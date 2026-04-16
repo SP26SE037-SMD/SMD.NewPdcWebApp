@@ -1,0 +1,21 @@
+Redux vs Tanstack Query
+- Redux is for global state management
+- Tanstack Query is for data fetching
+
+1. Phân biệt Client State (Redux) vs Server State (TanStack Query)
++ Server State (Dữ liệu máy chủ - Dùng TanStack Query): Là những dữ liệu như Danh sách Syllabus, Quản lý sinh viên, Các ngành học... Dữ liệu này luôn thay đổi trên Server, nhiều người cùng sửa một lúc, cần được tự động tải lại (refetch), cần cache, cần phân trang. Việc isLoading của TanStack Query ở đây có nghĩa là: "Tôi đang đi bới dữ liệu mới nhất trên database về cho anh xem".
++ Client State (Trạng thái giao diện - Dùng Redux/Zustand): Là thông tin về Giao diện hiện tại của cái máy tính đang mở web. Ví dụ: Người dùng đang đăng nhập là ai? Cái Sidebar có đang mở hay đóng? Người ta đang xài Dark Mode hay Light Mode? Những thứ này gần như bất biến sau khi xác thực xong. Việc isLoading của Redux ở đây có nghĩa là: "Tôi đang khóa cái nút bấm này lại (disable) để ông khỏi bấm 2 lần chạy 2 cái request rác".
+
+2. Tại sao Auth lại thuộc về Redux (Client State)?
+Thông tin User (user, role, email,...) sau khi đăng nhập thành công là một thông tin cốt lõi và tĩnh (static) trong suốt phiên làm việc (Session) của người dùng đó.
+
++ Nó không bị ai khác thay đổi (Khác với List Syllabus có thể bị người khác xóa/thêm liên tục).
++ Mọi ngóc ngách trong giao diện đều cần biết "Tôi là ai" (Header cần cái tên, Sidebar cần cái Role, Form cần cái Email).
++ Đưa nó vào Redux (Global Store) giúp bất kỳ component nào cũng gọi ra được mượt mà, không cần phải chọc API lên Server một lần nữa.
+
+3. Khi nào thì dùng TanStack Query?
+Đợi đến lúc bạn làm màn hình Dashoard của HoCFDC (Trưởng ban phát triển chương trình môn học) hoặc màn hình VP: Màn hình đó cần hiển thị danh sách 50 cái Syllabus, có tính năng Tìm kiếm, Phân trang, Lọc theo ngày... Lúc đó mới là sân nhà của TanStack Query. Mình sẽ dùng hàm useQuery() của nó để:
+
++ data: Lấy 50 cái Syllabus.
++ isLoading: Hiện cái khung xương (Skeleton) mờ mờ cho cái bảng (table).
++ refetchWindowFocus=true: VP vừa tab ra ngoài đọc báo, quay lại trang web là nó tự động ngầm tải thêm xem có Syllabus nào mới gửi lên không.

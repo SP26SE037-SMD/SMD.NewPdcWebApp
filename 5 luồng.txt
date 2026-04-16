@@ -1,0 +1,82 @@
+LUỒNG 1 — Hoạch định chiến lược & cấu trúc đào tạo
+Mục tiêu: Từ ý tưởng mở ngành của VP → thành bộ Khung chương trình đã được phê duyệt nguyên tắc (Approved Structure), sẵn sàng phân công soạn thảo.
+Actors: VP → HoCFDC → VP (Reviewer/Approver)
+Các bước nghiệp vụ:
+5: VP tạo Major và định nghĩa PO (Program Objectives). Đây là tầng chiến lược cao nhất. Sau đó VP giao nhiệm vụ cho HoCFDC.
+6: HoCFDC nhận PO rồi triển khai thành PLO (Program Learning Outcomes), xây dựng cấu trúc Curriculum (DRAFT): tạo Combo (bắt buộc), Group (tự chọn), lắp các Subject sơ bộ và Combo vào lộ trình từ học kỳ 1–9. Ở bước này Subject chỉ có thông tin header (mã, tên, tín chỉ, học kỳ, bộ môn) — chưa có CLO, Session, Assessment.
+7: Hệ thống tự động validate tiên quyết: kiểm tra đồ thị prerequisite, phát hiện các lỗi vi phạm thứ tự học kỳ, tự tiên quyết chính mình, hoặc tạo vòng lặp (Cycle).
+8: HoCFDC submit Curriculum lên VP (status chuyển DRAFT → STRUCTURE_REVIEW). VP thực hiện thẩm định Institutional Compliance. Nếu VP Approve → status chuyển STRUCTURE_REVIEW → STRUCTURE_APPROVED, chính thức kết thúc Luồng 1 và mở khóa Luồng 2. Nếu reject → trả về cho HoCFDC kèm comment (status trở lại DRAFT).
+9: Business Rules Luồng 1:
+10: BR-L1-01: VP là actor duy nhất có quyền tạo/sửa Major và PO. HoCFDC chỉ được đọc PO để làm căn cứ.
+11: BR-L1-02: Mỗi PLO bắt buộc phải trace về ít nhất 1 PO (PO_PLO_Mapping). Hệ thống block submit nếu có PLO "orphan".
+12: BR-L1-03: Curriculum mới tạo luôn ở DRAFT. Chỉ khi trạng thái đạt STRUCTURE_APPROVED (sau khi VP ký duyệt) mới được phép mở Sprints/Tasks ở Luồng 2. 
+13: BR-L1-04: Subject ở giai đoạn này chỉ được phép ở trạng thái DRAFT hoặc DEFINED. Chỉ Subject đã DEFINED mới được map prerequisite.
+14: BR-L1-05: Validate cây tiên quyết: chặn cứng self-reference, duplicate, và circular dependency (Cycle). Học kỳ môn tiên quyết phải nhỏ hơn học kỳ môn chính.
+15: BR-L1-06: Mã ngành (major_code) và mã môn (subject_code) là unique toàn hệ thống. Môn ở kì 0 (Preparatory) được phép add/remove nội dung linh hoạt nhưng vẫn phải tuân thủ logic tiên quyết trước kì 1.
+
+LUỒNG 2 — Phân bổ, kiểm duyệt chéo ngành và phân công
+Mục tiêu: Từ Khung đã duyệt nguyên tắc → phân chia gói công việc về từng bộ môn, xử lý xung đột, thiết lập chuẩn đầu ra, phân công Creator soạn thảo.
+Actors: HoCFDC → HoPDC → Creator (PDCM/Collaborator)
+Các bước nghiệp vụ:
+21: HoCFDC tạo "chiến dịch biên soạn" (Sprint), phân bổ các Combo/Subject về HoPDC theo Department phụ trách. Hệ thống tự tạo Task cho từng HoPDC.
+22: HoPDC xử lý bài toán Cross-Major: nếu Curriculum dùng môn từ ngành khác mà CLO cũ không tương thích, HoPDC có thể Reject Mapping và tạo subject_code mới để cắt đứt tiên quyết cũ, tự do quy hoạch lại.
+23: HoPDC định chuẩn đầu vào: tạo CLO cho môn học (bulk), chốt Reference Materials/Sources bắt buộc, thiết lập min_bloom_level (sàn Bloom tối thiểu Creator phải đạt).
+24: HoPDC phân công Creator: tạo Syllabus ở trạng thái DRAFT, gán creator_id, đính kèm Sources và CLO đã chốt. Ticket phân công (Assignment) gửi đến Creator.
+25: Business Rules Luồng 2:
+26: BR-L2-01: Chỉ có thể mở Luồng 2 khi Curriculum đang ở trạng thái STRUCTURE_REVIEW. HoCFDC không thể tạo Sprint/Task khi Curriculum còn DRAFT.
+27: BR-L2-02: CLO chỉ được tạo khi Subject đã ở trạng thái DEFINED. Code enforce: CLOsService.createBulkClos() ném CLO_SUBJECT_NOT_EDITABLE nếu Subject không phải DEFINED.
+28: BR-L2-03: Mã CLO phải unique trong phạm vi Subject đó (kiểm tra cả local trong request lẫn database).
+29: BR-L2-04: Cross-Major Rejection: khi tạo Subject mới thay thế môn cũ, subject_code mới phải unique toàn hệ thống. Prerequisite cũ của môn cũ không tự động kế thừa — phải thiết lập lại từ đầu.
+30: BR-L2-05: min_bloom_level là ràng buộc cứng — Creator không được submit Syllabus nếu bất kỳ CLO nào có Bloom level thấp hơn ngưỡng này (AI check Gemini enforce).
+31: BR-L2-06: Syllabus được tạo bởi HoPDC luôn ở DRAFT. Chỉ Creator được điền nội dung vào Syllabus được gán cho mình.
+
+LUỒNG 3 — Sản xuất Syllabus (4 phases)
+Mục tiêu: Creator soạn thảo nội dung chi tiết từng môn theo chuẩn do HoPDC đặt ra.
+Actors: Creator → HoPDC (review từng phase)
+Phase 1 — Nền tảng kiến thức:
+37: Creator đọc Sources, biên soạn Learning Materials (slide, lab manual, handout) dựa trên Reference Materials. Submit → HoPDC duyệt → Phase 1 bị khóa cứng, không sửa được nữa.
+38: Phase 2 — Thiết kế lịch trình:
+39: Creator chia nội dung vào Sessions (buổi học), map CLO vào từng Session. Subject chuyển WAITING_SYLLABUS → PENDING_REVIEW.
+40: Phase 3 — Cấu trúc đánh giá:
+41: Creator tạo Assessments (Quiz 10%, Thực hành 40%, Cuối kỳ 50%). Hệ thống validate tổng weight = 100% mới cho phép save. Map Assessment với CLO (CLO_Assessment). Submit toàn bộ → Syllabus chuyển PENDING_REVIEW.
+42: Phase 4 — Kiểm chéo và nghiệm thu bộ môn:
+43: HoPDC tạo Task Reviewer (Creator kiểm chéo lẫn nhau). Sau khi Reviewer nộp báo cáo, HoPDC nghiệm thu. Khi toàn bộ Syllabus trong bộ môn đã APPROVED → HoPDC "Push" lên cấp trường.
+44: Business Rules Luồng 3:
+45: BR-L3-01: Phase hoạt động theo cơ chế "khóa tuần tự" — Phase 1 phải được HoPDC duyệt thì mới mở Phase 2. Không được nhảy phase.
+46: BR-L3-02: Sum(Assessment.weight) trong một Syllabus bắt buộc phải bằng đúng 100%. Hệ thống chặn cứng (trigger Sum(weight) = 100), không phải warning.
+47: BR-L3-03: Mỗi Assessment phải được map with ít nhất 1 CLO. Assessment không có CLO mapping không được phép submit.
+48: BR-L3-04: Creator chỉ được edit Syllabus khi trạng thái là DRAFT hoặc REVISION_REQUESTED. Code enforce tại SyllabusService.update().
+49: BR-L3-05: Syllabus chỉ được xóa hẳn (hard delete) khi còn DRAFT. Mọi trạng thái khác chỉ được chuyển sang ARCHIVED (soft delete).
+50: BR-L3-06: Student và Lecturer chỉ được đọc Syllabus ở trạng thái PUBLISHED. Trạng thái DRAFT chỉ HoPDC mới xem được. Code enforce tại SyllabusService.getDetail().
+51: BR-L3-07: HoPDC có thể reject với REVISION_REQUESTED — Creator phải sửa lại. Reject ≠ xóa, lịch sử revision được giữ trong Syllabus_Action_Logs.
+
+LUỒNG 4 — Nghiệm thu và công bố
+Mục tiêu: Đưa toàn bộ Curriculum và Syllabus vào trạng thái chính thức có giá trị pháp lý.
+Actors: HoCFDC → VP → HoCFDC (publish)
+Các bước nghiệp vụ:
+57: HoCFDC rà soát dashboard tổng quan: kiểm tra 100% Subject trong Curriculum đã có Syllabus ở trạng thái APPROVED, kiểm tra đồng bộ giữa các chuyên ngành hẹp và khối kiến thức chung.
+58: Hệ thống chạy Final Integrity Check (chốt chặn cuối): quét lại toàn bộ cây prerequisite, xác nhận Sum(Assessment.weight) = 100% của từng môn, kiểm tra CLO-PLO Mapping không có orphan. Nếu có sai sót → block, không cho trình ký.
+59: VP ký số → Curriculum chuyển FINAL_REVIEW → SIGNED. Hệ thống tự động batch-update toàn bộ Syllabus liên quan sang PUBLISHED.
+60: HoCFDC thực hiện Publish → Curriculum chuyển SIGNED → PUBLISHED. Lúc này mới visible cho Student/Lecturer.
+61: Business Rules Luồng 4:
+62: BR-L4-01: Không thể submit lên VP nếu còn bất kỳ Subject nào trong Curriculum chưa ở trạng thái COMPLETED (tức là Syllabus chưa APPROVED).
+63: BR-L4-02: Final Integrity Check là bắt buộc và không thể bỏ qua — VP không thể ký nếu hệ thống chưa pass checkpoint này.
+64: BR-L4-03: VP chỉ ký hoặc từ chối — không được sửa nội dung trực tiếp. Mọi yêu cầu thay đổi phải kèm comment và trả lại cho HoCFDC.
+65: BR-L4-04: Khi VP ký (SIGNED), approved_date được ghi tự động. Đây là mốc pháp lý theo TT17/2021.
+66: BR-L4-05: Sau khi Publish, nếu Curriculum này là phiên bản mới nhất của Major → Curriculum cũ đang PUBLISHED tự động chuyển sang ARCHIVED.
+67: BR-L4-06: Toàn bộ hành động trong luồng này phải ghi Syllabus_Action_Logs với action_type rõ ràng (HOPDC_APPROVED, ALL_APPROVED...) làm minh chứng kiểm định.
+
+LUỒNG 5 — Post-live Feedback & Version Control
+Mục tiêu: Tiếp nhận phản hồi thực tế, nâng cấp phiên bản và phân tích lan truyền ảnh hưởng.
+Actors: Lecturer/Student/Doanh nghiệp → HoPDC/HoCFDC → (quay lại Luồng 2)
+Các bước nghiệp vụ:
+73: Thu thập feedback từ Lecturer, Student, doanh nghiệp qua Syllabus_Comments.
+74: Quyết định loại update: bản vá nhỏ (chỉ sửa Assessment) giữ Subject ID cũ, tạo Syllabus ID mới với version tăng — bật Diff View. Đại tu (thay đổi nội dung lõi) tạo subject_code mới hoàn toàn, Syllabus ID mới, giáo viên điền lại từ đầu.
+75: Impact Analysis: chạy thuật toán đệ quy (CTE query) trên bảng Subject_Prerequisite toàn trường để tìm các môn hậu quyết bị ảnh hưởng khi một CLO bị xóa hoặc thay đổi.
+76: Xuất Red Flag Report: các bộ môn bị ảnh hưởng nhận notification buộc phải cập nhật lại Syllabus → trigger Luồng 2 lại cho những môn đó.
+77: Business Rules Luồng 5:
+78: BR-L5-01: Không được sửa trực tiếp Syllabus đang PUBLISHED — bắt buộc phải tạo phiên bản mới và đi qua đủ quy trình (đảm bảo tính pháp lý của tài liệu đã ký).
+79: BR-L5-02: Bản vá nhỏ (Update Assessment): clone toàn bộ CLO, Session sang Syllabus mới, để trắng phần Assessment cho Creator điền lại. Subject ID giữ nguyên.
+80: BR-L5-03: Đại tu (Major Update): bắt buộc tạo subject_code mới. Prerequisite của môn cũ không tự động kế thừa — HoPDC phải khai báo lại.
+81: BR-L5-04: Impact Analysis là bắt buộc trước khi xóa hoặc thay đổi CLO trên môn PUBLISHED. Nếu Impact Analysis phát hiện ≥1 môn hậu quyết bị ảnh hưởng, hệ thống phải sinh Red Flag và notify HoPDC của các bộ môn đó.
+82: BR-L5-05: Diff View chỉ available khi có ≥2 Syllabus version của cùng một Subject (cùng subject_id).

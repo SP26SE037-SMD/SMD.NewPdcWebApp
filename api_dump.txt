@@ -1,0 +1,94 @@
+=== ALL RELEVANT ENDPOINTS ===
+
+[/api/group/{id}]
+  GET - Get group by ID
+  PUT - Update group by ID
+  RequestBody: GroupRequest
+    - groupCode: string
+    - groupName: string
+    - description: string
+    - type: string
+
+[/api/curriculums/{id}]
+  GET - Get curriculum detail by ID
+  PUT - Update an existing curriculum
+  RequestBody: CurriculumCreateRequest
+    - curriculumCode: string
+    - curriculumName: string
+    - startYear: integer
+    - majorId: string
+  DELETE - Soft delete curriculum
+
+[/api/plos/curriculum/{curriculumId}]
+  GET - Get PLOs by Curriculum ID
+  POST - Create multiple PLOs
+  RequestBody: Array of PLOsCreateRequest
+      - ploCode: string
+      - description: string
+
+[/api/group]
+  GET - Get all groups with pagination, search, and type filter
+  POST - Create new group
+  RequestBody: GroupRequest
+    - groupCode: string
+    - groupName: string
+    - description: string
+    - type: string
+
+[/api/group/import]
+  POST - Import groups from Excel
+  RequestBody parse error: 'application/json'
+
+[/api/curriculums]
+  GET - Get curriculums with pagination and filters
+  POST - Create a new curriculum
+  RequestBody: CurriculumCreateRequest
+    - curriculumCode: string
+    - curriculumName: string
+    - startYear: integer
+    - majorId: string
+
+[/api/curriculum-group-subjects]
+  POST - Add subject to curriculum (via group)
+  RequestBody: CurriculumGroupSubjectRequest
+    - curriculumId: string
+    - groupId: string
+    - subjectId: string
+    - semester: integer
+
+[/api/curriculum-group-subjects/bulk-configure]
+  POST - Bulk configure semester-subject-group mappings 
+  RequestBody: BulkSemesterMappingRequest
+    - curriculumId: string
+    - deleteSubjectsList: array of string
+    - semesterMappings: array of SemesterMappingDTO
+
+[/api/plos/curriculum/{curriculum_id}/status]
+  PATCH - Update PLOs status
+
+[/api/curriculums/{id}/status]
+  PATCH - Update Curriculum Life-cycle Status
+
+[/api/curriculums/{id}/end-year]
+  PATCH - 
+
+[/api/po-plo-mappings/curriculum/{curriculumId}]
+  GET - Get all mappings for a specific Curriculum
+
+[/api/feedback/summary/curriculum/{curriculumId}]
+  GET - Get aggregated feedback summary by curriculum
+
+[/api/feedback/submissions/curriculum/{curriculumId}]
+  GET - Get all feedback submissions by curriculum
+
+[/api/curriculums/code/{code}]
+  GET - Get curriculum by curriculum code
+
+[/api/curriculum-group-subjects/subjects]
+  GET - Get subjects by curriculum or group with pagination
+
+[/api/curriculum-group-subjects/subjects/by-curriculum]
+  GET - Get subjects by curriculum and department
+
+[/api/curriculum-group-subjects/semester-mappings]
+  GET - Get semester mappings by curriculumId
