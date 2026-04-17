@@ -100,7 +100,7 @@ export async function PUT(
       { 
         error: "Internal server error", 
         details: (error as any).message,
-        sentPayload: body 
+        sentPayload: undefined 
       },
       { status: 500 },
     );

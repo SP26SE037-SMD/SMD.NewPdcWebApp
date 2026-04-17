@@ -1,5 +1,6 @@
 import AssignTaskContent from "@/components/hopdc/AssignmentContent";
 import { Metadata } from 'next';
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
     title: 'Assign Task | HOPDC Dashboard | SMD',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function AssignTaskPage() {
-    return <AssignTaskContent />;
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <AssignTaskContent />
+        </Suspense>
+    );
 }

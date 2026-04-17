@@ -41,7 +41,7 @@ export function useNewSubjectLogic() {
       );
       const tasks = res?.data?.content || [];
       return (
-        tasks.find((t) => t.subjectId === subjectId) || null
+        tasks.find((t: any) => t.subjectId === subjectId) || null
       );
     },
     enabled: !!sprintId && !!subjectId && !!user?.departmentId,

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import SprintManagementContent from "@/components/hopdc/SprintManagementContent";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SprintManagementPage() {
-  return <SprintManagementContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SprintManagementContent />
+    </Suspense>
+  );
 }

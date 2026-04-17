@@ -359,7 +359,6 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
                     materialId: material.materialId || materialId,
                     title: material.title || initialTitle || 'Material',
                     materialType: material.materialType,
-                    status: material.status,
                 }]}
                 taskId={reviewId}
             />
@@ -378,7 +377,7 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
         <SyllabusInfoModal 
             isOpen={isInfoModalOpen} 
             onClose={() => setIsInfoModalOpen(false)} 
-            syllabusId={routeTaskData?.data?.syllabusId || ''} 
+            syllabusId={routeTaskData?.data?.syllabus?.syllabusId || ''} 
         />
         </>
     );

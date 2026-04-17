@@ -45,7 +45,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabusId;
+    const syllabusId = realTask?.syllabus?.syllabusId;
 
     const { data: syllabusData, isLoading: isSyllabusLoading } = useQuery({
         queryKey: ['syllabus', syllabusId],

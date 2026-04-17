@@ -36,8 +36,8 @@ export default function ElectiveManagement() {
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
-                const resp = await SubjectService.getSubjects({ search: "" });
-                setAvailableSubjects(resp.data.content);
+                const resp = await SubjectService.getSubjects({ search: "" } as any);
+                setAvailableSubjects(resp.data.content as any);
             } catch (err) {
                 console.error("Failed to load subjects", err);
             }

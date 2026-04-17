@@ -684,20 +684,21 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
     // ── Block editor helpers ──────────────────────────────────────────────────
 
-    const addBlock = async (index: number, type: BlockType = 'PARAGRAPH', initialContent: string = '') => {
+    const addBlock = async (index: number, type: BlockType = 'PARAGRAPH', shouldSave: boolean = true, initialContent: string = '') => {
         const newBlock: Block = { id: crypto.randomUUID(), type, content: initialContent };
 
+        let updatedBlocks: Block[] = [];
         setBlocks(prev => {
             const next = [...prev];
             next.splice(index + 1, 0, newBlock);
+            updatedBlocks = next;
             return next;
         });
 
         // Set focus to the new block immediately
         setFocusedBlockId(newBlock.id);
         setShowMenuForBlockId(null);
-        setFocusToken(t => t + 1);
-        if (shouldSave) await handleSaveDraft(updatedBlocks);
+        if (shouldSave && updatedBlocks.length > 0) await handleSaveDraft(updatedBlocks);
         return newBlock;
     };
 
@@ -1999,8 +2000,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                         </div>
                     </div>
                 </div>
-
-            </main>
+            </div>
 
             {/* Floating Info Button */}
             <button

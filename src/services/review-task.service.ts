@@ -17,6 +17,19 @@ export const REVIEW_TASK_STATUS = {
 export type ReviewTaskStatus =
   (typeof REVIEW_TASK_STATUS)[keyof typeof REVIEW_TASK_STATUS];
 
+export interface CreateReviewTaskPayload {
+  taskId: string;
+  reviewerId: string;
+  titleTask: string;
+  commentMaterial?: string;
+  commentSession?: string;
+  commentAssessment?: string;
+  reviewDate?: string;
+  countDown?: number;
+  status?: string;
+  dueDate: string;
+}
+
 export interface ReviewTaskItem {
   reviewId: string;
   titleTask: string;

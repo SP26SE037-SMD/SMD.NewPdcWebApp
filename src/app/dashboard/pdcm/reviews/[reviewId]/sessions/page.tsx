@@ -35,7 +35,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         staleTime: 5 * 60 * 1000,
     });
 
-    const syllabusId = routeTaskData?.data?.syllabusId;
+    const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
 
     const { data: sessionsRes, isLoading: isSessionsLoading } = useQuery({
         queryKey: ['pdcm-sessions', syllabusId],

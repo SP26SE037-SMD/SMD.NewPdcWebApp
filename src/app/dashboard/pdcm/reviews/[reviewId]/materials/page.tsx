@@ -34,7 +34,7 @@ export default function PDCMReviewMaterialsPage({ params }: { params: Promise<{ 
         staleTime: 5 * 60 * 1000,
     });
 
-    const syllabusId = routeTaskData?.data?.syllabusId;
+    const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
 
     const { data: materialsRes, isLoading: isMaterialsLoading } = useQuery({
         queryKey: ['pdcm-materials', syllabusId],

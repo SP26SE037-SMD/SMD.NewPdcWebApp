@@ -39,7 +39,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabusId;
+    const syllabusId = realTask?.syllabus?.syllabusId;
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, error: sessionError, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId],

@@ -60,7 +60,7 @@ export function useSyllabusWorkspace(syllabusId: string | undefined) {
 
     return {
         syllabus: syllabusQuery.data?.data,
-        subject: subjectQuery.data?.data,
+        subject: (subjectQuery.data as any)?.data || subjectQuery.data,
         materials: materialsQuery.data?.data || [],
         sessions: sessionsQuery.data?.data?.content || [],
         assessments: Array.isArray(assessmentsQuery.data?.data) 

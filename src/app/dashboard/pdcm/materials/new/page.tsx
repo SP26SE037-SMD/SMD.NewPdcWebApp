@@ -246,6 +246,11 @@ function NewMaterialPageInner() {
     const [hasChanges, setHasChanges] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
 
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
     // ── Unsaved Changes Protection (Hard Exit & Browser Back) ──
     useEffect(() => {
         if (!hasChanges) return;
@@ -809,9 +814,9 @@ function NewMaterialPageInner() {
             try {
                 const existingMaterialsRes = await MaterialService.getMaterialsBySyllabusId(syllabusId as string);
                 const materials = Array.isArray(existingMaterialsRes?.data) ? existingMaterialsRes.data : [];
-                const ids = materials.map((m: any) => m.id).filter(id => id !== undefined && !isNaN(Number(id)));
+                const ids = materials.map((m: any) => m.id).filter((id: any) => id !== undefined && !isNaN(Number(id)));
                 if (ids.length > 0) {
-                    nextId = Math.max(...ids.map(id => Number(id))) + 1;
+                    nextId = Math.max(...ids.map((id: any) => Number(id))) + 1;
                 }
             } catch (err) {
                 console.warn("Failed to fetch existing materials for ID calculation, defaulting to 0", err);
@@ -1518,6 +1523,8 @@ function NewMaterialPageInner() {
 
 export default function NewMaterialPage() {
     return (
-        <NewMaterialPageInner />
+        <Suspense fallback={<div>Loading...</div>}>
+            <NewMaterialPageInner />
+        </Suspense>
     );
 }

@@ -55,7 +55,7 @@ export default function SubjectManagement() {
     useEffect(() => {
         const fetchDeps = async () => {
             const resp = await SubjectService.getDepartments();
-            setDepartments(resp.data);
+            setDepartments(resp.data as any);
         };
         fetchDeps();
     }, []);
@@ -63,7 +63,7 @@ export default function SubjectManagement() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
-            await SubjectService.createSubject(formData);
+            await SubjectService.createSubject(formData as any);
             router.push("/dashboard/hocfdc/curriculums");
         } catch (error) {
             console.error(error);

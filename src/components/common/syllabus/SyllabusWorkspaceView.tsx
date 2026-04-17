@@ -23,7 +23,7 @@ interface SyllabusWorkspaceViewProps {
         assessments?: { status: string; note: string };
     };
     onOpenMaterial?: (material: any) => void;
-    onUpdateStatus?: (type: 'material' | 'sessions' | 'assessments', id: string, status: 'APPROVED' | 'REVISION_REQUESTED') => void;
+    onUpdateStatus?: (type: 'material' | 'sessions' | 'assessments', id: string, status: 'APPROVED' | 'REVISION_REQUESTED' | 'PENDING_REVIEW') => void;
 }
 
 export function SyllabusWorkspaceView({ 

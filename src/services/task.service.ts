@@ -140,7 +140,7 @@ export interface TasksPaginatedResponse {
 
 export interface TaskQueryParams {
   search?: string;
-  status?: TaskStatus;
+  status?: TaskStatus | string | string[];
   sprintId?: string;
   accountId?: string;
   departmentId?: string;
@@ -160,6 +160,7 @@ export interface CreateTaskPayload {
   taskName: string;
   description: string;
   priority: string | null;
+  status?: string;
   type: string;
   deadline?: string;
   createdAt?: string;
@@ -189,7 +190,7 @@ const calculateProgress = (subjects: SubjectTaskDetail[]): number => {
 };
 
 export const TaskService = {
-  getTasks: async (params?: TaskQueryParams) => {
+  getTasks: async (params?: TaskQueryParams): Promise<TasksPaginatedResponse> => {
     // If multiple statuses are provided, we map them into parallel requests.
     if (Array.isArray(params?.status)) {
         const results = await Promise.all(params.status.map(async (s) => {

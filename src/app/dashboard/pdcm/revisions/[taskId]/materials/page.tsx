@@ -52,7 +52,7 @@ export default function RevisionMaterialsPage({ params }: { params: Promise<{ ta
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabusId;
+    const syllabusId = realTask?.syllabus?.syllabusId;
     const displayId = realTask?.taskId || taskId;
 
     // Fetch Revision Request Data (Always enabled for this route)

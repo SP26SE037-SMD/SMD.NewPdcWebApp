@@ -426,7 +426,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     ].filter(tab => {
         if (navTab === 'peer-review' && tab.id === 'revision_requested') return false;
         return true;
-    }) as const;
+    });
 
     return (
         <PDCMBaseLayout
@@ -452,7 +452,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                         {statusTabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setStatusTab(tab.id)}
+                                onClick={() => setStatusTab(tab.id as any)}
                                 className={`pb-4 text-sm font-bold transition-all relative ${
                                     statusTab === tab.id 
                                         ? 'text-primary' 
