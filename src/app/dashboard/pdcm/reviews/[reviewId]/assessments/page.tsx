@@ -39,7 +39,7 @@ export default function PDCMReviewAssessmentsPage({
     staleTime: 5 * 60 * 1000,
   });
 
-  const taskId = reviewTaskRes?.data?.task?.taskId;
+  const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
 
   const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
     queryKey: ["pdcm-task-detail", taskId],
@@ -48,7 +48,7 @@ export default function PDCMReviewAssessmentsPage({
     staleTime: 5 * 60 * 1000,
   });
 
-  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
+  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId || routeTaskData?.data?.syllabusId;
 
   const { data: syllabusData } = useQuery({
     queryKey: ["syllabus", syllabusId],
