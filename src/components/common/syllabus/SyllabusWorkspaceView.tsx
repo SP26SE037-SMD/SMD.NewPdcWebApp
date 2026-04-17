@@ -93,7 +93,7 @@ export function SyllabusWorkspaceView({
                         evaluations={evaluations?.materials}
                         overallFeedback={overallFeedback?.materials}
                         onOpenMaterial={onOpenMaterial}
-                        onUpdateStatus={onUpdateStatus ? (id, s) => onUpdateStatus('material', id, s) : undefined}
+                        onUpdateStatus={onUpdateStatus ? (id, s) => onUpdateStatus('material', id, s as any) : undefined}
                     />
                 )}
                 {activeTab === 'sessions' && (
@@ -105,7 +105,7 @@ export function SyllabusWorkspaceView({
                             setSelectedSession(s);
                             setIsSessionModalOpen(true);
                         }}
-                        onUpdateStatus={onUpdateStatus ? (s) => onUpdateStatus('sessions', 'ALL', s) : undefined}
+                        onUpdateStatus={onUpdateStatus ? (s) => onUpdateStatus('sessions', 'ALL', s as any) : undefined}
                     />
                 )}
                 {activeTab === 'assessments' && (
@@ -113,7 +113,7 @@ export function SyllabusWorkspaceView({
                         assessments={assessments} 
                         evaluations={evaluations?.assessments}
                         overallFeedback={overallFeedback?.assessments}
-                        onUpdateStatus={onUpdateStatus ? (s) => onUpdateStatus('assessments', 'ALL', s) : undefined}
+                        onUpdateStatus={onUpdateStatus ? (s) => onUpdateStatus('assessments', 'ALL', s as any) : undefined}
                     />
                 )}
             </div>

@@ -1,10 +1,439 @@
-[00:00:03.091] Server  LOG     ✓ Ready in 2.5s
-[00:00:12.789] Server  LOG     ○ Compiling / ...
-[00:00:21.450] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:27.560] Server  LOG     ○ Compiling /login ...
-[00:00:47.061] Server  LOG     {}
-[00:00:47.067] Server  LOG     /dashboard/vice-principal
-[00:00:50.627] Server  LOG     ○ Compiling /dashboard/vice-principal ...
-[00:00:52.726] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:57.908] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
-[00:00:58.597] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:37.492] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js:148:29
+Module not found: Can't resolve '../../client/components/hooks-server-context'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.493] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js:149:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.493] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js:14:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.494] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/utils.js:27:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/utils.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.496] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.500] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.502] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.504] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.505] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/cookies.js:27:18
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.506] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/lib/trace/tracer.js:18:15
+Module not found: Can't resolve 'next/dist/compiled/@opentelemetry/api'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@opentelemetry/api' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/lib/trace/tracer.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.506] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/api-utils/index.js:65:27
+Module not found: Can't resolve 'next/dist/compiled/cookie'
+Import map: aliased to module 'next' with subpath '/dist/compiled/cookie' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/api-utils/index.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/draft-mode-provider.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.506] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/module.compiled.js:22:34
+Module not found: Can't resolve 'next/dist/compiled/next-server/app-page-turbo.runtime.dev.js'
+Import map: aliased to module 'next' with subpath '/dist/compiled/next-server/app-page-turbo.runtime.dev.js' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/module.compiled.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.506] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/p-queue'
+Import map: aliased to module 'next' with subpath '/dist/compiled/p-queue' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/work-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.507] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/p-queue'
+Import map: aliased to module 'next' with subpath '/dist/compiled/p-queue' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/work-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.509] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js:148:29
+Module not found: Can't resolve '../../client/components/hooks-server-context'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.509] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js:149:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.510] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js:14:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.512] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/utils.js:27:34
+Module not found: Can't resolve '../../client/components/static-generation-bailout'
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/utils.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.514] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.516] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.517] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.517] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import traces:
+  #1 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+  #2 [Middleware]:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.518] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/cookies.js:27:18
+Module not found: Can't resolve 'next/dist/compiled/@edge-runtime/cookies'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@edge-runtime/cookies' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/cookies.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/web/spec-extension/response.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.518] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/lib/trace/tracer.js:18:15
+Module not found: Can't resolve 'next/dist/compiled/@opentelemetry/api'
+Import map: aliased to module 'next' with subpath '/dist/compiled/@opentelemetry/api' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/lib/trace/tracer.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.518] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/api-utils/index.js:65:27
+Module not found: Can't resolve 'next/dist/compiled/cookie'
+Import map: aliased to module 'next' with subpath '/dist/compiled/cookie' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/api-utils/index.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/draft-mode-provider.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/request-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.518] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/module.compiled.js:22:34
+Module not found: Can't resolve 'next/dist/compiled/next-server/app-page-turbo.runtime.dev.js'
+Import map: aliased to module 'next' with subpath '/dist/compiled/next-server/app-page-turbo.runtime.dev.js' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/module.compiled.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/app-render/dynamic-rendering.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/request/connection.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/server.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/src/proxy.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.519] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/p-queue'
+Import map: aliased to module 'next' with subpath '/dist/compiled/p-queue' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/work-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.519] Server  ERROR   ⨯ ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/p-queue'
+Import map: aliased to module 'next' with subpath '/dist/compiled/p-queue' inside of [project]/Documents/DoAn/UI/SMD.NewPdcWebApp
+
+
+Import trace:
+  Middleware:
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/after/after-context.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/async-storage/work-store.js
+    ./Documents/DoAn/UI/SMD.NewPdcWebApp/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/esm/server/web/adapter.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:05:37.573] Server  LOG     ✓ Compiled in 388ms

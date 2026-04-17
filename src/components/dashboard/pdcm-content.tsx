@@ -260,7 +260,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                 accountId: user?.accountId || "", 
                 size: 10,
                 page: page,
-                status: developStatusMapping[statusTab]
+                status: developStatusMapping[statusTab] as any
             });
 
             // Enrichment: If tasks are IN_PROGRESS, fetch their syllabus status to allow filtering
@@ -426,7 +426,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     ].filter(tab => {
         if (navTab === 'peer-review' && tab.id === 'revision_requested') return false;
         return true;
-    }) as const;
+    });
 
     return (
         <PDCMBaseLayout
@@ -452,7 +452,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                         {statusTabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setStatusTab(tab.id)}
+                                onClick={() => setStatusTab(tab.id as any)}
                                 className={`pb-4 text-sm font-bold transition-all relative ${
                                     statusTab === tab.id 
                                         ? 'text-primary' 

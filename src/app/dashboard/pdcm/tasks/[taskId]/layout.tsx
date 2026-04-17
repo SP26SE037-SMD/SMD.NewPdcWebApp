@@ -109,7 +109,7 @@ export default function TaskWorkspaceLayout({
             sidebarItems={sidebarItems}
             sidebarSubContent={sidebarSubContent}
             onBack={() => router.push('/dashboard/pdcm')}
-            actionButton={realTask?.status === 'PENDING_REVIEW' ? undefined : {
+            actionButton={realTask?.status === 'DONE' ? undefined : {
                 label: 'Submit Syllabus',
                 icon: 'send',
                 onClick: () => router.push(`/dashboard/pdcm/tasks/${displayId}/submit`)
@@ -131,7 +131,7 @@ export default function TaskWorkspaceLayout({
                     <span className="font-bold text-xs whitespace-nowrap">Syllabus Info</span>
                 </button>
             )}
-            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={realTask?.syllabusId} />
+            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={(realTask as any)?.syllabusId || realTask?.syllabus?.syllabusId} />
         </PDCMBaseLayout>
     );
 }

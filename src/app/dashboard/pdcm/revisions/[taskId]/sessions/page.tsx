@@ -41,7 +41,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabusId;
+    const syllabusId = (realTask as any)?.syllabusId || realTask?.syllabus?.syllabusId;
     
     // Fetch Revision Request Data (Always enabled for this route)
     const { data: revisionRequest, isLoading: isRevisionLoading } = useRevisionRequest(taskId, true);

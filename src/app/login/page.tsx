@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import LoginForm from "@/components/login-form";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -20,7 +21,7 @@ export default function LoginPage() {
                     </Link>
                 </div>
 
-                <LoginForm />
+                <Suspense fallback={<div>Loading LoginForm...</div>}><LoginForm /></Suspense>
 
                 <p className="mt-8 text-center text-xs text-zinc-400">
                     © 2026 SMD Project Team · FPT University Capstone Implementation

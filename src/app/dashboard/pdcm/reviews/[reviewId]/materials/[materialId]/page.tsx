@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { use, useState, useEffect, useMemo } from 'react';
@@ -358,8 +359,7 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
                 materials={[{
                     materialId: material.materialId || materialId,
                     title: material.title || initialTitle || 'Material',
-                    materialType: material.materialType,
-                    status: material.status,
+                    materialType: material.materialType
                 }]}
                 taskId={reviewId}
             />
@@ -378,7 +378,7 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
         <SyllabusInfoModal 
             isOpen={isInfoModalOpen} 
             onClose={() => setIsInfoModalOpen(false)} 
-            syllabusId={routeTaskData?.data?.syllabusId || ''} 
+            syllabusId={(routeTaskData?.data as any)?.syllabusId || routeTaskData?.data?.syllabus?.syllabusId || ''} 
         />
         </>
     );

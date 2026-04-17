@@ -131,7 +131,7 @@ export default function RevisionWorkspaceLayout({
                     <span className="font-bold text-xs whitespace-nowrap">Syllabus Info</span>
                 </button>
             )}
-            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={realTask?.syllabusId} />
+            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={(realTask as any)?.syllabusId || realTask?.syllabus?.syllabusId} />
         </PDCMBaseLayout>
     );
 }

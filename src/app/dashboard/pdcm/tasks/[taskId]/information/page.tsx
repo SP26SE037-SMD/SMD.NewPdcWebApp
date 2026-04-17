@@ -53,7 +53,7 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
         staleTime: 5 * 60 * 1000,
     });
 
-    const syllabusId = routeTaskData?.data?.syllabusId;
+    const syllabusId = (routeTaskData?.data as any)?.syllabusId || routeTaskData?.data?.syllabus?.syllabusId;
 
     // Fetch Syllabus Data
     const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({

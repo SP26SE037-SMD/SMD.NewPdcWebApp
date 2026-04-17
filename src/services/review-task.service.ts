@@ -1,5 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 
+export type CreateReviewTaskPayload = any;
+
 export interface Reviewer {
   reviewerId: string;
   fullName: string;

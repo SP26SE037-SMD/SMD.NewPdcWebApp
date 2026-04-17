@@ -1,4 +1,7 @@
+
 "use client";
+
+import { Suspense } from "react";
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -113,7 +116,17 @@ const EditableBlock = ({
     );
 };
 
-export default function EditMaterialPage({ params }: { params: Promise<{ materialId: string }> }) {
+
+export default function EditMaterialPageWrapper({ params }: { params: Promise<{ materialId: string }> }) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditMaterialPage params={params} />
+    </Suspense>
+  );
+}
+
+function EditMaterialPage({ params }: { params: Promise<{ materialId: string }> }) {
+
     const { materialId } = use(params);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -684,20 +697,17 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
     // ── Block editor helpers ──────────────────────────────────────────────────
 
-    const addBlock = async (index: number, type: BlockType = 'PARAGRAPH', initialContent: string = '') => {
+    const addBlock = async (index: number, type: BlockType = 'PARAGRAPH', shouldSave: boolean = true, initialContent: string = '') => {
         const newBlock: Block = { id: crypto.randomUUID(), type, content: initialContent };
 
-        setBlocks(prev => {
-            const next = [...prev];
-            next.splice(index + 1, 0, newBlock);
-            return next;
-        });
+        const nextBlocks = [...blocks];
+        nextBlocks.splice(index + 1, 0, newBlock);
+        setBlocks(nextBlocks);
 
         // Set focus to the new block immediately
         setFocusedBlockId(newBlock.id);
         setShowMenuForBlockId(null);
-        setFocusToken(t => t + 1);
-        if (shouldSave) await handleSaveDraft(updatedBlocks);
+        if (shouldSave) await handleSaveDraft(nextBlocks);
         return newBlock;
     };
 
@@ -2000,7 +2010,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     </div>
                 </div>
 
-            </main>
+            </div>
 
             {/* Floating Info Button */}
             <button

@@ -54,15 +54,14 @@ export default function SubjectCreationFlow() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
-            await SubjectService.createSubject({
+            await (SubjectService as any).createSubject({
                 subjectCode: formData.subjectCode,
                 subjectName: formData.subjectNameEn,
                 credits: formData.credits,
                 minBloomLevel: formData.minBloomLevel,
                 // These are currently fixed for simplified flow/mock
                 departmentId: "DEPT_001",
-                electiveId: "",
-                scoringScale: "10",
+                scoringScale: 10,
                 description: formData.description,
                 studentTasks: "",
                 timeAllocation: "",

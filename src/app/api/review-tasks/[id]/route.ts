@@ -99,8 +99,7 @@ export async function PUT(
     return NextResponse.json(
       { 
         error: "Internal server error", 
-        details: (error as any).message,
-        sentPayload: body 
+        details: (error as any).message
       },
       { status: 500 },
     );

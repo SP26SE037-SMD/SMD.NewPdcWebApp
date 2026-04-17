@@ -1,3 +1,5 @@
+
+import { Suspense } from "react";
 import { StandardInputContent } from "@/components/hopdc/standard-input-content";
 import { Metadata } from "next";
 
@@ -7,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function StandardInputPage() {
-  return <StandardInputContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StandardInputContent />
+    </Suspense>
+  );
 }

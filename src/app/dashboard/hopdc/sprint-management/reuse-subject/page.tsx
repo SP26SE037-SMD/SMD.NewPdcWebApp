@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ReuseSubjectContent from "@/components/hopdc/SubjectIntakeReuseContent";
 import { Metadata } from "next";
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function ReuseSubjectPage() {
-  return <ReuseSubjectContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReuseSubjectContent />
+    </Suspense>
+  );
 }

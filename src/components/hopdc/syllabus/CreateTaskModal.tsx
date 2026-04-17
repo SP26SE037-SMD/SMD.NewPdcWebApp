@@ -27,7 +27,6 @@ export const CreateTaskModal = ({
     taskName: "",
     description: "",
     priority: "MEDIUM",
-    status: "DRAFT",
     deadline: new Date().toISOString().split("T")[0],
     type: "TASK",
     accountId: "",
@@ -99,9 +98,9 @@ export const CreateTaskModal = ({
                 <div className="relative group">
                   <select
                     className="appearance-none bg-[#6B728E] text-white font-bold text-sm px-6 py-2.5 pr-10 rounded-xl hover:bg-[#5B627E] transition-all cursor-pointer outline-none shadow-lg shadow-zinc-200 border-none"
-                    value={taskData.status}
+                    value={(taskData as any).status}
                     onChange={(e) =>
-                      setTaskData({ ...taskData, status: e.target.value })
+                      setTaskData({ ...taskData, status: e.target.value } as any)
                     }
                   >
                     <option value="DRAFT">Draft</option>

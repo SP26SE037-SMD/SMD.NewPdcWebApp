@@ -55,7 +55,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
         staleTime: 5 * 60 * 1000,
     });
 
-    const syllabusId = routeTaskData?.data?.syllabusId;
+    const syllabusId = (routeTaskData?.data as any)?.syllabusId || routeTaskData?.data?.syllabus?.syllabusId;
     const isRevisionRequested = routeTaskData?.data?.status === 'REVISION_REQUESTED';
 
     // Fetch Revision Request Data (Always enabled for this route)

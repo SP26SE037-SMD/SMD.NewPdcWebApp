@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import NewSubjectContent from "@/components/hopdc/SubjectIntakeNewContent";
 import { Metadata } from "next";
 
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewSubjectPage() {
-  return <NewSubjectContent />;
+  return <Suspense fallback={<div>Loading...</div>}><NewSubjectContent /></Suspense>;
 }

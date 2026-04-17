@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import AssignTaskContent from "@/components/hopdc/AssignmentContent";
 import { Metadata } from 'next';
 
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function AssignTaskPage() {
-    return <AssignTaskContent />;
+    return <Suspense fallback={<div>Loading...</div>}><AssignTaskContent /></Suspense>;
 }

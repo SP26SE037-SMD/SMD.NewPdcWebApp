@@ -50,7 +50,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabusId;
+    const syllabusId = (realTask as any)?.syllabusId || realTask?.syllabus?.syllabusId;
     const displayId = realTask?.taskId || taskId;
 
     const { data: materialsData, isLoading: isMaterialsLoading } = useQuery({

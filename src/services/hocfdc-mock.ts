@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Major } from "./major.service";
 import { CurriculumFramework } from "./curriculum.service";
 

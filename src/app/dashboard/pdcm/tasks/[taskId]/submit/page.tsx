@@ -30,7 +30,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     });
 
     const taskData = fullTaskResponse?.data;
-    const syllabusId = taskData?.syllabusId;
+    const syllabusId = (taskData as any)?.syllabusId || taskData?.syllabus?.syllabusId;
 
     // Fetch Sessions to ensure count is accurate even if not visited sessions tab
     const { data: sessionsRes } = useQuery({
@@ -204,7 +204,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                     <button 
                         disabled={!isValidated || isSubmitting}
                         onClick={async () => {
-                            if (!syllabusId || !taskData?.accountId) return;
+                            if (!syllabusId || !(taskData as any)?.accountId || taskData?.account?.accountId) return;
                             
                             setIsSubmitting(true);
                             try {
@@ -218,10 +218,10 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 await MaterialService.updateSyllabusMaterialsStatus(syllabusId, 'PENDING_REVIEW');
                                 
                                 // 4. Update Syllabus Status
-                                await SyllabusService.updateSyllabusStatus(syllabusId, taskData.accountId, 'PENDING_REVIEW');
+                                await SyllabusService.updateSyllabusStatus(syllabusId, ((taskData as any)?.accountId || taskData?.account?.accountId) as string, 'PENDING_REVIEW');
 
                                 // 5. Update Task Status so it moves to the Completed tab natively
-                                await TaskService.updateTaskStatus(taskData.taskId, 'DONE', taskData.accountId);
+                                await TaskService.updateTaskStatus(taskData!.taskId, 'DONE', ((taskData as any)?.accountId || taskData?.account?.accountId) as string);
 
                                 alert("Syllabus configuration submitted to HoPDC successfully!");
                                 router.push('/dashboard/pdcm');
