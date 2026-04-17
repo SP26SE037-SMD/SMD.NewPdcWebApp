@@ -61,9 +61,10 @@ export default function MajorDetailContent() {
   // Curriculums Query (for non-draft majors)
   const { data: curriculumsResponse, isLoading: isCurriculumsLoading } =
     useQuery({
-      queryKey: ["major-curriculums", majorCode],
-      queryFn: () => CurriculumService.getCurriculumsByMajor(majorCode),
-      enabled: !!majorCode && majorDetail?.data?.status !== "DRAFT",
+      queryKey: ["major-curriculums", majorDetail?.data?.majorId],
+      queryFn: () =>
+        CurriculumService.getCurriculumsByMajorId(majorDetail!.data.majorId),
+      enabled: !!majorDetail?.data?.majorId && majorDetail?.data?.status !== "DRAFT",
     });
 
   const curriculums = curriculumsResponse?.data || [];
