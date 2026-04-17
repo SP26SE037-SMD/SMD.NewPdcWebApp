@@ -1,1 +1,8 @@
-{}
+{
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/curriculums/route": "app/api/curriculums/route.js",
+  "/api/majors/route": "app/api/majors/route.js",
+  "/dashboard/vice-principal/manage-majors/page": "app/dashboard/vice-principal/manage-majors/page.js",
+  "/dashboard/vice-principal/page": "app/dashboard/vice-principal/page.js",
+  "/page": "app/page.js"
+}

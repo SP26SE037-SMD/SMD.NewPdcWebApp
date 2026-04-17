@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Academic Atelier - Finalize Major</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed": "#014931",
+                      "error": "#a73b21",
+                      "tertiary": "#60622d",
+                      "on-primary-container": "#1d5c42",
+                      "error-container": "#fd795a",
+                      "primary": "#2d6a4f",
+                      "on-secondary-fixed": "#344331",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#29664c",
+                      "surface-bright": "#f8f9fa",
+                      "outline": "#767c7e",
+                      "on-surface-variant": "#5a6062",
+                      "on-primary": "#e6ffee",
+                      "background": "#f8f9fa",
+                      "surface-tint": "#2d6a4f",
+                      "on-secondary-container": "#465643",
+                      "on-background": "#2d3335",
+                      "primary-container": "#b1f0ce",
+                      "on-secondary-fixed-variant": "#50604c",
+                      "surface": "#f8f9fa",
+                      "surface-container-high": "#e5e9eb",
+                      "on-secondary": "#ecfee4",
+                      "secondary-dim": "#475744",
+                      "on-tertiary-fixed-variant": "#6a6d37",
+                      "primary-dim": "#1f5e44",
+                      "on-error-container": "#6e1400",
+                      "inverse-on-surface": "#9b9d9e",
+                      "tertiary-container": "#fcfeb9",
+                      "surface-container": "#ebeef0",
+                      "tertiary-fixed-dim": "#edefac",
+                      "on-tertiary-fixed": "#4d501d",
+                      "tertiary-fixed": "#fcfeb9",
+                      "on-surface": "#2d3335",
+                      "secondary-fixed-dim": "#c7dac1",
+                      "surface-variant": "#dee3e6",
+                      "surface-container-highest": "#dee3e6",
+                      "error-dim": "#791903",
+                      "secondary": "#53634f",
+                      "on-tertiary": "#fbfdb9",
+                      "inverse-primary": "#beffdc",
+                      "primary-fixed": "#b1f0ce",
+                      "outline-variant": "#adb3b5",
+                      "primary-fixed-dim": "#a3e2c0",
+                      "secondary-container": "#d5e8ce",
+                      "surface-dim": "#d5dbdd",
+                      "surface-container-low": "#f1f4f5",
+                      "inverse-surface": "#0c0f10",
+                      "on-tertiary-container": "#60622d",
+                      "tertiary-dim": "#545622",
+                      "secondary-fixed": "#d5e8ce",
+                      "on-error": "#fff7f6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.8rem",
+                      "xl": "1.1rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Plus Jakarta Sans"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .tonal-shift { background-color: #f1f4f5; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      </style>
+</head>
+<body class="bg-background text-on-background font-body antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm dark:shadow-none flex justify-between items-center px-8 h-16 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-emerald-800 dark:text-emerald-300 font-['Plus_Jakarta_Sans'] tracking-tight">Academic Atelier</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Dashboard</a>
+<a class="text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-600 pb-1 font-medium text-sm" href="#">Curriculum</a>
+<a class="text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Faculty</a>
+<a class="text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="Stylized minimalist avatar of a professional academic user in soft emerald tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHyAsdui2InVmW151-lRQxcG6HryYNSVLCWhWTOcsHEdyQXwpLQNYjTamJQ7o6lhjw1NI8vHYgIevJfGYj1fNvj7PmDc5mRPo81u8M7yPFedFYtE1NIyMpaXceOI6soferCxD1gZusZxhCGsm0cRKqqZF2JGx1RUE7bTE0o2I41cHSeT4IyrjeZehTavEz_Wgpca1Mk2insmxyFV-Vg3E6hmzBhRAif-K6Tm9Vn2BrBwMnn0bjwEc7R5u3ANNr4WI7PVO7R-qSrKtj"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16">
+<!-- SideNavBar (Major Wizard Context) -->
+<aside class="flex flex-col fixed left-0 top-16 h-[calc(100vh-64px)] py-6 pl-4 bg-zinc-50 dark:bg-zinc-950 w-64 border-r-0 font-['Inter'] text-sm font-medium">
+<div class="px-4 mb-8">
+<h2 class="text-lg font-extrabold text-emerald-900 dark:text-emerald-100 mb-1">Major Wizard</h2>
+<p class="text-zinc-500 text-xs">Step 3 of 3</p>
+</div>
+<nav class="flex-1 space-y-2 pr-4">
+<div class="flex items-center gap-3 px-4 py-3 text-zinc-500 dark:text-zinc-500 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded-xl">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-zinc-500 dark:text-zinc-500 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded-xl">
+<span class="material-symbols-outlined text-[20px]" data-icon="fingerprint">fingerprint</span>
+<span>Major Identity</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-zinc-500 dark:text-zinc-500 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded-xl">
+<span class="material-symbols-outlined text-[20px]" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span>Program Outcomes</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 rounded-l-xl shadow-sm translate-x-1 transition-transform">
+<span class="material-symbols-outlined text-[20px]" data-icon="verified">verified</span>
+<span>Review &amp; Submit</span>
+</div>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full py-3 bg-primary text-on-primary rounded-xl font-semibold shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span>Finalize Submission</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 p-8 bg-surface-container-low min-h-screen">
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<header class="mb-10">
+<div class="flex items-center gap-2 text-primary font-semibold mb-2">
+<span class="material-symbols-outlined text-sm" data-icon="verified">verified</span>
+<span class="text-xs uppercase tracking-widest">Final Review</span>
+</div>
+<h1 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight leading-tight">Review Major Submission</h1>
+<p class="text-on-surface-variant mt-2 text-lg">Please verify the details below before submitting the curriculum for academic board approval.</p>
+</header>
+<div class="grid grid-cols-12 gap-8">
+<!-- Basic Information Bento Card -->
+<section class="col-span-12 bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-start mb-6">
+<h3 class="text-xl font-headline font-bold text-on-surface">Basic Information</h3>
+<button class="text-primary hover:bg-primary-container px-3 py-1 rounded-full text-sm font-medium transition-colors">Edit</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div>
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1 block">Major Code</label>
+<div class="text-2xl font-headline font-bold text-emerald-800">CS-2024</div>
+</div>
+<div>
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1 block">Major Name</label>
+<div class="text-2xl font-headline font-bold text-on-surface">Computer Science</div>
+</div>
+<div class="md:col-span-2 pt-4 border-t border-surface-container">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">Description</label>
+<p class="text-on-surface leading-relaxed text-sm">
+                                    The Computer Science major provides a rigorous foundation in both theoretical and practical aspects of computing. Students explore algorithms, software development, data structures, and emerging technologies like artificial intelligence. This program is designed to cultivate innovative problem-solvers capable of addressing complex technological challenges in a rapidly evolving digital landscape.
+                                </p>
+</div>
+</div>
+</section>
+<!-- Program Outcomes Bento Card -->
+<section class="col-span-12 bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-start mb-6">
+<h3 class="text-xl font-headline font-bold text-on-surface">Program Outcomes</h3>
+<button class="text-primary hover:bg-primary-container px-3 py-1 rounded-full text-sm font-medium transition-colors">Edit Outcomes</button>
+</div>
+<div class="space-y-4">
+<!-- Outcome 1 -->
+<div class="flex items-start gap-4 p-5 bg-surface-container-low rounded-lg group hover:bg-primary-container/30 transition-colors">
+<div class="w-12 h-12 bg-white rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="font-headline font-bold text-emerald-700">01</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Analytical Thinking</h4>
+<p class="text-on-surface-variant text-sm leading-snug">Ability to analyze complex computing problems and apply principles of computing and other relevant disciplines to identify solutions.</p>
+</div>
+</div>
+<!-- Outcome 2 -->
+<div class="flex items-start gap-4 p-5 bg-surface-container-low rounded-lg group hover:bg-primary-container/30 transition-colors">
+<div class="w-12 h-12 bg-white rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="font-headline font-bold text-emerald-700">02</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Software Engineering</h4>
+<p class="text-on-surface-variant text-sm leading-snug">Design, implement, and evaluate a computing-based solution to meet a given set of computing requirements in the context of the program’s discipline.</p>
+</div>
+</div>
+<!-- Outcome 3 -->
+<div class="flex items-start gap-4 p-5 bg-surface-container-low rounded-lg group hover:bg-primary-container/30 transition-colors">
+<div class="w-12 h-12 bg-white rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="font-headline font-bold text-emerald-700">03</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Collaborative Leadership</h4>
+<p class="text-on-surface-variant text-sm leading-snug">Function effectively as a member or leader of a team engaged in activities appropriate to the program’s discipline.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Confirmation & Action Footer -->
+<section class="col-span-12 mt-4">
+<div class="flex items-center justify-between gap-6 p-8 bg-emerald-900 rounded-xl shadow-xl">
+<div class="hidden sm:block">
+<h4 class="text-white font-bold text-lg">Ready for Approval?</h4>
+<p class="text-emerald-100/70 text-sm">Once submitted, this major will enter the review queue.</p>
+</div>
+<div class="flex gap-4 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-8 py-3 bg-white/10 text-white font-semibold rounded-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+                                    Back to Outcomes
+                                </button>
+<button class="flex-1 sm:flex-none px-10 py-3 bg-[#4caf50] text-white font-bold rounded-xl shadow-lg shadow-black/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+                                    Submit for Approval
+                                </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- Floating Helper for context -->
+<div class="fixed bottom-8 right-8">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</div>
+</body></html>
