@@ -1,0 +1,14 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/src/app/dashboard/vice-principal/page": [
+      "static/media/2bbe8d2671613f1f-s.p.76dcb0b2.woff2",
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/8fcf71678f67d0c5-s.p.14cf5ea9.woff2",
+      "static/media/ce62453a442c7f35-s.p.124b2306.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.1bbdebe6.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}
