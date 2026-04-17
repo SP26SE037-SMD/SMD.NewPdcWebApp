@@ -131,7 +131,7 @@ export default function TaskWorkspaceLayout({
                     <span className="font-bold text-xs whitespace-nowrap">Syllabus Info</span>
                 </button>
             )}
-            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={realTask?.syllabus?.syllabusId} />
+            <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={realTask?.syllabus?.syllabusId || realTask?.syllabusId} />
         </PDCMBaseLayout>
     );
 }
