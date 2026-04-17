@@ -65,12 +65,12 @@ const SidebarItem = ({
     <div
       className={`relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
         active || (hasSubItems && isAnySubActive)
-          ? isHoPDC
-            ? "bg-white shadow-[0_4px_20px_rgba(45,52,43,0.08)] border border-black/5 text-[#2d342b]"
+          ? isHoPDC || true // We want the clean white/green look for VP too
+            ? "bg-white shadow-[0_4px_20px_rgba(45,52,43,0.06)] border border-black/5 text-[#1d5c42]"
             : "bg-primary text-white shadow-lg shadow-primary/20"
           : disabled
             ? "text-zinc-300 cursor-not-allowed"
-            : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+            : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 shadow-none hover:translate-x-1"
       }`}
       onClick={() => hasSubItems && setIsOpen(!isOpen)}
     >
@@ -80,9 +80,9 @@ const SidebarItem = ({
           <span
             className={`material-symbols-outlined transition-all duration-300 ${
               active || isAnySubActive
-                ? "text-[#41683f]"
+                ? "text-[#2d6a4f]"
                 : !disabled
-                  ? "group-hover:scale-110 text-zinc-400 group-hover:text-[#41683f]"
+                  ? "group-hover:scale-110 text-zinc-400 group-hover:text-[#2d6a4f]"
                   : "text-zinc-300"
             }`}
             style={{
@@ -96,14 +96,18 @@ const SidebarItem = ({
         ) : Icon ? (
           <Icon
             size={20}
-            className={`${active || isAnySubActive ? "text-white" : !disabled ? "group-hover:scale-110 transition-transform" : ""}`}
+            className={`${active || isAnySubActive ? (isHoPDC || true ? "text-[#2d6a4f]" : "text-white") : !disabled ? "group-hover:scale-110 transition-transform" : ""}`}
           />
         ) : null}
 
         {/* Label */}
         {!collapsed && (
           <span
-            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden ${(active || isAnySubActive) && isHoPDC ? "font-bold" : "font-semibold"}`}
+            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden transition-colors ${
+              active || isAnySubActive
+                ? "font-bold text-[#1d5c42]"
+                : "font-semibold text-zinc-500"
+            }`}
           >
             {label}
           </span>
@@ -114,19 +118,15 @@ const SidebarItem = ({
       {hasSubItems && !collapsed && (
         <ChevronRight
           size={14}
-          className={`transition-transform duration-300 ${isOpen ? "rotate-90" : ""} ${active || isAnySubActive ? "text-white" : "text-zinc-400"}`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-90" : ""} ${active || isAnySubActive ? "text-[#2d6a4f]" : "text-zinc-400"}`}
         />
       )}
 
-      {/* Active Indicator */}
-      {(active || (hasSubItems && isAnySubActive)) && !collapsed && (
+      {/* Active Indicator (Hidden for the new clean VP design as it uses shadow instead) */}
+      {(active || (hasSubItems && isAnySubActive)) && !collapsed && !isHoPDC && false && (
         <motion.div
           layoutId="active-indicator"
-          className={`absolute ${
-            isHoPDC
-              ? "left-0 w-1 h-6 bg-[#41683f] rounded-r-full"
-              : "right-0 w-1 h-6 bg-white rounded-l-full"
-          }`}
+          className="right-0 w-1 h-6 bg-white rounded-l-full"
         />
       )}
     </div>
@@ -235,27 +235,16 @@ export default function DashboardLayout({
     if (user?.role === "VP") {
       return [
         {
-          group: "Main Menu",
           items: [
             {
               href: "/dashboard/vice-principal",
-              icon: LayoutDashboard,
-              label: "Manage Majors",
+              icon: "dashboard",
+              label: "Dashboard",
             },
             {
               href: "/dashboard/vice-principal/digital-enactment",
-              icon: Signature,
+              icon: "draw",
               label: "Digital Enactment",
-            },
-          ],
-        },
-        {
-          group: "Settings",
-          items: [
-            {
-              href: "/dashboard/vice-principal/profile",
-              icon: User,
-              label: "Profile",
             },
           ],
         },
@@ -332,7 +321,7 @@ export default function DashboardLayout({
       <motion.aside
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 88 }}
-        className="relative bg-white border-r border-border flex flex-col z-30 shadow-sm"
+        className={`relative ${user?.role === 'VP' ? 'bg-[#f8f9fa]' : 'bg-white'} border-r border-border flex flex-col z-30 shadow-sm`}
       >
         {/* Toggle Button */}
         <button
@@ -344,20 +333,36 @@ export default function DashboardLayout({
 
         {/* Logo Section */}
         <div className="p-6 mb-4">
-          <Link
-            href="/"
-            className="flex items-center justify-center lg:justify-start"
-          >
-            <img
-              src="/icon-with-name.png"
-              alt="SMD System"
-              className={
-                isSidebarOpen
-                  ? "h-10 w-auto object-contain"
-                  : "h-10 w-10 object-contain"
-              }
-            />
-          </Link>
+          {user?.role === "VP" && isSidebarOpen ? (
+            <div className="flex items-center gap-3 px-2">
+              <div className="w-10 h-10 rounded-xl bg-[#2d6a4f] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#2d6a4f]/20">
+                <span className="material-symbols-outlined">school</span>
+              </div>
+              <div className="overflow-hidden">
+                <h2 className="font-bold text-[#1d5c42] leading-tight whitespace-nowrap">
+                  Office of the VP
+                </h2>
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                  Academic Affairs
+                </p>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/"
+              className="flex items-center justify-center lg:justify-start"
+            >
+              <img
+                src="/icon-with-name.png"
+                alt="SMD System"
+                className={
+                  isSidebarOpen
+                    ? "h-10 w-auto object-contain"
+                    : "h-10 w-10 object-contain"
+                }
+              />
+            </Link>
+          )}
         </div>
 
         {/* Navigation */}
@@ -383,7 +388,25 @@ export default function DashboardLayout({
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-border/50 space-y-2">
+          {user?.role === "VP" && isSidebarOpen && (
+            <div className="px-2 pb-4 space-y-4">
+              <button className="w-full bg-[#2d6a4f] text-white py-3 px-4 rounded-xl font-bold text-sm shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-transform">
+                New Term Plan
+              </button>
+              <div className="space-y-1">
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 px-4 py-2 text-zinc-500 hover:text-[#2d6a4f] text-sm font-medium transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    help
+                  </span>
+                  Help Center
+                </Link>
+              </div>
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group"
@@ -393,7 +416,7 @@ export default function DashboardLayout({
               className="group-hover:-translate-x-1 transition-transform"
             />
             {isSidebarOpen && (
-              <span className="text-sm font-semibold">Logout</span>
+              <span className="text-sm font-semibold">Sign Out</span>
             )}
           </button>
         </div>

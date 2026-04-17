@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Major | Academic Atelier</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#4caf50",
+                    "primary-dim": "#388e3c",
+                    "on-surface": "#2d3335",
+                    "surface": "#f8f9fa",
+                    "surface-container": "#ebeef0",
+                    "surface-container-low": "#f1f4f5",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5a6062",
+                    "outline": "#767c7e",
+                    "outline-variant": "#adb3b5",
+                    "primary-container": "#e8f5e9",
+                    "on-primary-container": "#1b5e20",
+                    "secondary-container": "#d5e8ce"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #2d3335;
+        }
+        h1, h2, h3, .font-headline {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .stepper-line {
+            height: 2px;
+            flex-grow: 1;
+            background-color: #e5e7eb;
+            margin: 0 1rem;
+        }
+        .stepper-line.active {
+            background-color: #4caf50;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-8 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm font-['Plus_Jakarta_Sans'] tracking-tight">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-emerald-900 dark:text-emerald-100">Academic Atelier</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-1.5 rounded-full bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm w-64" placeholder="Search major..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-emerald-800 dark:text-emerald-400 cursor-pointer active:scale-95 transition-transform hover:bg-slate-100 p-2 rounded-full">notifications</button>
+<button class="material-symbols-outlined text-emerald-800 dark:text-emerald-400 cursor-pointer active:scale-95 transition-transform hover:bg-slate-100 p-2 rounded-full">help</button>
+<div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-900 font-bold text-xs">JD</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col py-6 z-40 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] text-sm">
+<div class="px-6 mb-10 mt-16">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-emerald-800 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div>
+<div class="text-lg font-extrabold text-emerald-900 dark:text-emerald-50 leading-tight">Academic Affairs</div>
+<div class="text-[10px] uppercase tracking-widest text-slate-500">Management Portal</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-white dark:hover:bg-slate-900 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-emerald-800 dark:text-emerald-300 font-bold border-r-4 border-emerald-800 dark:border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/20 rounded-l-xl transition-colors" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Curriculum</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-white dark:hover:bg-slate-900 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">school</span>
+<span>Faculty</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-white dark:hover:bg-slate-900 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span>Research</span>
+</a>
+</nav>
+<div class="px-6 mt-6">
+<button class="w-full bg-emerald-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/10 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm">add</span>
+                Create New Major
+            </button>
+</div>
+<div class="mt-auto px-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-emerald-700 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-12 min-h-screen bg-surface">
+<div class="max-w-6xl mx-auto">
+<!-- Breadcrumbs & Header -->
+<div class="mb-8">
+<nav class="flex items-center gap-2 text-sm text-on-surface-variant mb-4">
+<span>Curriculum</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-medium">Create Major</span>
+</nav>
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Define Academic Major</h1>
+</div>
+<!-- 1. Horizontal Progress Stepper -->
+<div class="mb-10 flex items-center justify-between w-full">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</div>
+<span class="text-sm font-bold text-on-surface">Major Identity</span>
+</div>
+<div class="stepper-line"></div>
+<div class="flex items-center gap-3 opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center font-bold text-sm border-2 border-outline-variant">2</div>
+<span class="text-sm font-medium text-on-surface-variant">Program Outcomes</span>
+</div>
+<div class="stepper-line"></div>
+<div class="flex items-center gap-3 opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center font-bold text-sm border-2 border-outline-variant">3</div>
+<span class="text-sm font-medium text-on-surface-variant">Faculty Assignment</span>
+</div>
+<div class="stepper-line"></div>
+<div class="flex items-center gap-3 opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center font-bold text-sm border-2 border-outline-variant">4</div>
+<span class="text-sm font-medium text-on-surface-variant">Review &amp; Publish</span>
+</div>
+</div>
+<!-- 2. Horizontal Tabs -->
+<div class="mb-8 border-b border-outline-variant/30 flex gap-8">
+<button class="pb-4 border-b-2 border-primary text-primary font-bold text-sm">Basic Info</button>
+<button class="pb-4 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Program Outcomes</button>
+<button class="pb-4 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Faculty</button>
+<button class="pb-4 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Meta</button>
+</div>
+<form class="grid grid-cols-12 gap-8 items-start">
+<!-- Main Content Area: Tab content for 'Basic Info' -->
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<div class="bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10 shadow-sm">
+<div class="flex items-center gap-3 mb-8">
+<span class="material-symbols-outlined text-primary p-2 bg-primary-container rounded-lg">edit_note</span>
+<div>
+<h2 class="text-xl font-bold text-on-surface leading-tight">Basic Program Information</h2>
+<p class="text-sm text-on-surface-variant">Provide the foundational identification details for the new major.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-8 mb-8">
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Major Code</label>
+<input class="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline transition-all" placeholder="e.g. CS-2024" type="text"/>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Major Name</label>
+<input class="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline transition-all" placeholder="e.g. Computer Science" type="text"/>
+</div>
+</div>
+<div>
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Program Description</label>
+<textarea class="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline transition-all resize-none" placeholder="Describe the program's vision, philosophy, and primary educational focus..." rows="8"></textarea>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<button class="px-6 py-3 text-on-surface-variant font-semibold hover:text-on-surface transition-colors flex items-center gap-2" type="button">
+<span class="material-symbols-outlined">close</span> Cancel
+                        </button>
+<div class="flex gap-4">
+<button class="px-6 py-3 border border-outline-variant rounded-xl font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors" type="button">Save as Draft</button>
+<button class="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dim transition-all flex items-center gap-2" type="button">
+                                Next: Outcomes <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Contextual Meta & Progress -->
+<div class="col-span-12 lg:col-span-4 space-y-6 sticky top-24">
+<!-- Progress/Validation Bento Card (Kept visible as requested) -->
+<div class="bg-emerald-900 text-white rounded-xl p-6 overflow-hidden relative shadow-lg">
+<div class="relative z-10">
+<div class="text-emerald-300 text-[10px] font-bold uppercase tracking-widest mb-4">Setup Status</div>
+<div class="flex items-end justify-between mb-3">
+<div class="text-3xl font-bold">65%</div>
+<div class="text-xs text-emerald-200">2 sections remaining</div>
+</div>
+<div class="w-full bg-emerald-800/50 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-emerald-800/20 text-9xl">analytics</span>
+</div>
+<!-- Meta Quick View -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/10 shadow-sm">
+<h3 class="text-sm font-bold text-on-surface mb-4 uppercase tracking-wider">Quick Settings</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">visibility</span>
+<span class="text-xs font-semibold">Public Visibility</span>
+</div>
+<div class="w-10 h-5 bg-primary rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-2">Faculty Association</label>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 bg-secondary-container text-[10px] font-medium rounded flex items-center gap-1">
+                                        Engineering <span class="material-symbols-outlined text-[10px]">close</span>
+</span>
+<button class="text-[10px] font-bold text-primary">+ Add</button>
+</div>
+</div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-4 leading-normal italic">
+                            Your progress is automatically saved to drafts as you navigate between tabs.
+                        </p>
+</div>
+</div>
+</form>
+</div>
+</main>
+</body></html>
