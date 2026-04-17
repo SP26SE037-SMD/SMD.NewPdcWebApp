@@ -67,7 +67,7 @@ export default function PDCMReviewInformationPage({
     gcTime: 10 * 60 * 1000,
   });
 
-  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId || routeTaskData?.data?.syllabusId;
+  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId || (routeTaskData?.data as any)?.syllabusId;
 
   const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({
     queryKey: ["pdcm-syllabus-info", syllabusId],
@@ -77,7 +77,7 @@ export default function PDCMReviewInformationPage({
   });
 
   const syllabusData = syllabusRes?.data;
-  const subjectId = syllabusData?.subjectId || syllabusData?.subject?.subjectId;
+  const subjectId = syllabusData?.subjectId || (syllabusData as any)?.subject?.subjectId;
 
   const { data: subjectRes, isLoading: isSubjectLoading } = useQuery({
     queryKey: ["pdcm-subject-detail", subjectId],
@@ -102,7 +102,7 @@ export default function PDCMReviewInformationPage({
         const data = res.data;
         const minBloomLevel = data?.minBloomLevel;
         const bloomText = formatBloomLevel(minBloomLevel);
-        const subjectId = data?.subjectId || data?.subject?.subjectId;
+        const subjectId = data?.subjectId || (data as any)?.subject?.subjectId;
 
         if (!subjectId) return;
 

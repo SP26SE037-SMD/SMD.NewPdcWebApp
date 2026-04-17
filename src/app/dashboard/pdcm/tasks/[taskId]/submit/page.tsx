@@ -32,7 +32,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     });
 
     const taskData = fullTaskResponse?.data;
-    const syllabusId = taskData?.syllabus?.syllabusId || taskData?.syllabusId;
+    const syllabusId = taskData?.syllabus?.syllabusId || (taskData as any)?.syllabusId;
 
     // Fetch Sessions to ensure count is accurate even if not visited sessions tab
     const { data: sessionsRes } = useQuery({
@@ -206,7 +206,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                     <button 
                         disabled={!isValidated || isSubmitting}
                         onClick={async () => {
-                            const accountId = taskData?.account?.accountId || taskData?.accountId;
+                            const accountId = taskData?.account?.accountId || (taskData as any)?.accountId;
                             if (!syllabusId || !accountId) return;
                             
                             setIsSubmitting(true);
