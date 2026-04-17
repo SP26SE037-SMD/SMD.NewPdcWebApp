@@ -37,7 +37,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-    // 1. Fetch Task to get syllabusId
+    // 1. Fetch Task to get.syllabus?.syllabusId
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
         queryFn: () => TaskService.getTaskById(taskId),

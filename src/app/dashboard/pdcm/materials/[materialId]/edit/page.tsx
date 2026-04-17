@@ -118,6 +118,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
     const router = useRouter();
     const searchParams = useSearchParams();
     const syllabusId = searchParams.get("syllabusId");
+    const taskId = searchParams.get("taskId");
     const { user } = useSelector((state: RootState) => state.auth);
 
     // Toast State
@@ -214,7 +215,11 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
         if (hasChanges) {
             setShowExitModal(true);
         } else {
-            router.back();
+            if (taskId) {
+                router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+            } else {
+                router.push('/dashboard/pdcm/develop');
+            }
         }
     };
 
@@ -532,7 +537,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                         }
 
                         // Robust type mapping
-                        let rawType = (b.blockType || b.blockStyle || 'PARAGRAPH').toUpperCase(); // SWAPPED
+                        let rawType = (b.blockType || 'PARAGRAPH').toUpperCase();
                         let finalType: BlockType = 'PARAGRAPH';
 
                         if (rawType.includes('H1') || rawType.includes('HEADING 1') || rawType === 'HEADING') finalType = 'H1';
@@ -646,7 +651,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     }
 
                     // Robust type mapping
-                    let rawType = (b.blockType || b.blockStyle || 'PARAGRAPH').toUpperCase(); // SWAPPED
+                    let rawType = (b.blockType || 'PARAGRAPH').toUpperCase();
                     let finalType: BlockType = 'PARAGRAPH';
 
                     if (rawType.includes('H1') || rawType.includes('HEADING 1') || rawType === 'HEADING') finalType = 'H1';
@@ -739,19 +744,16 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
             setTimeout(() => setFocusedBlockId(nextBlocks[0].id), 0);
         }
 
-        // Add to deletion queue for the Bulk API (if we still need individual deletes)
+        // Use a local let to hold newly deleted IDs for the immediate save Draft
+        let idsToDelete = [...deletedBlockIds];
+
+        // Add to deletion queue for the Bulk API 
         if (blockToDelete?.blockId) {
             setDeletedBlockIds(prev => [...prev, blockToDelete.blockId!]);
-
-            // Delete immediately since we no longer have a bulk delete API in the new model
-            try {
-                await BlockService.deleteBlock(blockToDelete.blockId!);
-            } catch (err) {
-                console.error("Failed to delete block from server:", err);
-            }
+            idsToDelete.push(blockToDelete.blockId!);
         }
 
-        await handleSaveDraft(nextBlocks);
+        await handleSaveDraft(nextBlocks, idsToDelete);
     };
 
     const updateBlockContent = (id: string, content: string) => {
@@ -1089,28 +1091,33 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
         try {
             const sanitized = block.type === 'H2' ? sanitizeBlockContent(block.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(block.content || "");
-            const res = await BlockService.createSingleBlock(materialId, {
+            
+            // Using with-idx API as requested for auto save
+            const res = await BlockService.createBlocksWithIdx(materialId, [{
                 idx: index,
                 blockType: block.type || 'PARAGRAPH',
                 blockStyle: JSON.stringify({ align: block.align || 'left', color: block.color, fontSize: block.fontSize }),
                 contentText: sanitized
-            });
+            }]);
 
-            if (res?.data?.blockId) {
-                setBlocks(prev => prev.map(b => b.id === id ? {
-                    ...b,
-                    blockId: res.data.blockId,
-                    originalContent: b.content,
-                    originalType: b.type
-                } : b));
-                console.log("Auto-save success:", res.data.blockId);
+            if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+                const newServerBlockId = res.data[0].blockId;
+                if (newServerBlockId) {
+                    setBlocks(prev => prev.map(b => b.id === id ? {
+                        ...b,
+                        blockId: newServerBlockId,
+                        originalContent: b.content,
+                        originalType: b.type
+                    } : b));
+                    console.log("Auto-save success with idx:", newServerBlockId);
+                }
             }
         } catch (err) {
             console.error("Auto-save failed:", err);
         }
     };
 
-    const handleSaveDraft = async (blocksToSync?: Block[]) => {
+    const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string[]) => {
         if (saveInProgress.current) {
             console.log("DEBUG: Save already in progress, skipping...");
             return;
@@ -1119,70 +1126,56 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
         saveInProgress.current = true;
         setIsSaving(true);
         const targetBlocks = blocksToSync || blocks;
+        const targetDeletedIds = deletedIdsToSync || deletedBlockIds;
 
         try {
-            // 1. Handle Existing Blocks (PUT)
-            const modifiedBlocks = targetBlocks
-                .map((b, index) => ({ b, index }))
-                .filter(({ b }) => b.blockId)
-                .map(({ b, index }) => {
-                    const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content || "");
-                    return {
-                        blockId: b.blockId,
-                        blockType: b.type || 'PARAGRAPH',
-                        blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
-                        contentText: sanitized,
-                        idx: index
-                    };
+            // Lọc ra các dòng không có nội dung thực tế (chỉ chứa khoảng trắng, thẻ br...)
+            const validBlocks = targetBlocks.filter(b => {
+                const content = b.content || "";
+                // Giữ lại nếu là ảnh, đường kẻ, hoặc sau khi làm sạch HTML vẫn còn nội dung
+                if (b.type === 'IMAGE' || b.type === 'DIVIDER') return true;
+                const sanitized = sanitizeBlockContent(content).trim();
+                return sanitized !== '';
+            });
+
+            // Mapping blocks according to the new POST API requirement
+            const requestBody = validBlocks.map((b, index) => {
+                const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content || "");
+                return {
+                    idx: index,
+                    blockType: b.type || 'PARAGRAPH',
+                    blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
+                    contentText: sanitized
+                };
+            });
+
+            console.log("DEBUG: Payload with-idx:", JSON.stringify(requestBody, null, 2));
+
+            // Sending an array directly to POST /api/blocks/material/{materialId}/with-idx
+            const res = await BlockService.createBlocksWithIdx(materialId, requestBody);
+
+            if (res?.data && Array.isArray(res.data)) {
+                // Determine layout updates based on server responses
+                setBlocks(prev => {
+                    const next = [...prev];
+                    
+                    // Match received blocks back to local state based on index `idx`
+                    res.data.forEach(serverBlock => {
+                        const localIndex = serverBlock.idx;
+                        if (localIndex != null && next[localIndex]) {
+                            next[localIndex] = {
+                                ...next[localIndex],
+                                blockId: serverBlock.blockId,
+                                originalContent: next[localIndex].content,
+                                originalType: next[localIndex].type
+                            };
+                        }
+                    });
+                    return next;
                 });
-
-            if (modifiedBlocks.length > 0) {
-                await BlockService.updateBlockList(modifiedBlocks);
-            }
-
-            // 2. Handle New Blocks (POST with-idx)
-            const newBlocksToCreate = targetBlocks
-                .map((b, index) => ({ block: b, index }))
-                .filter(({ block }) => !block.blockId && block.content.trim() !== '')
-                .map(({ block, index }) => {
-                    const sanitized = block.type === 'H2' ? sanitizeBlockContent(block.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(block.content || "");
-                    return {
-                        blockType: block.type || 'PARAGRAPH',
-                        blockStyle: JSON.stringify({ align: block.align || 'left', color: block.color, fontSize: block.fontSize }),
-                        contentText: sanitized,
-                        idx: index
-                    };
-                });
-
-            if (newBlocksToCreate.length > 0) {
-                try {
-                    const res = await BlockService.createBlocksWithIdx(materialId, newBlocksToCreate);
-                    if (res?.data && Array.isArray(res.data)) {
-                        // Update local blocks with the new blockIds from server
-                        setBlocks(prev => {
-                            const next = [...prev];
-                            res.data.forEach(serverBlock => {
-                                // Match by index (idx)
-                                const localIndex = serverBlock.idx;
-                                if (next[localIndex]) {
-                                    next[localIndex] = {
-                                        ...next[localIndex],
-                                        blockId: serverBlock.blockId,
-                                        originalContent: next[localIndex].content,
-                                        originalType: next[localIndex].type
-                                    };
-                                }
-                            });
-                            return next;
-                        });
-                    }
-                } catch (blockErr: any) {
-                    console.error("Block creation error:", blockErr);
-                    if (blockErr?.message?.includes('Vector embedding')) {
-                        throw new Error('Changes saved, but search indexing failed (Vector Service Error). Your content is safe.');
-                    }
-                    throw blockErr;
-                }
+                
+                // Clear the deleted queue since the backend processed it
+                setDeletedBlockIds([]);
             }
 
             setBlocks(prev => prev.map(b => {
@@ -2057,8 +2050,11 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                                 <button 
                                     onClick={() => {
                                         setHasChanges(false);
-                                        // Use go(-2) to skip both the dummy history entry and the current page
-                                        window.history.go(-2);
+                                        if (taskId) {
+                                            router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+                                        } else {
+                                            router.push('/dashboard/pdcm/develop');
+                                        }
                                     }}
                                     className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl font-bold text-xs hover:bg-red-100 transition-all active:scale-[0.98]"
                                 >
@@ -2069,7 +2065,11 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                                     onClick={async () => {
                                         await handleSaveDraft();
                                         setHasChanges(false);
-                                        window.history.go(-2);
+                                        if (taskId) {
+                                            router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+                                        } else {
+                                            router.push('/dashboard/pdcm/develop');
+                                        }
                                     }}
                                     disabled={isSaving}
                                     className="px-7 py-2.5 bg-primary-600 text-white rounded-xl font-bold text-xs hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-900/10 active:scale-[0.98]"

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+const BACKEND_URL = process.env.BACKEND_URL || "http://43.207.156.116";
 
 export async function GET(request: Request) {
   try {
