@@ -123,8 +123,8 @@ function NewCurriculumContent() {
           console.error("Failed to auto-save PLOs:", error);
         }
       }
-      // Redirect to Mapping page per user request
-      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}/mapping/po-plo`);
+      // Redirect to NEW Wizard Mapping page per user request (Isolated Flow)
+      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}/wizard/mapping`);
     },
   });
 
@@ -268,36 +268,7 @@ function NewCurriculumContent() {
               </div>
             </section>
 
-            <aside className="w-full lg:w-80 space-y-8">
-              <div className="bg-[#b1f0ce]/30 p-8 rounded-[2.5rem] border border-primary/10 ring-1 ring-primary/5">
-                <span className="material-symbols-outlined text-primary mb-6" style={{ fontSize: 36, fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                <h4 className="text-[#1d5c42] font-black text-xl mb-4 leading-tight tracking-tight uppercase">Design Strategy</h4>
-                <p className="text-sm text-[#1d5c42]/80 leading-relaxed italic mb-6">
-                  "The General Description should clearly articulate how this curriculum meets industry demands while maintaining academic rigor."
-                </p>
-                <div className="h-[1px] w-16 bg-[#1d5c42]/20 mb-6"></div>
-                <p className="text-[10px] font-black text-[#1d5c42]/60 uppercase tracking-widest">
-                  Dr. Elena Vance<br />Registry Lead
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-[2.5rem] relative overflow-hidden group border border-[#ebeef0] shadow-sm ring-1 ring-black/5 hover:shadow-xl transition-all h-64 flex flex-col justify-between">
-                <div className="relative z-10">
-                  <h4 className="text-[#2d3335] font-black text-lg mb-3 tracking-tight uppercase">Registry Help?</h4>
-                  <p className="text-[11px] text-[#5a6062] font-semibold leading-relaxed mb-4 uppercase tracking-tighter opacity-70">
-                    Access our knowledge base for standard curriculum templates and accreditation guidelines.
-                  </p>
-                </div>
-                <a 
-                  className="relative z-10 w-full py-4 bg-[#f1f4f5] rounded-2xl text-primary text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all active:scale-95 group/link shadow-sm" 
-                  href="#"
-                >
-                  View Docs
-                  <span className="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">open_in_new</span>
-                </a>
-                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-[#ebeef0] opacity-40 select-none group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700" style={{ fontSize: 160 }}>menu_book</span>
-              </div>
-            </aside>
+            {/* Aside removed as per user request */}
           </motion.div>
         ) : (
           <motion.div
