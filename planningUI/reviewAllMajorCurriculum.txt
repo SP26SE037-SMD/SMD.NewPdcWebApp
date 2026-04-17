@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Major Proposal Review - Computer Science</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#edefac",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#767c7e",
+                    "tertiary-container": "#fcfeb9",
+                    "primary-fixed": "#b1f0ce",
+                    "on-tertiary-fixed": "#4d501d",
+                    "inverse-primary": "#beffdc",
+                    "primary-container": "#b1f0ce",
+                    "tertiary-dim": "#545622",
+                    "primary-fixed-dim": "#a3e2c0",
+                    "surface-bright": "#f8f9fa",
+                    "tertiary": "#60622d",
+                    "primary": "#2d6a4f",
+                    "on-primary-container": "#1d5c42",
+                    "tertiary-fixed": "#fcfeb9",
+                    "on-tertiary-fixed-variant": "#6a6d37",
+                    "on-background": "#2d3335",
+                    "on-secondary-fixed": "#344331",
+                    "on-secondary-container": "#465643",
+                    "error-container": "#fd795a",
+                    "surface": "#f8f9fa",
+                    "secondary-fixed": "#d5e8ce",
+                    "inverse-on-surface": "#9b9d9e",
+                    "inverse-surface": "#0c0f10",
+                    "error": "#a73b21",
+                    "surface-container-highest": "#dee3e6",
+                    "on-secondary": "#ecfee4",
+                    "surface-container-low": "#f1f4f5",
+                    "secondary": "#53634f",
+                    "on-tertiary-container": "#60622d",
+                    "surface-tint": "#2d6a4f",
+                    "surface-dim": "#d5dbdd",
+                    "on-primary-fixed-variant": "#29664c",
+                    "surface-variant": "#dee3e6",
+                    "on-primary": "#e6ffee",
+                    "background": "#f8f9fa",
+                    "primary-dim": "#1f5e44",
+                    "surface-container": "#ebeef0",
+                    "outline-variant": "#adb3b5",
+                    "on-error-container": "#6e1400",
+                    "on-secondary-fixed-variant": "#50604c",
+                    "secondary-dim": "#475744",
+                    "on-surface": "#2d3335",
+                    "on-tertiary": "#fbfdb9",
+                    "error-dim": "#791903",
+                    "on-error": "#fff7f6",
+                    "on-surface-variant": "#5a6062",
+                    "surface-container-high": "#e5e9eb",
+                    "secondary-fixed-dim": "#c7dac1",
+                    "secondary-container": "#d5e8ce",
+                    "on-primary-fixed": "#014931"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none flex items-center justify-between px-8 py-3 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-emerald-800 dark:text-emerald-200">Veridian Review</span>
+<div class="hidden md:flex gap-6">
+<a class="text-emerald-700 dark:text-emerald-400 font-semibold font-plus-jakarta-sans tracking-tight" href="#">Proposals</a>
+<a class="text-slate-500 dark:text-slate-400 font-plus-jakarta-sans tracking-tight hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-2 py-1 rounded" href="#">Analytics</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="pl-10 pr-4 py-1.5 rounded-full bg-surface-container border-none text-sm focus:ring-2 focus:ring-primary/20 w-64" placeholder="Search major..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-slate-50 transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-slate-50 transition-colors">settings</button>
+<div class="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Administrator Profile" class="w-full h-full object-cover" data-alt="close up professional headshot of a woman in academic attire with soft library background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-QBLkprLZRpjqUCIDGGJmtDDPaolqkYX6OYjuaajL_K7kIMsLCZK6AcmguMwyfXvQkKQ6ELx05B3CGNHXB5HurT7gu2OqClSNBUKR5423fUBOQCuVRuN13t8EUeQe6h3E3lhumyQB8MvFHm_p6xb3TM4xLR0Ffp-8kLsHPYK-vgvKnGh9IppPtcU6SHqqdDizQgsVvW0aMtufQUcdXJ-aY_7yR6hRQ8OfVjlUGWGGaG9RjN7x7ndDKafFje-Wcd4O527ahKPErmqE"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 h-full w-64 bg-slate-50 dark:bg-slate-950 flex flex-col py-8 gap-4 pt-20 border-r-0 z-40 hidden md:flex">
+<div class="px-8 mb-6">
+<h2 class="text-lg font-black text-emerald-900 dark:text-emerald-100">Veridian Admin</h2>
+<p class="text-xs text-on-surface-variant opacity-70">Academic Oversight</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 py-3 ml-4 pl-4 text-slate-600 dark:text-slate-400 font-plus-jakarta-sans text-sm hover:text-emerald-600 dark:hover:text-emerald-300 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Strategic Management</span>
+</a>
+<a class="flex items-center gap-3 py-3 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 font-bold rounded-l-full ml-4 pl-4 font-plus-jakarta-sans text-sm translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Curriculum Proposals</span>
+</a>
+</nav>
+<div class="mt-auto px-8">
+<button class="w-full py-3 bg-primary text-white rounded-xl font-semibold shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Proposal
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:pl-64 pt-20 min-h-screen">
+<div class="max-w-7xl mx-auto px-8 py-10">
+<!-- Breadcrumb & Header -->
+<div class="mb-10 ml-4">
+<nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-4 font-medium uppercase tracking-widest">
+<span>Curriculum Proposals</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span class="text-primary">CS-2024</span>
+</nav>
+<h1 class="text-5xl font-extrabold tracking-tighter text-on-surface mb-4">Computer Science</h1>
+<div class="flex items-center gap-4">
+<span class="px-3 py-1 bg-primary-container text-on-primary-container text-xs font-bold rounded-full">Active Proposal</span>
+<span class="text-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                        Last updated 2 days ago
+                    </span>
+</div>
+</div>
+<!-- Custom Tabs System -->
+<div class="flex gap-8 mb-12 border-b-0 ml-4 overflow-x-auto no-scrollbar">
+<button class="pb-4 text-sm font-bold text-primary border-b-2 border-primary whitespace-nowrap">Major Overview</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Curriculum Info</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Mapping Matrix</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Semester Structure</button>
+</div>
+<!-- Bento Layout Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Basic Info Card -->
+<div class="lg:col-span-8 space-y-6">
+<section class="bg-surface-container-lowest rounded-2xl p-8 shadow-[0px_2px_8px_rgba(45,51,53,0.08)]">
+<div class="flex justify-between items-start mb-6">
+<h3 class="text-xl font-bold tracking-tight">Core Description</h3>
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">edit_note</span>
+</button>
+</div>
+<p class="text-on-surface-variant leading-relaxed text-lg font-light italic">
+                            "The Bachelor of Science in Computer Science provides a rigorous foundation in computational theory and practical software engineering. Our 2024 curriculum focuses on sustainable AI, high-performance computing, and cross-platform architecture, preparing students for the intellectual challenges of the next decade's digital economy."
+                        </p>
+<div class="mt-8 grid grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-4 rounded-xl">
+<span class="block text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Major Code</span>
+<span class="text-primary font-mono font-bold">CS-2024</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl">
+<span class="block text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Total Credits</span>
+<span class="text-primary font-mono font-bold">120 Units</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl">
+<span class="block text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Duration</span>
+<span class="text-primary font-mono font-bold">4 Years</span>
+</div>
+</div>
+</section>
+<!-- Program Outcomes Section -->
+<section class="bg-surface-container-low rounded-2xl p-8">
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-3">
+<span class="p-2 bg-primary-container text-primary rounded-lg material-symbols-outlined">stars</span>
+<h3 class="text-xl font-bold tracking-tight">Program Outcomes (POs)</h3>
+</div>
+<span class="text-xs font-semibold text-on-surface-variant bg-surface-container-highest px-3 py-1 rounded-full">5 Outcomes Defined</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- PO Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary transition-transform hover:-translate-y-1">
+<span class="text-xs font-bold text-primary mb-2 block">PO-01: Technical Mastery</span>
+<p class="text-sm text-on-surface-variant leading-snug">Design and implement complex software systems using industry-standard paradigms.</p>
+</div>
+<!-- PO Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary/40 transition-transform hover:-translate-y-1">
+<span class="text-xs font-bold text-primary mb-2 block">PO-02: Ethical Innovation</span>
+<p class="text-sm text-on-surface-variant leading-snug">Analyze the societal impact of computing through lenses of accessibility and sustainability.</p>
+</div>
+<!-- PO Card 3 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary/40 transition-transform hover:-translate-y-1">
+<span class="text-xs font-bold text-primary mb-2 block">PO-03: Analytical Rigor</span>
+<p class="text-sm text-on-surface-variant leading-snug">Apply mathematical foundations to algorithm design and efficiency analysis.</p>
+</div>
+<!-- PO Card 4 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary/40 transition-transform hover:-translate-y-1">
+<span class="text-xs font-bold text-primary mb-2 block">PO-04: Collaboration</span>
+<p class="text-sm text-on-surface-variant leading-snug">Communicate technical concepts effectively within diverse multidisciplinary teams.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Metadata Bento -->
+<div class="lg:col-span-4 space-y-6">
+<div class="bg-primary p-8 rounded-2xl text-on-primary shadow-lg">
+<h4 class="text-lg font-bold mb-2">Review Progress</h4>
+<div class="flex items-end justify-between mb-4">
+<span class="text-3xl font-black">65%</span>
+<span class="text-xs opacity-80 mb-1">Stage 2 of 3</span>
+</div>
+<div class="w-full bg-white/20 h-2 rounded-full overflow-hidden mb-6">
+<div class="w-[65%] h-full bg-white"></div>
+</div>
+<button class="w-full py-3 bg-white text-primary rounded-xl font-bold text-sm hover:bg-primary-container transition-colors">
+                            Submit for Approval
+                        </button>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_2px_8px_rgba(45,51,53,0.08)]">
+<h4 class="text-sm font-bold text-on-surface mb-4 uppercase tracking-wider">Stakeholders</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<img alt="Faculty Head" class="w-8 h-8 rounded-full" data-alt="portrait of an older distinguished academic man with grey hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfiBzwFBHSCDQkQ9YE4tvs-7VSqP0Tq0OmhxBpCO1SiCneICoxO-vj3u2o83iZ_eoOQ1yC1jXDtGYwu6t986zsEBxTAIAxqjf9aQRhkVj6-m50Idy1n6esHwklPyW4CCHwST3SI64BIpHW8Uwv9NrBIJ8w8EdmA8CrQZiM38O0FoLijTXhshD0UoONsIzDu8HNhi6tkYQka7XYRWRe0QRhezBRZ7UwPJgUqpSpJiOqB5TQxQHHsB7mAK7bwjnhmZpWutB4YgJ4iQt3"/>
+<div>
+<p class="text-sm font-bold">Dr. Alistair Vance</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Dept. Chair</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<img alt="Curriculum Coordinator" class="w-8 h-8 rounded-full" data-alt="portrait of a professional woman wearing glasses and a blazer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXrIBZ1In-DwXMNdp7VBfmwpHJCV7wT4_vQMubqCBH2lguf-D3u4m6j6Q1QXO58fIg5v70psSPAqiRu8q5jHhfeeHBkZjq7xwIbgDNkZ83SXFpjfZH8kJcPHhqGNCtgcoZm0ZhUriLkPJ7GHvbt8KLh33E2iMkUGViNhkV4JMS_GCoj_y2ArECQP-Ovd1urIm6ZJsnHSOkd-PRrCl2nWPCL9yPtuLKdJQ7tLaseTYk7cpD_fqHWJzABDSGLPiO7N--jZONq4CepZ7E"/>
+<div>
+<p class="text-sm font-bold">Elena Rodriguez</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Coordinator</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-6 border border-primary/10">
+<h4 class="text-sm font-bold text-on-surface mb-4">Review Timeline</h4>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-primary mt-1.5"></span>
+<div class="w-px h-full bg-primary-container mt-1"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface">Proposal Drafted</p>
+<p class="text-[10px] text-on-surface-variant">Oct 12, 2024</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-primary mt-1.5"></span>
+<div class="w-px h-full bg-primary-container mt-1"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface">Dean Review</p>
+<p class="text-[10px] text-on-surface-variant">Oct 28, 2024</p>
+</div>
+</li>
+<li class="flex gap-3 opacity-40">
+<div class="flex flex-col items-center">
+<span class="w-2 h-2 rounded-full bg-slate-300 mt-1.5"></span>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface">Senate Approval</p>
+<p class="text-[10px] text-on-surface-variant">Expected Nov 15</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB Suppression Logic: FAB is contextual. Home/Dashboard typically has it. This page is a Details/Review page, so suppressed. -->
+</body></html>

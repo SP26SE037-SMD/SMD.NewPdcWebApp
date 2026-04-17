@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Major - Academic Atelier</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#1d5c42",
+                    "surface-container-high": "#e5e9eb",
+                    "on-surface": "#2d3335",
+                    "primary-dim": "#1f5e44",
+                    "surface-container": "#ebeef0",
+                    "secondary-fixed-dim": "#c7dac1",
+                    "error-dim": "#791903",
+                    "secondary-container": "#d5e8ce",
+                    "on-secondary": "#ecfee4",
+                    "tertiary-dim": "#545622",
+                    "tertiary-fixed-dim": "#edefac",
+                    "on-error": "#fff7f6",
+                    "outline-variant": "#adb3b5",
+                    "tertiary": "#60622d",
+                    "on-error-container": "#6e1400",
+                    "primary-fixed": "#b1f0ce",
+                    "inverse-on-surface": "#9b9d9e",
+                    "secondary-fixed": "#d5e8ce",
+                    "on-tertiary": "#fbfdb9",
+                    "on-primary-fixed": "#014931",
+                    "surface": "#f8f9fa",
+                    "background": "#f8f9fa",
+                    "secondary-dim": "#475744",
+                    "primary": "#2d6a4f",
+                    "on-tertiary-container": "#60622d",
+                    "on-secondary-fixed-variant": "#50604c",
+                    "on-background": "#2d3335",
+                    "inverse-primary": "#beffdc",
+                    "surface-bright": "#f8f9fa",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-variant": "#dee3e6",
+                    "surface-container-highest": "#dee3e6",
+                    "secondary": "#53634f",
+                    "inverse-surface": "#0c0f10",
+                    "primary-fixed-dim": "#a3e2c0",
+                    "primary-container": "#b1f0ce",
+                    "surface-tint": "#2d6a4f",
+                    "surface-dim": "#d5dbdd",
+                    "error-container": "#fd795a",
+                    "on-secondary-fixed": "#344331",
+                    "surface-container-low": "#f1f4f5",
+                    "on-tertiary-fixed": "#4d501d",
+                    "on-surface-variant": "#5a6062",
+                    "outline": "#767c7e",
+                    "on-primary": "#e6ffee",
+                    "tertiary-container": "#fcfeb9",
+                    "on-tertiary-fixed-variant": "#6a6d37",
+                    "error": "#a73b21",
+                    "tertiary-fixed": "#fcfeb9",
+                    "on-primary-fixed-variant": "#29664c",
+                    "on-secondary-container": "#465643"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "16px",
+                    "xl": "24px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased overflow-hidden">
+<!-- BACKGROUND CONTENT (Review Page Blurred) -->
+<div class="fixed inset-0 z-0 flex blur-md saturate-50 opacity-60">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 bg-zinc-50 dark:bg-zinc-950 flex flex-col p-6 space-y-8 flex-shrink-0">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<div class="font-black text-emerald-900 dark:text-emerald-50 text-lg">Atelier Admin</div>
+<div class="text-xs text-on-surface-variant">Dean's Office</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<div class="bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 font-semibold rounded-lg shadow-sm p-3 flex items-center space-x-3">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="text-zinc-600 dark:text-zinc-400 p-3 flex items-center space-x-3">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Curriculum</span>
+</div>
+<div class="text-zinc-600 dark:text-zinc-400 p-3 flex items-center space-x-3">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Faculty</span>
+</div>
+</nav>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-12 overflow-y-auto">
+<header class="mb-12">
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Major Review</h1>
+<p class="text-on-surface-variant">B.Sc. Computational Ethics &amp; Digital Policy</p>
+</header>
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-8 space-y-8">
+<section class="bg-surface-container-lowest rounded-xl p-8">
+<h2 class="text-xl font-bold mb-6">Course Modules</h2>
+<div class="space-y-4">
+<div class="h-16 bg-surface-container-low rounded-lg w-full"></div>
+<div class="h-16 bg-surface-container-low rounded-lg w-full"></div>
+<div class="h-16 bg-surface-container-low rounded-lg w-full"></div>
+</div>
+</section>
+</div>
+<div class="col-span-4 space-y-8">
+<div class="bg-surface-container-lowest rounded-xl p-8">
+<div class="h-48 bg-surface-container-low rounded-lg w-full mb-4"></div>
+<div class="h-4 w-3/4 bg-surface-container-low rounded mb-2"></div>
+<div class="h-4 w-1/2 bg-surface-container-low rounded"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- MODAL OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+<!-- Backdrop Dimmer -->
+<div class="absolute inset-0 bg-on-surface/30 backdrop-blur-sm"></div>
+<!-- Submission Confirmation Modal -->
+<div class="relative w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(45,51,53,0.04),0px_2px_8px_rgba(45,51,53,0.08)] overflow-hidden transition-all transform scale-100">
+<!-- Graphic/Header Section -->
+<div class="px-8 pt-10 pb-6 flex flex-col items-center text-center">
+<!-- Icon Container -->
+<div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mb-6 shadow-sm">
+<span class="material-symbols-outlined text-on-primary-container text-4xl" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+</div>
+<h2 class="text-2xl font-bold tracking-tight text-on-surface mb-3">Confirm Submission</h2>
+<p class="text-on-surface-variant leading-relaxed px-4">
+                    Are you sure you want to submit this Major curriculum? Once submitted, it will be sent to the department head for review.
+                </p>
+</div>
+<!-- Detail Breakdown (Subtle) -->
+<div class="px-8 py-4 mx-8 bg-surface-container-low rounded-lg mb-8">
+<div class="flex items-center justify-between text-sm mb-1">
+<span class="text-on-surface-variant">Document ID</span>
+<span class="font-mono font-medium text-on-surface">AT-2024-CXP-09</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<span class="text-on-surface-variant">Submission Priority</span>
+<span class="text-primary font-semibold">Standard Review</span>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="px-8 pb-10 flex flex-col sm:flex-row-reverse gap-3">
+<button class="flex-1 bg-primary hover:bg-primary-dim text-white font-bold py-3.5 px-6 rounded-lg transition-colors duration-200 shadow-sm flex items-center justify-center space-x-2 active:scale-95 duration-150">
+<span>Yes, Submit</span>
+</button>
+<button class="flex-1 bg-surface-container-high hover:bg-surface-variant text-on-surface font-semibold py-3.5 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center active:scale-95 duration-150">
+<span>Cancel</span>
+</button>
+</div>
+<!-- Close "X" Button -->
+<button class="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- TopNavBar (Fixed over overlay) -->
+<nav class="fixed top-0 w-full z-[60] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-[0px_2px_8px_rgba(45,51,53,0.08)] flex justify-between items-center h-16 px-8">
+<div class="flex items-center space-x-8">
+<span class="text-lg font-bold tracking-tighter text-emerald-900 dark:text-emerald-50">Academic Atelier</span>
+<div class="hidden md:flex space-x-6">
+<a class="text-zinc-500 dark:text-zinc-400 font-medium hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors p-2 rounded" href="#">Programs</a>
+<a class="text-emerald-800 dark:text-emerald-300 font-bold border-b-2 border-emerald-800 p-2" href="#">Curriculum Builder</a>
+<a class="text-zinc-500 dark:text-zinc-400 font-medium hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors p-2 rounded" href="#">Reports</a>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-emerald-50 p-2 rounded-full cursor-pointer" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="Academic Administrator Profile" class="w-full h-full object-cover" data-alt="Close-up headshot of a professional male academic administrator with glasses in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIg8NHxdLBXWZXXbE2R90ktYwn41iZa7st2t92mf4b7Q84QCAtQruNZ--JGoTKMqFecEF1hzJggAKPQuny9LD9QeA69rINHJZC1szJy9xtualpgH7WlcmnGIqz5kvP2vMC3olO3X883YUQ-LMHaxJEvpoy7Pvc70ZqAPGsK2eZQiX_l5pOZiw-F6GAcXgbdjgkrB_MAe3fm1cWUrxI0XalZi3iqUtZI5ZalzUYEhlsF-aUQvPV-VfKXr0NvXMAGjJAmWAaYH_VfRg7"/>
+</div>
+</div>
+</nav>
+</body></html>
