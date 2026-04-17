@@ -235,11 +235,17 @@ export default function DashboardLayout({
     if (user?.role === "VP") {
       return [
         {
+          group: "Core Management",
           items: [
             {
               href: "/dashboard/vice-principal",
               icon: "dashboard",
-              label: "Dashboard",
+              label: "Overview",
+            },
+            {
+              href: "/dashboard/vice-principal/manage-majors",
+              icon: "school",
+              label: "Manage Majors",
             },
             {
               href: "/dashboard/vice-principal/digital-enactment",

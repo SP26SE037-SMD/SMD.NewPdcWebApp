@@ -1,14 +1,2 @@
-[00:00:01.424] Server  LOG     ✓ Ready in 1075ms
-[00:00:02.832] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:02:55.027] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:06:13.592] Server  LOG     ✓ Compiled in 140ms
-[00:06:22.921] Server  LOG     ✓ Compiled in 182ms
-[00:06:33.767] Server  LOG     ✓ Compiled in 170ms
-[00:07:00.156] Server  LOG     ✓ Compiled in 412ms
-[00:07:53.940] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: 4bfbc89e-9a90-417d-95d2-41130b83cd3e
-[00:09:20.159] Server  LOG     [API /api/pos/major/e51a0db2-f30e-46d7-bad9-d0165b4b48f2 POST] Backend Status: 200
-[00:09:59.983] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: e51a0db2-f30e-46d7-bad9-d0165b4b48f2
-[00:10:51.209] Server  LOG     [API /api/pos/major/61ed20b7-d677-4d5a-a6cf-a7c7cd5520e9 POST] Backend Status: 200
-[00:11:37.700] Server  LOG     [API /api/pos/major/e51a0db2-f30e-46d7-bad9-d0165b4b48f2/status PATCH] Backend Status: 404
-[00:11:37.701] Server  ERROR   [API /api/pos/major/e51a0db2-f30e-46d7-bad9-d0165b4b48f2/status PATCH] Backend Error Text: "{\"status\":5001,\"message\":\"Major not found\"}"
-[00:12:43.321] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:01.399] Server  LOG     ✓ Ready in 1058ms
+[00:00:07.218] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
