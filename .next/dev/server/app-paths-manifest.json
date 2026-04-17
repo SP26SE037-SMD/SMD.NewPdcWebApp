@@ -1,7 +1,0 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/majors/[id]/route": "app/api/majors/[id]/route.js",
-  "/api/pos/major/[id]/route": "app/api/pos/major/[id]/route.js",
-  "/dashboard/vice-principal/manage-majors/[majorCode]/page": "app/dashboard/vice-principal/manage-majors/[majorCode]/page.js"
-}

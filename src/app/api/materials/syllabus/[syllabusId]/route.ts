@@ -17,6 +17,8 @@ export async function GET(
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
         const queryParams = status ? `?status=${status}` : "";
 
+        console.log(`\n[PROXY GET /api/materials/syllabus/${syllabusId}${queryParams}] SENDING TO BACKEND`);
+
         const response = await fetch(`${API_BASE_URL}/api/materials/syllabus/${syllabusId}${queryParams}`, {
             headers: {
                 "Content-Type": "application/json",

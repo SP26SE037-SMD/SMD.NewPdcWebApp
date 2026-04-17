@@ -64,7 +64,7 @@ const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcc
     const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 86400000) : null;
     const status = (task.status || '').toUpperCase().replace(/\s+/g, '_');
 
-    const effectiveSyllabusId = task.syllabusId || task.syllabus?.syllabusId;
+    const effectiveSyllabusId = task.syllabus?.syllabusId || task.syllabus?.syllabusId;
 
     // Fetch syllabus details if task is In Progress to check its specific status
     const syllabusStatusFromTask = (task.syllabusStatus || '').trim().toUpperCase().replace(/\s+/g, '_');
@@ -267,11 +267,11 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
             if (response.data?.content) {
                 const enrichedContent = await Promise.all(response.data.content.map(async (task: any) => {
                     const status = (task.status || '').trim().toUpperCase().replace(/\s+/g, '_');
-                    const hasSyllabus = !!(task.syllabusId || task.syllabus?.syllabusId);
+                    const hasSyllabus = !!(task.syllabus?.syllabusId || task.syllabus?.syllabusId);
                     
                     if (status === 'IN_PROGRESS' && hasSyllabus && !task.syllabusStatus) {
                         try {
-                            const syllabusId = task.syllabusId || task.syllabus?.syllabusId;
+                            const syllabusId = task.syllabus?.syllabusId || task.syllabus?.syllabusId;
                             const sylRes = await SyllabusService.getSyllabusById(syllabusId!);
                             return { ...task, syllabusStatus: sylRes.data?.status || null };
                         } catch (e) {

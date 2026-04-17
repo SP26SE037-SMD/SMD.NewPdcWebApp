@@ -16,6 +16,11 @@ export async function POST(
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
         const body = await request.json();
 
+        // LOG PAYLOAD SENDING TO BACKEND HERE
+        console.log(`\n\n[PROXY WITH-IDX] SENDING TO BACKEND (Material ${id}):`);
+        console.log(JSON.stringify(body, null, 2));
+        console.log(`\n\n`);
+
         const baseUrl = process.env.BACKEND_URL || 'http://43.207.156.116';
         
         const headers: Record<string, string> = {

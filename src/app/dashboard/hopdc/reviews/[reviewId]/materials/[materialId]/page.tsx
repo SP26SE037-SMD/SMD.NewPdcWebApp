@@ -146,8 +146,6 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
             try {
                 if (b.blockStyle && b.blockStyle.startsWith('{')) {
                     parsedStyle = JSON.parse(b.blockStyle);
-                } else {
-                    parsedStyle = { align: b.blockStyle || 'left' };
                 }
             } catch {
                 parsedStyle = { align: 'left' };
