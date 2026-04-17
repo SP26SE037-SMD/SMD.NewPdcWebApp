@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PLO Definitions - Curriculum Studio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#d5e8ce",
+                    "error-dim": "#791903",
+                    "on-surface": "#2d3335",
+                    "inverse-on-surface": "#9b9d9e",
+                    "tertiary-container": "#fcfeb9",
+                    "on-primary": "#e6ffee",
+                    "on-tertiary-container": "#60622d",
+                    "tertiary": "#60622d",
+                    "outline": "#767c7e",
+                    "on-secondary-container": "#465643",
+                    "on-primary-container": "#1d5c42",
+                    "secondary-fixed": "#d5e8ce",
+                    "primary": "#2d6a4f",
+                    "primary-fixed-dim": "#a3e2c0",
+                    "surface-container": "#ebeef0",
+                    "on-background": "#2d3335",
+                    "surface-container-low": "#f1f4f5",
+                    "primary-dim": "#1f5e44",
+                    "primary-fixed": "#b1f0ce",
+                    "surface-tint": "#2d6a4f",
+                    "on-tertiary-fixed": "#4d501d",
+                    "secondary": "#53634f",
+                    "on-primary-fixed-variant": "#29664c",
+                    "tertiary-dim": "#545622",
+                    "on-tertiary": "#fbfdb9",
+                    "secondary-dim": "#475744",
+                    "on-secondary-fixed-variant": "#50604c",
+                    "inverse-surface": "#0c0f10",
+                    "on-error": "#fff7f6",
+                    "tertiary-fixed": "#fcfeb9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error-container": "#6e1400",
+                    "error": "#a73b21",
+                    "error-container": "#fd795a",
+                    "surface-container-highest": "#dee3e6",
+                    "background": "#f8f9fa",
+                    "on-primary-fixed": "#014931",
+                    "surface-container-high": "#e5e9eb",
+                    "tertiary-fixed-dim": "#edefac",
+                    "on-tertiary-fixed-variant": "#6a6d37",
+                    "outline-variant": "#adb3b5",
+                    "surface-dim": "#d5dbdd",
+                    "surface": "#f8f9fa",
+                    "on-surface-variant": "#5a6062",
+                    "primary-container": "#b1f0ce",
+                    "surface-variant": "#dee3e6",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#c7dac1",
+                    "on-secondary-fixed": "#344331",
+                    "inverse-primary": "#beffdc",
+                    "on-secondary": "#ecfee4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #2d3335;
+        }
+        .editorial-shadow {
+            box-shadow: 0px 4px 20px rgba(45, 51, 53, 0.04), 0px 2px 8px rgba(45, 51, 53, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm flex items-center justify-between px-8 py-4 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-emerald-900 dark:text-emerald-100 font-['Plus_Jakarta_Sans'] tracking-tight">Curriculum Studio</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-emerald-700 font-semibold border-b-2 border-emerald-700 font-['Plus_Jakarta_Sans'] py-1" href="#">Curriculum Wizard</a>
+<a class="text-slate-500 hover:text-slate-700 font-['Plus_Jakarta_Sans'] py-1 hover:bg-slate-50/50 transition-colors" href="#">Repository</a>
+<a class="text-slate-500 hover:text-slate-700 font-['Plus_Jakarta_Sans'] py-1 hover:bg-slate-50/50 transition-colors" href="#">Analytics</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Search resources..." type="text"/>
+</div>
+<button class="p-2 rounded-full hover:bg-slate-50/50 transition-colors">
+<span class="material-symbols-outlined text-emerald-800" data-icon="help">help</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-50/50 transition-colors relative">
+<span class="material-symbols-outlined text-emerald-800" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<img alt="Academic administrator profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-container" data-alt="Professional headshot of a middle-aged academic administrator with a friendly expression in a brightly lit office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7eyltUHU3wTL6FrtJQ03mSybJ3I0fsJB_WjyPvA9d_UI3x9NlFsDWIC_FA7QUpwu0LvHRqzhvTHB1vj_GbPr2GS9WPsitU-C4gGQMpwyJCfNLwpmTRP0YUgRj0JQWHCRLRE1CkdjghdxN-tG5xLmNM4F4-LTHa9Zmi8CtteOJjyTLBxWsMmlqdjlrWjFu8nV-0rWfwWIsT2PX-uRi2Uw5bN_82EF1fJWD5vrokBdk8wP30le8hfVHtNY4kVvar04SjYiAPI696Ve1"/>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col p-4 gap-2 pt-24">
+<div class="mb-6 px-2">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</div>
+<div>
+<h2 class="text-lg font-extrabold text-emerald-800 leading-tight">Curriculum Wizard</h2>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Batch 2024-2028</p>
+</div>
+</div>
+</div>
+<nav class="flex-grow flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+                Curriculum Info
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold shadow-sm rounded-lg font-['Inter'] text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+                PLO Definition
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="grid_on">grid_on</span>
+                Mapping Matrix
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+                Course Builder
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="task_alt">task_alt</span>
+                Review &amp; Publish
+            </a>
+</nav>
+<div class="mt-auto pt-4 border-t border-surface-container">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="menu_book">menu_book</span>
+                Documentation
+            </a>
+<button class="w-full mt-4 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm editorial-shadow hover:bg-primary-dim transition-all active:scale-95">
+                Save Draft
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 min-h-screen px-12 pb-20">
+<!-- Progress Stepper (Asymmetric Editorial Style) -->
+<div class="max-w-5xl mb-12">
+<div class="flex justify-between items-center relative">
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-surface-container-highest -z-10"></div>
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold editorial-shadow">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Curriculum Info</span>
+</div>
+<!-- Step 2 (Active) -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold ring-4 ring-primary-container editorial-shadow">
+                        02
+                    </div>
+<span class="text-[11px] font-extrabold uppercase tracking-widest text-primary">PLO Definitions</span>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold">
+                        03
+                    </div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant opacity-50">Mapping</span>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold">
+                        04
+                    </div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant opacity-50">Builder</span>
+</div>
+<!-- Step 5 -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold">
+                        05
+                    </div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant opacity-50">Review</span>
+</div>
+</div>
+</div>
+<!-- Page Header -->
+<header class="mb-10 ml-8 max-w-4xl">
+<h1 class="text-4xl font-headline font-extrabold tracking-tight text-on-surface mb-2">Program Learning Outcomes</h1>
+<p class="text-on-surface-variant max-w-2xl leading-relaxed">
+                Define the high-level competencies students will achieve upon graduation. These outcomes bridge the gap between academic standards and career readiness.
+            </p>
+</header>
+<!-- Bento Layout for Content -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Left: Definition Form (Floating Island) -->
+<section class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+<div class="bg-surface-container-lowest p-8 rounded-xl editorial-shadow">
+<h3 class="text-xl font-headline font-bold text-emerald-900 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">add_circle</span>
+                        New Outcome
+                    </h3>
+<form class="space-y-6">
+<div>
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Outcome Identifier</label>
+<input class="w-full bg-surface-container-low border-none focus:ring-2 focus:ring-primary rounded-lg py-3 px-4 font-medium text-on-surface placeholder:text-on-surface-variant/40" placeholder="e.g., PLO-01" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Detailed Description</label>
+<textarea class="w-full bg-surface-container-low border-none focus:ring-2 focus:ring-primary rounded-lg py-3 px-4 font-medium text-on-surface placeholder:text-on-surface-variant/40 resize-none" placeholder="Describe the specific skill, knowledge, or behavior..." rows="6"></textarea>
+</div>
+<div class="flex items-center gap-3 p-4 bg-primary-container/30 rounded-lg border border-primary-container/50">
+<span class="material-symbols-outlined text-primary-dim">lightbulb</span>
+<p class="text-xs text-on-primary-container leading-tight">
+<strong>Tip:</strong> Start with an action verb like 'Analyze', 'Demonstrate', or 'Synthesize'.
+                            </p>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-bold rounded-xl editorial-shadow hover:translate-y-[-2px] transition-all" type="submit">
+                            Add to Curriculum
+                        </button>
+</form>
+</div>
+<!-- Guidance Card -->
+<div class="bg-secondary-container/20 p-6 rounded-xl border border-secondary-container/30">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shrink-0 editorial-shadow">
+<span class="material-symbols-outlined text-secondary" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<h4 class="font-bold text-secondary mb-1">Standard Alignment</h4>
+<p class="text-sm text-on-secondary-container leading-snug">Ensure these outcomes align with the Institutional Quality Framework (IQF) standards updated for 2024.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right: Outcomes List (The Exhibit Gallery) -->
+<section class="col-span-12 lg:col-span-7">
+<div class="flex items-end justify-between mb-6 px-4">
+<div>
+<span class="text-xs font-bold text-primary tracking-widest uppercase">Current Progress</span>
+<h3 class="text-2xl font-headline font-bold text-on-surface">Outcome Inventory</h3>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="sort">sort</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+<div class="space-y-4">
+<!-- PLO Item 1 -->
+<div class="group bg-surface-container-low hover:bg-surface-container-lowest transition-all p-6 rounded-xl flex items-start gap-6 relative border border-transparent hover:editorial-shadow hover:border-surface-container">
+<div class="w-16 h-16 shrink-0 bg-white rounded-lg flex flex-col items-center justify-center border border-surface-container-highest group-hover:scale-110 transition-transform">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">ID</span>
+<span class="text-lg font-extrabold text-primary">01</span>
+</div>
+<div class="flex-grow">
+<h4 class="text-lg font-bold text-emerald-900 mb-1">Advanced Analytical Reasoning</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-4">
+                                Graduates will be able to synthesize complex datasets from disparate sources to formulate evidence-based conclusions in environmental policy contexts.
+                            </p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">COGNITIVE</span>
+<span class="px-3 py-1 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">RESEARCH</span>
+</div>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- PLO Item 2 -->
+<div class="group bg-surface-container-low hover:bg-surface-container-lowest transition-all p-6 rounded-xl flex items-start gap-6 relative border border-transparent hover:editorial-shadow hover:border-surface-container">
+<div class="w-16 h-16 shrink-0 bg-white rounded-lg flex flex-col items-center justify-center border border-surface-container-highest group-hover:scale-110 transition-transform">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">ID</span>
+<span class="text-lg font-extrabold text-primary">02</span>
+</div>
+<div class="flex-grow">
+<h4 class="text-lg font-bold text-emerald-900 mb-1">Ethical Leadership &amp; Governance</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-4">
+                                Demonstrate the ability to lead diverse teams through ethical dilemmas while maintaining transparency and adhering to global governance standards.
+                            </p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">LEADERSHIP</span>
+<span class="px-3 py-1 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">ETHICS</span>
+</div>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Empty State Placeholder (Ghost Border) -->
+<div class="border-2 border-dashed border-outline-variant/30 rounded-xl p-10 flex flex-col items-center justify-center text-center">
+<div class="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-outline-variant" data-icon="add">add</span>
+</div>
+<h5 class="font-bold text-on-surface-variant">Add more PLOs</h5>
+<p class="text-xs text-on-surface-variant/60 max-w-[200px] mt-1">Recommended: 5 to 10 outcomes for a comprehensive curriculum.</p>
+</div>
+</div>
+<!-- Visual Accent: Curated Gallery Look -->
+<div class="mt-8 relative h-48 rounded-2xl overflow-hidden editorial-shadow group">
+<img alt="Academic writing environment" class="w-full h-full object-cover grayscale opacity-30 group-hover:grayscale-0 group-hover:opacity-50 transition-all duration-700" data-alt="Overhead view of a minimalist workspace with fountain pen, open leather journal, and morning sunlight casting long shadows on light wood" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgxtmUQY0fmutglb6OgXdx8Ohddw5M4XT7Yuw4N-lgdyzOWhv2J1s9dCk5bhpjW2V744HaSDOr0k-NG9Tb0Qs7vxb3a3UOrG0qBpSaD04c9UXYJb-FLDm7sKK3ZqyJUGjYzVEWdZqZ7hmmA2x-6QcOXJPWOcnKmHFICwwtZI7qvXjEDphJz7jMl7sYA1mlogIvc6_wm52Uu-hzcg_fAcROrurT7qqELp4uLcCQaA88yzlJPbIk3VkFCPRB-UVfKk0TSJ7Kud2QXAUx"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+<div class="absolute bottom-6 left-8">
+<p class="text-white text-xs font-bold tracking-[0.3em] uppercase mb-1">Academic Atelier</p>
+<h4 class="text-white text-xl font-headline font-bold">Bridging Theory &amp; Practice</h4>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB - Restricted to Top Level -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full editorial-shadow flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40">
+<span class="material-symbols-outlined" data-icon="save">save</span>
+</button>
+</body></html>

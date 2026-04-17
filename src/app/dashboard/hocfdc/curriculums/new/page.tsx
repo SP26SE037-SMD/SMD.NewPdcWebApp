@@ -6,19 +6,14 @@ import { CurriculumService, PLO } from "@/services/curriculum.service";
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Plus,
   X,
-  Target,
-  Layers,
-  Info,
-  CheckCircle2,
-  ArrowRight,
   Loader2,
 } from "lucide-react";
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function NewCurriculumPage() {
   return (
@@ -40,19 +35,6 @@ function NewCurriculumContent() {
   const majorCodeFromUrl = searchParams.get("majorCode");
 
   const [step, setStep] = useState(1);
-  const [isMajorOpen, setIsMajorOpen] = useState(false);
-  const majorDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Click outside listener
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (majorDropdownRef.current && !majorDropdownRef.current.contains(event.target as Node)) {
-        setIsMajorOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Form State
   const [selectedMajorId, setSelectedMajorId] = useState("");
@@ -68,12 +50,12 @@ function NewCurriculumContent() {
     queryFn: () => MajorService.getMajors({ size: 100 }),
   });
   const majors = majorData?.data?.content || [];
-  const selectedMajor = majors.find((m) => m.majorId === selectedMajorId);
+  const selectedMajor = majors.find((m: any) => m.majorId === selectedMajorId);
 
   // Auto-select major if majorCode is in URL
   useEffect(() => {
     if (majorCodeFromUrl && majors.length > 0 && !selectedMajorId) {
-      const matchedMajor = majors.find((m) => m.majorCode === majorCodeFromUrl);
+      const matchedMajor = majors.find((m: any) => m.majorCode === majorCodeFromUrl);
       if (matchedMajor) {
         setSelectedMajorId(matchedMajor.majorId);
       }
@@ -120,19 +102,14 @@ function NewCurriculumContent() {
   const createMutation = useMutation({
     mutationFn: CurriculumService.createCurriculum,
     onSuccess: async (response: any) => {
-      const curriculumId =
-        response?.data?.curriculumId || response?.curriculumId;
-
-      // If we have PLOs, save them now
+      const curriculumId = response?.data?.curriculumId || response?.curriculumId;
       if (curriculumId && plos.length > 0) {
         try {
           await CurriculumService.bulkCreatePLOs(curriculumId, plos);
         } catch (error) {
           console.error("Failed to auto-save PLOs:", error);
-          // We still navigate, as the curriculum was created
         }
       }
-
       router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
     },
   });
@@ -142,300 +119,290 @@ function NewCurriculumContent() {
     else {
       createMutation.mutate({
         curriculumCode,
-        curriculumName: `${selectedMajor?.majorName || ""} - ${curriculumCode}`, // Construct a name since it's required
+        curriculumName: `${selectedMajor?.majorName || ""} - ${curriculumCode}`,
         majorId: selectedMajorId,
-        startYear: new Date().getFullYear(), // Add a default start year if needed
+        startYear: new Date().getFullYear(),
       });
     }
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
-      {/* Breadcrumbs / Back */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-colors font-bold text-xs uppercase tracking-widest"
-      >
-        <ChevronLeft size={16} /> Backward
-      </button>
+    <div className="max-w-6xl mx-auto px-12 pb-20 pt-10">
+      {/* Academic Editorial Header */}
+      <header className="mb-12">
+        <div className="flex items-center gap-4 mb-6">
+          <span className="px-3 py-1 bg-[#b1f0ce] text-[#1d5c42] text-[10px] font-black rounded-full uppercase tracking-widest">Setup Phase</span>
+          <div className="h-[1px] flex-1 bg-[#dee3e6]"></div>
+        </div>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-5xl font-extrabold text-[#2d3335] tracking-tighter mb-4 leading-none font-headline">
+              {step === 1 ? "Basic Information" : "Program Outcomes"}
+            </h1>
+            <p className="text-[#5a6062] text-lg max-w-2xl leading-relaxed italic">
+              {step === 1
+                ? "Define the structural core of your academic program. This data forms the metadata foundation for all subsequent curriculum mapping."
+                : "Establish the specific learning achievements students must demonstrate upon completion of this framework."}
+            </p>
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="w-12 h-12 rounded-2xl bg-white border border-[#ebeef0] flex items-center justify-center text-[#5a6062] hover:text-primary transition-all shadow-sm active:scale-90"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </header>
 
-      {/* Stepper Header */}
-      <div className="flex items-center gap-4">
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${step >= 1 ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400"}`}
-        >
-          1
-        </div>
-        <div className="h-0.5 w-12 bg-zinc-100" />
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${step >= 2 ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400"}`}
-        >
-          2
-        </div>
-        <div className="ml-4">
-          <h1 className="text-2xl font-black text-zinc-900 leading-tight">
-            {step === 1 ? "Strategic Context." : "Program Outcomes."}
-          </h1>
-          <p className="text-sm text-zinc-500 font-medium">
-            {step === 1
-              ? "Define major association and framework identification."
-              : "Define PLOs and map them to Major Objectives."}
-          </p>
-        </div>
+      {/* Stepper Bento Grid (5 Steps UI, Logic active for 1-2) */}
+      <div className="grid grid-cols-5 gap-4 mb-16">
+        {[
+          { id: 1, label: "Basic Info", sub: "Structural Identity" },
+          { id: 2, label: "PLO Definitions", sub: "Program Outcomes" },
+          { id: 3, label: "PLO-PO Mapping", sub: "Institutional Alignment" },
+          { id: 4, label: "Course Builder", sub: "Syllabus Creation" },
+          { id: 5, label: "Review & Submit", sub: "Final Validation" },
+        ].map((s) => (
+          <div
+            key={s.id}
+            className={cn(
+              "p-6 rounded-2xl transition-all duration-500",
+              step === s.id
+                ? "bg-white shadow-xl shadow-primary/5 border-l-4 border-primary ring-1 ring-black/5"
+                : "bg-[#f1f4f5] opacity-50 shadow-inner"
+            )}
+          >
+            <div className={cn(
+              "font-extrabold text-2xl mb-1",
+              step === s.id ? "text-primary" : "text-[#5a6062]"
+            )}>0{s.id}</div>
+            <div className="text-[#2d3335] font-bold text-sm tracking-tight">{s.label}</div>
+            <div className="text-[10px] text-[#5a6062] font-semibold mt-2 uppercase tracking-widest">{s.sub}</div>
+            {step === s.id && (
+              <motion.div
+                layoutId="step-dot"
+                className="text-[10px] text-primary font-black mt-3 flex items-center gap-1.5 uppercase tracking-tighter"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                Current Phase
+              </motion.div>
+            )}
+          </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-        <div className="flex-1 p-10">
+      <div className="flex flex-col lg:flex-row gap-12">
+        <section className="flex-1">
           <AnimatePresence mode="wait">
             {step === 1 ? (
               <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                key="step1-form"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 className="space-y-8"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-3 relative" ref={majorDropdownRef}>
-                    <label className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
-                      Target Major
-                    </label>
-                    <button
-                      onClick={() => setIsMajorOpen(!isMajorOpen)}
-                      className="w-full flex items-center justify-between bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 outline-none transition-all text-left"
-                    >
-                      {selectedMajor
-                        ? `${selectedMajor.majorName} (${selectedMajor.majorCode})`
-                        : "Select a Major..."}
-                      <ChevronDown
-                        size={14}
-                        className={`opacity-40 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    <AnimatePresence>
-                      {isMajorOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-2xl shadow-xl z-50 overflow-hidden p-1 max-h-[300px] overflow-y-auto"
+                {/* Main Form Bento */}
+                <div className="bg-white p-10 rounded-[2.5rem] border border-[#ebeef0] shadow-[0px_4px_20px_rgba(45,51,53,0.04)] ring-1 ring-black/5">
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6062] ml-1">Curriculum Code *</label>
+                        <input
+                          value={curriculumCode}
+                          onChange={(e) => setCurriculumCode(e.target.value)}
+                          className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:bg-white rounded-xl px-5 py-3.5 transition-all text-[#2d3335] font-bold placeholder:text-[#adb3b5]"
+                          placeholder="e.g., CS-2024-ENG"
+                          type="text"
+                        />
+                        <p className="text-[10px] text-[#adb3b5] italic font-medium">Unique institutional identifier.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6062] ml-1">Target Major *</label>
+                        <select
+                          value={selectedMajorId}
+                          onChange={(e) => setSelectedMajorId(e.target.value)}
+                          className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:bg-white rounded-xl px-5 py-3.5 transition-all text-[#2d3335] font-bold appearance-none cursor-pointer"
                         >
-                          <button
-                            onClick={() => {
-                              setSelectedMajorId("");
-                              setIsMajorOpen(false);
-                            }}
-                            className="w-full text-left px-5 py-3 text-xs font-black uppercase tracking-widest text-zinc-400 hover:bg-zinc-50 rounded-xl transition-colors"
-                          >
-                            Select a Major...
-                          </button>
-                          {majors.map((m) => (
-                            <button
-                              key={m.majorId}
-                              onClick={() => {
-                                setSelectedMajorId(m.majorId);
-                                setIsMajorOpen(false);
-                              }}
-                              className={`w-full text-left px-5 py-3 text-xs font-bold rounded-xl transition-colors flex items-center justify-between ${
-                                selectedMajorId === m.majorId
-                                  ? "bg-primary text-white"
-                                  : "text-zinc-600 hover:bg-zinc-50"
-                              }`}
-                            >
-                              <span>
-                                {m.majorName}{" "}
-                                <span className={`ml-1 text-[10px] opacity-60`}>
-                                  ({m.majorCode})
-                                </span>
-                              </span>
-                              {selectedMajorId === m.majorId && (
-                                <CheckCircle2 size={14} />
-                              )}
-                            </button>
+                          <option value="">Select Target Major...</option>
+                          {majors.map((m: any) => (
+                            <option key={m.majorId} value={m.majorId}>{m.majorName} ({m.majorCode})</option>
                           ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
-                      Framework Code
-                    </label>
-                    <input
-                      value={curriculumCode}
-                      onChange={(e) => setCurriculumCode(e.target.value)}
-                      placeholder="e.g. SE_K18"
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-zinc-900">
-                    Strategic Description
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Outline the goals and scope of this curriculum framework..."
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 outline-none resize-none"
-                  />
-                </div>
-
-                {selectedMajor && (
-                  <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 space-y-4">
-                    <div className="flex items-center gap-2 text-indigo-600">
-                      <Target size={18} />
-                      <h4 className="text-xs font-black uppercase tracking-widest">
-                        Major Objectives (POs) from VP
-                      </h4>
+                        </select>
+                      </div>
                     </div>
-                    <ul className="space-y-2">
-                      {selectedMajor.pos?.length ? (
-                        selectedMajor.pos.map((po, i) => (
-                          <li
-                            key={i}
-                            className="text-xs font-medium text-zinc-600 flex items-start gap-2"
-                          >
-                            <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm border border-indigo-100">
-                              {i + 1}
-                            </span>
-                            {po.description}
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-xs italic text-zinc-400">
-                          No POs defined for this major by the Vice Principal.
-                        </li>
-                      )}
-                    </ul>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6062] ml-1">General Description *</label>
+                      <textarea
+                        rows={10}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:bg-white rounded-2xl px-6 py-4 transition-all text-[#2d3335] font-medium resize-none placeholder:text-[#adb3b5]"
+                        placeholder="Describe the educational philosophy, core objectives, and unique value proposition..."
+                      />
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] text-[#adb3b5] font-bold uppercase tracking-widest">Recommended: 200-500 words</span>
+                        <span className="text-[10px] text-[#adb3b5] font-bold uppercase tracking-widest">{description.length} / 2500 CHARS</span>
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* PO Preview Bento has been removed as per user request */}
               </motion.div>
             ) : (
               <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                key="step2-form"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 className="space-y-8"
               >
-                <div className="space-y-6">
-                  {plos.map((plo, ploIdx) => (
-                    <div
-                      key={ploIdx}
-                      className="p-6 rounded-3xl border border-zinc-100 bg-zinc-50/30 space-y-6 relative group"
+                {/* Step 2 PLO Definition UI - Simplified for now to focus on Step 1 Modernization */}
+                <div className="bg-white p-10 rounded-[2.5rem] border border-[#ebeef0] shadow-sm ring-1 ring-black/5 space-y-8">
+                  <div className="flex items-center justify-between border-b pb-6">
+                    <h3 className="text-xl font-black text-[#2d3335] tracking-tight uppercase">Define Program Outcomes (PLOs)</h3>
+                    <button
+                      onClick={addPLO}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.05] transition-all"
                     >
-                      <button
-                        onClick={() => removePLO(ploIdx)}
-                        className="absolute -right-2 -top-2 w-8 h-8 bg-white border border-zinc-200 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
-                      >
-                        <X size={14} />
-                      </button>
+                      <Plus size={16} /> Add Outcome
+                    </button>
+                  </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="md:col-span-1 space-y-2">
-                          <label className="text-[11px] font-black uppercase tracking-[0.15em] text-zinc-900 px-1">
-                            Identifier
-                          </label>
-                          <input
-                            value={plo.ploName}
-                            onChange={(e) =>
-                              updatePLO(ploIdx, "ploName", e.target.value)
-                            }
-                            className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold focus:ring-4 focus:ring-primary/5 outline-none"
-                          />
+                  <div className="space-y-4">
+                    {plos.map((plo, ploIdx) => (
+                      <div key={ploIdx} className="bg-[#f1f4f5] p-6 rounded-3xl space-y-6 relative group border-2 border-transparent hover:border-white transition-all">
+                        <button
+                          onClick={() => removePLO(ploIdx)}
+                          className="absolute -right-3 -top-3 w-10 h-10 bg-white border border-[#ebeef0] rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 shadow-lg opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                          <div className="md:col-span-1 space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#5a6062] px-1">Identifier</label>
+                            <input
+                              value={plo.ploName}
+                              onChange={(e) => updatePLO(ploIdx, "ploName", e.target.value)}
+                              className="w-full bg-white border-transparent focus:border-primary/20 rounded-xl px-4 py-3 text-sm font-bold shadow-sm outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-3 space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#5a6062] px-1">Outcome Description</label>
+                            <textarea
+                              value={plo.description}
+                              onChange={(e) => updatePLO(ploIdx, "description", e.target.value)}
+                              rows={2}
+                              className="w-full bg-white border-transparent focus:border-primary/20 rounded-xl px-4 py-3 text-sm font-bold shadow-sm outline-none resize-none"
+                            />
+                          </div>
                         </div>
-                        <div className="md:col-span-3 space-y-2">
-                          <label className="text-[11px] font-black uppercase tracking-[0.15em] text-zinc-900 px-1">
-                            Outcome Description
-                          </label>
-                          <textarea
-                            value={plo.description}
-                            onChange={(e) =>
-                              updatePLO(ploIdx, "description", e.target.value)
-                            }
-                            placeholder="e.g. Students will be able to design microservices..."
-                            rows={2}
-                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 outline-none resize-none"
-                          />
-                        </div>
-                      </div>
 
-                      {/* PO Mapping Grid */}
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap gap-2">
-                          {selectedMajor?.pos?.map((po) => (
+                        {/* Simplified Mapping for brevity */}
+                        <div className="flex flex-wrap gap-2 pt-4 border-t border-white/50">
+                          {selectedMajor?.pos?.map((po: any) => (
                             <button
                               key={po.poId}
                               onClick={() => togglePOMapping(ploIdx, po.poId)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-2 ${
+                              className={cn(
+                                "px-4 py-2 rounded-xl text-[10px] font-bold transition-all border shadow-sm",
                                 plo.mappingPOIds?.includes(po.poId)
-                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
-                                  : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300"
-                              }`}
-                            >
-                              {plo.mappingPOIds?.includes(po.poId) && (
-                                <CheckCircle2 size={12} />
+                                  ? "bg-primary text-white border-primary"
+                                  : "bg-white text-[#5a6062] border-[#ebeef0] hover:border-[#adb3b5]"
                               )}
+                            >
                               {po.poCode || "PO"}
                             </button>
                           ))}
                         </div>
                       </div>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={addPLO}
-                    className="w-full py-4 border-2 border-dashed border-zinc-200 rounded-3xl text-zinc-400 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                  >
-                    <Plus size={16} /> Add Program Outcome
-                  </button>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+        </section>
+
+        {/* Sidebar Contextual Cards (Editorial) */}
+        <aside className="w-full lg:w-80 space-y-8">
+          <div className="bg-[#b1f0ce]/30 p-8 rounded-[2.5rem] border border-primary/10 ring-1 ring-primary/5">
+            <span className="material-symbols-outlined text-primary mb-6" style={{ fontSize: 36, fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+            <h4 className="text-[#1d5c42] font-black text-xl mb-4 leading-tight tracking-tight uppercase">Design Strategy</h4>
+            <p className="text-sm text-[#1d5c42]/80 leading-relaxed italic mb-6">
+              "The General Description should clearly articulate how this curriculum meets industry demands while maintaining academic rigor."
+            </p>
+            <div className="h-[1px] w-16 bg-[#1d5c42]/20 mb-6"></div>
+            <p className="text-[10px] font-black text-[#1d5c42]/60 uppercase tracking-widest">
+              Dr. Elena Vance<br />Registry Lead
+            </p>
+          </div>
+
+          <div className="bg-white p-8 rounded-[2.5rem] relative overflow-hidden group border border-[#ebeef0] shadow-sm ring-1 ring-black/5 hover:shadow-xl transition-all h-64 flex flex-col justify-between">
+            <div className="relative z-10">
+              <h4 className="text-[#2d3335] font-black text-lg mb-3 tracking-tight uppercase">Registry Help?</h4>
+              <p className="text-[11px] text-[#5a6062] font-semibold leading-relaxed mb-4 uppercase tracking-tighter opacity-70">
+                Access our knowledge base for standard curriculum templates and accreditation guidelines.
+              </p>
+            </div>
+            <a
+              className="relative z-10 w-full py-4 bg-[#f1f4f5] rounded-2xl text-primary text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all active:scale-95 group/link shadow-sm"
+              href="#"
+            >
+              View Docs
+              <span className="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">open_in_new</span>
+            </a>
+            <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-[#ebeef0] opacity-40 select-none group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700" style={{ fontSize: 160 }}>menu_book</span>
+          </div>
+        </aside>
+      </div>
+
+      {/* Action Footer */}
+      <footer className="mt-20 pt-10 border-t border-[#ebeef0] flex justify-between items-center">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-[#adb3b5] uppercase tracking-widest">Registry Sync Active</span>
+          </div>
+          {step === 2 && (
+            <button
+              onClick={() => setStep(1)}
+              className="flex items-center gap-2 text-[10px] font-extrabold text-[#5a6062] hover:text-primary transition-all uppercase tracking-[0.2em]"
+            >
+              <ChevronLeft size={16} /> Backward
+            </button>
+          )}
         </div>
 
-        <div className="p-8 border-t border-zinc-50 bg-zinc-50/20 flex justify-between items-center">
-          <div className="flex items-center gap-3 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
-            <Info size={14} />
-            Framework data is persistent once established.
-          </div>
-          <div className="flex gap-4">
-            {step === 2 && (
-              <button
-                onClick={() => setStep(1)}
-                className="px-6 py-3 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 transition-all"
-              >
-                Back
-              </button>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-8 py-4 rounded-xl font-black text-[10px] text-[#5a6062] hover:bg-[#f1f4f5] transition-all uppercase tracking-[0.2em]"
+          >
+            Discard Draft
+          </button>
+          <button
+            disabled={
+              createMutation.isPending ||
+              (step === 1 ? !selectedMajorId || !curriculumCode : plos.some((p) => !p.description))
+            }
+            onClick={handleNext}
+            className="px-12 py-4 bg-gradient-to-br from-primary to-[#1f5e44] text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50 uppercase tracking-[0.2em]"
+          >
+            {createMutation.isPending ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <>
+                <span>{step === 1 ? "Define Outcomes" : "Finalize Framework"}</span>
+                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'wght' 700" }}>arrow_forward</span>
+              </>
             )}
-            <button
-              onClick={handleNext}
-              disabled={
-                step === 1
-                  ? !selectedMajorId || !curriculumCode
-                  : plos.some((p) => !p.description)
-              }
-              className="bg-primary text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed group"
-            >
-              {step === 1 ? "Define Outcomes" : "Initialize Framework"}
-              {step === 1 ? (
-                <ArrowRight
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              ) : (
-                <Layers size={16} />
-              )}
-            </button>
-          </div>
+          </button>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
