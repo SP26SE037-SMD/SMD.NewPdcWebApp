@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary-container": "#d5e8ce",
+                  "error-dim": "#791903",
+                  "on-surface": "#2d3335",
+                  "inverse-on-surface": "#9b9d9e",
+                  "tertiary-container": "#fcfeb9",
+                  "on-primary": "#e6ffee",
+                  "on-tertiary-container": "#60622d",
+                  "tertiary": "#60622d",
+                  "outline": "#767c7e",
+                  "on-secondary-container": "#465643",
+                  "on-primary-container": "#1d5c42",
+                  "secondary-fixed": "#d5e8ce",
+                  "primary": "#2d6a4f",
+                  "primary-dim": "#1f5e44",
+                  "primary-fixed": "#b1f0ce",
+                  "surface-container": "#ebeef0",
+                  "on-background": "#2d3335",
+                  "surface-container-low": "#f1f4f5",
+                  "primary-dim": "#1f5e44",
+                  "primary-fixed": "#b1f0ce",
+                  "surface-tint": "#2d6a4f",
+                  "on-tertiary-fixed": "#4d501d",
+                  "secondary": "#53634f",
+                  "on-primary-fixed-variant": "#29664c",
+                  "tertiary-dim": "#545622",
+                  "on-tertiary": "#fbfdb9",
+                  "secondary-dim": "#475744",
+                  "on-secondary-fixed-variant": "#50604c",
+                  "inverse-surface": "#0c0f10",
+                  "on-error": "#fff7f6",
+                  "tertiary-fixed": "#fcfeb9",
+                  "surface-container-lowest": "#ffffff",
+                  "on-error-container": "#6e1400",
+                  "error": "#a73b21",
+                  "error-container": "#fd795a",
+                  "surface-container-highest": "#dee3e6",
+                  "background": "#f8f9fa",
+                  "on-primary-fixed": "#014931",
+                  "surface-container-high": "#e5e9eb",
+                  "tertiary-fixed-dim": "#edefac",
+                  "on-tertiary-fixed-variant": "#6a6d37",
+                  "outline-variant": "#adb3b5",
+                  "surface-dim": "#d5dbdd",
+                  "surface": "#f8f9fa",
+                  "on-surface-variant": "#5a6062",
+                  "primary-container": "#b1f0ce",
+                  "surface-variant": "#dee3e6",
+                  "surface-bright": "#f8f9fa",
+                  "secondary-fixed-dim": "#c7dac1",
+                  "on-secondary-fixed": "#344331",
+                  "inverse-primary": "#beffdc",
+                  "on-secondary": "#ecfee4"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {},
+          "fontFamily": {
+                  "headline": ["Plus Jakarta Sans"],
+                  "body": ["Inter"],
+                  "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-slate-50 dark:bg-slate-950 flex flex-col p-4 gap-2 z-40">
+<div class="flex items-center gap-3 px-2 py-4 mb-4">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="account_tree">account_tree</span>
+</div>
+<div>
+<h1 class="text-lg font-extrabold text-emerald-800 leading-none">Curriculum Wizard</h1>
+<p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase mt-1">Batch 2024-2028</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 rounded-lg flex items-center gap-3 font-medium text-sm">
+<span class="material-symbols-outlined text-xl" data-icon="info">info</span>
+<span>Curriculum Info</span>
+</div>
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 rounded-lg flex items-center gap-3 font-medium text-sm">
+<span class="material-symbols-outlined text-xl" data-icon="list_alt">list_alt</span>
+<span>PLO Definition</span>
+</div>
+<div class="px-3 py-2.5 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold shadow-sm rounded-lg flex items-center gap-3 text-sm">
+<span class="material-symbols-outlined text-xl" data-icon="grid_on">grid_on</span>
+<span>Mapping Matrix</span>
+</div>
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 rounded-lg flex items-center gap-3 font-medium text-sm">
+<span class="material-symbols-outlined text-xl" data-icon="account_tree">account_tree</span>
+<span>Course Builder</span>
+</div>
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1 transition-transform duration-200 rounded-lg flex items-center gap-3 font-medium text-sm">
+<span class="material-symbols-outlined text-xl" data-icon="task_alt">task_alt</span>
+<span>Review &amp; Publish</span>
+</div>
+</nav>
+<div class="mt-auto border-t border-slate-200/50 pt-4 space-y-1">
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 text-sm font-medium">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span>Settings</span>
+</div>
+<div class="px-2 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 text-sm font-medium">
+<span class="material-symbols-outlined text-xl" data-icon="menu_book">menu_book</span>
+<span>Documentation</span>
+</div>
+<button class="w-full mt-4 bg-primary text-on-primary py-2.5 px-4 rounded-xl font-semibold shadow-md hover:opacity-90 active:scale-95 transition-all text-sm">
+        Save Draft
+      </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-64 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center justify-between px-8 py-4 w-full">
+<div class="flex items-center gap-4">
+<h2 class="font-['Plus_Jakarta_Sans'] tracking-tight text-xl font-bold text-emerald-900 dark:text-emerald-100">Curriculum Studio</h2>
+<div class="h-6 w-px bg-surface-container-highest"></div>
+<nav class="flex gap-6">
+<a class="text-slate-500 hover:text-slate-700 font-medium transition-colors text-sm" href="#">Dashboard</a>
+<a class="text-emerald-700 font-semibold border-b-2 border-emerald-700 text-sm" href="#">Academic Programs</a>
+<a class="text-slate-500 hover:text-slate-700 font-medium transition-colors text-sm" href="#">Accreditation</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+</span>
+<input class="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:ring-2 focus:ring-primary/20" placeholder="Search curriculum..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-slate-500 hover:bg-slate-50/50 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-50/50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+<img alt="Academic administrator profile" class="w-8 h-8 rounded-full border border-surface-container-highest" data-alt="close-up portrait of a professional academic administrator in a modern office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCreVQTpS3f-4kSSx0OfXjqQUzgEiVjkolbvjDuaaRmEBFoLzFejIIlGXdHgi-i8YXC93wRzVgcO_TUhc_o749iejNVphyRKsr7lZVwCD8gzByGBXcxgIUYmt5OxROzNb_3T7CcUkdofyOWtgawXjKrNIP02O4U86XNLV9Ti9H_3o4PxvT4HRRNeaHrBC8iNVHMzeWYWKbIvfsxkLnNWes9NvYd4Na8tQNtna0aFDTONZ1iTcQUUeDweqV6BsX9oQwU9qVmQoumJkB8"/>
+</div>
+</div>
+</header>
+<div class="pt-24 px-12 pb-12">
+<!-- Progress Stepper -->
+<section class="mb-12">
+<div class="flex items-center justify-between max-w-4xl mx-auto relative">
+<!-- Connector Lines -->
+<div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-highest -z-10"></div>
+<div class="absolute top-5 left-0 w-1/2 h-0.5 bg-primary -z-10"></div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg" data-icon="check">check</span>
+</div>
+<span class="text-xs font-bold text-on-surface">Step 1</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg" data-icon="check">check</span>
+</div>
+<span class="text-xs font-bold text-on-surface">Step 2</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shadow-lg shadow-primary/20 ring-4 ring-primary-container">
+<span class="text-sm">03</span>
+</div>
+<span class="text-xs font-bold text-primary">Step 3: Mapping</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest text-outline border-2 border-surface-container-highest flex items-center justify-center font-bold">
+<span class="text-sm">04</span>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Step 4</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest text-outline border-2 border-surface-container-highest flex items-center justify-center font-bold">
+<span class="text-sm">05</span>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Step 5</span>
+</div>
+</div>
+</section>
+<!-- Editorial Header Section -->
+<section class="mb-10 max-w-6xl">
+<div class="flex items-baseline gap-6 mb-2">
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface">Outcome Correlation Matrix</h1>
+<div class="h-1 flex-grow bg-primary-container self-center opacity-40"></div>
+</div>
+<p class="font-body text-on-surface-variant text-lg max-w-2xl leading-relaxed">
+          Align Program Learning Outcomes (PLO) with the broader Program Outcomes (PO). 
+          This structural mapping ensures instructional integrity and cross-curricula consistency.
+        </p>
+</section>
+<!-- Matrix Grid Implementation -->
+<section class="grid grid-cols-12 gap-8 items-start">
+<!-- Main Mapping Surface -->
+<div class="col-span-12 lg:col-span-9">
+<div class="bg-surface-container-lowest rounded-2xl p-8 shadow-sm border border-surface-container-low overflow-hidden">
+<div class="overflow-x-auto scrollbar-hide">
+<table class="w-full border-collapse">
+<thead>
+<tr>
+<th class="p-4 text-left bg-surface-container-low rounded-tl-xl w-48">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Row x Col</span>
+<span class="text-sm font-bold text-primary">PLO to PO</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px]">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold">PO-01</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Knowledge</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px]">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold">PO-02</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Analysis</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px]">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-primary">PO-03</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Design</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px]">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold">PO-04</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Tools</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px]">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold">PO-05</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Ethics</span>
+</div>
+</th>
+<th class="p-4 bg-surface-container-low min-w-[80px] rounded-tr-xl">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold">PO-06</span>
+<span class="text-[9px] text-on-surface-variant font-medium mt-1">Comm</span>
+</div>
+</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<!-- PLO-01 -->
+<tr>
+<td class="p-4 font-bold text-sm text-on-surface border-r border-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                        PLO-01
+                      </div>
+<p class="text-[10px] font-normal text-on-surface-variant mt-1 line-clamp-1 italic">Technical Core Proficiency</p>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+</tr>
+<!-- PLO-02 -->
+<tr>
+<td class="p-4 font-bold text-sm text-on-surface border-r border-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                        PLO-02
+                      </div>
+<p class="text-[10px] font-normal text-on-surface-variant mt-1 line-clamp-1 italic">Analytical Systems Design</p>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center bg-secondary-container/30 group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+</tr>
+<!-- PLO-03 -->
+<tr>
+<td class="p-4 font-bold text-sm text-on-surface border-r border-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                        PLO-03
+                      </div>
+<p class="text-[10px] font-normal text-on-surface-variant mt-1 line-clamp-1 italic">Interdisciplinary Leadership</p>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<span class="material-symbols-outlined text-surface-container-highest group-hover:text-primary-dim transition-colors" data-icon="add">add</span>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+<td class="p-0">
+<button class="w-full h-full min-h-[80px] flex items-center justify-center hover:bg-primary-container/20 transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-lg" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-8 pt-6 border-t border-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-6 text-[11px] text-on-surface-variant font-medium">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-primary shadow-sm"></div>
+<span>High Correlation</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-surface-container-highest"></div>
+<span>No Mapping</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 rounded-xl text-primary font-bold hover:bg-primary-container/30 transition-colors text-sm">Clear All</button>
+<button class="px-8 py-2 bg-primary-container text-on-primary-container rounded-xl font-bold hover:opacity-90 transition-opacity shadow-sm text-sm">Validation Check</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar / Contextual Cards -->
+<div class="col-span-12 lg:col-span-3 space-y-6">
+<div class="bg-surface-container-low rounded-2xl p-6 border-l-4 border-primary">
+<h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Quick Stats</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<span class="text-sm font-medium text-on-surface">Mapped PLOs</span>
+<span class="text-2xl font-bold text-primary leading-none">3/12</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full">
+<div class="w-1/4 h-full bg-primary rounded-full shadow-sm shadow-primary/40"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">
+                Most Program Learning Outcomes require at least 2 correlating POs for accreditation validation.
+              </p>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container-low">
+<h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Program Outcomes (PO)</h3>
+<div class="space-y-4 max-h-[300px] overflow-y-auto scrollbar-hide">
+<div class="p-3 bg-primary-container/10 rounded-xl border border-primary/10">
+<span class="text-[10px] font-bold text-primary">PO-01</span>
+<p class="text-xs font-medium text-on-surface leading-snug mt-1">Apply knowledge of mathematics, science, and engineering fundamentals.</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-xl">
+<span class="text-[10px] font-bold text-on-surface-variant">PO-02</span>
+<p class="text-xs font-medium text-on-surface leading-snug mt-1">Identify, formulate, and analyze complex engineering problems.</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-xl">
+<span class="text-[10px] font-bold text-on-surface-variant">PO-03</span>
+<p class="text-xs font-medium text-on-surface leading-snug mt-1">Design solutions for complex engineering problems and systems.</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-xl">
+<span class="text-[10px] font-bold text-on-surface-variant">PO-04</span>
+<p class="text-xs font-medium text-on-surface leading-snug mt-1">Create, select, and apply appropriate modern tools and techniques.</p>
+</div>
+</div>
+</div>
+<div class="relative rounded-2xl overflow-hidden aspect-[4/3] group shadow-lg">
+<img alt="Mapping collaboration" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="team of academic designers pointing at a large digital screen with complex mapping diagrams in a bright modern workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgSzcarJWrzK66pMLmY3gv1D7Udc1_vin7akWjv3B3vnPkiqnMVbfMMZvnsDFEJmRYfR2FGTzBZ_x0r8P0WM63_Jw2DMvBW5eVdMpppfpFoG2T0QllVbigPUd279u-uBkdL2hnfjn9Lsu45EUnV4QT7r2_K5O604e4JMykVMX3DSQdz5CZAAngNRm5sE14deElLRBCFGSX0AR0WQYenN-2KiQUHQxX9FFjiMmU57qCaxV5PrOZFiddgpfQXq4fS3LTVht8bV3zqdNV"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex flex-col justify-end p-4">
+<span class="text-[10px] text-on-primary font-bold uppercase tracking-widest">Collaborative View</span>
+<p class="text-xs text-on-primary font-medium opacity-90 mt-1">Real-time mapping active with 2 other reviewers.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Navigation Actions -->
+<div class="fixed bottom-0 right-0 left-64 bg-white/60 backdrop-blur-sm px-12 py-6 flex items-center justify-between border-t border-surface-container-low/30 z-20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="auto_awesome">auto_awesome</span>
+<p class="text-sm text-on-surface-variant font-medium">Smart Suggestions are available for PLO-04</p>
+</div>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 px-6 py-3 border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-container-low transition-colors group">
+<span class="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1" data-icon="arrow_back">arrow_back</span>
+          Previous Step
+        </button>
+<button class="flex items-center gap-2 px-10 py-3 bg-primary text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 hover:opacity-95 transition-opacity group">
+          Continue to Course Builder
+          <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>
