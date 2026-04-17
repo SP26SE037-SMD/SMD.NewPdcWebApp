@@ -8684,6 +8684,13 @@
   }
 
   @media (hover: hover) {
+    .hover\:border-\[\#2d6a4f\]\/20:hover {
+      border-color: #2d6a4f33;
+      border-color: lab(40.2301% -26.0029 8.98786 / .2);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:border-\[\#2d342b\]\/5:hover {
       border-color: #2d342b0d;
       border-color: lab(20.7972% -4.69913 4.66002 / .05);
@@ -8718,6 +8725,12 @@
   @media (hover: hover) {
     .hover\:border-\[\#94a3b8\]:hover {
       border-color: #94a3b8;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:border-\[\#ebeef0\]:hover {
+      border-color: #ebeef0;
     }
   }
 
@@ -8979,6 +8992,12 @@
   @media (hover: hover) {
     .hover\:bg-\[\#0c0f10\]:hover {
       background-color: #0c0f10;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[\#1d5c42\]:hover {
+      background-color: #1d5c42;
     }
   }
 
@@ -10082,6 +10101,11 @@
       --tw-grayscale: grayscale(0%);
       filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
     }
+  }
+
+  .focus\:border-\[\#2d6a4f\]\/30:focus {
+    border-color: #2d6a4f4d;
+    border-color: lab(40.2301% -26.0029 8.98783 / .3);
   }
 
   .focus\:border-\[\#4caf50\]:focus {

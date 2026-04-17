@@ -364,9 +364,9 @@ export default function ManageMajorsContent() {
           {wizardStep === 1 && (
             <form
               onSubmit={handleMajorIdentitySubmit}
-              className="grid grid-cols-12 gap-8 items-start"
+              className="space-y-8"
             >
-              <div className="col-span-12 lg:col-span-8 space-y-8">
+              <div className="space-y-8">
                 <div className="bg-white rounded-xl p-8 border border-[#adb3b5]/10 shadow-sm">
                   <div className="flex items-center gap-3 mb-8">
                     <span className="material-symbols-outlined text-[#4caf50] p-2 bg-[#e8f5e9] rounded-lg">
@@ -480,49 +480,6 @@ export default function ManageMajorsContent() {
                         </>
                       )}
                     </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column Contextual Card */}
-              <div className="col-span-12 lg:col-span-4 space-y-6 sticky top-24">
-                <div className="bg-[#1b5e20] text-white rounded-xl p-8 relative overflow-hidden shadow-lg group">
-                  <div className="relative z-10">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a5d6a7] mb-4">
-                      Wizard Progress
-                    </h4>
-                    <div className="text-3xl font-black mb-1">33%</div>
-                    <p className="text-xs text-[#c8e6c9] font-medium">
-                      Establishing core identity
-                    </p>
-                    <div className="mt-6 w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-[#4caf50] h-full"
-                        style={{ width: "33%" }}
-                      ></div>
-                    </div>
-                  </div>
-                  <Target
-                    size={160}
-                    className="absolute -bottom-10 -right-10 text-white/5 group-hover:rotate-12 transition-transform duration-700"
-                  />
-                </div>
-                <div className="bg-white rounded-xl p-6 border border-[#adb3b5]/10 shadow-sm">
-                  <h3 className="text-sm font-bold text-[#2d3335] mb-4 flex items-center gap-2">
-                    <Settings size={16} className="text-[#4caf50]" />
-                    Configuration
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-[#f1f4f5] rounded-xl space-y-3">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-[#5a6062] uppercase tracking-widest">
-                        <span>Visibility</span>
-                        <span className="text-[#4caf50]">Active</span>
-                      </div>
-                      <p className="text-[10px] text-[#5a6062] leading-relaxed">
-                        Setting this major to public will allow curriculum
-                        assignment and student enrollment.
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -975,16 +932,7 @@ export default function ManageMajorsContent() {
       ) : (
         <div className="p-12 max-w-7xl mx-auto space-y-12">
           {/* Page Header */}
-          <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div className="space-y-2">
-              <h1 className="text-4xl font-extrabold tracking-tight text-[#2d3335] font-['Plus_Jakarta_Sans']">
-                Academic Oversight
-              </h1>
-              <p className="text-[#5a6062] text-lg max-w-2xl font-medium">
-                Executive summary and lifecycle management for active majors and
-                institutional accreditation status.
-              </p>
-            </div>
+          <section className="flex justify-end">
             <button
               onClick={handleInitialCreateAction}
               className="px-6 py-3 bg-[#2d6a4f] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2"
@@ -994,87 +942,6 @@ export default function ManageMajorsContent() {
             </button>
           </section>
 
-          {/* KPI Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="bg-white p-8 rounded-2xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] flex flex-col justify-between group hover:translate-y-[-2px] transition-transform">
-              <div className="flex justify-between items-start">
-                <span className="p-2 bg-[#b1f0ce] text-[#1d5c42] rounded-lg">
-                  <span className="material-symbols-outlined">menu_book</span>
-                </span>
-                <span className="text-[#2d6a4f] text-xs font-bold tracking-widest uppercase">
-                  Target 42
-                </span>
-              </div>
-              <div className="mt-6">
-                <div className="text-4xl font-extrabold tracking-tight">
-                  {kpis.totalActive.toString().padStart(2, "0")}
-                </div>
-                <div className="text-sm font-medium text-[#5a6062] mt-1">
-                  Total Active Majors
-                </div>
-              </div>
-              <div className="mt-6 h-1 w-full bg-[#ebeef0] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#2d6a4f]"
-                  style={{ width: `${(kpis.totalActive / 42) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-white p-8 rounded-2xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] flex flex-col justify-between group hover:translate-y-[-2px] transition-transform">
-              <div className="flex justify-between items-start">
-                <span className="p-2 bg-[#fcfeb9] text-[#60622d] rounded-lg">
-                  <span className="material-symbols-outlined">rate_review</span>
-                </span>
-                <span className="text-[#60622d] text-xs font-bold tracking-widest uppercase">
-                  Urgent: {kpis.underReview}
-                </span>
-              </div>
-              <div className="mt-6">
-                <div className="text-4xl font-extrabold tracking-tight">
-                  {kpis.underReview.toString().padStart(2, "0")}
-                </div>
-                <div className="text-sm font-medium text-[#5a6062] mt-1">
-                  Programs Under Review
-                </div>
-              </div>
-              <div className="mt-6 flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 bg-[#fd795a]/20 text-[#a73b21] font-bold rounded">
-                  Next Audit: Oct 24
-                </span>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-[#2d6a4f] text-white p-8 rounded-2xl shadow-[0px_4px_20px_rgba(45,51,53,0.08)] flex flex-col justify-between relative overflow-hidden group hover:translate-y-[-2px] transition-transform">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <span className="material-symbols-outlined text-8xl">
-                  verified
-                </span>
-              </div>
-              <div className="flex justify-between items-start relative z-10">
-                <span className="p-2 bg-white/20 backdrop-blur rounded-lg">
-                  <span className="material-symbols-outlined">analytics</span>
-                </span>
-              </div>
-              <div className="mt-6 relative z-10">
-                <div className="text-4xl font-extrabold tracking-tight">
-                  {kpis.complianceRate}
-                </div>
-                <div className="text-sm font-medium text-white/80 mt-1">
-                  PO Compliance Rate
-                </div>
-              </div>
-              <div className="mt-6 relative z-10 flex items-center gap-1 text-xs font-bold">
-                <span className="material-symbols-outlined text-sm">
-                  trending_up
-                </span>
-                2.1% from last term
-              </div>
-            </div>
-          </div>
 
           {/* Major Catalog Section */}
           <section className="space-y-6">

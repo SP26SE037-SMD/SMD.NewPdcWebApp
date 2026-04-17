@@ -1,14 +1,14 @@
 import { apiClient } from "@/lib/api-client";
 
 export const CURRICULUM_STATUS = {
-    DRAFT: 'DRAFT',
-    STRUCTURE_REVIEW: 'STRUCTURE_REVIEW',
-    STRUCTURE_APPROVED: 'STRUCTURE_APPROVED',
-    SYLLABUS_DEVELOP: 'SYLLABUS_DEVELOP',
-    FINAL_REVIEW: 'FINAL_REVIEW',
-    SIGNED: 'SIGNED',
-    PUBLISHED: 'PUBLISHED',
-    ARCHIVED: 'ARCHIVED',
+  DRAFT: 'DRAFT',
+  STRUCTURE_REVIEW: 'STRUCTURE_REVIEW',
+  STRUCTURE_APPROVED: 'STRUCTURE_APPROVED',
+  SYLLABUS_DEVELOP: 'SYLLABUS_DEVELOP',
+  FINAL_REVIEW: 'FINAL_REVIEW',
+  SIGNED: 'SIGNED',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
 } as const;
 
 // CurriculumStatus
@@ -132,7 +132,7 @@ export const CurriculumService = {
   },
 
   getCurriculumsByMajorId: async (majorId: string) => {
-    return apiClient.get<APIResponse<CurriculumFramework[]>>(
+    return apiClient.get<CurriculumFramework[]>(
       `/api/curriculums/major/${majorId}`,
     );
   },
