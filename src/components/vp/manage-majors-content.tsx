@@ -73,6 +73,7 @@ export default function ManageMajorsContent() {
     description: "",
   });
   const [editingPOIndex, setEditingPOIndex] = useState<number | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -147,9 +148,9 @@ export default function ManageMajorsContent() {
     mutationFn: (pos: CreatePOPload[]) =>
       PoService.createMultiplePOs(currentMajorId || "", pos),
     onSuccess: () => {
-      setWizardStep(3);
+      setWizardStep(3); // Move to Review step
       queryClient.invalidateQueries({ queryKey: ["majors"] });
-      showToast("All outcomes recorded successfully.", "success");
+      showToast("Outcomes staged for final review.", "info");
     },
     onError: (error: any) => {
       showToast(error.message || "Failed to save outcomes.", "error");
@@ -217,8 +218,10 @@ export default function ManageMajorsContent() {
       MajorService.updateMajorStatus(id, status),
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["majors"] });
+      setIsConfirmModalOpen(false);
+      setWizardStep(4); // Move to Success screen
       showToast(
-        `Major status updated to ${response.data.status.replace("_", " ")}.`,
+        `Major submitted for ${response.data.status.replace("_", " ")}.`,
         "success",
       );
     },
@@ -328,7 +331,7 @@ export default function ManageMajorsContent() {
             {[
               { id: 1, label: "Major Identity" },
               { id: 2, label: "Program Outcomes" },
-              { id: 3, label: "Finalize" },
+              { id: 3, label: "Review & Submit" },
             ].map((step, idx, arr) => (
               <Fragment key={step.id}>
                 <div
@@ -710,23 +713,260 @@ export default function ManageMajorsContent() {
           )}
 
           {wizardStep === 3 && (
-            <div className="max-w-2xl mx-auto py-20 text-center">
-              <div className="w-24 h-24 bg-[#e8f5e9] text-[#4caf50] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <header className="mb-10">
+                <div className="flex items-center gap-2 text-[#4caf50] font-semibold mb-2">
+                  <span className="material-symbols-outlined text-sm">
+                    verified
+                  </span>
+                  <span className="text-xs uppercase tracking-widest">
+                    Final Review
+                  </span>
+                </div>
+                <h1 className="text-4xl font-extrabold text-[#2d3335] tracking-tight leading-tight font-['Plus_Jakarta_Sans']">
+                  Review Major Submission
+                </h1>
+                <p className="text-[#5a6062] mt-2 text-lg">
+                  Please verify the details below before submitting the
+                  curriculum for academic board approval.
+                </p>
+              </header>
+
+              <div className="grid grid-cols-12 gap-8">
+                {/* Basic Information Bento Card */}
+                <section className="col-span-12 bg-white rounded-xl p-8 shadow-sm border border-[#adb3b5]/10">
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-xl font-bold text-[#2d3335] font-['Plus_Jakarta_Sans']">
+                      Basic Information
+                    </h3>
+                    <button
+                      onClick={() => setWizardStep(1)}
+                      className="text-[#4caf50] hover:bg-[#e8f5e9] px-4 py-1.5 rounded-full text-sm font-bold transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className="text-[10px] font-black text-[#5a6062] uppercase tracking-[0.2em] mb-1 block">
+                        Major Code
+                      </label>
+                      <div className="text-2xl font-bold text-[#1b5e20] font-['Plus_Jakarta_Sans']">
+                        {newMajor.majorCode || "N/A"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-[#5a6062] uppercase tracking-[0.2em] mb-1 block">
+                        Major Name
+                      </label>
+                      <div className="text-2xl font-bold text-[#2d3335] font-['Plus_Jakarta_Sans']">
+                        {newMajor.majorName || "N/A"}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2 pt-4 border-t border-[#f1f4f5]">
+                      <label className="text-[10px] font-black text-[#5a6062] uppercase tracking-[0.2em] mb-2 block">
+                        Description
+                      </label>
+                      <p className="text-[#5a6062] leading-relaxed text-sm font-medium">
+                        {newMajor.description || "No description provided."}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Program Outcomes Bento Card */}
+                <section className="col-span-12 bg-white rounded-xl p-8 shadow-sm border border-[#adb3b5]/10">
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-xl font-bold text-[#2d3335] font-['Plus_Jakarta_Sans']">
+                      Program Outcomes
+                    </h3>
+                    <button
+                      onClick={() => setWizardStep(2)}
+                      className="text-[#4caf50] hover:bg-[#e8f5e9] px-4 py-1.5 rounded-full text-sm font-bold transition-colors"
+                    >
+                      Edit Outcomes
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {stagedPOs.length > 0 ? (
+                      stagedPOs.map((po, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-4 p-5 bg-[#f1f4f5]/50 rounded-xl group hover:bg-[#e8f5e9]/50 transition-colors border border-transparent hover:border-[#4caf50]/20"
+                        >
+                          <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-[#adb3b5]/10">
+                            <span className="font-bold text-[#4caf50] text-sm">
+                              {(index + 1).toString().padStart(2, "0")}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-[#2d3335] mb-1">
+                              {po.poCode}
+                            </h4>
+                            <p className="text-[#5a6062] text-sm leading-relaxed font-medium">
+                              {po.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center bg-[#f1f4f5]/30 rounded-xl border-2 border-dashed border-[#adb3b5]/20">
+                        <p className="text-sm text-[#5a6062] font-bold">
+                          No outcomes defined yet.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Confirmation Footer */}
+                <section className="col-span-12 mt-4">
+                  <div className="flex items-center justify-between gap-6 p-8 bg-[#1b5e20] rounded-2xl shadow-xl relative overflow-hidden group">
+                    <div className="relative z-10">
+                      <h4 className="text-white font-bold text-xl font-['Plus_Jakarta_Sans']">
+                        Ready for Approval?
+                      </h4>
+                      <p className="text-[#a5d6a7] text-sm font-medium">
+                        Once submitted, this major will enter the review queue.
+                      </p>
+                    </div>
+                    <div className="flex gap-4 w-full sm:w-auto relative z-10">
+                      <button
+                        onClick={() => setWizardStep(2)}
+                        className="flex-1 sm:flex-none px-8 py-3 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2 border border-white/20"
+                      >
+                        <ArrowLeft size={18} />
+                        Back to Outcomes
+                      </button>
+                      <button
+                        onClick={() => setIsConfirmModalOpen(true)}
+                        className="flex-1 sm:flex-none px-10 py-3 bg-[#4caf50] text-white font-black uppercase tracking-widest text-[13px] rounded-xl shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Send size={18} />
+                        Submit for Approval
+                      </button>
+                    </div>
+                    <ShieldCheck
+                      size={140}
+                      className="absolute -bottom-10 -right-10 text-white/5 group-hover:rotate-12 transition-transform duration-700"
+                    />
+                  </div>
+                </section>
+              </div>
+
+              {/* Confirmation Modal */}
+              <AnimatePresence>
+                {isConfirmModalOpen && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setIsConfirmModalOpen(false)}
+                      className="absolute inset-0 bg-[#2d3335]/60 backdrop-blur-sm"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                      className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+                    >
+                      <div className="px-8 pt-10 pb-6 flex flex-col items-center text-center">
+                        <div className="w-20 h-20 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-6 shadow-sm border border-[#4caf50]/10">
+                          <Send className="text-[#4caf50] w-10 h-10" />
+                        </div>
+                        <h2 className="text-2xl font-bold tracking-tight text-[#2d3335] mb-3 font-['Plus_Jakarta_Sans']">
+                          Confirm Submission
+                        </h2>
+                        <p className="text-[#5a6062] leading-relaxed px-4 text-sm font-medium">
+                          Are you sure you want to submit the{" "}
+                          <span className="font-bold text-[#2d3335]">
+                            {newMajor.majorName}
+                          </span>{" "}
+                          curriculum? Once submitted, it will be sent to the
+                          department head for review.
+                        </p>
+                      </div>
+
+                      <div className="px-8 py-4 mx-8 bg-[#f1f4f5] rounded-xl mb-8 border border-[#adb3b5]/10">
+                        <div className="flex items-center justify-between text-xs mb-2">
+                          <span className="text-[#5a6062] font-bold uppercase tracking-widest">
+                            Major Code
+                          </span>
+                          <span className="font-bold text-[#2d3335]">
+                            {newMajor.majorCode}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#5a6062] font-bold uppercase tracking-widest">
+                            Outcomes Count
+                          </span>
+                          <span className="text-[#4caf50] font-bold">
+                            {stagedPOs.length} Established
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="px-8 pb-10 flex flex-col sm:flex-row-reverse gap-3">
+                        <button
+                          onClick={() =>
+                            updateStatusMutation.mutate({
+                              id: currentMajorId!,
+                              status: "INTERNAL_REVIEW",
+                            })
+                          }
+                          disabled={updateStatusMutation.isPending}
+                          className="flex-1 bg-[#4caf50] hover:bg-[#388e3c] text-white font-black uppercase tracking-widest text-[13px] py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#4caf50]/20 flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
+                        >
+                          {updateStatusMutation.isPending ? (
+                            <Loader2 className="animate-spin" size={18} />
+                          ) : (
+                            <span>Yes, Submit</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setIsConfirmModalOpen(false)}
+                          className="flex-1 bg-[#f1f4f5] hover:bg-[#e5e9eb] text-[#2d3335] font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center active:scale-95"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => setIsConfirmModalOpen(false)}
+                        className="absolute top-4 right-4 text-[#adb3b5] hover:text-[#5a6062] transition-colors p-2 rounded-full hover:bg-[#f1f4f5]"
+                      >
+                        <X size={20} />
+                      </button>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {wizardStep === 4 && (
+            <div className="max-w-2xl mx-auto py-20 text-center animate-in zoom-in duration-700">
+              <div className="w-24 h-24 bg-[#e8f5e9] text-[#4caf50] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-[#4caf50]/10">
                 <Check size={48} strokeWidth={4} />
               </div>
-              <h2 className="text-4xl font-black text-[#2d3335] mb-4 tracking-tight">
-                Mission Accomplished!
+              <h2 className="text-4xl font-extrabold text-[#2d3335] mb-4 tracking-tight font-['Plus_Jakarta_Sans']">
+                Submission Successful!
               </h2>
               <p className="text-[#5a6062] text-lg mb-12 font-medium">
-                The academic major has been successfully registered and outcomes
-                have been established.
+                The academic major{" "}
+                <span className="text-[#2d3335] font-bold">
+                  {newMajor.majorName}
+                </span>{" "}
+                has been submitted for review. You can track its status in the
+                Major Catalog.
               </p>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-10 py-5 bg-[#4caf50] text-white rounded-2xl font-black shadow-xl shadow-[#4caf50]/20 hover:bg-[#388e3c] transition-all flex items-center gap-3"
+                  className="px-10 py-5 bg-[#4caf50] text-white rounded-2xl font-black uppercase tracking-widest text-[14px] shadow-xl shadow-[#4caf50]/20 hover:bg-[#388e3c] hover:scale-[1.05] active:scale-95 transition-all flex items-center gap-3"
                 >
-                  Return to Portal <ArrowRight size={20} />
+                  Return to Major Catalog <ArrowRight size={20} />
                 </button>
               </div>
             </div>

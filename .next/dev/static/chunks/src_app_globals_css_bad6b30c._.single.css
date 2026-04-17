@@ -3178,6 +3178,10 @@
     border-color: #f0f2ef;
   }
 
+  .border-\[\#f1f4f5\] {
+    border-color: #f1f4f5;
+  }
+
   .border-\[\#f1f5f9\] {
     border-color: #f1f5f9;
   }
@@ -3803,6 +3807,11 @@
 
   .bg-\[\#2d3335\] {
     background-color: #2d3335;
+  }
+
+  .bg-\[\#2d3335\]\/60 {
+    background-color: #2d333599;
+    background-color: lab(20.7235% -2.29062 -2.19811 / .6);
   }
 
   .bg-\[\#2e5d32\] {
@@ -5959,6 +5968,10 @@
 
   .text-\[\#1a1f18\] {
     color: #1a1f18;
+  }
+
+  .text-\[\#1b5e20\] {
+    color: #1b5e20;
   }
 
   .text-\[\#1d5c42\] {
@@ -8543,6 +8556,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:scale-\[1\.05\]:hover {
+      scale: 1.05;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:rotate-90:hover {
       rotate: 90deg;
     }
@@ -8977,8 +8996,21 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-\[\#e5e9eb\]:hover {
+      background-color: #e5e9eb;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-\[\#e8f5e9\]:hover {
       background-color: #e8f5e9;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[\#e8f5e9\]\/50:hover {
+      background-color: #e8f5e980;
+      background-color: lab(95.3092% -6.05053 4.23818 / .5);
     }
   }
 
@@ -9575,6 +9607,12 @@
   @media (hover: hover) {
     .hover\:text-\[\#4caf50\]:hover {
       color: #4caf50;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-\[\#5a6062\]:hover {
+      color: #5a6062;
     }
   }
 
