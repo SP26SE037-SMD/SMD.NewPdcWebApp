@@ -204,7 +204,8 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                     <button 
                         disabled={!isValidated || isSubmitting}
                         onClick={async () => {
-                            if (!syllabusId || !taskData?.account?.accountId) return;
+                            const accountId = taskData?.account?.accountId || taskData?.accountId;
+                            if (!syllabusId || !accountId) return;
                             
                             setIsSubmitting(true);
                             try {
@@ -218,7 +219,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 await MaterialService.updateSyllabusMaterialsStatus(syllabusId, 'PENDING_REVIEW');
                                 
                                 // 4. Update Syllabus Status
-                                await SyllabusService.updateSyllabusStatus(syllabusId, taskData.account?.accountId, 'PENDING_REVIEW');
+                                await SyllabusService.updateSyllabusStatus(syllabusId, accountId, 'PENDING_REVIEW');
 
                                 alert("Syllabus configuration submitted to HoPDC successfully!");
                                 router.push('/dashboard/pdcm');
