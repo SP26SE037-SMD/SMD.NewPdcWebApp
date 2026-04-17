@@ -16,10 +16,12 @@ import { SessionService } from '@/services/session.service';
 import { MaterialService } from '@/services/material.service';
 import { AssessmentService } from '@/services/assessment.service';
 import { SyllabusService } from '@/services/syllabus.service';
+import { useToast } from '@/components/ui/Toast';
 
 export default function SubmitPage({ params }: { params: Promise<{ taskId: string }> }) {
     const { taskId } = use(params);
     const router = useRouter();
+    const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Fetch Task Details
@@ -221,11 +223,11 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 // 4. Update Syllabus Status
                                 await SyllabusService.updateSyllabusStatus(syllabusId, accountId, 'PENDING_REVIEW');
 
-                                alert("Syllabus configuration submitted to HoPDC successfully!");
+                                showToast("Syllabus configuration submitted to HoPDC successfully!", "success");
                                 router.push('/dashboard/pdcm');
                             } catch (err) {
                                 console.error("Submission failed:", err);
-                                alert("Failed to submit syllabus. Please ensure all components are properly configured.");
+                                showToast("Failed to submit syllabus. Please ensure all components are properly configured.", "error");
                             } finally {
                                 setIsSubmitting(false);
                             }
