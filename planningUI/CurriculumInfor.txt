@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Major Proposal Review - Curriculum Info</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Scripts -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#edefac",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#767c7e",
+                    "tertiary-container": "#fcfeb9",
+                    "primary-fixed": "#b1f0ce",
+                    "on-tertiary-fixed": "#4d501d",
+                    "inverse-primary": "#beffdc",
+                    "primary-container": "#b1f0ce",
+                    "tertiary-dim": "#545622",
+                    "primary-fixed-dim": "#a3e2c0",
+                    "surface-bright": "#f8f9fa",
+                    "tertiary": "#60622d",
+                    "primary-dim": "#1f5e44",
+                    "on-primary-container": "#1d5c42",
+                    "tertiary-fixed": "#fcfeb9",
+                    "on-tertiary-fixed-variant": "#6a6d37",
+                    "on-background": "#2d3335",
+                    "on-secondary-fixed": "#344331",
+                    "on-secondary-container": "#465643",
+                    "error-container": "#fd795a",
+                    "surface": "#f8f9fa",
+                    "secondary-fixed": "#d5e8ce",
+                    "inverse-on-surface": "#9b9d9e",
+                    "inverse-surface": "#0c0f10",
+                    "error": "#a73b21",
+                    "surface-container-highest": "#dee3e6",
+                    "on-secondary": "#ecfee4",
+                    "surface-container-low": "#f1f4f5",
+                    "secondary": "#53634f",
+                    "on-tertiary-container": "#60622d",
+                    "surface-tint": "#2d6a4f",
+                    "surface-dim": "#d5dbdd",
+                    "on-primary-fixed-variant": "#29664c",
+                    "surface-variant": "#dee3e6",
+                    "on-primary": "#e6ffee",
+                    "background": "#f8f9fa",
+                    "primary": "#2d6a4f",
+                    "surface-container": "#ebeef0",
+                    "outline-variant": "#adb3b5",
+                    "on-error-container": "#6e1400",
+                    "on-secondary-fixed-variant": "#50604c",
+                    "secondary-dim": "#475744",
+                    "on-surface": "#2d3335",
+                    "on-tertiary": "#fbfdb9",
+                    "error-dim": "#791903",
+                    "on-error": "#fff7f6",
+                    "on-surface-variant": "#5a6062",
+                    "surface-container-high": "#e5e9eb",
+                    "secondary-fixed-dim": "#c7dac1",
+                    "secondary-container": "#d5e8ce",
+                    "on-primary-fixed": "#014931"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-shadow {
+            box-shadow: 0px 4px 20px rgba(45, 51, 53, 0.04), 0px 2px 8px rgba(45, 51, 53, 0.08);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, .brand-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none flex items-center justify-between px-8 py-3 w-full font-plus-jakarta-sans tracking-tight">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-emerald-800 dark:text-emerald-200">Veridian Review</span>
+<div class="hidden md:flex gap-6">
+<a class="text-emerald-700 dark:text-emerald-400 font-semibold transition-colors" href="#">Dashboard</a>
+<a class="text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-2 py-1 rounded" href="#">Archive</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container-low px-4 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 p-0" placeholder="Search proposals..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-slate-50 p-2 rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-slate-50 p-2 rounded-full transition-colors">settings</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs border border-primary/10">
+                AD
+            </div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 h-full w-64 bg-slate-50 dark:bg-slate-950 flex flex-col py-8 gap-4 pt-20 border-r-0 font-plus-jakarta-sans text-sm">
+<div class="px-8 mb-6">
+<h2 class="text-lg font-black text-emerald-900 dark:text-emerald-100">Veridian Admin</h2>
+<p class="text-xs text-on-surface-variant opacity-70">Academic Oversight</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 ml-4 pl-4 py-3 hover:text-emerald-600 dark:hover:text-emerald-300 transition-transform translate-x-0 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Strategic Management</span>
+</a>
+<a class="flex items-center gap-3 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 font-bold rounded-l-full ml-4 pl-4 py-3 shadow-sm" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Curriculum Proposals</span>
+</a>
+</nav>
+<div class="mt-auto px-8">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Proposal
+            </button>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 pt-24 px-12 pb-12 min-h-screen">
+<!-- Editorial Header -->
+<header class="mb-12 max-w-5xl">
+<div class="flex items-center gap-2 text-primary font-semibold mb-2">
+<span class="material-symbols-outlined text-lg">school</span>
+<span class="text-sm tracking-widest uppercase">Proposal Review</span>
+</div>
+<h1 class="text-5xl font-extrabold tracking-tighter text-on-surface mb-4">B.Sc. CS - Fall 2024</h1>
+<div class="flex items-center gap-6 text-on-surface-variant font-medium">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-600">history</span>
+                    Version 2.4.1
+                </span>
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-600">database</span>
+                    120 Credits Total
+                </span>
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold uppercase tracking-wider">Under Review</span>
+</div>
+</header>
+<!-- Sub-navigation Tabs -->
+<div class="flex gap-12 mb-8 border-b-0 relative">
+<button class="pb-4 text-on-surface-variant font-semibold hover:text-primary transition-colors relative">
+                Overview
+            </button>
+<button class="pb-4 text-primary font-bold transition-colors relative">
+                Curriculum Info
+                <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-full"></div>
+</button>
+<button class="pb-4 text-on-surface-variant font-semibold hover:text-primary transition-colors relative">
+                Course Map
+            </button>
+<button class="pb-4 text-on-surface-variant font-semibold hover:text-primary transition-colors relative">
+                Resource Impact
+            </button>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-12 gap-8 max-w-6xl">
+<!-- Metadata Bento Box -->
+<div class="col-span-12 md:col-span-5 flex flex-col gap-8">
+<section class="bg-surface-container-lowest p-8 rounded-xl editorial-shadow">
+<h3 class="text-xl font-bold mb-6 text-emerald-900 flex items-center gap-2">
+<span class="material-symbols-outlined">info</span>
+                        Core Specifications
+                    </h3>
+<div class="space-y-6">
+<div class="group">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Academic Department</label>
+<p class="text-lg font-medium text-on-surface">School of Computer Science &amp; Engineering</p>
+</div>
+<div class="group">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Degree Level</label>
+<p class="text-lg font-medium text-on-surface">Undergraduate (Baccalaureate)</p>
+</div>
+<div class="group">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Effective Term</label>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-dim">calendar_today</span>
+<p class="text-lg font-medium text-on-surface">Autumn 2024</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Status Card -->
+<section class="bg-emerald-900 text-white p-8 rounded-xl editorial-shadow overflow-hidden relative">
+<div class="relative z-10">
+<h3 class="text-lg font-bold mb-2">Review Status</h3>
+<p class="text-emerald-100 text-sm mb-6 opacity-80 leading-relaxed">Current phase: Academic Senate Subcommittee for Undergraduate Curriculum.</p>
+<div class="flex items-center gap-4">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-emerald-900 bg-slate-300 flex items-center justify-center text-slate-800 text-xs font-bold">JD</div>
+<div class="w-10 h-10 rounded-full border-2 border-emerald-900 bg-slate-400 flex items-center justify-center text-slate-800 text-xs font-bold">MR</div>
+<div class="w-10 h-10 rounded-full border-2 border-emerald-900 bg-slate-200 flex items-center justify-center text-slate-800 text-xs font-bold">PL</div>
+</div>
+<span class="text-xs font-medium text-emerald-200">+4 Reviewers</span>
+</div>
+</div>
+<span class="material-symbols-outlined absolute -bottom-6 -right-6 text-emerald-800 text-9xl opacity-20 rotate-12" style="font-variation-settings: 'FILL' 1;">verified</span>
+</section>
+</div>
+<!-- PLO Section (Main Content) -->
+<div class="col-span-12 md:col-span-7">
+<section class="bg-surface-container-low p-1 rounded-xl">
+<div class="bg-surface-container-lowest p-8 rounded-lg editorial-shadow h-full">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-2xl font-bold tracking-tight text-emerald-900">Program Learning Outcomes</h3>
+<button class="text-primary hover:bg-primary-container px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">edit</span> Edit
+                            </button>
+</div>
+<div class="space-y-8">
+<!-- PLO 1 -->
+<div class="flex gap-6 group">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container font-black text-lg">1</div>
+<div>
+<h4 class="font-bold text-on-surface mb-2 leading-snug">Algorithmic Foundations</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed">Students will demonstrate the ability to analyze complex computing problems and apply principles of computing and other relevant disciplines to identify solutions.</p>
+</div>
+</div>
+<!-- PLO 2 -->
+<div class="flex gap-6 group">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container font-black text-lg">2</div>
+<div>
+<h4 class="font-bold text-on-surface mb-2 leading-snug">Software Engineering Professionalism</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed">Design, implement, and evaluate a computing-based solution to meet a given set of computing requirements in the context of the program’s discipline.</p>
+</div>
+</div>
+<!-- PLO 3 -->
+<div class="flex gap-6 group">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container font-black text-lg">3</div>
+<div>
+<h4 class="font-bold text-on-surface mb-2 leading-snug">Collaborative Systems Design</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed">Function effectively as a member or leader of a team engaged in activities appropriate to the program’s discipline with effective communication strategies.</p>
+</div>
+</div>
+<!-- PLO 4 -->
+<div class="flex gap-6 group">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container font-black text-lg">4</div>
+<div>
+<h4 class="font-bold text-on-surface mb-2 leading-snug">Ethical Responsibility</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed">Recognize professional responsibilities and make informed judgments in computing practice based on legal and ethical principles.</p>
+</div>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t-0 bg-surface-container-low/30 -mx-8 -mb-8 p-8 flex justify-center">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary font-bold text-sm transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+                                View All 8 Learning Outcomes
+                            </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- FAB Suppression: This is a details/review screen, so FAB is suppressed per rules. -->
+</body></html>
