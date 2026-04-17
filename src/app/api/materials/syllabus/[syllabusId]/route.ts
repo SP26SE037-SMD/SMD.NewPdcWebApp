@@ -17,6 +17,8 @@ export async function GET(
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
         const queryParams = status ? `?status=${status}` : "";
 
+        console.log(`\n[PROXY GET /api/materials/syllabus/${syllabusId}${queryParams}] SENDING TO BACKEND`);
+
         const response = await fetch(`${API_BASE_URL}/api/materials/syllabus/${syllabusId}${queryParams}`, {
             headers: {
                 "Content-Type": "application/json",
@@ -28,7 +30,7 @@ export async function GET(
         const data = await response.json().catch(() => null);
         return NextResponse.json(data, { status: response.status });
     } catch (error) {
-        console.error(`[API /materials/syllabus/${error}] GET Error:`, error);
+        console.error(`[API /materials/syllabus] GET Error:`, error);
         return NextResponse.json(
             { status: 500, message: "Internal server error" },
             { status: 500 }

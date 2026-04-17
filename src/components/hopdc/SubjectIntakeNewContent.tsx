@@ -599,7 +599,7 @@ export default function NewSubjectContent() {
                             mode="MONITOR"
                             onOpenMaterial={(m) => {
                               router.push(
-                                `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${associatedTask.syllabus?.syllabusId}`,
+                                `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${associatedTask?.syllabus?.syllabusId}`,
                               );
                             }}
                           />

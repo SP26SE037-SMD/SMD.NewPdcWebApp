@@ -1,6 +1,5 @@
-[00:00:01.741] Server  LOG     ✓ Ready in 1285ms
-[00:00:03.472] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:04.251] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:05.622] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:11.209] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
-[00:00:11.556] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:01.574] Server  LOG     ✓ Ready in 1180ms
+[00:04:30.628] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:30.215] Server  LOG     ✓ Compiled in 384ms
+[00:06:38.423] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:01.825] Server  LOG     ✓ Compiled in 90ms

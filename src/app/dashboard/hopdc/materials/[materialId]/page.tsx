@@ -127,8 +127,6 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
             try {
                 if (b.blockStyle && b.blockStyle.startsWith('{')) {
                     parsedStyle = JSON.parse(b.blockStyle);
-                } else {
-                    parsedStyle = { align: b.blockStyle || 'left' };
                 }
             } catch {
                 parsedStyle = { align: 'left' };

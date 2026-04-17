@@ -30,7 +30,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     });
 
     const taskData = fullTaskResponse?.data;
-    const syllabusId = taskData?.syllabus?.syllabusId;
+    const syllabusId = taskData?.syllabus?.syllabusId || taskData?.syllabusId;
 
     // Fetch Sessions to ensure count is accurate even if not visited sessions tab
     const { data: sessionsRes } = useQuery({
@@ -218,7 +218,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 await MaterialService.updateSyllabusMaterialsStatus(syllabusId, 'PENDING_REVIEW');
                                 
                                 // 4. Update Syllabus Status
-                                await SyllabusService.updateSyllabusStatus(syllabusId, taskData.account.accountId, 'PENDING_REVIEW');
+                                await SyllabusService.updateSyllabusStatus(syllabusId, taskData.account?.accountId, 'PENDING_REVIEW');
 
                                 alert("Syllabus configuration submitted to HoPDC successfully!");
                                 router.push('/dashboard/pdcm');

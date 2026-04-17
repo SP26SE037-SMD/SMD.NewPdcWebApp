@@ -316,19 +316,23 @@ function NewMaterialPageInner() {
         if (hasChanges) {
             setShowExitModal(true);
         } else {
-            router.back();
+            if (taskId) {
+                router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+            } else {
+                router.push('/dashboard/pdcm/develop');
+            }
         }
     };
 
     // Fetch Syllabus Name
     useEffect(() => {
-        if (!syllabusId) return;
+        if (!syllabusId || syllabusId === 'undefined') return;
         (async () => {
             try {
                 const res = await SyllabusService.getSyllabusById(syllabusId);
                 if (res?.data?.syllabusName) setSyllabusName(res.data.syllabusName);
             } catch (err) {
-                console.error("Failed to fetch syllabus name:", err);
+                console.warn("Failed to fetch syllabus name:", err);
             }
         })();
     }, [syllabusId]);
@@ -803,8 +807,8 @@ function NewMaterialPageInner() {
             showToast('Please enter a material title.', 'error');
             return; 
         }
-        if (!syllabusId) { 
-            showToast('Missing syllabusId.', 'error');
+        if (!syllabusId || syllabusId === 'undefined') { 
+            showToast('Missing syllabusId. Please make sure the URL contains a valid syllabus ID.', 'error');
             return; 
         }
         setIsSaving(true);
@@ -830,18 +834,26 @@ function NewMaterialPageInner() {
             });
             const theNewId = materialRes?.data?.materialId || materialRes?.data?.id;
 
-            const validBlocks = blocks.filter(b => b.content.trim() !== '' || b.type === 'IMAGE' || b.type === 'DIVIDER');
+            // Loại bỏ các dòng trống không có ý nghĩa sau khi enter xuống dòng quá nhiều
+            const validBlocks = blocks.filter(b => {
+                if (b.type === 'IMAGE' || b.type === 'DIVIDER') return true;
+                const sanitized = sanitizeBlockContent(b.content || "").trim();
+                return sanitized !== '';
+            });
+
             if (validBlocks.length > 0) {
                 try {
-                    await BlockService.createBlocks(theNewId as string, validBlocks.map((b, i) => {
+                    const requestBody = validBlocks.map((b, i) => {
                         const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content).replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content);
                         return {
+                            idx: i,
                             contentText: sanitized,
-                            blockType: b.type,
-                            blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
-                            idx: i
+                            blockType: b.type || 'PARAGRAPH',
+                            blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize })
                         };
-                    }));
+                    });
+                    console.log("DEBUG: Payload with-idx:", JSON.stringify(requestBody, null, 2));
+                    await BlockService.createBlocksWithIdx(theNewId as string, requestBody);
                 } catch (blockErr: any) {
                     console.error("Block creation error:", blockErr);
                     if (blockErr?.message?.includes('Vector embedding')) {
@@ -1427,8 +1439,11 @@ function NewMaterialPageInner() {
                                 <button 
                                     onClick={() => {
                                         setHasChanges(false);
-                                        // Use go(-2) to skip both the dummy history entry and the current page
-                                        window.history.go(-2);
+                                        if (taskId) {
+                                            router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+                                        } else {
+                                            router.push('/dashboard/pdcm/develop');
+                                        }
                                     }}
                                     className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl font-bold text-xs hover:bg-red-100 transition-all active:scale-[0.98]"
                                 >
@@ -1438,11 +1453,12 @@ function NewMaterialPageInner() {
                                 <button 
                                     onClick={async () => {
                                         await handleSaveDraft();
-                                        // The handleSaveDraft function navigates to the edit page on success.
-                                        // However, if we want to "Exit", we should probably go back instead.
-                                        // Let's modify handleSaveDraft to take a 'shouldExit' flag or just do it here.
                                         setHasChanges(false);
-                                        window.history.go(-2);
+                                        if (taskId) {
+                                            router.push(`/dashboard/pdcm/tasks/${taskId}/materials`);
+                                        } else {
+                                            router.push('/dashboard/pdcm/develop');
+                                        }
                                     }}
                                     disabled={isSaving}
                                     className="px-7 py-2.5 bg-primary-600 text-white rounded-xl font-bold text-xs hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-900/10 active:scale-[0.98]"

@@ -27,7 +27,7 @@ export default async function SubjectsPage({
     try {
         const queryParams = new URLSearchParams({
             page: page.toString(),
-            size: '6',
+            size: '10',
             sortBy: sortBy,
             direction: direction
         });
@@ -40,7 +40,7 @@ export default async function SubjectsPage({
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
-            cache: 'no-store' // ensure fresh data on every navigation
+            cache: 'no-store'
         });
 
         if (!backendResponse.ok) {

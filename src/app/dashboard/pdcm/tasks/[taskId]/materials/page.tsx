@@ -49,7 +49,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
         enabled: !!taskId,
     });
 
-    const realTask = routeTaskData?.data;
+    const realTask = routeTaskData?.data as any;
     const syllabusId = realTask?.syllabus?.syllabusId;
     const displayId = realTask?.taskId || taskId;
 
