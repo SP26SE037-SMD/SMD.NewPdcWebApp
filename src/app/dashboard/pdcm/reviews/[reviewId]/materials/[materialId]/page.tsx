@@ -81,7 +81,7 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
         staleTime: 5 * 60 * 1000,
     });
 
-    const taskId = reviewTaskRes?.data?.task?.taskId;
+    const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
