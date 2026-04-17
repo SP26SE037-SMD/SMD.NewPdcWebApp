@@ -2,24 +2,7 @@
 
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import {
-  Plus,
-  Search,
-  MoreHorizontal,
-  User,
-  ChevronDown,
-  SearchIcon,
-  Loader2,
-  X,
-  History,
-  LayoutGrid,
-  Users,
-  Settings,
-  Eye,
-  Target,
-  Trash2,
-} from "lucide-react";
-import { useState } from "react";
+import { useState, Fragment, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,11 +10,41 @@ import {
   Major,
   CreateMajorPayload,
 } from "@/services/major.service";
+import { PoService, CreatePOPload, PO } from "@/services/po.service";
 import { CurriculumService } from "@/services/curriculum.service";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { ToastProvider } from "@/components/ui/Toast";
-import { useMemo, useEffect } from "react";
+import {
+  X,
+  Plus,
+  Search,
+  MoreHorizontal,
+  User,
+  ChevronDown,
+  SearchIcon,
+  Loader2,
+  History,
+  LayoutGrid,
+  Users,
+  Settings,
+  Eye,
+  Target,
+  Trash2,
+  Check,
+  ChevronRight,
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  Trash,
+  Edit2,
+  Undo2,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  ShieldCheck,
+  Send,
+} from "lucide-react";
 
 export default function ManageMajorsContent() {
   const [search, setSearch] = useState("");
@@ -41,13 +54,25 @@ export default function ManageMajorsContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const router = useRouter();
 
-  // Create Modal State
+  // Wizard Navigation
+  const [wizardStep, setWizardStep] = useState(1);
+  const [currentMajorId, setCurrentMajorId] = useState<string | null>(null);
+
+  // Step 1: Major Identity State
   const [newMajor, setNewMajor] = useState<CreateMajorPayload>({
     majorCode: "",
     majorName: "",
     description: "",
   });
   const [createError, setCreateError] = useState("");
+
+  // Step 2: Program Outcomes State
+  const [stagedPOs, setStagedPOs] = useState<CreatePOPload[]>([]);
+  const [currentPO, setCurrentPO] = useState<CreatePOPload>({
+    poCode: "",
+    description: "",
+  });
+  const [editingPOIndex, setEditingPOIndex] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -85,18 +110,106 @@ export default function ManageMajorsContent() {
   // Create Major Mutation
   const createMutation = useMutation({
     mutationFn: MajorService.createMajor,
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["majors"] });
-      setIsCreateModalOpen(false);
-      setNewMajor({ majorCode: "", majorName: "", description: "" });
-      setCreateError("");
-      showToast("Major established successfully.", "success");
+      setCurrentMajorId(response.data.majorId);
+      setWizardStep(2);
+      showToast("Major identity established.", "success");
     },
     onError: (error: any) => {
       setCreateError(error.message || "Failed to create major");
-      showToast(error.message || "Failed to establish major.", "error");
+      showToast(error.message || "Failed to create major.", "error");
     },
   });
+
+  // Update Major Mutation
+  const updateMajorMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CreateMajorPayload;
+    }) => MajorService.updateMajor(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["majors"] });
+      setWizardStep(2);
+      showToast("Major identity updated.", "success");
+    },
+    onError: (error: any) => {
+      setCreateError(error.message || "Failed to update major");
+      showToast(error.message || "Failed to update major.", "error");
+    },
+  });
+
+  // Bulk PO Mutation
+  const bulkPOMutation = useMutation({
+    mutationFn: (pos: CreatePOPload[]) =>
+      PoService.createMultiplePOs(currentMajorId || "", pos),
+    onSuccess: () => {
+      setWizardStep(3);
+      queryClient.invalidateQueries({ queryKey: ["majors"] });
+      showToast("All outcomes recorded successfully.", "success");
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to save outcomes.", "error");
+    },
+  });
+
+  // Fetch Existing Major for "Back" navigation or update
+  const { data: existingMajorData } = useQuery({
+    queryKey: ["wizard-major", currentMajorId],
+    queryFn: () => MajorService.getMajorById(currentMajorId || ""),
+    enabled: !!currentMajorId && isCreateModalOpen && wizardStep === 1,
+  });
+
+  // Auto-fill form when returning to Step 1
+  useEffect(() => {
+    if (existingMajorData?.data && wizardStep === 1) {
+      setNewMajor({
+        majorCode: existingMajorData.data.majorCode,
+        majorName: existingMajorData.data.majorName,
+        description: existingMajorData.data.description,
+      });
+    }
+  }, [existingMajorData, wizardStep]);
+
+  // Handle Step 1 Submit
+  const handleMajorIdentitySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentMajorId) {
+      updateMajorMutation.mutate({ id: currentMajorId, payload: newMajor });
+    } else {
+      createMutation.mutate(newMajor);
+    }
+  };
+
+  // PO Management Logic
+  const handleAddPO = () => {
+    if (currentPO.poCode && currentPO.description) {
+      if (editingPOIndex !== null) {
+        const updated = [...stagedPOs];
+        updated[editingPOIndex] = { ...currentPO };
+        setStagedPOs(updated);
+        setEditingPOIndex(null);
+        showToast("Outcome updated in queue", "info");
+      } else {
+        setStagedPOs((prev) => [...prev, { ...currentPO }]);
+        showToast("Outcome staged for review", "info");
+      }
+      setCurrentPO({ poCode: "", description: "" });
+    }
+  };
+
+  const handleEditPO = (index: number) => {
+    setCurrentPO(stagedPOs[index]);
+    setEditingPOIndex(index);
+  };
+
+  const handleDeletePO = (index: number) => {
+    setStagedPOs((prev) => prev.filter((_, i) => i !== index));
+    showToast("Outcome removed from queue", "warning");
+  };
 
   // Update Status Mutation
   const updateStatusMutation = useMutation({
@@ -136,15 +249,26 @@ export default function ManageMajorsContent() {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createMutation.mutate(newMajor);
+  const handleFinalSubmit = () => {
+    if (stagedPOs.length === 0) {
+      showToast("Please add at least one program outcome.", "error");
+      return;
+    }
+    bulkPOMutation.mutate(stagedPOs);
   };
 
   const handleOpenDetail = (code: string) => {
     router.push(
       `/dashboard/vice-principal/manage-majors/${encodeURIComponent(code)}`,
     );
+  };
+
+  const handleInitialCreateAction = () => {
+    setWizardStep(1);
+    setCurrentMajorId(null);
+    setNewMajor({ majorCode: "", majorName: "", description: "" });
+    setStagedPOs([]);
+    setIsCreateModalOpen(true);
   };
 
   // Filter mapping
@@ -191,250 +315,422 @@ export default function ManageMajorsContent() {
               <span className="text-[#4caf50] font-medium">Create Major</span>
             </nav>
             <h1 className="text-4xl font-extrabold tracking-tight text-[#2d3335] mb-2 font-['Plus_Jakarta_Sans']">
-              Define Academic Major
+              {wizardStep === 1
+                ? "Define Academic Major"
+                : wizardStep === 2
+                  ? "Program Outcomes"
+                  : "Major Established"}
             </h1>
           </div>
 
-          {/* 1. Horizontal Progress Stepper */}
+          {/* Stepper Component */}
           <div className="mb-10 flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#4caf50] text-white flex items-center justify-center font-bold text-sm">
-                1
-              </div>
-              <span className="text-sm font-bold text-[#2d3335]">
-                Major Identity
-              </span>
-            </div>
-            <div className="h-[2px] grow bg-[#e5e7eb] mx-4"></div>
-            <div className="flex items-center gap-3 opacity-40">
-              <div className="w-8 h-8 rounded-full bg-[#f1f4f5] text-[#5a6062] flex items-center justify-center font-bold text-sm border-2 border-[#adb3b5]">
-                2
-              </div>
-              <span className="text-sm font-medium text-[#5a6062]">
-                Program Outcomes
-              </span>
-            </div>
-            <div className="h-[2px] grow bg-[#e5e7eb] mx-4"></div>
-            <div className="flex items-center gap-3 opacity-40">
-              <div className="w-8 h-8 rounded-full bg-[#f1f4f5] text-[#5a6062] flex items-center justify-center font-bold text-sm border-2 border-[#adb3b5]">
-                3
-              </div>
-              <span className="text-sm font-medium text-[#5a6062]">
-                Faculty Assignment
-              </span>
-            </div>
-            <div className="h-[2px] grow bg-[#e5e7eb] mx-4"></div>
-            <div className="flex items-center gap-3 opacity-40">
-              <div className="w-8 h-8 rounded-full bg-[#f1f4f5] text-[#5a6062] flex items-center justify-center font-bold text-sm border-2 border-[#adb3b5]">
-                4
-              </div>
-              <span className="text-sm font-medium text-[#5a6062]">
-                Review & Publish
-              </span>
-            </div>
-          </div>
-
-          {/* 2. Horizontal Tabs */}
-          <div className="mb-8 border-b border-[#adb3b5]/30 flex gap-8">
-            <button className="pb-4 border-b-2 border-[#4caf50] text-[#4caf50] font-bold text-sm">
-              Basic Info
-            </button>
-            <button className="pb-4 border-b-2 border-transparent text-[#5a6062] hover:text-[#2d3335] transition-colors font-medium text-sm">
-              Program Outcomes
-            </button>
-            <button className="pb-4 border-b-2 border-transparent text-[#5a6062] hover:text-[#2d3335] transition-colors font-medium text-sm">
-              Faculty
-            </button>
-            <button className="pb-4 border-b-2 border-transparent text-[#5a6062] hover:text-[#2d3335] transition-colors font-medium text-sm">
-              Meta
-            </button>
-          </div>
-
-          <form
-            onSubmit={handleCreateSubmit}
-            className="grid grid-cols-12 gap-8 items-start"
-          >
-            {/* Main Content Area: Tab content for 'Basic Info' */}
-            <div className="col-span-12 lg:col-span-8 space-y-8">
-              <div className="bg-white rounded-xl p-8 border border-[#adb3b5]/10 shadow-sm">
-                <div className="flex items-center gap-3 mb-8">
-                  <span className="material-symbols-outlined text-[#4caf50] p-2 bg-[#e8f5e9] rounded-lg">
-                    edit_note
-                  </span>
-                  <div>
-                    <h2 className="text-xl font-bold text-[#2d3335] leading-tight font-['Plus_Jakarta_Sans']">
-                      Basic Program Information
-                    </h2>
-                    <p className="text-sm text-[#5a6062]">
-                      Provide the foundational identification details for the
-                      new major.
-                    </p>
-                  </div>
-                </div>
-
-                {createError && (
-                  <div className="mb-6 p-4 bg-[#fff7f6] text-[#a73b21] text-xs font-bold uppercase tracking-widest rounded-xl border border-[#fd795a]/20">
-                    Error: {createError}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div className="col-span-1">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
-                      Major Code
-                    </label>
-                    <input
-                      required
-                      value={newMajor.majorCode}
-                      onChange={(e) =>
-                        setNewMajor({ ...newMajor, majorCode: e.target.value })
-                      }
-                      className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all outline-none"
-                      placeholder="e.g. CS-2024"
-                      type="text"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
-                      Major Name
-                    </label>
-                    <input
-                      required
-                      value={newMajor.majorName}
-                      onChange={(e) =>
-                        setNewMajor({ ...newMajor, majorName: e.target.value })
-                      }
-                      className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all outline-none"
-                      placeholder="e.g. Computer Science"
-                      type="text"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
-                    Program Description
-                  </label>
-                  <textarea
-                    required
-                    value={newMajor.description}
-                    onChange={(e) =>
-                      setNewMajor({ ...newMajor, description: e.target.value })
-                    }
-                    className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all resize-none outline-none"
-                    placeholder="Describe the program's vision, philosophy, and primary educational focus..."
-                    rows={8}
-                  ></textarea>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-6 py-3 text-[#5a6062] font-semibold hover:text-[#2d3335] transition-colors flex items-center gap-2"
+            {[
+              { id: 1, label: "Major Identity" },
+              { id: 2, label: "Program Outcomes" },
+              { id: 3, label: "Finalize" },
+            ].map((step, idx, arr) => (
+              <Fragment key={step.id}>
+                <div
+                  className={`flex items-center gap-3 ${wizardStep < step.id ? "opacity-40" : ""}`}
                 >
-                  <span className="material-symbols-outlined">close</span>{" "}
-                  Cancel
-                </button>
-                <div className="flex gap-4">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                      wizardStep >= step.id
+                        ? "bg-[#4caf50] text-white"
+                        : "bg-[#f1f4f5] text-[#5a6062] border-2 border-[#adb3b5]"
+                    }`}
+                  >
+                    {wizardStep > step.id ? <Check size={16} /> : step.id}
+                  </div>
+                  <span
+                    className={`text-sm ${wizardStep >= step.id ? "font-bold text-[#2d3335]" : "font-medium text-[#5a6062]"}`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {idx < arr.length - 1 && (
+                  <div
+                    className={`h-[2px] grow mx-4 ${wizardStep > step.id ? "bg-[#4caf50]" : "bg-[#e5e7eb]"}`}
+                  ></div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+
+          {wizardStep === 1 && (
+            <form
+              onSubmit={handleMajorIdentitySubmit}
+              className="grid grid-cols-12 gap-8 items-start"
+            >
+              <div className="col-span-12 lg:col-span-8 space-y-8">
+                <div className="bg-white rounded-xl p-8 border border-[#adb3b5]/10 shadow-sm">
+                  <div className="flex items-center gap-3 mb-8">
+                    <span className="material-symbols-outlined text-[#4caf50] p-2 bg-[#e8f5e9] rounded-lg">
+                      edit_note
+                    </span>
+                    <div>
+                      <h2 className="text-xl font-bold text-[#2d3335] leading-tight font-['Plus_Jakarta_Sans']">
+                        Basic Program Information
+                      </h2>
+                      <p className="text-sm text-[#5a6062]">
+                        Provide the foundational identification details for the
+                        new major.
+                      </p>
+                    </div>
+                  </div>
+
+                  {createError && (
+                    <div className="mb-6 p-4 bg-[#fff7f6] text-[#a73b21] text-xs font-bold uppercase tracking-widest rounded-xl border border-[#fd795a]/20">
+                      Error: {createError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div className="col-span-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
+                        Major Code
+                      </label>
+                      <input
+                        required
+                        value={newMajor.majorCode}
+                        onChange={(e) =>
+                          setNewMajor({
+                            ...newMajor,
+                            majorCode: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all outline-none"
+                        placeholder="e.g. CS-2024"
+                        type="text"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
+                        Major Name
+                      </label>
+                      <input
+                        required
+                        value={newMajor.majorName}
+                        onChange={(e) =>
+                          setNewMajor({
+                            ...newMajor,
+                            majorName: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all outline-none"
+                        placeholder="e.g. Computer Science"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#5a6062] mb-2">
+                      Program Description
+                    </label>
+                    <textarea
+                      required
+                      value={newMajor.description}
+                      onChange={(e) =>
+                        setNewMajor({
+                          ...newMajor,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-3 text-[#2d3335] placeholder:text-[#adb3b5] transition-all resize-none outline-none"
+                      placeholder="Describe the program's vision, philosophy, and primary educational focus..."
+                      rows={8}
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    className="px-6 py-3 border border-[#adb3b5] rounded-xl font-semibold text-[#5a6062] hover:bg-[#f1f4f5] transition-colors"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-6 py-3 text-[#5a6062] font-semibold hover:text-[#2d3335] transition-colors flex items-center gap-2"
                   >
-                    Save as Draft
+                    <ArrowLeft size={18} /> Back to Dashboard
+                  </button>
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(false)}
+                      className="px-6 py-3 border border-[#adb3b5] rounded-xl font-semibold text-[#5a6062] hover:bg-[#f1f4f5] transition-colors flex items-center gap-2"
+                    >
+                      <Save size={18} />
+                      {currentMajorId ? "Update as Draft" : "Save as Draft"}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={
+                        createMutation.isPending || updateMajorMutation.isPending
+                      }
+                      className="px-8 py-3 bg-[#4caf50] text-white rounded-xl font-bold shadow-lg shadow-[#4caf50]/20 hover:bg-[#388e3c] transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {createMutation.isPending ||
+                      updateMajorMutation.isPending ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <>
+                          Next: Outcomes <ArrowRight size={18} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column Contextual Card */}
+              <div className="col-span-12 lg:col-span-4 space-y-6 sticky top-24">
+                <div className="bg-[#1b5e20] text-white rounded-xl p-8 relative overflow-hidden shadow-lg group">
+                  <div className="relative z-10">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a5d6a7] mb-4">
+                      Wizard Progress
+                    </h4>
+                    <div className="text-3xl font-black mb-1">33%</div>
+                    <p className="text-xs text-[#c8e6c9] font-medium">
+                      Establishing core identity
+                    </p>
+                    <div className="mt-6 w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-[#4caf50] h-full"
+                        style={{ width: "33%" }}
+                      ></div>
+                    </div>
+                  </div>
+                  <Target
+                    size={160}
+                    className="absolute -bottom-10 -right-10 text-white/5 group-hover:rotate-12 transition-transform duration-700"
+                  />
+                </div>
+                <div className="bg-white rounded-xl p-6 border border-[#adb3b5]/10 shadow-sm">
+                  <h3 className="text-sm font-bold text-[#2d3335] mb-4 flex items-center gap-2">
+                    <Settings size={16} className="text-[#4caf50]" />
+                    Configuration
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-[#f1f4f5] rounded-xl space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-[#5a6062] uppercase tracking-widest">
+                        <span>Visibility</span>
+                        <span className="text-[#4caf50]">Active</span>
+                      </div>
+                      <p className="text-[10px] text-[#5a6062] leading-relaxed">
+                        Setting this major to public will allow curriculum
+                        assignment and student enrollment.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {wizardStep === 2 && (
+            <div className="grid grid-cols-12 gap-8 items-start">
+              {/* Left Column: Form */}
+              <div className="col-span-12 lg:col-span-5 space-y-6">
+                <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#adb3b5]/10">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-xl bg-[#e8f5e9] text-[#4caf50] flex items-center justify-center">
+                      <Plus size={24} />
+                    </div>
+                    <h3 className="text-xl font-black tracking-tight text-[#2d3335]">
+                      {editingPOIndex !== null ? "Edit Outcome" : "Add Outcome"}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6062] ml-1">
+                        Outcome Title (PO Code)
+                      </label>
+                      <input
+                        value={currentPO.poCode}
+                        onChange={(e) =>
+                          setCurrentPO({ ...currentPO, poCode: e.target.value })
+                        }
+                        className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-xl px-5 py-4 text-sm font-bold outline-none transition-all"
+                        placeholder="e.g. PO1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6062] ml-1">
+                        Description
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={currentPO.description}
+                        onChange={(e) =>
+                          setCurrentPO({
+                            ...currentPO,
+                            description: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f1f4f5] border-2 border-transparent focus:border-[#4caf50]/30 rounded-xl px-5 py-4 text-sm font-medium outline-none transition-all resize-none"
+                        placeholder="Define what students will demonstrate..."
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddPO}
+                      className="w-full py-4 bg-[#4caf50] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#388e3c] transition-all shadow-lg shadow-[#4caf50]/10 flex items-center justify-center gap-2"
+                    >
+                      {editingPOIndex !== null ? (
+                        <>
+                          Update Outcome <Check size={16} strokeWidth={3} />
+                        </>
+                      ) : (
+                        <>
+                          Save Outcome <Check size={16} strokeWidth={3} />
+                        </>
+                      )}
+                    </button>
+                    {editingPOIndex !== null && (
+                      <button
+                        onClick={() => {
+                          setEditingPOIndex(null);
+                          setCurrentPO({ poCode: "", description: "" });
+                        }}
+                        className="w-full py-2 text-[10px] font-black text-[#5a6062] uppercase tracking-widest hover:text-[#2d3335]"
+                      >
+                        Cancel Editing
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-[#1b5e20] rounded-2xl p-8 text-white relative overflow-hidden group">
+                  <div className="relative z-10">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a5d6a7]">
+                      Pro Tip
+                    </span>
+                    <p className="mt-2 text-sm font-medium leading-relaxed">
+                      Program outcomes should be measurable, achievable, and
+                      aligned with institutional goals.
+                    </p>
+                  </div>
+                  <Target
+                    size={120}
+                    className="absolute -bottom-4 -right-4 text-white/5 opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: List */}
+              <div className="col-span-12 lg:col-span-7 bg-[#f1f4f5]/50 rounded-2xl p-8 border border-[#adb3b5]/10 min-h-[600px] flex flex-col">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h3 className="text-xl font-black text-[#2d3335]">
+                      Staging Queue
+                    </h3>
+                    <p className="text-xs text-[#5a6062] font-medium">
+                      Review and manage outcomes before final submission.
+                    </p>
+                  </div>
+                  <span className="px-4 py-1.5 bg-white text-[#4caf50] text-[10px] font-black rounded-full border border-[#4caf50]/20">
+                    {stagedPOs.length} TOTAL
+                  </span>
+                </div>
+
+                <div className="space-y-4 grow">
+                  {stagedPOs.length > 0 ? (
+                    stagedPOs.map((po, idx) => (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={idx}
+                        className="bg-white p-5 rounded-2xl border border-transparent hover:border-[#4caf50]/20 transition-all shadow-sm group"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[10px] font-black text-[#4caf50] px-2 py-0.5 bg-[#e8f5e9] rounded">
+                                {po.poCode}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#2d3335] font-medium leading-relaxed">
+                              {po.description}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleEditPO(idx)}
+                              className="p-2 text-[#5a6062] hover:text-[#4caf50] hover:bg-[#e8f5e9] rounded-lg transition-all"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePO(idx)}
+                              className="p-2 text-[#5a6062] hover:text-[#a73b21] hover:bg-[#fff7f6] rounded-lg transition-all"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-40">
+                      <Target size={48} className="mb-4" />
+                      <p className="text-sm font-bold uppercase tracking-widest text-[#5a6062]">
+                        Queue is currently empty
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-12 pt-8 border-t border-[#adb3b5]/20 flex justify-between items-center">
+                  <button
+                    onClick={() => setWizardStep(1)}
+                    className="px-6 py-3 text-[#5a6062] font-bold text-sm flex items-center gap-2 hover:text-[#2d3335] transition-all"
+                  >
+                    <ArrowLeft size={18} /> Back to Identity
                   </button>
                   <button
-                    type="submit"
-                    disabled={createMutation.isPending}
-                    className="px-8 py-3 bg-[#4caf50] text-white rounded-xl font-bold shadow-lg shadow-[#4caf50]/20 hover:bg-[#388e3c] transition-all flex items-center gap-2 disabled:opacity-50"
+                    onClick={handleFinalSubmit}
+                    disabled={bulkPOMutation.isPending}
+                    className="px-10 py-4 bg-[#2d3335] text-white rounded-xl font-bold shadow-xl shadow-[#2d3335]/10 hover:bg-[#0c0f10] transition-all flex items-center gap-3 group disabled:opacity-50"
                   >
-                    {createMutation.isPending ? (
+                    {bulkPOMutation.isPending ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <>
-                        Next: Outcomes{" "}
-                        <span className="material-symbols-outlined">
-                          arrow_forward
-                        </span>
+                        Next: Submit
+                        <ArrowRight
+                          size={18}
+                          className="group-hover:translate-x-1 transition-transform"
+                        />
                       </>
                     )}
                   </button>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Right Column: Contextual Meta & Progress */}
-            <div className="col-span-12 lg:col-span-4 space-y-6 sticky top-24">
-              {/* Progress Card */}
-              <div className="bg-[#1b5e20] text-white rounded-xl p-6 overflow-hidden relative shadow-lg">
-                <div className="relative z-10">
-                  <div className="text-[#a5d6a7] text-[10px] font-bold uppercase tracking-widest mb-4">
-                    Setup Status
-                  </div>
-                  <div className="flex items-end justify-between mb-3">
-                    <div className="text-3xl font-bold">65%</div>
-                    <div className="text-xs text-[#c8e6c9]">
-                      2 sections remaining
-                    </div>
-                  </div>
-                  <div className="w-full bg-black/20 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#4caf50] h-full"
-                      style={{ width: "65%" }}
-                    ></div>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-white/10 text-9xl">
-                  analytics
-                </span>
+          {wizardStep === 3 && (
+            <div className="max-w-2xl mx-auto py-20 text-center">
+              <div className="w-24 h-24 bg-[#e8f5e9] text-[#4caf50] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <Check size={48} strokeWidth={4} />
               </div>
-
-              {/* Meta Quick View */}
-              <div className="bg-white rounded-xl p-6 border border-[#adb3b5]/10 shadow-sm">
-                <h3 className="text-sm font-bold text-[#2d3335] mb-4 uppercase tracking-wider">
-                  Quick Settings
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-[#f1f4f5] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-[#4caf50] text-sm">
-                        visibility
-                      </span>
-                      <span className="text-xs font-semibold">
-                        Public Visibility
-                      </span>
-                    </div>
-                    <div className="w-10 h-5 bg-[#4caf50] rounded-full relative cursor-pointer">
-                      <div className="absolute right-1 top-0.5 w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#f1f4f5] rounded-lg">
-                    <label className="block text-[10px] font-bold text-[#5a6062] uppercase mb-2">
-                      Faculty Association
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="px-2 py-0.5 bg-[#d5e8ce] text-[10px] font-medium rounded flex items-center gap-1">
-                        Engineering{" "}
-                        <span className="material-symbols-outlined text-[10px]">
-                          close
-                        </span>
-                      </span>
-                      <button
-                        type="button"
-                        className="text-[10px] font-bold text-[#4caf50]"
-                      >
-                        + Add
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[10px] text-[#5a6062] mt-4 leading-normal italic">
-                  Your progress is automatically saved to drafts as you navigate
-                  between tabs.
-                </p>
+              <h2 className="text-4xl font-black text-[#2d3335] mb-4 tracking-tight">
+                Mission Accomplished!
+              </h2>
+              <p className="text-[#5a6062] text-lg mb-12 font-medium">
+                The academic major has been successfully registered and outcomes
+                have been established.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-10 py-5 bg-[#4caf50] text-white rounded-2xl font-black shadow-xl shadow-[#4caf50]/20 hover:bg-[#388e3c] transition-all flex items-center gap-3"
+                >
+                  Return to Portal <ArrowRight size={20} />
+                </button>
               </div>
             </div>
-          </form>
+          )}
         </div>
       ) : (
         <div className="p-12 max-w-7xl mx-auto space-y-12">
@@ -450,7 +746,7 @@ export default function ManageMajorsContent() {
               </p>
             </div>
             <button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={handleInitialCreateAction}
               className="px-6 py-3 bg-[#2d6a4f] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2"
             >
               <Plus size={18} strokeWidth={3} />

@@ -5,5 +5,7 @@
   "/api/majors/route": "app/api/majors/route.js",
   "/api/pos/major/[id]/route": "app/api/pos/major/[id]/route.js",
   "/dashboard/vice-principal/manage-majors/[majorCode]/page": "app/dashboard/vice-principal/manage-majors/[majorCode]/page.js",
-  "/dashboard/vice-principal/manage-majors/page": "app/dashboard/vice-principal/manage-majors/page.js"
+  "/dashboard/vice-principal/manage-majors/page": "app/dashboard/vice-principal/manage-majors/page.js",
+  "/dashboard/vice-principal/page": "app/dashboard/vice-principal/page.js",
+  "/page": "app/page.js"
 }

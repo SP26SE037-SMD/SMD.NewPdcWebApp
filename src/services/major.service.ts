@@ -66,6 +66,19 @@ export const MajorService = {
         return response.json();
     },
 
+    async updateMajor(majorId: string, payload: CreateMajorPayload): Promise<ApiResponse<Major>> {
+        const response = await fetch(`/api/majors/${majorId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || error.message || 'Failed to update major');
+        }
+        return response.json();
+    },
+
     async updateMajorStatus(majorId: string, newStatus: string): Promise<ApiResponse<Major>> {
         const response = await fetch(`/api/majors/${majorId}/status?newStatus=${newStatus}`, {
             method: 'PATCH',
@@ -83,6 +96,15 @@ export const MajorService = {
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.error || error.message || 'Failed to fetch major details');
+        }
+        return response.json();
+    },
+
+    async getMajorById(id: string): Promise<ApiResponse<Major>> {
+        const response = await fetch(`/api/majors/${id}`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || error.message || 'Failed to fetch major by ID');
         }
         return response.json();
     },

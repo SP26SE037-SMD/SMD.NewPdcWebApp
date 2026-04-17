@@ -1,3 +1,2353 @@
-[00:00:01.698] Server  LOG     ✓ Ready in 1310ms
-[00:00:08.017] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:02:18.281] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: 89fdfc98-1919-4286-aa46-fa96b5819956
+[00:00:01.579] Server  LOG     ✓ Ready in 1173ms
+[00:00:04.119] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:06.764] Server  ERROR   ⨯ ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+[00:00:07.027] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.028] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.662] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:07.775] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.241] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:08.944] Server  ERROR   ⨯ ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+
+./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+[00:00:09.398] Browser ERROR   uncaughtError: Error: ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+
+
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.535] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:42:3
+Ecmascript file had an error
+  40 |   MoreHorizontal,
+  41 |   User,
+> 42 |   ChevronDown,
+     |   ^^^^^^^^^^^
+  43 |   SearchIcon,
+  44 |   Loader2,
+  45 |   History,
+
+the name `ChevronDown` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:49:3
+Ecmascript file had an error
+  47 |   Users,
+  48 |   Settings,
+> 49 |   Eye,
+     |   ^^^
+  50 |   Target,
+  51 |   Trash2,
+  52 |   Check,
+
+the name `Eye` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:45:3
+Ecmascript file had an error
+  43 |   SearchIcon,
+  44 |   Loader2,
+> 45 |   History,
+     |   ^^^^^^^
+  46 |   LayoutGrid,
+  47 |   Users,
+  48 |   Settings,
+
+the name `History` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:46:3
+Ecmascript file had an error
+  44 |   Loader2,
+  45 |   History,
+> 46 |   LayoutGrid,
+     |   ^^^^^^^^^^
+  47 |   Users,
+  48 |   Settings,
+  49 |   Eye,
+
+the name `LayoutGrid` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:44:3
+Ecmascript file had an error
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+> 44 |   Loader2,
+     |   ^^^^^^^
+  45 |   History,
+  46 |   LayoutGrid,
+  47 |   Users,
+
+the name `Loader2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:40:3
+Ecmascript file had an error
+  38 |   Plus,
+  39 |   Search,
+> 40 |   MoreHorizontal,
+     |   ^^^^^^^^^^^^^^
+  41 |   User,
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+
+the name `MoreHorizontal` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:38:3
+Ecmascript file had an error
+  36 | import {
+  37 |   X,
+> 38 |   Plus,
+     |   ^^^^
+  39 |   Search,
+  40 |   MoreHorizontal,
+  41 |   User,
+
+the name `Plus` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:43:3
+Ecmascript file had an error
+  41 |   User,
+  42 |   ChevronDown,
+> 43 |   SearchIcon,
+     |   ^^^^^^^^^^
+  44 |   Loader2,
+  45 |   History,
+  46 |   LayoutGrid,
+
+the name `SearchIcon` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:39:3
+Ecmascript file had an error
+  37 |   X,
+  38 |   Plus,
+> 39 |   Search,
+     |   ^^^^^^
+  40 |   MoreHorizontal,
+  41 |   User,
+  42 |   ChevronDown,
+
+the name `Search` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:48:3
+Ecmascript file had an error
+  46 |   LayoutGrid,
+  47 |   Users,
+> 48 |   Settings,
+     |   ^^^^^^^^
+  49 |   Eye,
+  50 |   Target,
+  51 |   Trash2,
+
+the name `Settings` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:50:3
+Ecmascript file had an error
+  48 |   Settings,
+  49 |   Eye,
+> 50 |   Target,
+     |   ^^^^^^
+  51 |   Trash2,
+  52 |   Check,
+  53 |   ChevronRight,
+
+the name `Target` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:51:3
+Ecmascript file had an error
+  49 |   Eye,
+  50 |   Target,
+> 51 |   Trash2,
+     |   ^^^^^^
+  52 |   Check,
+  53 |   ChevronRight,
+  54 |   ArrowLeft,
+
+the name `Trash2` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:41:3
+Ecmascript file had an error
+  39 |   Search,
+  40 |   MoreHorizontal,
+> 41 |   User,
+     |   ^^^^
+  42 |   ChevronDown,
+  43 |   SearchIcon,
+  44 |   Loader2,
+
+the name `User` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:47:3
+Ecmascript file had an error
+  45 |   History,
+  46 |   LayoutGrid,
+> 47 |   Users,
+     |   ^^^^^
+  48 |   Settings,
+  49 |   Eye,
+  50 |   Target,
+
+the name `Users` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:37:3
+Ecmascript file had an error
+  35 | import { useMemo, useEffect } from "react";
+  36 | import {
+> 37 |   X,
+     |   ^
+  38 |   Plus,
+  39 |   Search,
+  40 |   MoreHorizontal,
+
+the name `X` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:19
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |                   ^^^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useEffect` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:00:09.644] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:35:10
+Ecmascript file had an error
+  33 | import { useToast } from "@/components/ui/Toast";
+  34 | import { ToastProvider } from "@/components/ui/Toast";
+> 35 | import { useMemo, useEffect } from "react";
+     |          ^^^^^^^
+  36 | import {
+  37 |   X,
+  38 |   Plus,
+
+the name `useMemo` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:01:34.864] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:1:39
+Ecmascript file had an error
+> 1 | import { useState, Fragment, useMemo, useEffect } from "react";
+    |                                       ^^^^^^^^^
+  2 | import { motion, AnimatePresence } from "framer-motion";
+  3 | import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+  4 | import {
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:01:34.864] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:11:10
+Ecmascript file had an error
+   9 | import { PoService, CreatePOPload, PO } from "@/services/po.service";
+  10 | import { CurriculumService } from "@/services/curriculum.service";
+> 11 | import { useRouter } from "next/navigation";
+     |          ^^^^^^^^^
+  12 | import { useToast } from "@/components/ui/Toast";
+  13 | import { ToastProvider } from "@/components/ui/Toast";
+  14 | import {
+
+You're importing a component that needs `useRouter`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:01:34.864] Browser ERROR   ./src/components/vp/manage-majors-content.tsx:1:10
+Ecmascript file had an error
+> 1 | import { useState, Fragment, useMemo, useEffect } from "react";
+    |          ^^^^^^^^
+  2 | import { motion, AnimatePresence } from "framer-motion";
+  3 | import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+  4 | import {
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+Import trace:
+  Server Component:
+    ./src/components/vp/manage-majors-content.tsx
+    ./src/app/dashboard/vice-principal/page.tsx
+[00:01:42.741] Server  LOG     ✓ Compiled in 85ms
+[00:01:43.757] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:14.153] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: 47fe731a-c27c-43c4-b31b-6c968f5d1aa2
+[00:03:39.781] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: 21d2767c-8183-4b45-9614-78f61355c184
+[00:04:39.307] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:32.326] Server  LOG     [API /api/pos/major/4bfbc89e-9a90-417d-95d2-41130b83cd3e POST] Backend Status: 200
+[00:10:48.484] Server  LOG     ✓ Compiled in 152ms
