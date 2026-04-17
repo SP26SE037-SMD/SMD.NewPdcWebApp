@@ -1,35 +1,6 @@
-[00:00:02.351] Server  LOG     ✓ Ready in 1770ms
-[00:00:07.946] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:14.202] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
-[00:00:14.623] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:02:30.695] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
-[00:02:30.996] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:03:47.553] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:04:38.586] Browser ERROR   Failed to fetch syllabus name: {}
-[00:04:38.943] Browser ERROR   Failed to fetch syllabus name: {}
-[00:10:29.972] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:11:28.920] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:42:01.255] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
-[00:42:01.565] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:45:38.756] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:45:44.313] Server  LOG     ✓ Compiled in 550ms
-[00:46:13.741] Browser LOG     ASSESSMENT SERVICE GET URL: /api/assessments/syllabus/a784c452-e9b0-47f9-a0c2-fe87f3d23c66
-[00:46:14.786] Browser WARN    API call for detailed sessions failed, providing mock container {"data":{"message":"The syllabus does not exist on the system.","status":18001},"status":404}
-[00:46:15.197] Browser WARN    API Call for materials failed, using mock container {"data":{"message":"The syllabus does not exist on the system.","status":18001},"status":404}
-[00:46:32.141] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:46:44.428] Browser LOG     ASSESSMENT SERVICE GET URL: /api/assessments/syllabus/a784c452-e9b0-47f9-a0c2-fe87f3d23c66
-[00:46:45.121] Browser WARN    API call for detailed sessions failed, providing mock container {"data":{"message":"The syllabus does not exist on the system.","status":18001},"status":404}
-[00:46:45.262] Browser WARN    API Call for materials failed, using mock container {"data":{"message":"The syllabus does not exist on the system.","status":18001},"status":404}
-[00:47:14.189] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:48:11.249] Server  LOG     ✓ Compiled in 156ms
-[00:50:03.541] Server  LOG     ✓ Compiled in 88ms
-[00:52:14.468] Server  LOG     ✓ Compiled in 277ms
-[00:53:46.891] Server  LOG     [API /api/pos/major/77ca7e1d-50bd-446f-9898-8403cf7de310 POST] Backend Status: 200
-[00:54:04.627] Server  LOG     [API /majors/[id] DELETE] Proxying delete for ID: 77ca7e1d-50bd-446f-9898-8403cf7de310
-[00:54:51.537] Server  LOG     [API /api/pos/major/55609249-5bf4-4f15-a649-cdf608b23737 POST] Backend Status: 200
-[01:01:34.174] Server  LOG     ✓ Compiled in 492ms
-[01:12:46.804] Server  LOG     ✓ Compiled in 232ms
-[01:13:23.943] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[01:29:06.005] Server  LOG     ✓ Compiled in 117ms
-[01:37:49.907] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[01:37:55.656] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:01.741] Server  LOG     ✓ Ready in 1285ms
+[00:00:03.472] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:04.251] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:05.622] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:11.209] Server  LOG     Backend logout success for token: "eyJhbGciOi..."
+[00:00:11.556] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold

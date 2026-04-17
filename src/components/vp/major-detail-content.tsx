@@ -762,7 +762,7 @@ export default function MajorDetailContent() {
                     <tbody className="divide-y divide-[#f1f4f5]">
                       {curriculums.length > 0 ? (
                         curriculums.map((curr) => (
-                          <tr key={curr.curriculumId} className="hover:bg-zinc-50/50 transition-colors">
+                          <tr key={curr.curriculumId} className="hover:bg-[#f8f9fa] transition-colors">
                             <td className="px-8 py-5 text-sm font-bold text-[#1d5c42]">
                               {curr.curriculumCode}
                             </td>
@@ -773,15 +773,34 @@ export default function MajorDetailContent() {
                               {curr.startYear} - {curr.endYear}
                             </td>
                             <td className="px-8 py-5">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${curr.status === 'PUBLISHED' ? 'bg-[#b1f0ce] text-[#1d5c42]' : 'bg-[#f1f4f5] text-[#5a6062]'
-                                }`}>
-                                {curr.status}
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                                curr.status === 'PUBLISHED'
+                                  ? 'bg-[#b1f0ce] text-[#1d5c42]'
+                                  : curr.status === 'STRUCTURE_REVIEW'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : curr.status === 'DRAFT'
+                                  ? 'bg-[#f1f4f5] text-[#5a6062]'
+                                  : curr.status === 'ARCHIVED'
+                                  ? 'bg-rose-50 text-rose-600'
+                                  : 'bg-blue-50 text-blue-600'
+                              }`}>
+                                {curr.status?.replace(/_/g, ' ')}
                               </span>
                             </td>
                             <td className="px-8 py-5 text-right">
-                              <button className="text-[#2d6a4f] hover:bg-[#b1f0ce]/20 p-2 rounded-lg transition-colors">
-                                <ChevronRight size={18} />
-                              </button>
+                              {curr.status === 'STRUCTURE_REVIEW' ? (
+                                <button
+                                  onClick={() => router.push(`/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`)}
+                                  className="inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-amber-600 transition-all shadow-sm active:scale-95"
+                                >
+                                  Review
+                                  <ChevronRight size={14} strokeWidth={2.5} />
+                                </button>
+                              ) : (
+                                <button className="text-[#adb3b5] p-2 rounded-lg cursor-default" disabled>
+                                  <ChevronRight size={18} />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))
