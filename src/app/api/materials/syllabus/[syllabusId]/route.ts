@@ -30,7 +30,7 @@ export async function GET(
         const data = await response.json().catch(() => null);
         return NextResponse.json(data, { status: response.status });
     } catch (error) {
-        console.error(`[API /materials/syllabus/${error}] GET Error:`, error);
+        console.error(`[API /materials/syllabus] GET Error:`, error);
         return NextResponse.json(
             { status: 500, message: "Internal server error" },
             { status: 500 }

@@ -53,7 +53,8 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
         staleTime: 5 * 60 * 1000,
     });
 
-    const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
+    const realTask = routeTaskData?.data;
+    const syllabusId = realTask?.syllabus?.syllabusId || realTask?.syllabusId;
 
     // Fetch Syllabus Data
     const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({
@@ -307,7 +308,7 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
                     </span>
                 </div>
 
-                <div className="max-h-[500px] overflow-y-auto custom-scrollbar" style={{ borderTop: 'none' }}>
+                <div className="max-h-125 overflow-y-auto custom-scrollbar" style={{ borderTop: 'none' }}>
                     {displayInfo.clos.map((clo, idx) => {
                         const codeMatch = clo.match(/^\[([^\]]+)\]/);
                         const code = codeMatch ? codeMatch[1] : `CLO${idx + 1}`;
