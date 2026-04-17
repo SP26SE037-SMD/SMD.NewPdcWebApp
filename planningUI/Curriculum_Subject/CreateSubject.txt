@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#b1f0ce",
+                        "error-dim": "#791903",
+                        "surface-container-low": "#f1f4f5",
+                        "on-tertiary-container": "#60622d",
+                        "error-container": "#fd795a",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#2d3335",
+                        "surface-container": "#ebeef0",
+                        "secondary-container": "#d5e8ce",
+                        "tertiary": "#60622d",
+                        "on-primary-container": "#1d5c42",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-container-high": "#e5e9eb",
+                        "primary": "#2d6a4f",
+                        "background": "#f8f9fa",
+                        "tertiary-fixed-dim": "#edefac",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#fff7f6",
+                        "surface-dim": "#d5dbdd",
+                        "secondary-fixed": "#d5e8ce",
+                        "on-error-container": "#6e1400",
+                        "on-tertiary-fixed-variant": "#6a6d37",
+                        "on-secondary-fixed-variant": "#50604c",
+                        "primary-fixed": "#b1f0ce",
+                        "tertiary-dim": "#545622",
+                        "on-tertiary-fixed": "#4d501d",
+                        "on-tertiary": "#fbfdb9",
+                        "inverse-primary": "#beffdc",
+                        "surface": "#f8f9fa",
+                        "secondary-fixed-dim": "#c7dac1",
+                        "surface-variant": "#dee3e6",
+                        "tertiary-container": "#fcfeb9",
+                        "on-primary-fixed": "#014931",
+                        "primary-dim": "#1f5e44",
+                        "on-secondary": "#ecfee4",
+                        "on-secondary-fixed": "#344331",
+                        "secondary-dim": "#475744",
+                        "inverse-surface": "#0c0f10",
+                        "on-primary-fixed-variant": "#29664c",
+                        "primary-fixed-dim": "#a3e2c0",
+                        "on-secondary-container": "#465643",
+                        "on-primary": "#e6ffee",
+                        "outline": "#767c7e",
+                        "inverse-on-surface": "#9b9d9e",
+                        "surface-tint": "#2d6a4f",
+                        "on-surface-variant": "#5a6062",
+                        "tertiary-fixed": "#fcfeb9",
+                        "outline-variant": "#adb3b5",
+                        "error": "#a73b21",
+                        "secondary": "#53634f",
+                        "on-background": "#2d3335"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-container">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen flex flex-col py-6 bg-zinc-50 dark:bg-zinc-950 docked h-full left-0 w-64 z-50 font-['Plus_Jakarta_Sans'] text-sm font-medium">
+<div class="px-8 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+</div>
+<div>
+<h1 class="text-lg font-extrabold text-emerald-900 dark:text-emerald-100 leading-tight">Faculty Portal</h1>
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest">Department of Science</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 px-8 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:translate-x-1 transition-transform duration-300 group" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span>Curriculum</span>
+</a>
+<a class="flex items-center gap-4 px-8 py-3 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-r-full font-bold transition-transform duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Subjects</span>
+</a>
+<a class="flex items-center gap-4 px-8 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:translate-x-1 transition-transform duration-300 group" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span>Faculty</span>
+</a>
+<a class="flex items-center gap-4 px-8 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:translate-x-1 transition-transform duration-300 group" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-4 px-8 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:translate-x-1 transition-transform duration-300 group" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Archives</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10">
+<p class="text-xs font-semibold mb-2">Academic Atelier</p>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">System v2.4.1 stable build</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-8 py-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md docked full-width top-0 z-40 sticky font-['Plus_Jakarta_Sans'] tracking-tight">
+<div class="flex items-center gap-8">
+<div class="text-xl font-bold tracking-tighter text-emerald-800 dark:text-emerald-300">Academic Atelier</div>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors" href="#">Overview</a>
+<a class="text-emerald-700 dark:text-emerald-400 font-semibold border-b-2 border-emerald-600" href="#">Curriculum Builder</a>
+<a class="text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors" href="#">Resources</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant scale-90" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 rounded-full bg-zinc-50 border-none text-sm w-64 focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Global search..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-600">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-600">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-px bg-zinc-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold leading-none">Dr. Julian Vance</p>
+<p class="text-[10px] text-on-surface-variant">Head of Faculty</p>
+</div>
+<img alt="Professor Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-100" data-alt="portrait of a middle-aged academic professional with glasses in a library setting, warm natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1ml6S6sF1s6suBxPoi5UBZmo5ix2dFcRHqNtI4hWnpE4--TkYpQuJlucdcLNMAj_HVYV3Tq2X3aFPPbzxGlTYrOcgHU3Kel9X8XUYPMVANKtLGTlCG2d4scc4_D9yhZykHUFXrQjP5KnXb6Blj9PQe8tfR50XiznoIx8cKQ0ETPv50SZ47AiP9pq4P8SFwYI-iPcs54YouEDK3pmp93Bhmf782w0uXj1t_KxCQIwmw7ihtrIyAfnJB2_KN1GI87Sw2sj3o8qLefox"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="p-12 max-w-6xl mx-auto">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-6 font-medium">
+<span>Portal</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span>Subjects</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-bold">Create New Subject</span>
+</nav>
+<div class="mb-12">
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface mb-3">Define New Academic Subject</h2>
+<p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">Fill in the essential academic parameters to register this subject in the central repository. All fields marked with an asterisk are required for syllabus generation.</p>
+</div>
+<!-- Form Grid -->
+<form class="space-y-8">
+<!-- Section: Basic Identification -->
+<div class="bg-surface-container-lowest rounded-2xl p-10 border border-outline-variant/10 shadow-[0px_4px_20px_rgba(45,51,53,0.04)]">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-4">
+<h3 class="text-xl font-bold mb-2">Subject Identity</h3>
+<p class="text-sm text-on-surface-variant">Establish the unique identifiers and departmental ownership for this unit.</p>
+</div>
+<div class="col-span-12 lg:col-span-8 grid grid-cols-2 gap-6">
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Subject Code *</label>
+<input class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium placeholder:text-outline-variant" placeholder="e.g., PRN231" type="text"/>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Degree Level *</label>
+<select class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium">
+<option>Undergraduate (Bachelors)</option>
+<option>Postgraduate (Masters)</option>
+<option>Doctorate (PhD)</option>
+<option>Professional Certification</option>
+</select>
+</div>
+<div class="col-span-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Subject Name *</label>
+<input class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium placeholder:text-outline-variant" placeholder="e.g., Advanced Quantum Mechanics II" type="text"/>
+</div>
+<div class="col-span-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Responsible Department *</label>
+<select class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium">
+<option>Department of Theoretical Physics</option>
+<option>School of Biological Sciences</option>
+<option>Faculty of Humanities &amp; Arts</option>
+<option>Global Business School</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Academic Weights -->
+<div class="bg-surface-container-lowest rounded-2xl p-10 border border-outline-variant/10 shadow-[0px_4px_20px_rgba(45,51,53,0.04)]">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-4">
+<h3 class="text-xl font-bold mb-2">Credit &amp; Timing</h3>
+<p class="text-sm text-on-surface-variant">Define the academic load and contact hours expected for student completion.</p>
+</div>
+<div class="col-span-12 lg:col-span-8 grid grid-cols-2 gap-6">
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Credits *</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium" type="number" value="4"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant bg-surface-container-highest px-2 py-1 rounded">ECTS</span>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Time Allocation (L-T-P) *</label>
+<input class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium text-center tracking-widest placeholder:text-outline-variant" placeholder="e.g., 3-0-6" type="text" value="3-0-6"/>
+<p class="mt-2 text-[10px] text-on-surface-variant italic">Lecture - Tutorial - Practical</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Quality & Assessment -->
+<div class="bg-surface-container-lowest rounded-2xl p-10 border border-outline-variant/10 shadow-[0px_4px_20px_rgba(45,51,53,0.04)]">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-4">
+<h3 class="text-xl font-bold mb-2">Assessment Matrix</h3>
+<p class="text-sm text-on-surface-variant">Set the rigorous standards for mastery and grade calculations.</p>
+</div>
+<div class="col-span-12 lg:col-span-8 grid grid-cols-2 gap-6">
+<div class="col-span-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Minimum Bloom's Taxonomy Level *</label>
+<select class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium">
+<option>Level 1: Remember</option>
+<option>Level 2: Understand</option>
+<option selected="">Level 3: Apply</option>
+<option>Level 4: Analyze</option>
+<option>Level 5: Evaluate</option>
+<option>Level 6: Create</option>
+</select>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Scoring Scale *</label>
+<select class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium">
+<option>100 Point Scale (Percentage)</option>
+<option>4.0 GPA Scale</option>
+<option>A-F Qualitative Scale</option>
+</select>
+</div>
+<div class="col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">Min. Grade to Pass *</label>
+<input class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-on-surface font-medium" type="number" value="60"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="flex items-center justify-between pt-12 border-t border-outline-variant/10">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+<p class="text-sm">Changes are automatically saved as a draft.</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-8 py-3 rounded-xl font-bold text-on-surface hover:bg-surface-container-highest transition-colors" type="button">Discard Draft</button>
+<button class="px-10 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-white font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3" type="submit">
+<span>Create Subject</span>
+<span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</form>
+<!-- Decorative Element: Featured Card (Bento Grid Style) -->
+<div class="mt-20 grid grid-cols-3 gap-6">
+<div class="col-span-2 relative h-48 rounded-3xl overflow-hidden group">
+<img alt="Collaboration space" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="modern minimalist university study space with large windows and wooden desks, focused atmosphere with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLSK2aboQmfi7YO8x6GA4jzAD7z4rXYnoxEjz2rDMEL63dfkkYXOhUibQuHp_ffxKYlF0luV2VhK_Lf0kWYx0emJdjz0SyL3ZhWU7VcP7CTA3FgFdUeGegtgu3uBHxnrbABzSNtTK9V8jjPRxOJaJQCWP0KV3MFlsuo5a-N-1ANH4dvXYD0ZQqamDVmNKc1gDXoOPvyy9s8ZWl9XW0vxIsYMt1GpehOQvaoPuldmwcyUlfxau7mXZJG-YICeDIGMR81_uEZPC-rwrw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-emerald-950/80 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<h4 class="text-xl font-bold">Curriculum Analytics</h4>
+<p class="text-emerald-100 text-sm opacity-90">Review how this subject fits into the degree roadmap.</p>
+</div>
+</div>
+<div class="col-span-1 bg-primary-container rounded-3xl p-6 flex flex-col justify-between">
+<div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<p class="text-on-primary-container font-bold text-lg">AI Assistant</p>
+<p class="text-on-primary-container/70 text-sm mt-1">Ready to help generate syllabus content once defined.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-12 py-8 px-12 text-on-surface-variant flex justify-between items-center text-xs border-t border-outline-variant/10">
+<p>© 2024 Academic Atelier. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">System Status</a>
+<a class="hover:text-primary transition-colors" href="#">Faculty Handbook</a>
+</div>
+</footer>
+</main>
+</body></html>
