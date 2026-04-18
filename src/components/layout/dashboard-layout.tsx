@@ -237,11 +237,7 @@ export default function DashboardLayout({
         {
           group: "Core Management",
           items: [
-            {
-              href: "/dashboard/vice-principal",
-              icon: "dashboard",
-              label: "Overview",
-            },
+            
             {
               href: "/dashboard/vice-principal/manage-majors",
               icon: "school",
