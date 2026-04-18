@@ -39,6 +39,7 @@ export async function GET(
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (error: any) {
     const isNetworkError = error?.cause?.code === 'ENETUNREACH' || error?.name === 'AbortError' || error?.cause?.code === 'ECONNREFUSED';
+     
     console.error(`[API /tasks GET] Error:`, isNetworkError ? `Backend unreachable: ${error?.cause?.code || error?.name}` : error);
     return NextResponse.json(
       { error: isNetworkError ? "Backend server is currently unreachable. Please try again later." : "Internal server error", data: null },

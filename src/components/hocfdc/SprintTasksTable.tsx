@@ -329,14 +329,14 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               {/* Syllabus Name */}
               <td className="px-6 py-5">
                 <div className="flex items-center gap-2">
-                  {task.syllabus.syllabusName === "Unnamed Syllabus" ||
-                  !task.syllabus.syllabusName ? (
+                  {task.syllabus?.syllabusName === "Unnamed Syllabus" ||
+                  !task.syllabus?.syllabusName ? (
                     <span className="text-xs text-zinc-400 italic font-medium tracking-tight">
                       No Syllabus
                     </span>
                   ) : (
                     <div className="px-3 py-1.5 bg-primary text-white text-[10px] font-black tracking-widest rounded-lg shadow-sm">
-                      {task.syllabus.syllabusName}
+                      {task.syllabus?.syllabusName}
                     </div>
                   )}
                 </div>

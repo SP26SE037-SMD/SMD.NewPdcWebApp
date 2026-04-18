@@ -54,7 +54,8 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
     });
 
     const realTask = routeTaskData?.data;
-    const syllabusId = realTask?.syllabus?.syllabusId;
+    const syllabusId = realTask?.syllabus?.syllabusId || realTask?.syllabusId;
+    console.log('EXTRACTED SYLLABUS_ID: ', syllabusId);
 
     // Fetch Syllabus Data
     const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({
@@ -65,7 +66,7 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
     });
 
     const syllabusData = syllabusRes?.data;
-    const subjectId = syllabusData?.subjectId;
+    const subjectId = syllabusData?.subjectId || realTask?.subjectId;
 
     // Fetch Subject Data (for Bloom and Meta Info)
     const { data: subjectRes, isLoading: isSubjectLoading } = useQuery({
@@ -77,19 +78,29 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
 
     const subjectData = subjectRes?.data;
     const syllabusInfoDB = useSelector((state: RootState) => state.syllabus.syllabusInfoDB);
-    const syllabusInfo = syllabusId ? syllabusInfoDB[syllabusId] : undefined;
+    const uniqueId = syllabusId || subjectId || '';
+    const syllabusInfo = uniqueId ? syllabusInfoDB[uniqueId] : undefined;
 
     useEffect(() => {
         const fetchInfo = async () => {
-            if (!syllabusId) return;
+            if (!syllabusId && !subjectId) return;
             if (syllabusInfo) return;
 
             try {
-                const res = await SyllabusService.getSyllabusById(syllabusId);
-                const data = res.data;
-                const minBloomLevel = data?.minBloomLevel;
-                const bloomText = formatBloomLevel(minBloomLevel);
-                const sid = data?.subjectId;
+                let minBloomLevel;
+                let bloomText;
+                let sid = subjectId;
+                
+                if (syllabusId) {
+                    const res = await SyllabusService.getSyllabusById(syllabusId);
+                    const data = res.data;
+                    minBloomLevel = data?.minBloomLevel;
+                    bloomText = formatBloomLevel(minBloomLevel);
+                    sid = data?.subjectId || subjectId;
+                } else if (subjectData) {
+                    minBloomLevel = subjectData?.minBloomLevel;
+                    bloomText = formatBloomLevel(minBloomLevel);
+                }
 
                 if (!sid) return;
 
@@ -112,10 +123,11 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
                     closText = closData.map((c: any) => `[${c.cloCode}] ${c.description}`);
                 }
 
-                dispatch(setSyllabusInfo({
-                    syllabusId,
-                    info: {
-                        bloomTaxonomy: bloomText,
+                const targetId = syllabusId || subjectId || 'placeholder';
+dispatch(setSyllabusInfo({
+syllabusId: targetId,
+info: {
+                        bloomTaxonomy: bloomText || 'Loading...',
                         sourcesReference: sourcesReference.length > 0 ? sourcesReference : ["No references available."],
                         clos: closText.length > 0 ? closText : ["No CLOs available."]
                     }
@@ -123,9 +135,10 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
             } catch (err) {
                 console.error("Failed to fetch syllabus context information:", err);
                 // Handle permission or network errors gracefully
-                dispatch(setSyllabusInfo({
-                    syllabusId,
-                    info: {
+                const targetId = syllabusId || subjectId || 'placeholder';
+dispatch(setSyllabusInfo({
+syllabusId: targetId,
+info: {
                         bloomTaxonomy: "Level 4 (Est.)",
                         sourcesReference: ["Reference materials restricted for your role."],
                         clos: ["CLO details restricted for your role."]
@@ -134,7 +147,7 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
             }
         };
         fetchInfo();
-    }, [syllabusId, dispatch, syllabusInfo]);
+    }, [syllabusId, subjectId, dispatch, syllabusInfo, subjectData]);
 
     const displayInfo = syllabusInfo || {
         bloomTaxonomy: "Loading...",
@@ -162,24 +175,54 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
         { bg: C.primaryContainer, text: C.onPrimaryContainer },
     ];
 
+    const isMajorTask = !!realTask?.majorId;
+
     if (isTaskLoading || (!!syllabusId && isSyllabusLoading) || (!!subjectId && isSubjectLoading)) {
         return (
             <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: C.primary }}></div>
             </div>
         );
     }
 
-    if (!syllabusData) {
+    if (isMajorTask) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-xl shadow-sm border" style={{ borderColor: C.outlineVariant + '33' }}>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: C.primaryContainer }}>
+                    <span className="material-symbols-outlined text-3xl" style={{ color: C.onPrimaryContainer }}>domain</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2" style={{ color: C.onSurface }}>Major Operations Task</h3>
+                <p className="max-w-md mb-6 text-sm" style={{ color: C.onSurfaceVariant }}>
+                    This task is related to Academic Major review and enactment. Detailed Syllabus properties are not applicable here.
+                </p>
+                <div className="grid grid-cols-2 gap-4 max-w-sm w-full text-left">
+                    <div className="p-4 rounded-lg" style={{ background: C.surfaceContainer }}>
+                        <p className="text-[10px] uppercase font-bold tracking-widest mb-1" style={{ color: C.onSurfaceVariant }}>Task Type</p>
+                        <p className="font-semibold" style={{ color: C.onSurface }}>{realTask?.type || 'MAJOR TASK'}</p>
+                    </div>
+                    <div className="p-4 rounded-lg" style={{ background: C.surfaceContainer }}>
+                        <p className="text-[10px] uppercase font-bold tracking-widest mb-1" style={{ color: C.onSurfaceVariant }}>Priority</p>
+                        <p className="font-semibold" style={{ color: C.onSurface }}>{realTask?.priority || 'NORMAL'}</p>
+                    </div>
+                    <div className="col-span-2 p-4 rounded-lg" style={{ background: C.surfaceContainer }}>
+                        <p className="text-[10px] uppercase font-bold tracking-widest mb-1" style={{ color: C.onSurfaceVariant }}>Task Name</p>
+                        <p className="font-semibold text-sm leading-tight" style={{ color: C.onSurface }}>{realTask?.taskName || 'Review Major'}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!syllabusData && !subjectData && !isMajorTask) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
                     style={{ background: C.surfaceContainer }}>
                     <span className="material-symbols-outlined text-3xl" style={{ color: C.onSurfaceVariant }}>info</span>
                 </div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: C.onSurface }}>No Syllabus Information</h3>
+                <h3 className="text-lg font-bold mb-2" style={{ color: C.onSurface }}>No Data Available</h3>
                 <p style={{ color: C.onSurfaceVariant }} className="max-w-sm">
-                    We couldn't retrieve the specific syllabus details for this development task.
+                    We couldn't retrieve the subject or syllabus details for this task.
                 </p>
             </div>
         );
@@ -251,22 +294,22 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
                     {
                         icon: 'school',
                         label: 'Credits',
-                        value: `${subjectData?.credits ?? syllabusData.credit ?? syllabusData.noCredit ?? 0} Credits`,
+                        value: `${subjectData?.credits ?? syllabusData?.credit ?? syllabusData?.noCredit ?? 0} Credits`,
                     },
                     {
                         icon: 'grade',
                         label: 'Scoring Scale',
-                        value: `${subjectData?.scoringScale ?? (syllabusData.scoringScale || 10)} / 10`,
+                        value: `${subjectData?.scoringScale ?? (syllabusData?.scoringScale || 10)} / 10`,
                     },
                     {
                         icon: 'check_circle',
                         label: 'Min. Pass Score',
-                        value: `${subjectData?.minToPass ?? syllabusData.minAvgGrade ?? syllabusData.minAvgMarkToPass ?? 0} Points`,
+                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgGrade ?? syllabusData?.minAvgMarkToPass ?? 0} Points`,
                     },
                     {
                         icon: 'policy',
                         label: 'Decision Level',
-                        value: subjectData?.decisionNo ? `Decision: ${subjectData.decisionNo}` : `Level ${syllabusData.decisionLevel || 1}`,
+                        value: subjectData?.decisionNo ? `Decision: ${subjectData.decisionNo}` : `Level ${syllabusData?.decisionLevel || 1}`,
                         highlight: true,
                     },
                 ].map((item) => (
