@@ -66,12 +66,15 @@ export interface TaskItem {
     email?: string;
     fullName: string;
   };
-  syllabus: {
+  syllabusId?: string;
+  syllabus?: {
     syllabusId: string;
     syllabusName: string;
     status?: SyllabusStatus;
   };
   curriculumId?: string | null;
+  majorId?: string | null;
+  major?: { majorId: string; majorCode: string; majorName: string; } | null;
   taskName: string;
   description: string;
   status: TaskStatus;
@@ -108,6 +111,8 @@ export interface TaskApiItem {
     status?: string;
   };
   curriculumId?: string | null;
+  majorId?: string | null;
+  major?: { majorId: string; majorCode: string; majorName: string; } | null;
   taskName: string;
   description: string;
   status: TaskStatus;
