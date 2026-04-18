@@ -88,3 +88,44 @@ export async function POST(
         );
     }
 }
+
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+    const cookieStore = await cookies();
+    const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+    const body = await request.json();
+    
+    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const targetUrl = `${BACKEND_URL}/api/blocks/material/${id}`;
+
+    console.log('Proxying PUT /api/blocks/material/[id] to:', targetUrl);
+
+    try {
+        const response = await fetch(targetUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Backend Error (Blocks General PUT):', data);
+            return NextResponse.json(data, { status: response.status });
+        }
+
+        return NextResponse.json(data);
+    } catch (error: any) {
+        console.error('Proxy Error (Blocks General PUT):', error);
+        return NextResponse.json(
+            { status: 500, message: 'Internal Server Error', error: error.message },
+            { status: 500 }
+        );
+    }
+}

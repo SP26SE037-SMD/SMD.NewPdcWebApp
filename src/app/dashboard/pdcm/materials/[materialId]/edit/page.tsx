@@ -556,7 +556,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
                         return {
                             id: crypto.randomUUID(),
-                            blockId: b.blockId,
+                            blockId: b.blockId || undefined,
                             type: finalType,
                             content: finalType === 'H2' ? cleanContent.replace(/\s+/g, ' ').trim() : cleanContent,
                             align: parsedStyle.align || 'left',
@@ -668,7 +668,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
                     return {
                         id: crypto.randomUUID(),
-                        blockId: b.blockId,
+                        blockId: b.blockId || undefined,
                         type: finalType,
                         content: finalType === 'H2' ? cleanContent.replace(/\s+/g, ' ').trim() : cleanContent,
                         align: parsedStyle.align || 'left',
@@ -1087,37 +1087,53 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
     const autoSaveBlock = async (id: string, index: number) => {
         if (saveInProgress.current) return;
         const block = blocks.find(b => b.id === id);
-        if (!block || block.blockId || block.content.trim() === '') return;
+        
+        // Không lưu các block trống khi auto-save (sẽ do handleSaveDraft dọn dẹp lúc save)
+        if (!block || block.content.trim() === '') return;
+
+        // Chỉ gọi API tiết kiệm băng thông nếu có thay đổi thật sự so với bản gốc
+        if (block.content === block.originalContent && block.type === block.originalType) return;
 
         try {
             const sanitized = block.type === 'H2' ? sanitizeBlockContent(block.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(block.content || "");
             
-            // Using with-idx API as requested for auto save
-            const res = await BlockService.createBlocksWithIdx(materialId, [{
+            const payload = {
                 idx: index,
                 blockType: block.type || 'PARAGRAPH',
                 blockStyle: JSON.stringify({ align: block.align || 'left', color: block.color, fontSize: block.fontSize }),
                 contentText: sanitized
-            }]);
+            };
 
-            if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-                const newServerBlockId = res.data[0].blockId;
-                if (newServerBlockId) {
+            // Nếu đã có ID trên hệ thống -> Update 1 Block
+            if (block.blockId) {
+                await BlockService.updateBlock(block.blockId, payload);
+            } 
+            // Nếu chưa có ID trên DB -> Create 1 block mới
+            else {
+                const res = await BlockService.createSingleBlock(materialId, payload);
+                if (res?.data && res.data.blockId) {
                     setBlocks(prev => prev.map(b => b.id === id ? {
                         ...b,
-                        blockId: newServerBlockId,
-                        originalContent: b.content,
+                        blockId: res.data.blockId,
+                        originalContent: sanitized,
                         originalType: b.type
                     } : b));
-                    console.log("Auto-save success with idx:", newServerBlockId);
+                    return;
                 }
             }
+
+            // Sync lại nội dung của block sau khi auto save thành công
+            setBlocks(prev => prev.map(b => b.id === id ? {
+                ...b,
+                originalContent: sanitized,
+                originalType: b.type
+            } : b));
+
         } catch (err) {
-            console.error("Auto-save failed:", err);
+            console.error("Auto-save single block failed:", err);
         }
     };
-
-    const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string[]) => {
+const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string[]) => {
         if (saveInProgress.current) {
             console.log("DEBUG: Save already in progress, skipping...");
             return;
@@ -1130,29 +1146,42 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
         try {
             // Lọc ra các dòng không có nội dung thực tế (chỉ chứa khoảng trắng, thẻ br...)
+            const invalidBlocks = targetBlocks.filter(b => {
+                const content = b.content || "";
+                if (b.type === 'IMAGE' || b.type === 'DIVIDER') return false;
+                const sanitized = sanitizeBlockContent(content).trim();
+                return sanitized === '';
+            });
+
+            const extraDeletedIds = invalidBlocks.map(b => b.blockId).filter(Boolean);
+            const finalDeletedIds = Array.from(new Set([...targetDeletedIds, ...extraDeletedIds as string[]]));
+
             const validBlocks = targetBlocks.filter(b => {
                 const content = b.content || "";
-                // Giữ lại nếu là ảnh, đường kẻ, hoặc sau khi làm sạch HTML vẫn còn nội dung
                 if (b.type === 'IMAGE' || b.type === 'DIVIDER') return true;
                 const sanitized = sanitizeBlockContent(content).trim();
                 return sanitized !== '';
             });
 
             // Mapping blocks according to the new POST API requirement
-            const requestBody = validBlocks.map((b, index) => {
+            const requestBody = {
+                deleteBlockList: finalDeletedIds,
+                blocks: validBlocks.map((b, index) => {
                 const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content || "");
                 return {
-                    idx: index,
-                    blockType: b.type || 'PARAGRAPH',
-                    blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
-                    contentText: sanitized
-                };
-            });
+                    blockId: b.blockId || undefined,
+                        idx: index,
+                        blockType: b.type || 'PARAGRAPH',
+                        blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
+                        contentText: sanitized
+                    };
+                })
+            };
 
             console.log("DEBUG: Payload with-idx:", JSON.stringify(requestBody, null, 2));
 
             // Sending an array directly to POST /api/blocks/material/{materialId}/with-idx
-            const res = await BlockService.createBlocksWithIdx(materialId, requestBody);
+            const res = await BlockService.bulkUpdateBlocks(materialId, requestBody);
 
             if (res?.data && Array.isArray(res.data)) {
                 // Determine layout updates based on server responses
@@ -1162,13 +1191,17 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     // Match received blocks back to local state based on index `idx`
                     res.data.forEach(serverBlock => {
                         const localIndex = serverBlock.idx;
-                        if (localIndex != null && next[localIndex]) {
-                            next[localIndex] = {
-                                ...next[localIndex],
-                                blockId: serverBlock.blockId,
-                                originalContent: next[localIndex].content,
-                                originalType: next[localIndex].type
-                            };
+                        if (localIndex != null && validBlocks[localIndex]) {
+                            const originalId = validBlocks[localIndex].id;
+                            const globalIndex = next.findIndex(b => b.id === originalId);
+                            if (globalIndex !== -1) {
+                                next[globalIndex] = {
+                                    ...next[globalIndex],
+                                    blockId: serverBlock.blockId,
+                                    originalContent: next[globalIndex].content,
+                                    originalType: next[globalIndex].type
+                                };
+                            }
                         }
                     });
                     return next;
