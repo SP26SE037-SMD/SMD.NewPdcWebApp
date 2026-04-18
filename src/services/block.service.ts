@@ -48,7 +48,7 @@ export const BlockService = {
   },
 
   bulkUpdateBlocks: async (materialId: string, params: BulkUpdateBlocksParams) => {
-    return apiClient.post<{ status: number; message: string; data: BlockItem[] }>(
+    return apiClient.put<{ status: number; message: string; data: BlockItem[] }>(
       `/api/blocks/material/${materialId}`,
       params
     );
