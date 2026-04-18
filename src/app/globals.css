@@ -3,15 +3,30 @@
 :root {
   --background: #f8fafc;
   --foreground: #1e293b;
-  --primary: #4caf50;
+  --primary: #409b43;
   --primary-foreground: #ffffff;
   --secondary: #334155;
   --secondary-foreground: #f8fafc;
   --accent: #10b981;
   --muted: #64748b;
   --border: #e2e8f0;
-  --primary-glow: rgba(76, 175, 80, 0.4);
+  --primary-glow: rgba(64, 155, 67, 0.4);
   --surface: rgba(255, 255, 255, 0.7);
+  --on-primary: #ffffff;
+  --primary-container: #b1f0ce;
+  --on-primary-container: #002113;
+  --secondary-container: #cfebd9;
+  --on-secondary-container: #091f15;
+  --surface-dim: #d9d9d9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f6f6f6;
+  --surface-container: #f1f1f1;
+  --surface-container-high: #ebebeb;
+  --surface-container-highest: #e6e6e6;
+  --on-surface: #1d1b20;
+  --on-surface-variant: #49454f;
+  --outline: #79747e;
+  --outline-variant: #cac4d0;
 }
 @theme inline {
   --color-background: var(--background);
@@ -22,7 +37,7 @@
   --color-primary-200: #a5d6a7;
   --color-primary-300: #81c784;
   --color-primary-400: #66bb6a;
-  --color-primary-500: #4caf50;
+  --color-primary-500: #409b43;
   --color-primary-600: #43a047;
   --color-primary-700: #388e3c;
   --color-primary-800: #2e7d32;
@@ -33,6 +48,21 @@
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
   --font-sans: var(--font-roboto);
 }
 
@@ -48,11 +78,11 @@ body {
 
 /* PDCM Custom Ghost Button */
 .btn-pdcm-ghost {
-  @apply flex items-center justify-center gap-2 border-2 border-[#4caf50] bg-white text-[#4caf50] transition-all duration-300 font-bold active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply flex items-center justify-center gap-2 border-2 border-[#409b43] bg-white text-[#409b43] transition-all duration-300 font-bold active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-pdcm-ghost:hover {
-  @apply bg-[#4caf50] text-white shadow-md -translate-y-0.5;
+  @apply bg-[#409b43] text-white shadow-md -translate-y-0.5;
 }
 
 .btn-pdcm-ghost .material-symbols-outlined {

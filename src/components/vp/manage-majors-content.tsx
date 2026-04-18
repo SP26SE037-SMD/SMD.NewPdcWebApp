@@ -66,6 +66,14 @@ export default function ManageMajorsContent() {
   });
   const [createError, setCreateError] = useState("");
 
+  const [taskForm, setTaskForm] = useState({
+    deadline: "",
+    type: "REVIEW",
+    priority: "HIGH",
+  });
+
+
+
   // Step 2: Program Outcomes State
   const [stagedPOs, setStagedPOs] = useState<CreatePOPload[]>([]);
   const [currentPO, setCurrentPO] = useState<CreatePOPload>({
@@ -172,17 +180,29 @@ export default function ManageMajorsContent() {
         majorName: existingMajorData.data.majorName,
         description: existingMajorData.data.description,
       });
+    } else if (wizardStep === 1 && typeof window !== "undefined" && !currentMajorId) {
+      const savedMajor = localStorage.getItem("pendingMajor");
+      if (savedMajor) {
+        try {
+          setNewMajor(JSON.parse(savedMajor));
+        } catch(e) {}
+      }
+      const savedPOs = localStorage.getItem("pendingPOs");
+      if (savedPOs) {
+        try {
+          setStagedPOs(JSON.parse(savedPOs));
+        } catch(e) {}
+      }
     }
-  }, [existingMajorData, wizardStep]);
+  }, [existingMajorData, wizardStep, currentMajorId]);
 
   // Handle Step 1 Submit
   const handleMajorIdentitySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentMajorId) {
-      updateMajorMutation.mutate({ id: currentMajorId, payload: newMajor });
-    } else {
-      createMutation.mutate(newMajor);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pendingMajor", JSON.stringify(newMajor));
     }
+    setWizardStep(2);
   };
 
   // PO Management Logic
@@ -230,6 +250,68 @@ export default function ManageMajorsContent() {
     },
   });
 
+  
+  const submitAllDataMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Create Major
+      let finalMajorId = currentMajorId;
+      if (!finalMajorId) {
+        const majorRes = await MajorService.createMajor(newMajor);
+        finalMajorId = majorRes.data.majorId;
+      }
+      
+      // 2. Create POs
+      if (stagedPOs.length > 0 && finalMajorId) {
+        await PoService.createMultiplePOs(finalMajorId, stagedPOs);
+      }
+      
+      // 3. Update status
+      if (finalMajorId) {
+        await MajorService.updateMajorStatus(finalMajorId, "INTERNAL_REVIEW");
+      }
+      
+      // 4. Create Task
+      if (finalMajorId) {
+        let actualDeadline = taskForm.deadline;
+        if (!actualDeadline) {
+          actualDeadline = new Date().toISOString().split("T")[0]; // fallback to today
+        }
+        await fetch("/api/tasks/byVP", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                accountId: "a7e97b05-4fce-4f65-9b01-bd8cafaf3a9a",
+                majorId: finalMajorId,
+                taskName: `Review Major: ${newMajor.majorName}`,
+                description: `Please review the new major ${newMajor.majorCode} - ${newMajor.majorName}.`,
+                priority: taskForm.priority,
+                deadline: actualDeadline,
+                type: taskForm.type
+            })
+        });
+      }
+      
+      return finalMajorId;
+    },
+    onSuccess: (newMajorId) => {
+      queryClient.invalidateQueries({ queryKey: ["majors"] });
+      setCurrentMajorId(newMajorId || null);
+      setWizardStep(4);
+      showToast("Major created and submitted for Board Review successfully.", "success");
+      setIsConfirmModalOpen(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("pendingMajor");
+        localStorage.removeItem("pendingPOs");
+      }
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to submit major", "error");
+      setIsConfirmModalOpen(false);
+    }
+  });
+
   // Delete Major Mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => MajorService.deleteMajor(id),
@@ -257,7 +339,10 @@ export default function ManageMajorsContent() {
       showToast("Please add at least one program outcome.", "error");
       return;
     }
-    bulkPOMutation.mutate(stagedPOs);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pendingPOs", JSON.stringify(stagedPOs));
+    }
+    setWizardStep(3);
   };
 
   const handleOpenDetail = (code: string) => {
@@ -828,54 +913,70 @@ export default function ManageMajorsContent() {
                       exit={{ opacity: 0, scale: 0.95, y: 20 }}
                       className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
                     >
-                      <div className="px-8 pt-10 pb-6 flex flex-col items-center text-center">
-                        <div className="w-20 h-20 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-6 shadow-sm border border-[#4caf50]/10">
-                          <Send className="text-[#4caf50] w-10 h-10" />
+                      <div className="px-8 pt-8 pb-4 flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-4 shadow-sm border border-[#4caf50]/10">
+                          <Send className="text-[#4caf50] w-8 h-8" />
                         </div>
-                        <h2 className="text-2xl font-bold tracking-tight text-[#2d3335] mb-3 font-['Plus_Jakarta_Sans']">
-                          Confirm Submission
+                        <h2 className="text-2xl font-bold tracking-tight text-[#2d3335] mb-2 font-['Plus_Jakarta_Sans']">
+                          Confirm & Create Task
                         </h2>
-                        <p className="text-[#5a6062] leading-relaxed px-4 text-sm font-medium">
-                          Are you sure you want to submit the{" "}
-                          <span className="font-bold text-[#2d3335]">
-                            {newMajor.majorName}
-                          </span>{" "}
-                          curriculum? Once submitted, it will be sent to the
-                          department head for review.
+                        <p className="text-[#5a6062] leading-relaxed px-4 text-xs font-medium">
+                          Submit this major and assign a review task.
                         </p>
                       </div>
 
-                      <div className="px-8 py-4 mx-8 bg-[#f1f4f5] rounded-xl mb-8 border border-[#adb3b5]/10">
-                        <div className="flex items-center justify-between text-xs mb-2">
-                          <span className="text-[#5a6062] font-bold uppercase tracking-widest">
-                            Major Code
-                          </span>
-                          <span className="font-bold text-[#2d3335]">
-                            {newMajor.majorCode}
-                          </span>
+                      <div className="px-8 flex flex-col gap-4 mb-8">
+                        <div>
+                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                             Task Deadline
+                           </label>
+                           <input
+                             type="date"
+                             required
+                             value={taskForm.deadline}
+                             onChange={(e) => setTaskForm({...taskForm, deadline: e.target.value})}
+                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
+                           />
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-[#5a6062] font-bold uppercase tracking-widest">
-                            Outcomes Count
-                          </span>
-                          <span className="text-[#4caf50] font-bold">
-                            {stagedPOs.length} Established
-                          </span>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div>
+                             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                               Priority
+                             </label>
+                             <select
+                               value={taskForm.priority}
+                               onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
+                               className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
+                             >
+                               <option value="HIGH">High</option>
+                               <option value="MEDIUM">Medium</option>
+                               <option value="LOW">Low</option>
+                             </select>
+                           </div>
+                           <div>
+                             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                               Type
+                             </label>
+                             <select
+                               value={taskForm.type}
+                               onChange={(e) => setTaskForm({...taskForm, type: e.target.value})}
+                               className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
+                             >
+                               <option value="REVIEW">Review</option>
+                               <option value="ENACTMENT">Enactment</option>
+                               <option value="EXPERTISE">Expertise</option>
+                             </select>
+                           </div>
                         </div>
                       </div>
 
                       <div className="px-8 pb-10 flex flex-col sm:flex-row-reverse gap-3">
                         <button
-                          onClick={() =>
-                            updateStatusMutation.mutate({
-                              id: currentMajorId!,
-                              status: "INTERNAL_REVIEW",
-                            })
-                          }
-                          disabled={updateStatusMutation.isPending}
+                          onClick={() => submitAllDataMutation.mutate()}
+                          disabled={submitAllDataMutation.isPending}
                           className="flex-1 bg-[#4caf50] hover:bg-[#388e3c] text-white font-black uppercase tracking-widest text-[13px] py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#4caf50]/20 flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
                         >
-                          {updateStatusMutation.isPending ? (
+                          {submitAllDataMutation.isPending ? (
                             <Loader2 className="animate-spin" size={18} />
                           ) : (
                             <span>Yes, Submit</span>
