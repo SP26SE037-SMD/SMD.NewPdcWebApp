@@ -54,8 +54,8 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     });
 
     const { data: assessmentDataRes, isLoading: isAssessmentLoading, refetch: refetchAssessments } = useQuery({
-        queryKey: ['assessments', syllabusId],
-        queryFn: () => (syllabusId ? AssessmentService.getAssessmentsBySyllabusId(syllabusId) : null),
+        queryKey: ['assessments', syllabusId, 'REVISION_REQUESTED'],
+        queryFn: () => (syllabusId ? AssessmentService.getAssessmentsBySyllabusId(syllabusId, 'REVISION_REQUESTED') : null),
         enabled: !!syllabusId,
     });
 

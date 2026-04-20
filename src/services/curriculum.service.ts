@@ -184,7 +184,7 @@ export const CurriculumService = {
   },
 
   getPLOsByCurriculumId: async (id: string) => {
-    return apiClient.get<any>(`/api/plos/curriculum/${id}`);
+    return apiClient.get<any>(`/api/plos/curriculum/${id}?page=0&size=100`);
   },
 
   async bulkCreatePLOs(curriculumId: string, plos: any[]) {

@@ -49,8 +49,11 @@ export interface SessionItem {
 
 export class SessionService {
     // New Detailed Endpoints
-    static async getDetailedSessions(syllabusId: string, page = 0, size = 100) {
-        const url = `/api/session-material-blocks?syllabusId=${syllabusId}&page=${page}&size=${size}`;
+    static async getDetailedSessions(syllabusId: string, page = 0, size = 100, status?: string) {
+        let url = `/api/session-material-blocks?syllabusId=${syllabusId}&page=${page}&size=${size}`;
+        if (status) {
+            url += `&status=${status}`;
+        }
         let response: any;
         try {
             response = await apiClient.get<any>(url);

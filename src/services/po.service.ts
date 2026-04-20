@@ -16,6 +16,8 @@ export interface CreatePOPload {
 export const PoService = {
     async getPOsByMajorId(majorId: string, params?: { page?: number; size?: number }): Promise<ApiResponse<PageableResponse<PO>>> {
         const query = new URLSearchParams();
+        if (params?.page === undefined) query.append('page', '0');
+        if (params?.size === undefined) query.append('size', '100');
         if (params?.page !== undefined) query.append('page', params.page.toString());
         if (params?.size !== undefined) query.append('size', params.size.toString());
         
