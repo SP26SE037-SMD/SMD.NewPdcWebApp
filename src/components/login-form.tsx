@@ -8,6 +8,7 @@ import { loginAction, clearError } from "@/store/slices/authSlice";
 import { RootState, AppDispatch } from "@/store";
 import { ROLE_PATHS } from "@/lib/auth";
 import { AuthService } from "@/services/auth.service";
+import { useToast } from "@/components/ui/Toast";
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export default function LoginForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
+    const { showToast } = useToast();
 
     const { user, error, isLoading } = useSelector((state: RootState) => state.auth);
     const [urlError, setUrlError] = useState<string | null>(null);
@@ -30,6 +32,9 @@ export default function LoginForm() {
         }
         if (reasonParam === 'session_expired') {
             setSessionExpired(true);
+            setTimeout(() => {
+                showToast("Session expired. Please log in again.", "warning");
+            }, 100);
         }
         // Clean URL params
         if (errorParam || reasonParam) {
@@ -38,7 +43,7 @@ export default function LoginForm() {
             url.searchParams.delete("reason");
             window.history.replaceState({}, "", url.toString());
         }
-    }, [searchParams]);
+    }, [searchParams, showToast]);
 
     // Redirect if already logged in or after successful login
     useEffect(() => {

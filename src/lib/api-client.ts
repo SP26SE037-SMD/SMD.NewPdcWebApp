@@ -89,6 +89,16 @@ export const apiClient = {
             const error = new Error(`API Error | ${errorInfo}`) as any;
             error.status = response.status;
             error.data = errorData;
+
+            // Handle Unauthorized globally
+            if (response.status === 401) {
+                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+                    window.location.href = '/login?reason=session_expired';
+                    // We return a never resolving promise to stop execution of the caller since we are redirecting
+                    return new Promise(() => { }) as any;
+                }
+            }
+
             throw error;
         }
         return response.json();

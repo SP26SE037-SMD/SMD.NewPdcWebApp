@@ -393,9 +393,6 @@ export default function DashboardLayout({
         <div className="p-4 border-t border-border/50 space-y-2">
           {user?.role === "VP" && isSidebarOpen && (
             <div className="px-2 pb-4 space-y-4">
-              <button className="w-full bg-[#2d6a4f] text-white py-3 px-4 rounded-xl font-bold text-sm shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-transform">
-                New Term Plan
-              </button>
               <div className="space-y-1">
                 <Link
                   href="#"

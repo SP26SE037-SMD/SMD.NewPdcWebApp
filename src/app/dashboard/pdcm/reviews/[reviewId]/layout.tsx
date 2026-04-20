@@ -14,6 +14,7 @@ import { PDCMBaseLayout } from '@/components/layout/PDCMBaseLayout';
 import { ReviewProvider, useReview } from './ReviewContext';
 import { ConfirmReviewModal } from './_components/ConfirmReviewModal';
 import { Send } from 'lucide-react';
+import { useToast } from "@/components/ui/Toast";
 
 function PDCMReviewContent({
     children,
@@ -36,6 +37,7 @@ function PDCMReviewContent({
 }) {
     const pathname = usePathname();
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const {
         syllabusReview,
         materialsReview,
@@ -90,12 +92,12 @@ function PDCMReviewContent({
             queryClient.invalidateQueries({ queryKey: ['pdcm-tasks'] });
             queryClient.invalidateQueries({ queryKey: ['pdcm-review-tasks'] });
 
+            showToast(status === 'APPROVED' ? "Syllabus approved and submitted to supervisor!" : "Revision requests submitted to supervisor.", 'success');
             // Redirect back to dashboard
             router.push('/dashboard/pdcm');
-            alert(status === 'APPROVED' ? "Syllabus approved and submitted to supervisor!" : "Revision requests submitted to supervisor.");
         } catch (err: any) {
             console.error(err);
-            alert(err.message || "Failed to submit evaluation. Please try again.");
+            showToast(err.message || "Failed to submit evaluation. Please try again.", 'error');
         } finally {
             setIsSubmitting(false);
             setIsConfirmModalOpen(false);

@@ -31,11 +31,15 @@ export function ConfirmReviewModal({ isOpen, onClose, onConfirm, isSubmitting, t
     const hasRejections = 
         Object.values(evaluations?.materials || {}).some(m => m.status === 'REJECTED') ||
         Object.values(evaluations?.sessions || {}).some(s => s.status === 'REJECTED') ||
-        Object.values(evaluations?.assessments || {}).some(a => a.status === 'REJECTED');
+        Object.values(evaluations?.assessments || {}).some(a => a.status === 'REJECTED') ||
+        reviews?.materials?.status === 'FAIL' ||
+        reviews?.sessions?.status === 'FAIL' ||
+        reviews?.assessments?.status === 'FAIL' ||
+        reviews?.syllabus?.status === 'FAIL';
 
-    const status: 'APPROVED' | 'REVISION_REQUESTED' = (!hasRejections && allMaterialsAccepted && allSessionsAccepted && allAssessmentsAccepted) 
-        ? 'APPROVED' 
-        : 'REVISION_REQUESTED';
+    const status: 'APPROVED' | 'REVISION_REQUESTED' = hasRejections 
+        ? 'REVISION_REQUESTED' 
+        : 'APPROVED';
 
     const getAggregatedNotes = (type: 'materials' | 'sessions' | 'assessments') => {
         const evs = Object.values(evaluations?.[type] || {});

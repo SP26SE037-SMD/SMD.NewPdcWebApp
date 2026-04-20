@@ -36,6 +36,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isSaving, setIsSaving] = useState(false);
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number } | null>(null);
 
     // 1. Fetch Task to get.syllabus?.syllabusId
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
@@ -78,7 +79,16 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
     // 3. Sync to Redux
     useEffect(() => {
-        if (assessmentDataRes?.data?.content && syllabusId) {
+        if (assessmentDataRes?.data && Array.isArray(assessmentDataRes.data) && syllabusId) {
+            const fetched = assessmentDataRes.data;
+            const origMap: Record<string, AssessmentItem> = {};
+            fetched.forEach((a: AssessmentItem) => {
+                if (a.assessmentId) origMap[a.assessmentId] = a;
+            });
+            setOriginalAssessmentsMap(origMap);
+            dispatch(setAssessments({ syllabusId, assessments: fetched }));
+        } else if (assessmentDataRes?.data?.content && syllabusId) {
+            // fallback if it's pagination format
             const fetched = assessmentDataRes.data.content;
             const origMap: Record<string, AssessmentItem> = {};
             fetched.forEach((a: AssessmentItem) => {
@@ -93,8 +103,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
         if (!syllabusId) return;
         try {
             const { data } = await refetchAssessments();
-            if (data?.data?.content) {
-                const fetched = data.data.content;
+            if (data?.data) {
+                const fetched = Array.isArray(data.data) ? data.data : (data.data.content || []);
                 const origMap: Record<string, AssessmentItem> = {};
                 fetched.forEach((a: AssessmentItem) => {
                     if (a.assessmentId) origMap[a.assessmentId] = a;
@@ -161,22 +171,34 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
     const handleDeleteLocal = (index: number) => {
         if (!syllabusId) return;
-        dispatch(removeAssessment({ syllabusId, index }));
+        setDeleteConfirm({ id: null, index });
     };
 
-    const handleDeleteApi = async (assessmentId: string, index: number) => {
+    const handleDeleteApi = (assessmentId: string, index: number) => {
         if (!syllabusId) return;
-        const confirmDel = window.confirm("Are you sure you want to delete this assessment component?");
-        if (!confirmDel) return;
+        setDeleteConfirm({ id: assessmentId, index });
+    };
+
+    const executeDelete = async () => {
+        if (!syllabusId || !deleteConfirm) return;
+        const { id, index } = deleteConfirm;
+
+        if (!id) {
+            dispatch(removeAssessment({ syllabusId, index }));
+            setDeleteConfirm(null);
+            return;
+        }
 
         try {
-            await AssessmentService.deleteAssessment(assessmentId);
+            await AssessmentService.deleteAssessment(id);
             showToast("Assessment deleted successfully", "success");
             dispatch(removeAssessment({ syllabusId, index }));
             handleReload();
         } catch (e) {
             console.error(e);
             showToast("Failed to delete assessment", "error");
+        } finally {
+            setDeleteConfirm(null);
         }
     };
 
@@ -324,6 +346,31 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                     subjectId={syllabusData?.data?.subjectId}
                 />
             )}
+
+            {/* ── Delete Confirmation Modal ── */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl text-center space-y-6">
+                        <div className="mx-auto w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-2">
+                            <span className="material-symbols-outlined text-3xl">warning</span>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Assessment?</h3>
+                            <p className="text-sm text-slate-500">
+                                Are you sure you want to delete this assessment component? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-center pt-2">
+                            <button onClick={() => setDeleteConfirm(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2">
+                                Cancel
+                            </button>
+                            <button onClick={executeDelete} className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -389,8 +436,13 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
         const url = assessment.assessmentId ? `/api/assessments/${assessment.assessmentId}` : '/api/assessments';
         console.log("ASSESSMENT MODAL SAVE ATTEMPT - URL:", url, "Data:", assessment);
 
+        if (!assessment.weight || Number(assessment.weight) <= 0) {
+            showToast("Assessment weight is required and must be greater than 0%", "warning");
+            return;
+        }
+
         if (isOverWeight) {
-            showToast("Total weight cannot exceed 100%", "error");
+            showToast("Total weight cannot exceed 100%", "warning");
             return;
         }
 
@@ -737,7 +789,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
                                 Cancel
                             </button>
-                            <button onClick={handleSave} disabled={isSaving || isOverWeight}
+                            <button onClick={handleSave} disabled={isSaving}
                                 className={`flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white
                                     ${isOverWeight ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary shadow-primary/20 hover:scale-[1.03]'}`}>
                                 {isSaving ? (
