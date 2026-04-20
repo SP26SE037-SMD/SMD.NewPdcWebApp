@@ -33,6 +33,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const { showToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number } | null>(null);
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -74,16 +75,19 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const reduxAssessments = useSelector((state: RootState) => syllabusId ? state.syllabus.assessmentsDB[syllabusId] : undefined);
 
     useEffect(() => {
-        if (assessmentDataRes?.data?.content && syllabusId) {
-            dispatch(setAssessments({ syllabusId, assessments: assessmentDataRes.data.content }));
+        if (assessmentDataRes?.data && Array.isArray(assessmentDataRes.data) && syllabusId) {
+            dispatch(setAssessments({ syllabusId, assessments: assessmentDataRes.data }));
+        } else if (assessmentDataRes?.data?.content && syllabusId) {
+             dispatch(setAssessments({ syllabusId, assessments: assessmentDataRes.data.content }));
         }
     }, [assessmentDataRes?.data, syllabusId, dispatch]);
 
     const handleReload = async () => {
         if (!syllabusId) return;
         const { data } = await refetchAssessments();
-        if (data?.data?.content) {
-            dispatch(setAssessments({ syllabusId, assessments: data.data.content }));
+        if (data?.data) {
+             const fetched = Array.isArray(data.data) ? data.data : (data.data.content || []);
+             dispatch(setAssessments({ syllabusId, assessments: fetched }));
         }
     };
 
@@ -121,13 +125,27 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
         setExpandedIndex(assessments.length);
     };
 
-    const handleDeleteApi = async (assessmentId: string, index: number) => {
-        if (!confirm("Delete this component?")) return;
+    const handleDeleteApi = (assessmentId: string, index: number) => {
+        setDeleteConfirm({ id: assessmentId, index });
+    };
+
+    const executeDelete = async () => {
+        if (!syllabusId || !deleteConfirm) return;
+        const { id, index } = deleteConfirm;
+
+        if (!id) {
+            dispatch(removeAssessment({ syllabusId, index }));
+            setDeleteConfirm(null);
+            return;
+        }
+
         try {
-            await AssessmentService.deleteAssessment(assessmentId);
-            dispatch(removeAssessment({ syllabusId: syllabusId!, index }));
+            await AssessmentService.deleteAssessment(id);
+            dispatch(removeAssessment({ syllabusId, index }));
             showToast("Deleted", "success");
-        } catch (e) { showToast("Error", "error"); }
+        } catch (e) { showToast("Error", "error"); } finally {
+            setDeleteConfirm(null);
+        }
     };
 
     return (
@@ -169,7 +187,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                 </div>
                                 <div className="flex items-center gap-2">
                                      <button onClick={() => setExpandedIndex(index)} className="px-3 py-1.5 bg-surface-container rounded-lg text-[11px] font-bold">Edit</button>
-                                     <button onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : dispatch(removeAssessment({ syllabusId: syllabusId!, index }))} className="p-1.5 text-error"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                                     <button onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : setDeleteConfirm({ id: null, index })} className="p-1.5 text-error"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                                 </div>
                             </div>
                         </div>
@@ -190,6 +208,31 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                     subjectId={syllabusData?.data?.subjectId}
                 />
             )}
+
+            {/* ── Delete Confirmation Modal ── */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl text-center space-y-6">
+                        <div className="mx-auto w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-2">
+                            <span className="material-symbols-outlined text-3xl">warning</span>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Assessment?</h3>
+                            <p className="text-sm text-slate-500">
+                                Are you sure you want to delete this assessment component? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-center pt-2">
+                            <button onClick={() => setDeleteConfirm(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2">
+                                Cancel
+                            </button>
+                            <button onClick={executeDelete} className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -201,6 +244,17 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
     const [isSkillOpen, setIsSkillOpen] = useState(false);
 
     const handleSave = async () => {
+        if (!assessment.weight || Number(assessment.weight) <= 0) {
+            showToast("Assessment weight is required and must be greater than 0%", "warning");
+            return;
+        }
+
+        const currentTotalWeight = (otherAssessmentsWeight || 0) + Number(assessment.weight || 0);
+        if (currentTotalWeight > 100) {
+            showToast("Total weight cannot exceed 100%", "warning");
+            return;
+        }
+
         setIsSaving(true);
         try {
             let finalAssessmentId = assessment.assessmentId;

@@ -93,7 +93,7 @@ const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcc
                 <div className="mb-2">
                     <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: C.surfaceVariant, color: C.onSurfaceVariant }}>
                         {syllabusStatus === 'PENDING_REVIEW' ? 'PENDING REVIEW' : 
-                         status === 'TO_DO' ? 'DRAFT' : 
+                         status === 'TO_DO' ? 'TO DO' : 
                          status === 'IN_PROGRESS' ? 'IN PROGRESS' : 
                          status === 'REVISION_REQUESTED' ? 'REVISION REQ' : 'DONE'}
                     </span>
