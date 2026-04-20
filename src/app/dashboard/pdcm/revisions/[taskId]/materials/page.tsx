@@ -59,8 +59,8 @@ export default function RevisionMaterialsPage({ params }: { params: Promise<{ ta
     const { data: revisionRequest, isLoading: isRevisionLoading } = useRevisionRequest(taskId, true);
 
     const { data: materialsData, isLoading: isMaterialsLoading } = useQuery({
-        queryKey: ['pdcm-materials', syllabusId, 'DRAFT'],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'DRAFT'),
+        queryKey: ['pdcm-materials', syllabusId, 'REVISION_REQUESTED'],
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'REVISION_REQUESTED'),
         enabled: !!syllabusId,
     });
 
@@ -183,8 +183,8 @@ export default function RevisionMaterialsPage({ params }: { params: Promise<{ ta
                                         <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: C.primary }}>
                                             {material.materialType || 'Document'}
                                         </span>
-                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase" style={{ background: C.surfaceContainerHigh, color: C.onSurfaceVariant }}>
-                                            DRAFT
+                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase disabled:opacity-50 shadow-lg" style={{ background: '#fef3c7', color: '#92400e' }}>
+                                            REVISION_REQ
                                         </span>
                                         <div className="relative">
                                             <button 

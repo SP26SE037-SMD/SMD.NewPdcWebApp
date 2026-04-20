@@ -3,538 +3,754 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { CurriculumService, CURRICULUM_STATUS } from "@/services/curriculum.service";
+import {
+	CurriculumService,
+	CURRICULUM_STATUS,
+} from "@/services/curriculum.service";
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
 import { GroupService } from "@/services/group.service";
-import { MajorService } from "@/services/major.service";
 import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
-import {
-    ChevronLeft, CheckCircle2, AlertCircle, Loader2,
-    Layers, BookOpen, Target, Calendar, BarChart3,
-    ArrowRight, ChevronDown, ChevronUp, Sparkles,
-    Filter, LayoutGrid, Info, ShieldCheck, Check
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { RequestService } from "@/services/request.service";
+import { Loader2, Calendar } from "lucide-react";
 
 export default function VicePrincipalReviewPage() {
-    const { id } = useParams() as { id: string };
-    const router = useRouter();
-    const queryClient = useQueryClient();
+	const { id } = useParams() as { id: string };
+	const router = useRouter();
+	const queryClient = useQueryClient();
 
-    // Simulation State
-    const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
-    const [expandedElectives, setExpandedElectives] = useState<Set<string>>(new Set());
+	const [activeTab, setActiveTab] = useState<
+		"overview" | "info" | "matrix" | "structure" | "review"
+	>("overview");
+	
+	const [requestId, setRequestId] = useState<string | null>(null);
+	const [reviewComment, setReviewComment] = useState("");
+	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-    // Queries
-    const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
-        queryKey: ['curriculum-details', id],
-        queryFn: () => CurriculumService.getCurriculumById(id),
-    });
+	React.useEffect(() => {
+		if (typeof window !== "undefined") {
+			setRequestId(localStorage.getItem("requestId"));
+		}
+	}, []);
 
-    const { data: subjectsData, isLoading: isLoadingSub } = useQuery({
-        queryKey: ['curriculum-mapped-subjects', id],
-        queryFn: () => CurriculumGroupSubjectService.getSubjectsByCurriculum(id),
-    });
+	// Queries
+	const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
+		queryKey: ["curriculum-details", id],
+		queryFn: () => CurriculumService.getCurriculumById(id),
+	});
 
-    const { data: groupData, isLoading: isLoadingGroups } = useQuery({
-        queryKey: ['warehouse-groups'],
-        queryFn: () => GroupService.getGroups(),
-    });
+	const { data: subjectsData, isLoading: isLoadingSub } = useQuery({
+		queryKey: ["curriculum-mapped-subjects", id],
+		queryFn: () => CurriculumGroupSubjectService.getSubjectsByCurriculum(id),
+	});
 
-    const { data: plosData, isLoading: isLoadingPLOs } = useQuery({
-        queryKey: ['curriculum-plos', id],
-        queryFn: () => CurriculumService.getPLOsByCurriculumId(id),
-        enabled: !!id,
-    });
+	const { data: groupData, isLoading: isLoadingGroups } = useQuery({
+		queryKey: ["warehouse-groups"],
+		queryFn: () => GroupService.getGroups(),
+	});
 
-    const { data: mappingsData, isLoading: isLoadingMappings } = useQuery({
-        queryKey: ["po-plo-mappings", id],
-        queryFn: () => PoPloService.getMappingsByCurriculum(id),
-        enabled: !!id,
-    });
+	const { data: plosData, isLoading: isLoadingPLOs } = useQuery({
+		queryKey: ["curriculum-plos", id],
+		queryFn: () => CurriculumService.getPLOsByCurriculumId(id),
+		enabled: !!id,
+	});
 
-    const majorId = curriculumData?.data?.majorId || curriculumData?.data?.major?.majorId;
-    const { data: posData, isLoading: isLoadingPOs } = useQuery({
-        queryKey: ["pos-major", majorId],
-        queryFn: () => PoService.getPOsByMajorId(majorId || ""),
-        enabled: !!majorId,
-    });
+	const { data: mappingsData, isLoading: isLoadingMappings } = useQuery({
+		queryKey: ["po-plo-mappings", id],
+		queryFn: () => PoPloService.getMappingsByCurriculum(id),
+		enabled: !!id,
+	});
 
-    const mutation = useMutation({
-        mutationFn: async (newStatus: string) => {
-            // Update Curriculum Status
-            const curRes = await CurriculumService.updateCurriculumStatus(id, newStatus as any);
+	const majorId =
+		curriculumData?.data?.majorId || curriculumData?.data?.major?.majorId;
+	const { data: posData, isLoading: isLoadingPOs } = useQuery({
+		queryKey: ["pos-major", majorId],
+		queryFn: () => PoService.getPOsByMajorId(majorId || ""),
+		enabled: !!majorId,
+	});
 
-            // Synchronize Subject and PLO Statuses if it's Structure Review Enactment
-            if (newStatus === CURRICULUM_STATUS.STRUCTURE_APPROVED) {
-                // 1. Update Subjects to DEFINED
-                await SubjectService.updateSubjectStatusesBulk(
-                    id,
-                    SUBJECT_STATUS.DEFINED,
-                    undefined, // All departments
-                    SUBJECT_STATUS.DRAFT
-                );
+	const mutation = useMutation({
+		mutationFn: async (newStatus: string) => {
+			const curRes = await CurriculumService.updateCurriculumStatus(
+				id,
+				newStatus as any,
+			);
+			if (newStatus === CURRICULUM_STATUS.STRUCTURE_APPROVED) {
+				await SubjectService.updateSubjectStatusesBulk(
+					id,
+					SUBJECT_STATUS.DEFINED,
+					undefined,
+					SUBJECT_STATUS.DRAFT,
+				);
+				await CurriculumService.updatePloStatusByCurriculum(
+					id,
+					"INTERNAL_REVIEW",
+				);
+			}
+			return curRes;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+			router.push(`/dashboard/vice-principal/digital-enactment`);
+		},
+	});
 
-                // 2. Update all PLOs to INTERNAL_REVIEW
-                await CurriculumService.updatePloStatusByCurriculum(id, "INTERNAL_REVIEW");
-            }
+	const curriculum = curriculumData?.data;
+	const mappings = subjectsData?.data?.semesterMappings || [];
+	const plos =
+		plosData?.data?.content ||
+		plosData?.data ||
+		(Array.isArray(plosData) ? plosData : []);
+	const pos = (posData?.data as any)?.content || posData?.data || [];
+	const poPloMappings = mappingsData?.data || [];
 
-            return curRes;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['curriculum-details', id] });
-            router.push(`/dashboard/vice-principal/digital-enactment`);
-        }
-    });
+	const stats = useMemo(() => {
+		let count = 0;
+		let credits = 0;
+		mappings.forEach((m: any) => {
+			m.subjects?.forEach((s: any) => {
+				count++;
+				credits += s.credit ?? s.credits ?? 3;
+			});
+		});
+		return {
+			totalSubjects: count,
+			totalCredits: credits,
+			semesterCount: mappings.length,
+		};
+	}, [mappings]);
 
-    const curriculum = curriculumData?.data;
-    const mappings = subjectsData?.data?.semesterMappings || [];
-    const allGroups = (groupData?.data as any)?.content || (Array.isArray(groupData?.data) ? groupData?.data : []);
-    const plos = plosData?.data?.content || plosData?.data || (Array.isArray(plosData) ? plosData : []);
-    const pos = (posData?.data as any)?.content || posData?.data || [];
-    const poPloMappings = mappingsData?.data || [];
+	const isMapped = (poId: string, ploId: string) => {
+		return poPloMappings.some(
+			(m: any) =>
+				(m.poId === poId || m.po?.poId === poId) &&
+				(m.ploId === ploId || m.plo?.ploId === ploId),
+		);
+	};
 
-    // Derived Logic
-    const usedGroupIds = useMemo(() => {
-        const ids = new Set<string>();
-        mappings.forEach((m: any) => m.subjects?.forEach((s: any) => {
-            if (s.groupId) ids.add(s.groupId);
-        }));
-        return ids;
-    }, [mappings]);
+	if (
+		isLoadingCur ||
+		isLoadingSub ||
+		isLoadingGroups ||
+		isLoadingPLOs ||
+		isLoadingPOs ||
+		isLoadingMappings
+	) {
+		return (
+			<div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-[#f8f9fa]">
+				<Loader2 className="animate-spin text-[#2d6a4f]" size={40} />
+				<p className="mt-4 text-[12px] font-black uppercase tracking-widest text-[#5a6062]">
+					Loading Governance Matrix...
+				</p>
+			</div>
+		);
+	}
 
-    const curriculumGroups = useMemo(() => {
-        return allGroups.filter((g: any) => usedGroupIds.has(g.groupId));
-    }, [allGroups, usedGroupIds]);
+	const handleApprove = async () => {
+		if (
+			confirm(
+				"Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.",
+			)
+		) {
+			setIsSubmittingReview(true);
+			try {
+				if (requestId) {
+					await RequestService.updateRequest(requestId, {
+						status: "APPROVED",
+						comment: reviewComment,
+					});
+				}
+				mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
+			} catch (e) {
+				console.error(e);
+				alert("Failed to approve request.");
+			} finally {
+				setIsSubmittingReview(false);
+			}
+		}
+	};
+	
+	const handleReject = async () => {
+		if (!reviewComment.trim()) {
+			alert("Please provide a comment for requesting revision (rejection).");
+			return;
+		}
+		if (
+			confirm(
+				"Are you sure you want to request a revision for this curriculum? It will be marked as REJECTED.",
+			)
+		) {
+			setIsSubmittingReview(true);
+			try {
+				if (requestId) {
+					await RequestService.updateRequest(requestId, {
+						status: "REJECTED",
+						comment: reviewComment,
+					});
+				} else {
+					alert("No active request ID found. Cannot reject.");
+					return;
+				}
+				alert("Request rejected successfully!");
+				router.push(`/dashboard/vice-principal/digital-enactment`);
+			} catch (e) {
+				console.error(e);
+				alert("Failed to reject request.");
+			} finally {
+				setIsSubmittingReview(false);
+			}
+		}
+	};
 
-    const combos = useMemo(() => curriculumGroups.filter((g: any) => g.type === 'COMBO'), [curriculumGroups]);
+	return (
+		<div
+			className="max-w-7xl mx-auto px-8 py-10 bg-[#f8f9fa] text-[#2d3335] min-h-[calc(100vh-4rem)]"
+			style={{ fontFamily: "Inter, sans-serif" }}
+		>
+			{/* Header */}
+			<div className="mb-10 ml-4">
+				<nav className="flex items-center gap-2 text-xs text-[#5a6062] mb-4 font-medium uppercase tracking-widest">
+					<span
+						className="cursor-pointer hover:underline"
+						onClick={() => router.back()}
+					>
+						Curriculum Proposals
+					</span>
+					<span className="material-symbols-outlined text-[10px]">
+						chevron_right
+					</span>
+					<span className="text-[#2d6a4f]">
+						{curriculum?.curriculumCode || "Loading..."}
+					</span>
+				</nav>
+				<h1
+					className="text-5xl font-extrabold tracking-tighter text-[#2d3335] mb-4"
+					style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+				>
+					{curriculum?.major?.majorName ||
+						curriculum?.curriculumName ||
+						"Computer Science"}
+				</h1>
+				<div className="flex items-center gap-4">
+					<span className="px-3 py-1 bg-[#b1f0ce] text-[#1d5c42] text-xs font-bold rounded-full uppercase tracking-wider">
+						{curriculum?.status || "Active Proposal"}
+					</span>
+					<span className="text-sm text-[#5a6062] flex items-center gap-1 font-medium">
+						<Calendar size={14} />
+						Last updated{" "}
+						{curriculum?.updatedAt
+							? new Date(curriculum.updatedAt).toLocaleDateString()
+							: "2 days ago"}
+					</span>
+				</div>
+			</div>
 
-    const toggleElective = (groupId: string) => {
-        const next = new Set(expandedElectives);
-        if (next.has(groupId)) next.delete(groupId);
-        else next.add(groupId);
-        setExpandedElectives(next);
-    };
+			{/* Sub-navigation Tabs */}
+			<div className="flex gap-12 mb-8 border-b-0 relative ml-4">
+				<button
+					onClick={() => setActiveTab("overview")}
+					className={`pb-4 font-semibold transition-colors relative ${activeTab === "overview" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
+				>
+					Major Overview
+					{activeTab === "overview" && (
+						<div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
+					)}
+				</button>
+				<button
+					onClick={() => setActiveTab("info")}
+					className={`pb-4 font-semibold transition-colors relative ${activeTab === "info" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
+				>
+					Curriculum Info
+					{activeTab === "info" && (
+						<div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
+					)}
+				</button>
+				<button
+					onClick={() => setActiveTab("matrix")}
+					className={`pb-4 font-semibold transition-colors relative ${activeTab === "matrix" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
+				>
+					Mapping Matrix
+					{activeTab === "matrix" && (
+						<div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
+					)}
+				</button>
+				<button
+					onClick={() => setActiveTab("structure")}
+					className={`pb-4 font-semibold transition-colors relative ${activeTab === "structure" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
+				>
+					Semester Structure
+					{activeTab === "structure" && (
+						<div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
+					)}
+				</button>
+				<button
+					onClick={() => setActiveTab("review")}
+					className={`pb-4 font-semibold transition-colors relative ${activeTab === "review" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
+				>
+					Review Request
+					{activeTab === "review" && (
+						<div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
+					)}
+				</button>
+			</div>
 
-    // Statistics Calculation (Based on Simulation)
-    const stats = useMemo(() => {
-        let subjects: any[] = [];
-        mappings.forEach((m: any) => {
-            m.subjects?.forEach((s: any) => {
-                const group = curriculumGroups.find((g: any) => g.groupId === s.groupId);
-                if (!s.groupId || group?.type === 'ELECTIVE') {
-                    subjects.push(s);
-                } else if (group?.type === 'COMBO' && s.groupId === selectedComboId) {
-                    subjects.push(s);
-                }
-            });
-        });
+			{/* Tab Content */}
+			<div className="ml-4">
+				{activeTab === "overview" && (
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+						<div className="lg:col-span-8 flex flex-col gap-8">
+							{/* Core Description inherited from before */}
+							<section className="bg-[#ffffff] rounded-2xl p-8 shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)]">
+								<h3
+									className="text-xl font-bold mb-6 text-[#1d5c42] flex items-center gap-2"
+									style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+								>
+									<span className="material-symbols-outlined">info</span>
+									Core Specifications
+								</h3>
+								<p className="text-[#5a6062] leading-relaxed text-lg font-light italic mb-8">
+									"
+									{curriculum?.description ||
+										`Detailed specification and governance matrix.`}
+									"
+								</p>
+								<div className="space-y-6">
+									<div className="group">
+										<label className="text-xs font-bold text-[#5a6062] uppercase tracking-widest block mb-1">
+											Academic Department
+										</label>
+										<p className="text-lg font-medium text-[#2d3335]">
+											{curriculum?.major?.majorName ||
+												curriculum?.curriculumName ||
+												"N/A"}
+										</p>
+									</div>
+									<div className="group border-t border-[#dee3e6] pt-4">
+										<label className="text-xs font-bold text-[#5a6062] uppercase tracking-widest block mb-1">
+											Total Credits
+										</label>
+										<p className="text-lg font-medium text-[#2d3335]">
+											{stats.totalCredits} Units
+										</p>
+									</div>
+									<div className="group border-t border-[#dee3e6] pt-4">
+										<label className="text-xs font-bold text-[#5a6062] uppercase tracking-widest block mb-1">
+											Total Semesters
+										</label>
+										<p className="text-lg font-medium text-[#2d3335]">
+											{stats.semesterCount} Semesters
+										</p>
+									</div>
+								</div>
+							</section>
 
-        return {
-            totalSubjects: subjects.length,
-            totalCredits: subjects.reduce((acc: number, s: any) => acc + (s.credit ?? s.credits ?? 3), 0),
-            semesterCount: mappings.length
-        };
-    }, [mappings, curriculumGroups, selectedComboId]);
+							<section className="bg-[#f1f4f5] rounded-2xl p-8">
+								<div className="flex items-center justify-between mb-8">
+									<div className="flex items-center gap-3">
+										<span className="p-2 bg-[#b1f0ce] text-[#2d6a4f] rounded-lg material-symbols-outlined">
+											stars
+										</span>
+										<h3
+											className="text-xl font-bold tracking-tight"
+											style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+										>
+											Program Objectives (POs)
+										</h3>
+									</div>
+									<span className="text-xs font-semibold text-[#5a6062] bg-[#dee3e6] px-3 py-1 rounded-full">
+										{(pos && pos.length) || 0} Outcomes Defined
+									</span>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									{pos && pos.length > 0 ? (
+										pos.map((po: any, idx: number) => (
+											<div
+												key={po.poId || idx}
+												className={`bg-[#ffffff] p-6 rounded-xl border-l-4 ${idx === 0 ? "border-[#2d6a4f]" : "border-[#2d6a4f]/40"} transition-transform hover:-translate-y-1`}
+											>
+												<span className="text-xs font-bold text-[#2d6a4f] mb-2 block">
+													{po.poCode || `PO-0${idx + 1}`}
+												</span>
+												<p className="text-sm text-[#5a6062] leading-snug">
+													{po.description || "No description available."}
+												</p>
+											</div>
+										))
+									) : (
+										<div className="text-center py-8 col-span-2 text-[#5a6062]">
+											No POs mapped currently.
+										</div>
+									)}
+								</div>
+							</section>
+						</div>
 
-    // Mapping Logic helpers
-    const isMapped = (poId: string, ploId: string) => {
-        return poPloMappings.some((m: any) => m.poId === poId && m.ploId === ploId);
-    };
+						<div className="lg:col-span-4 flex flex-col gap-8">
+							{/* Review Status Sidebar inherited and stylized from HTML */}
+							<section className="bg-[#1d5c42] text-white p-8 rounded-xl shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)] overflow-hidden relative">
+								<div className="relative z-10">
+									<h3 className="text-lg font-bold mb-2">Review Status</h3>
+									<p className="text-[#e6ffee] text-sm mb-6 opacity-80 leading-relaxed">
+										Current phase: VP Curriculum Structure Final Enactment.
+									</p>
+									<button
+										onClick={handleApprove}
+										disabled={mutation.isPending || isSubmittingReview}
+										className="w-full py-3 bg-white text-[#2d6a4f] rounded-xl font-bold text-sm hover:bg-[#b1f0ce] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+									>
+										{mutation.isPending || isSubmittingReview ? (
+											<Loader2 size={16} className="animate-spin" />
+										) : (
+											<span className="material-symbols-outlined text-sm">
+												verified
+											</span>
+										)}
+										{mutation.isPending || isSubmittingReview ? "Processing..." : "Approve Structure"}
+									</button>
+								</div>
+								<span
+									className="material-symbols-outlined absolute -bottom-6 -right-6 text-[#014931] text-9xl opacity-20 rotate-12"
+									style={{ fontVariationSettings: "'FILL' 1" }}
+								>
+									verified
+								</span>
+							</section>
+						</div>
+					</div>
+				)}
 
-    if (isLoadingCur || isLoadingSub || isLoadingGroups || isLoadingPLOs || isLoadingPOs || isLoadingMappings) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen bg-white">
-                <Loader2 className="animate-spin text-primary" size={40} />
-                <p className="mt-4 text-[12px] font-black uppercase tracking-widest text-zinc-400">Loading Governance Matrix...</p>
-            </div>
-        );
-    }
+				{activeTab === "info" && (
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+						<div className="lg:col-span-8">
+							<section className="bg-[#f1f4f5] p-1 rounded-xl">
+								<div className="bg-[#ffffff] p-8 rounded-lg shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)] h-full">
+									<div className="flex justify-between items-center mb-8">
+										<h3
+											className="text-2xl font-bold tracking-tight text-[#1d5c42]"
+											style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+										>
+											Program Learning Outcomes
+										</h3>
+										<span className="text-xs font-semibold text-[#5a6062] bg-[#dee3e6] px-3 py-1 rounded-full">
+											{plos?.length || 0} PLOs
+										</span>
+									</div>
+									<div className="space-y-8">
+										{plos && plos.length > 0 ? (
+											plos.map((plo: any, idx: number) => (
+												<div
+													key={plo.ploId || idx}
+													className="flex gap-6 group"
+												>
+													<div className="flex-shrink-0 w-12 h-12 bg-[#b1f0ce] rounded-xl flex items-center justify-center text-[#1d5c42] font-black text-lg">
+														{idx + 1}
+													</div>
+													<div>
+														<h4 className="font-bold text-[#2d3335] mb-2 leading-snug">
+															{plo.ploCode ||
+																plo.ploName ||
+																`Outcome ${idx + 1}`}
+														</h4>
+														<p className="text-[#5a6062] text-sm leading-relaxed">
+															{plo.description}
+														</p>
+													</div>
+												</div>
+											))
+										) : (
+											<div className="text-center py-8 text-[#5a6062]">
+												No PLOs mapped currently.
+											</div>
+										)}
+									</div>
+								</div>
+							</section>
+						</div>
+					</div>
+				)}
 
-    const handleApprove = () => {
-        if (confirm("Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.")) {
-            mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
-        }
-    };
+				{activeTab === "matrix" && (
+					<div className="space-y-8">
+						<section className="flex flex-col lg:flex-row gap-8">
+							<div className="flex-1">
+								<h2
+									className="text-4xl font-black text-[#2d3335] tracking-tight mb-3"
+									style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+								>
+									PO to PLO Matrix
+								</h2>
+							</div>
+							<div className="bg-[#ffffff] p-6 rounded-2xl shadow-sm border border-[#dee3e6] flex items-center gap-6 min-w-[320px]">
+								<div className="relative w-24 h-24">
+									<svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+										<circle
+											className="stroke-[#e5e9eb]"
+											cx="18"
+											cy="18"
+											fill="none"
+											r="16"
+											strokeWidth="3"
+										></circle>
+										<circle
+											className="stroke-[#2d6a4f]"
+											cx="18"
+											cy="18"
+											fill="none"
+											r="16"
+											strokeDasharray="100"
+											strokeDashoffset="15"
+											strokeLinecap="round"
+											strokeWidth="3"
+										></circle>
+									</svg>
+									<div className="absolute inset-0 flex items-center justify-center">
+										<span
+											className="text-2xl font-bold text-[#2d6a4f]"
+											style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+										>
+											85%
+										</span>
+									</div>
+								</div>
+								<div>
+									<h4
+										className="font-bold text-[#2d3335]"
+										style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+									>
+										Alignment Score
+									</h4>
+									<p className="text-xs text-[#5a6062] mb-2">
+										Current matrix health
+									</p>
+									<span className="px-2 py-1 bg-[#b1f0ce] text-[#1d5c42] text-[10px] font-bold uppercase rounded-md tracking-wider">
+										High Alignment
+									</span>
+								</div>
+							</div>
+						</section>
 
-    return (
-        <div className="min-h-screen bg-zinc-50/50 pb-20">
-            {/* Sticky Header */}
-            <div className="bg-white/80 backdrop-blur-xl border-b border-zinc-100 sticky top-0 z-50 px-8 py-5">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <button
-                            onClick={() => router.back()}
-                            className="w-10 h-10 flex items-center justify-center bg-white border border-zinc-100 rounded-xl text-zinc-400 hover:text-primary transition-all shadow-sm"
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-                        <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-[12px] font-black text-indigo-600 uppercase tracking-widest">VP Architecture Review</span>
-                                <span className="text-zinc-300">•</span>
-                                <span className="text-[12px] font-black text-zinc-400 uppercase tracking-widest">{curriculum?.curriculumCode}</span>
-                            </div>
-                            <h1 className="text-2xl font-black text-zinc-900 tracking-tight">Governance Structure Verification.</h1>
-                        </div>
-                    </div>
+						<div className="bg-[#ffffff] rounded-2xl shadow-sm border border-[#dee3e6] overflow-hidden">
+							<div className="overflow-x-auto no-scrollbar">
+								<table className="w-full text-left border-collapse">
+									<thead>
+										<tr className="bg-[#f1f4f5]/50">
+											<th
+												className="p-6 border-b border-[#dee3e6] text-sm font-bold text-[#5a6062] uppercase tracking-wider w-1/3 min-w-[300px]"
+												style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+											>
+												Program Objectives (PO)
+											</th>
+											{plos.map((plo: any, i: number) => (
+												<th
+													key={plo.ploId || i}
+													className="p-4 border-b border-[#dee3e6] text-[11px] font-bold text-[#5a6062] uppercase tracking-widest text-center min-w-[120px] cursor-help relative group"
+													style={{
+														fontFamily: "Plus Jakarta Sans, sans-serif",
+													}}
+												>
+													{plo.ploCode || plo.ploName || `Outcome ${i + 1}`}
+													{/* Custom Tooltip */}
+													<div className={`absolute top-full mt-2 w-64 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-[#2d3335] text-[11px] font-medium rounded-xl p-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#dee3e6] pointer-events-none z-[100] normal-case tracking-normal text-left ${i > plos.length - 3 ? 'right-0' : 'left-0'}`}>
+														{plo.description || plo.ploName || 'No description available.'}
+													</div>
+												</th>
+											))}
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-[#dee3e6]/50">
+										{pos.map((po: any, poIndex: number) => (
+											<tr
+												key={po.poId}
+												className="hover:bg-[#f1f4f5]/50 transition-colors"
+											>
+												<td className="p-6 relative group">
+													<div className="flex flex-col items-center">
+														<span className="text-sm font-bold text-[#2d6a4f] cursor-help hover:underline">{po.poCode || po.poName || 'Unknown PO'}</span>
+													</div>
+													{/* Custom Tooltip */}
+													<div className={`absolute left-full ml-4 w-72 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-[#2d3335] text-[12px] font-medium rounded-xl p-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#dee3e6] pointer-events-none z-[100] text-left ${poIndex > pos.length - 3 ? 'bottom-[10%]' : 'top-[30%]'}`}>
+														{po.description || po.poName || 'No description available.'}
+													</div>
+												</td>
+												{plos.map((plo: any) => {
+													const mapped = isMapped(po.poId, plo.ploId);
+													return (
+														<td key={plo.ploId} className="p-4 text-center">
+															<div className="flex justify-center">
+																{mapped ? (
+																	<div className="w-8 h-8 rounded-lg bg-[#b1f0ce] text-[#1d5c42] flex items-center justify-center">
+																		<span
+																			className="material-symbols-outlined text-lg"
+																			style={{
+																				fontVariationSettings: "'wght' 700",
+																			}}
+																		>
+																			check
+																		</span>
+																	</div>
+																) : (
+																	<span className="text-[#adb3b5]">—</span>
+																)}
+															</div>
+														</td>
+													);
+												})}
+											</tr>
+										))}
+										{pos.length === 0 && (
+											<tr>
+												<td
+													colSpan={plos.length + 1}
+													className="p-6 text-center text-[#5a6062]"
+												>
+													No mapping data available
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				)}
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[12px] font-black text-indigo-500 uppercase tracking-widest">Verification Active</span>
-                            <span className="text-sm font-bold text-zinc-400">{stats.totalSubjects} Subjects • {stats.totalCredits} Credits</span>
-                        </div>
-                        <button
-                            onClick={handleApprove}
-                            disabled={mutation.isPending}
-                            className="px-8 py-3 bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-indigo-600 transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {mutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
-                            Approve Structure
-                        </button>
-                    </div>
-                </div>
-            </div>
+				{activeTab === "structure" && (
+					<div className="space-y-12 max-w-5xl">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+							{mappings.map((semesterData: any, i: number) => (
+								<div
+									key={`sem-${semesterData.semester || semesterData.semesterNo || "undef"}-${i}`}
+									className="space-y-4"
+								>
+									<h3 className="font-bold text-sm text-[#2d3335] tracking-wide px-2 uppercase">
+										{semesterData.semester || semesterData.semesterNo
+											? `Semester ${String(semesterData.semester || semesterData.semesterNo).padStart(2, "0")}`
+											: "Semester Unassigned"}
+									</h3>
+									<div className="bg-[#f1f4f5] rounded-2xl p-4 space-y-3 min-h-[150px]">
+										{semesterData.subjects &&
+										semesterData.subjects.length > 0 ? (
+											semesterData.subjects.map((sub: any) => (
+												<div
+													key={sub.subjectId || sub.subjectCode}
+													className={`bg-[#ffffff] p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer ${sub.status === "DRAFT" ? "border-l-4 border-yellow-400" : "border-l-4 border-[#2d6a4f]/20"}`}
+												>
+													<div className="flex justify-between items-start mb-1">
+														<span className="text-[10px] font-bold text-[#2d6a4f] tracking-widest">
+															{sub.subjectCode}
+														</span>
+														<span className="text-[10px] font-semibold text-[#5a6062] bg-[#f1f4f5] px-2 py-0.5 rounded">
+															{sub.credit || sub.credits || 3} Credits
+														</span>
+													</div>
+													<h4 className="text-sm font-bold text-[#2d3335] leading-tight">
+														{sub.subjectName || sub.translatedName}
+													</h4>
+													{sub.prerequisites &&
+														sub.prerequisites.length > 0 && (
+															<p className="text-[10px] text-[#5a6062] mt-2 italic flex items-center gap-1">
+																<span className="material-symbols-outlined text-[10px]">
+																	link
+																</span>
+																Prereq:{" "}
+																{sub.prerequisites
+																	.map((p: any) => p.subjectCode)
+																	.join(", ")}
+															</p>
+														)}
+												</div>
+											))
+										) : (
+											<div className="p-4 text-center text-sm text-[#5a6062] italic flex items-center justify-center h-full gap-2">
+												<span className="material-symbols-outlined text-xl opacity-50">
+													data_alert
+												</span>
+												No subjects mapped
+											</div>
+										)}
+									</div>
+								</div>
+							))}
+						</div>
+						{mappings.length === 0 && (
+							<div className="text-center py-12 text-[#5a6062] bg-[#f1f4f5] rounded-xl flex items-center justify-center flex-col gap-2">
+								<span className="material-symbols-outlined text-4xl">
+									account_tree
+								</span>
+								<p>Semester structure has not been built yet.</p>
+							</div>
+						)}
+					</div>
+				)}
 
-            <div className="max-w-6xl mx-auto mt-12 px-8 space-y-10">
+				{activeTab === "review" && (
+					<div className="max-w-4xl pt-0 pb-6">
+						<div className="bg-[#ffffff] p-6 md:p-8 rounded-3xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] border border-[#dee3e6]">
+							<div className="mb-6 pb-4 border-b border-[#dee3e6]">
+								<h2 className="text-2xl font-bold tracking-tight text-[#2d3335]" style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+									Final Curriculum Review
+								</h2>
+								<p className="text-sm text-[#5a6062] mt-2 max-w-2xl leading-relaxed">
+									Please provide your official feedback below. This comment will be attached to the request response. Once ready, choose to either request a revision (reject) or officially approve the structure.
+								</p>
+							</div>
 
-                {/* Curriculum Outcomes (PLOs) */}
-                <div className="bg-white p-8 rounded-[1.5rem] border border-zinc-100 shadow-sm">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center">
-                            <Target size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">PLO Verification</h3>
-                            <p className="text-[12px] font-bold text-zinc-400 uppercase mt-0.5">Core competencies established by this curriculum</p>
-                        </div>
-                    </div>
+							<div className="mb-6">
+								<h3 className="text-sm font-bold text-[#2d3335] uppercase tracking-wider mb-4 flex items-center gap-2">
+									<span className="material-symbols-outlined text-[20px] text-[#2d6a4f]">
+										history_edu
+									</span>
+									Official Feedback
+								</h3>
+								<div className="relative group">
+									<textarea
+										value={reviewComment}
+										onChange={(e) => setReviewComment(e.target.value)}
+										className="w-full h-32 bg-[#f1f4f5] border-2 border-transparent group-hover:border-[#2d6a4f]/30 rounded-2xl p-6 text-sm focus:bg-white focus:border-[#2d6a4f] transition-all resize-none shadow-inner outline-none"
+										placeholder="Add detailed feedback, required changes, or general notes for the faculty..."
+									></textarea>
+								</div>
+								<div className="mt-3 flex items-center gap-2 px-2 opacity-80">
+									<span className="material-symbols-outlined text-[#5a6062] text-[16px]">
+										info
+									</span>
+									<p className="text-xs text-[#5a6062] font-medium">
+										Comment is required for requesting a revision (reject).
+									</p>
+								</div>
+							</div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {plos && plos.length > 0 ? (
-                            plos.map((plo: any) => (
-                                <div key={plo.ploId || plo.id} className="p-5 bg-zinc-50 rounded-xl border border-zinc-100/50 hover:border-indigo-200 transition-all group">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-8 h-8 rounded-lg bg-white border border-zinc-100 flex items-center justify-center text-[12px] font-black text-indigo-600 shrink-0 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                                            {(plo.ploCode || plo.ploName || plo.name)?.split(' ')[1] || (plo.ploCode || plo.ploName || plo.name) || 'PLO'}
-                                        </div>
-                                        <div>
-                                            <h4 className="text-[13px] font-black text-zinc-900 uppercase tracking-wider mb-1">{plo.ploCode || plo.ploName || plo.name}</h4>
-                                            <p className="text-[13px] font-medium text-zinc-500 leading-relaxed">{plo.description}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-2 p-8 text-center bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-                                <p className="text-[12px] font-black text-zinc-400 uppercase tracking-widest">No PLOs defined for this curriculum</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Competency Alignment Matrix (PO-PLO) */}
-                <div className="bg-[#FCFCFD] p-8 rounded-[1.5rem] border border-zinc-200/60 shadow-sm overflow-hidden">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center">
-                            <Layers size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">
-                                Competency Alignment Matrix
-                            </h3>
-                            <p className="text-[12px] font-bold text-zinc-400 uppercase mt-0.5">
-                                Verification of Program Learning Outcomes against Strategic
-                                Objectives
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="overflow-x-auto overflow-y-hidden rounded-2xl custom-scrollbar">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="bg-zinc-200/50 border-b-2 border-zinc-200">
-                                    <th className="px-4 py-6 text-left border-r-2 border-zinc-200 w-[140px] min-w-[140px] max-w-[140px]">
-                                        <span className="text-[12px] font-black uppercase tracking-widest text-zinc-600">
-                                            Outcome (PLO)
-                                        </span>
-                                    </th>
-                                    {pos.map((po: any, idx: number) => (
-                                        <th
-                                            key={po.poId || idx}
-                                            className="p-6 text-center border-b border-r border-zinc-100/50 min-w-[100px] group relative"
-                                        >
-                                            <span className="text-[13px] font-black uppercase tracking-widest text-zinc-900 cursor-help underline decoration-dotted decoration-zinc-300">
-                                                {po.poCode || `PO${idx + 1}`}
-                                            </span>
-                                            {/* PO Tooltip */}
-                                            <div className="absolute opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-4 bg-zinc-900 text-white rounded-xl shadow-2xl z-50 text-left pointer-events-none">
-                                                <div className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-2 border-b border-zinc-800 pb-2">
-                                                    {po.poCode || `PO${idx + 1}`} objective
-                                                </div>
-                                                <p className="text-[12px] font-medium leading-relaxed opacity-80">
-                                                    {po.description ||
-                                                        "Program Objective established for this major."}
-                                                </p>
-                                            </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {plos.map((plo: any, idx: number) => (
-                                    <tr
-                                        key={plo.ploId || plo.id}
-                                        className="hover:bg-indigo-50/20 transition-colors group/row even:bg-zinc-50/50"
-                                    >
-                                        <td className="px-4 py-6 border-r-2 border-zinc-200 bg-zinc-100/20 relative group text-zinc-900 w-[140px] max-w-[140px]">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[13px] font-black text-zinc-900 uppercase">
-                                                    {plo.ploCode || plo.ploName || plo.name}
-                                                </span>
-                                                <span className="text-[13px] font-medium text-zinc-400 line-clamp-1 italic cursor-help">
-                                                    {plo.description}
-                                                </span>
-                                            </div>
-
-                                            {/* PLO Description Tooltip (Projection) */}
-                                            <div className={`absolute opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 left-[90%] w-72 p-5 bg-zinc-900 shadow-2xl rounded-xl z-[60] pointer-events-none border border-zinc-800 ${idx === plos.length - 1 ? "bottom-0" : "top-4"
-                                                }`}>
-                                                <div className={`absolute left-0 -translate-x-1/2 w-3 h-3 bg-zinc-900 rotate-45 border-l border-b border-zinc-800 ${idx === plos.length - 1 ? "bottom-8" : "top-6"
-                                                    }`} />
-                                                <div className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2 border-b border-zinc-800 pb-2">
-                                                    {plo.ploCode || "PLO Detail"}
-                                                </div>
-                                                <p className="text-[12px] font-medium leading-relaxed text-zinc-300">
-                                                    {plo.description}
-                                                </p>
-                                            </div>
-                                        </td>
-                                        {pos.map((po: any) => {
-                                            const active = isMapped(po.poId, plo.ploId);
-                                            return (
-                                                <td
-                                                    key={po.poId}
-                                                    className={`p-6 text-center border-b border-zinc-100 border-r border-zinc-100/50 transition-colors ${active ? "bg-indigo-50/40" : "bg-white/40"
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center justify-center">
-                                                        {active ? (
-                                                            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/50">
-                                                                <Check size={16} strokeWidth={3} />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-2 h-2 rounded-full bg-zinc-100" />
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Simulation Controls */}
-                <div className="bg-white p-8 rounded-[1.5rem] border border-zinc-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center">
-                            <Sparkles size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">Specialization Matrix</h3>
-                            <p className="text-[12px] font-bold text-zinc-400 uppercase mt-0.5">Preview academic flow for specific combos</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <select
-                            value={selectedComboId || ""}
-                            onChange={(e) => setSelectedComboId(e.target.value || null)}
-                            className="flex-1 md:w-64 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer"
-                        >
-                            <option value="">No Combo Selected (Slot Mode)</option>
-                            {combos.map((c: any) => (
-                                <option key={c.groupId} value={c.groupId}>{c.groupCode} — {c.groupName}</option>
-                            ))}
-                        </select>
-                        <LayoutGrid className="text-zinc-300" size={20} />
-                    </div>
-                </div>
-
-                {/* Matrix Table */}
-                <div className="bg-white rounded-[1.8rem] border border-zinc-100 shadow-xl overflow-hidden mb-20">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-zinc-900 text-white">
-                                <th className="px-8 py-5 text-left text-[12px] font-black uppercase tracking-widest w-[160px]">SubjectCode</th>
-                                <th className="px-8 py-5 text-left text-[12px] font-black uppercase tracking-widest">Subject Name</th>
-                                <th className="px-8 py-5 text-center text-[12px] font-black uppercase tracking-widest w-[120px]">Semester</th>
-                                <th className="px-8 py-5 text-center text-[12px] font-black uppercase tracking-widest w-[140px]">Credits</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {mappings.map((semMap: any) => {
-                                const subjects = semMap.subjects || [];
-
-                                // Organize subjects by their role
-                                const standalones = subjects.filter((s: any) => !s.groupId);
-                                const comboSubjects = subjects.filter((s: any) => curriculumGroups.find((g: any) => g.groupId === s.groupId)?.type === 'COMBO');
-                                const electiveSubjects = subjects.filter((s: any) => curriculumGroups.find((g: any) => g.groupId === s.groupId)?.type === 'ELECTIVE');
-
-                                // Combo Slot Calculation
-                                const comboGroupsInSem = Array.from(new Set(comboSubjects.map((s: any) => s.groupId as string))).filter(Boolean) as string[];
-                                const subjectsByGroup: Record<string, any[]> = {};
-                                comboGroupsInSem.forEach((gid: string) => {
-                                    subjectsByGroup[gid] = comboSubjects.filter((s: any) => s.groupId === gid);
-                                });
-
-                                const subjectsByGroupValues = Object.values(subjectsByGroup);
-                                const maxComboRows = subjectsByGroupValues.length > 0
-                                    ? Math.max(...subjectsByGroupValues.map(list => list.length))
-                                    : 0;
-                                const comboSlots = Array.from({ length: maxComboRows }, (_, i) => i);
-
-                                const electiveGroupIds = Array.from(new Set(electiveSubjects.map((s: any) => s.groupId as string))).filter(Boolean) as string[];
-
-                                const semesterTotalCredits = subjects.reduce(
-                                    (acc: number, s: any) => acc + (s.credit ?? s.credits ?? 0),
-                                    0,
-                                );
-
-                                return (
-                                    <React.Fragment key={semMap.semesterNo}>
-                                        {/* Standalone Rows */}
-                                        {standalones.map((sub: any) => (
-                                            <tr key={sub.subjectId} className="hover:bg-zinc-50 transition-colors">
-                                                <td className="px-8 py-6 text-[13px] font-black text-zinc-900 tracking-wide border-b border-zinc-100">
-                                                    {sub.subjectCode}
-                                                </td>
-                                                <td className="px-8 py-6 border-b border-zinc-100">
-                                                    <span className="text-[12px] font-bold text-zinc-900 line-clamp-1">{sub.subjectName}</span>
-                                                </td>
-                                                <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-900 border-b border-zinc-100">{semMap.semesterNo}</td>
-                                                <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-900 border-b border-zinc-100">{sub.credit ?? sub.credits ?? 0}</td>
-                                            </tr>
-                                        ))}
-
-                                        {/* Combo Slots (Aggregated) */}
-                                        {comboSlots.map((slotIdx) => {
-                                            const activeSubject = selectedComboId ? subjectsByGroup[selectedComboId]?.[slotIdx] : null;
-
-                                            if (selectedComboId && activeSubject) {
-                                                return (
-                                                    <tr key={`combo-active-${semMap.semesterNo}-${slotIdx}`} className="bg-indigo-50/10 hover:bg-indigo-50/20 transition-colors group">
-                                                        <td className="px-8 py-6 text-[13px] font-black text-indigo-600 tracking-wide border-b border-indigo-50">
-                                                            {activeSubject.subjectCode}
-                                                        </td>
-                                                        <td className="px-8 py-6 border-b border-indigo-50">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1 px-2 bg-indigo-500 text-white rounded-md text-[9px] font-black uppercase tracking-widest">
-                                                                    COMBO
-                                                                </div>
-                                                                <span className="text-[12px] font-bold text-indigo-900 line-clamp-1">{activeSubject.subjectName}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-indigo-900 border-b border-indigo-50">{semMap.semesterNo}</td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-indigo-900 border-b border-indigo-50">{activeSubject.credit ?? activeSubject.credits ?? 0}</td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            if (!selectedComboId) {
-                                                return (
-                                                    <tr key={`combo-placeholder-${semMap.semesterNo}-${slotIdx}`} className="hover:bg-indigo-50/30 transition-colors group">
-                                                        <td className="px-8 py-6 text-[13px] font-black text-indigo-400/50 tracking-wide border-b border-zinc-50 italic">
-                                                            [COMBO SLOT]
-                                                        </td>
-                                                        <td className="px-8 py-6 border-b border-zinc-50">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1 px-2 bg-indigo-50 text-indigo-500 rounded-md text-[9px] font-black uppercase tracking-widest opacity-50">
-                                                                    SELECTION REQ.
-                                                                </div>
-                                                                <span className="text-[13px] font-bold text-zinc-300 italic uppercase tracking-widest leading-none">Slot {slotIdx + 1} — Select Specialization</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-300 border-b border-zinc-50">{semMap.semesterNo}</td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-300 border-b border-zinc-50">—</td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            return null;
-                                        })}
-
-                                        {/* Elective Groups */}
-                                        {electiveGroupIds.map((grpId) => {
-                                            const group = curriculumGroups.find((g: any) => g.groupId === grpId);
-                                            if (!group) return null;
-
-                                            const groupSubjects = electiveSubjects.filter((s: any) => s.groupId === grpId);
-                                            const isExpanded = expandedElectives.has(grpId);
-
-                                            return (
-                                                <React.Fragment key={`elective-group-${grpId}`}>
-                                                    <tr
-                                                        onClick={() => toggleElective(grpId!)}
-                                                        className="hover:bg-emerald-50/30 transition-colors cursor-pointer group"
-                                                    >
-                                                        <td className="px-8 py-6 text-[13px] font-black text-emerald-600 tracking-wide border-b border-zinc-50">
-                                                            <div className="flex items-center gap-2">
-                                                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                                {group.groupCode}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6 border-b border-zinc-50">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded-md text-[9px] font-black uppercase tracking-widest">
-                                                                    ELECTIVE
-                                                                </div>
-                                                                <span className="text-[12px] font-bold text-zinc-900 line-clamp-1">{group.groupName}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-900 border-b border-zinc-50">{semMap.semesterNo}</td>
-                                                        <td className="px-8 py-6 text-center text-[13px] font-black text-zinc-900 border-b border-zinc-100">VARIES</td>
-                                                    </tr>
-                                                    {isExpanded && groupSubjects.map((gs: any) => (
-                                                        <tr key={`nested-${gs.subjectId}`} className="bg-emerald-50/10 transition-colors">
-                                                            <td className="px-8 pl-16 py-4 text-[12px] font-bold text-zinc-400 border-b border-zinc-50/50">
-                                                                {gs.subjectCode}
-                                                            </td>
-                                                            <td className="px-8 py-4 text-[13px] font-medium text-zinc-500 border-b border-zinc-50/50">
-                                                                {gs.subjectName}
-                                                            </td>
-                                                            <td className="px-8 py-4 text-center text-[12px] font-bold text-zinc-300 border-b border-zinc-50/50">—</td>
-                                                            <td className="px-8 py-4 text-center text-[12px] font-bold text-zinc-400 border-b border-zinc-50/50">{gs.credit ?? gs.credits ?? 0}</td>
-                                                        </tr>
-                                                    ))}
-                                                </React.Fragment>
-                                            );
-                                        })}
-
-                                        {/* Spacer between semesters */}
-                                        <tr className="h-10 bg-zinc-50 border-y border-zinc-100">
-                                            <td colSpan={3} className="px-8 text-right">
-                                                <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">
-                                                    Semester {semMap.semesterNo} Aggregate
-                                                </span>
-                                            </td>
-                                            <td className="px-8 text-center bg-zinc-100/50">
-                                                <span className="text-[13px] font-black text-indigo-600">
-                                                    {semesterTotalCredits} Credits
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
+							<div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+								<button 
+									onClick={handleReject}
+									disabled={isSubmittingReview || mutation.isPending}
+									className="w-full sm:w-1/2 py-4 bg-white border-2 border-rose-500/50 text-rose-500 hover:bg-rose-500 hover:border-rose-500 hover:text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50"
+								>
+									{isSubmittingReview ? <Loader2 size={20} className="animate-spin" /> : (
+										<span className="material-symbols-outlined text-[20px]">
+											assignment_return
+										</span>
+									)}
+									Request Revision
+								</button>
+								<button 
+									onClick={handleApprove}
+									disabled={isSubmittingReview || mutation.isPending}
+									className="w-full sm:w-1/2 py-4 bg-[#2d6a4f] text-white border-2 border-[#2d6a4f] hover:bg-[#1d5c42] hover:border-[#1d5c42] rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#2d6a4f]/25 transition-all duration-300 disabled:opacity-50"
+								>
+									{isSubmittingReview || mutation.isPending ? <Loader2 size={20} className="animate-spin" /> : (
+										<span className="material-symbols-outlined text-[20px]">
+											task_alt
+										</span>
+									)}
+									Approve Structure
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
