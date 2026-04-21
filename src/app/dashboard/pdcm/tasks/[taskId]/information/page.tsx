@@ -242,9 +242,6 @@ info: {
                         <h3 className="text-xl font-extrabold mt-0.5" style={{ color: C.onPrimaryContainer, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                             {bloomLabel}
                         </h3>
-                        <p className="mt-2 leading-relaxed italic text-[11px]" style={{ color: C.onSurfaceVariant }}>
-                            Students will synthesize complex theories and justify decisions based on academic criteria and established standards.
-                        </p>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {[1, 2, 3, 4, 5, 6].map(lvl => (
@@ -299,18 +296,18 @@ info: {
                     {
                         icon: 'grade',
                         label: 'Scoring Scale',
-                        value: `${subjectData?.scoringScale ?? (syllabusData?.scoringScale || 10)} / 10`,
+                        value: `${subjectData?.scoringScale ?? (syllabusData?.scoringScale || 10)}`,
                     },
                     {
                         icon: 'check_circle',
-                        label: 'Min. Pass Score',
-                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgGrade ?? syllabusData?.minAvgMarkToPass ?? 0} Points`,
+                        label: 'Min To Pass Score',
+                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgGrade ?? syllabusData?.minAvgMarkToPass ?? 0}`,
                     },
                     {
                         icon: 'policy',
                         label: 'Decision Level',
                         value: subjectData?.decisionNo ? `Decision: ${subjectData.decisionNo}` : `Level ${syllabusData?.decisionLevel || 1}`,
-                        highlight: true,
+                        highlight: false,
                     },
                 ].map((item) => (
                     <div key={item.label}

@@ -4,9 +4,9 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    ChevronDown, LogOut, Settings, User, Bell, X, 
-    ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, 
+import {
+    ChevronDown, LogOut, Settings, User, Bell, X,
+    ChevronRight, ChevronLeft, CheckCircle2, AlertCircle,
     Info, BellRing, Search, CheckCheck, Trash2, Filter,
     Loader2, FileEdit, Eye, CalendarClock
 } from 'lucide-react';
@@ -143,11 +143,11 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
         isLoading: notiLoading,
         latestRealtimeNotification,
     } = useSelector((state: RootState) => state.notification);
-    
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isNotiOpen, setIsNotiOpen] = useState(false);
     const [isAllNotiModalOpen, setIsAllNotiModalOpen] = useState(false);
-    
+
     // Modal state
     const [notiPage, setNotiPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
@@ -156,7 +156,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
         open: boolean; type: 'task' | 'review'; id: string; name: string; loading: boolean;
     }>({ open: false, type: 'task', id: '', name: '', loading: false });
     const [filterUnread, setFilterUnread] = useState(false);
-    
+
     const menuRef = useRef<HTMLDivElement>(null);
     const notiRef = useRef<HTMLDivElement>(null);
 
@@ -197,8 +197,8 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
 
     const filteredNotis = useMemo(() => {
         return notifications.filter((n: NotificationData) => {
-            const matchesSearch = (n.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 (getNotifContent(n)).toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = (n.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (getNotifContent(n)).toLowerCase().includes(searchTerm.toLowerCase());
             const matchesFilter = filterUnread ? !n.isRead : true;
             return matchesSearch && matchesFilter;
         });
@@ -291,7 +291,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                 {/* Left: Logo / Back */}
                 <div className="flex items-center gap-4">
                     {onBack && (
-                        <button 
+                        <button
                             onClick={onBack}
                             className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-on-surface/5 transition-all text-[24px]"
                         >
@@ -315,11 +315,10 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                         <button
                             key={tab.id}
                             onClick={tab.onClick}
-                            className={`transition-all duration-200 font-medium pb-2 relative whitespace-nowrap ${
-                                tab.isActive 
-                                    ? 'text-primary font-semibold' 
+                            className={`transition-all duration-200 font-medium pb-2 relative whitespace-nowrap ${tab.isActive
+                                    ? 'text-primary font-semibold'
                                     : 'text-on-surface/60 hover:text-on-surface'
-                            }`}
+                                }`}
                         >
                             {tab.label}
                             {tab.isActive && (
@@ -334,7 +333,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                     {actionButton && (React.isValidElement(actionButton) ? (
                         actionButton
                     ) : (
-                        <button 
+                        <button
                             onClick={(actionButton as any).onClick}
                             className="btn-pdcm-ghost px-4 py-2 rounded-xl text-xs shadow-sm"
                         >
@@ -345,7 +344,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
 
                     {/* Notification System */}
                     <div className="relative" ref={notiRef}>
-                        <button 
+                        <button
                             onClick={() => setIsNotiOpen(!isNotiOpen)}
                             className={`relative p-2.5 transition-all rounded-full group ${isNotiOpen ? 'bg-primary/10 text-primary shadow-inner' : 'text-on-surface-variant hover:text-primary hover:bg-primary/5'}`}
                         >
@@ -409,7 +408,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
 
                         <AnimatePresence>
                             {isNotiOpen && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 12, scale: 0.96 }}
@@ -428,11 +427,11 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                                 <div>
                                                     <p className="text-[15px] font-black text-[#1a1f18] tracking-tight">Notifications</p>
                                                     <p className="text-[11px] font-extrabold uppercase tracking-widest text-[#4caf50]">
-                                                        {unreadCount > 0 ? `${unreadCount} NEW UPDATES` : 'All caught up!'}
+                                                        {unreadCount > 0 ? `${unreadCount} NEW UPDATES` : ''}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <button onClick={handleMarkAllRead} 
+                                            <button onClick={handleMarkAllRead}
                                                 className="text-[10px] font-black px-3.5 py-2 rounded-xl transition-all active:scale-95 flex items-center gap-2 bg-white text-[#1a1f18] border border-[#2d342b]/15 shadow-sm hover:bg-[#4caf50] hover:text-white hover:border-[#4caf50]"
                                             >
                                                 <CheckCheck size={14} />
@@ -452,8 +451,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style={{ background: '#f4f7f1' }}>
                                                     <BellRing size={24} className="text-on-surface-variant/30" />
                                                 </div>
-                                                <p className="text-sm font-bold text-on-surface/40">No notifications yet</p>
-                                                <p className="text-[11px] text-on-surface-variant/30 mt-0.5">We'll notify you when something arrives</p>
+                                                <p className="text-sm font-bold text-on-surface/40">No Notifications</p>
                                             </div>
                                         ) : (
                                             <div className="space-y-0">
@@ -461,72 +459,69 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                                     const entity = getEntityInfo(n);
                                                     const hasAction = !!entity.id;
                                                     return (
-                                                    <motion.div key={n.notificationId}
-                                                        initial={{ opacity: 0, x: -8 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: idx * 0.04 }}
-                                                        className={`relative px-5 py-4 transition-all group flex gap-4 cursor-pointer border-b border-[#2d342b]/5 last:border-0 ${
-                                                            !n.isRead 
-                                                                ? 'bg-[#4caf50]/[0.03] hover:bg-[#4caf50]/[0.06]' 
-                                                                : 'bg-white hover:bg-[#fcfdfa]'
-                                                        }`}
-                                                        onClick={() => hasAction ? handleNotifNavigate(n) : handleMarkRead(n.notificationId)}
-                                                    >
-                                                        {/* Icon */}
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${!n.isRead ? 'bg-white shadow-sm' : 'bg-on-surface/[0.04]'}`}>
-                                                            <TypeIcon type={resolveNotiType(n.type)} size={16} />
-                                                        </div>
-                                                        {/* Content */}
-                                                        <div className="grow min-w-0 flex flex-col">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <p className={`text-[13.5px] font-black leading-snug line-clamp-1 ${!n.isRead ? 'text-[#1a1f18]' : 'text-[#2d342b]/85'}`}>
-                                                                    {n.title}
-                                                                </p>
-                                                                {!n.isRead && <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1 shadow-sm" style={{ background: '#4caf50' }} />}
+                                                        <motion.div key={n.notificationId}
+                                                            initial={{ opacity: 0, x: -8 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: idx * 0.04 }}
+                                                            className={`relative px-5 py-4 transition-all group flex gap-4 cursor-pointer border-b border-[#2d342b]/5 last:border-0 ${!n.isRead
+                                                                    ? 'bg-[#4caf50]/[0.03] hover:bg-[#4caf50]/[0.06]'
+                                                                    : 'bg-white hover:bg-[#fcfdfa]'
+                                                                }`}
+                                                            onClick={() => hasAction ? handleNotifNavigate(n) : handleMarkRead(n.notificationId)}
+                                                        >
+                                                            {/* Icon */}
+                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${!n.isRead ? 'bg-white shadow-sm' : 'bg-on-surface/[0.04]'}`}>
+                                                                <TypeIcon type={resolveNotiType(n.type)} size={16} />
                                                             </div>
-                                                            {getNotifContent(n) && (
-                                                                <p className="text-[12px] text-[#4b5249] font-bold line-clamp-2 leading-relaxed mt-1">{getNotifContent(n)}</p>
-                                                            )}
-                                                            <div className="flex items-center gap-2 mt-2">
-                                                                <span className="text-[10px] font-black text-[#5a6157]/90 bg-[#2d342b]/5 px-2 py-0.5 rounded-md uppercase tracking-wider">{formatDate(n.createdAt)}</span>
-                                                                {entity.type && (
-                                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-[2px] rounded-md ${
-                                                                        entity.type === 'review' 
-                                                                            ? 'bg-purple-50 text-purple-500' 
-                                                                            : 'bg-emerald-50 text-emerald-600'
-                                                                    }`}>
-                                                                        {entity.type === 'review' ? '● Review' : '● Task'}
-                                                                    </span>
+                                                            {/* Content */}
+                                                            <div className="grow min-w-0 flex flex-col">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <p className={`text-[13.5px] font-black leading-snug line-clamp-1 ${!n.isRead ? 'text-[#1a1f18]' : 'text-[#2d342b]/85'}`}>
+                                                                        {n.title}
+                                                                    </p>
+                                                                    {!n.isRead && <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1 shadow-sm" style={{ background: '#4caf50' }} />}
+                                                                </div>
+                                                                {getNotifContent(n) && (
+                                                                    <p className="text-[12px] text-[#4b5249] font-bold line-clamp-2 leading-relaxed mt-1">{getNotifContent(n)}</p>
                                                                 )}
-                                                            </div>
-                                                        </div>
-                                                        {/* Action Button */}
-                                                        {hasAction && (
-                                                            <div className="shrink-0 self-center flex items-center gap-2">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleNotifNavigate(n);
-                                                                    }}
-                                                                    disabled={loadingNotifId === n.notificationId}
-                                                                    className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 border ${
-                                                                        !n.isRead 
-                                                                            ? 'bg-[#4caf50] text-white border-[#4caf50] shadow-sm' 
-                                                                            : 'bg-white text-[#5a6157] border-[#2d342b]/10 hover:bg-[#4caf50] hover:text-white hover:border-[#4caf50]'
-                                                                    }`}
-                                                                >
-                                                                    {loadingNotifId === n.notificationId ? (
-                                                                        <Loader2 size={12} className="animate-spin" />
-                                                                    ) : (
-                                                                        <>
-                                                                            {entity.type === 'review' ? 'Review' : 'View'}
-                                                                            <ChevronRight size={12} />
-                                                                        </>
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <span className="text-[10px] font-black text-[#5a6157]/90 bg-[#2d342b]/5 px-2 py-0.5 rounded-md uppercase tracking-wider">{formatDate(n.createdAt)}</span>
+                                                                    {entity.type && (
+                                                                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-[2px] rounded-md ${entity.type === 'review'
+                                                                                ? 'bg-purple-50 text-purple-500'
+                                                                                : 'bg-emerald-50 text-emerald-600'
+                                                                            }`}>
+                                                                            {entity.type === 'review' ? '● Review' : '● Task'}
+                                                                        </span>
                                                                     )}
-                                                                </button>
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                    </motion.div>
+                                                            {/* Action Button */}
+                                                            {hasAction && (
+                                                                <div className="shrink-0 self-center flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleNotifNavigate(n);
+                                                                        }}
+                                                                        disabled={loadingNotifId === n.notificationId}
+                                                                        className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 border ${!n.isRead
+                                                                                ? 'bg-[#4caf50] text-white border-[#4caf50] shadow-sm'
+                                                                                : 'bg-white text-[#5a6157] border-[#2d342b]/10 hover:bg-[#4caf50] hover:text-white hover:border-[#4caf50]'
+                                                                            }`}
+                                                                    >
+                                                                        {loadingNotifId === n.notificationId ? (
+                                                                            <Loader2 size={12} className="animate-spin" />
+                                                                        ) : (
+                                                                            <>
+                                                                                {entity.type === 'review' ? 'Review' : 'View'}
+                                                                                <ChevronRight size={12} />
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
                                                     );
                                                 })}
                                             </div>
@@ -534,11 +529,11 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                     </div>
 
                                     <div className="bg-[#fcfdfa] border-t border-[#2d342b]/8">
-                                        <button 
+                                        <button
                                             onClick={() => { setIsNotiOpen(false); setIsAllNotiModalOpen(true); }}
                                             className="w-full py-4.5 text-[12px] font-black text-[#1a1f18] hover:bg-[#4caf50] hover:text-white transition-all flex items-center justify-center gap-3 group"
                                         >
-                                            View Full Notification Hub
+                                            All Notification
                                             <ChevronRight size={16} className="transition-transform group-hover:translate-x-1.5" />
                                         </button>
                                     </div>
@@ -546,10 +541,10 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                             )}
                         </AnimatePresence>
                     </div>
-                    
+
                     {/* User Menu */}
                     <div className="relative" ref={menuRef}>
-                        <div 
+                        <div
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-full hover:bg-on-surface/5 transition-all cursor-pointer group border border-on-surface/5 bg-surface shadow-sm hover:shadow-md h-12"
                         >
@@ -566,7 +561,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
 
                         <AnimatePresence>
                             {isMenuOpen && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, y: 12, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 12, scale: 0.95 }}
@@ -598,7 +593,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                             Settings
                                         </button>
                                         <div className="pt-3 mt-3 border-t border-on-surface/5">
-                                            <button 
+                                            <button
                                                 onClick={handleLogout}
                                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-rose-50 text-rose-600 text-sm font-bold transition-all group"
                                             >
@@ -620,7 +615,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
             <AnimatePresence>
                 {isAllNotiModalOpen && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 py-6">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -628,7 +623,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                             style={{ background: 'rgba(45,52,43,0.55)', backdropFilter: 'blur(12px)' }}
                             onClick={() => setIsAllNotiModalOpen(false)}
                         />
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.96, y: 24 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.96, y: 24 }}
@@ -639,7 +634,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                             {/* ─ Modal Header ─ */}
                             <div className="relative overflow-hidden shrink-0 bg-white border-b border-[#2d342b]/5">
                                 <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, #4caf50, transparent)', transform: 'translate(30%, -30%)' }} />
-                                
+
                                 <div className="relative px-8 pt-8 pb-6">
                                     <div className="flex justify-between items-start mb-5">
                                         <div className="flex items-center gap-4">
@@ -648,14 +643,12 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                             </div>
                                             <div>
                                                 <h3 className="text-2xl font-black text-[#1a1f18] tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                                    Notification Hub
+                                                    Notifications
                                                 </h3>
-                                                <p className="text-[11px] font-black uppercase tracking-widest mt-1 text-[#4caf50]">
-                                                    {filteredNotis.length} ACTIVE NOTIFICATIONS
-                                                </p>
+
                                             </div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => setIsAllNotiModalOpen(false)}
                                             className="p-2.5 rounded-xl transition-all hover:bg-[#2d342b]/5 active:scale-95 text-[#5a6157]"
                                         >
@@ -666,26 +659,25 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                     <div className="flex gap-2">
                                         <div className="relative grow">
                                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5a6157]/40" size={16} />
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 placeholder="Search notifications..."
                                                 value={searchTerm}
                                                 onChange={(e) => { setSearchTerm(e.target.value); setNotiPage(0); }}
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl outline-none text-[13px] font-bold text-[#1a1f18] placeholder:text-[#5a6157]/40 bg-[#f4f7f1] border border-[#2d342b]/5 focus:border-[#4caf50]/30 transition-all"
                                             />
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => { setFilterUnread(!filterUnread); setNotiPage(0); }}
-                                            className={`px-4 py-2.5 rounded-xl text-[11px] font-black flex items-center gap-1.5 transition-all active:scale-95 border ${
-                                                filterUnread 
-                                                    ? 'bg-[#4caf50] text-white border-[#4caf50]' 
+                                            className={`px-4 py-2.5 rounded-xl text-[11px] font-black flex items-center gap-1.5 transition-all active:scale-95 border ${filterUnread
+                                                    ? 'bg-[#4caf50] text-white border-[#4caf50]'
                                                     : 'bg-white text-[#5a6157] border-[#2d342b]/10 hover:bg-[#4caf50] hover:text-white hover:border-[#4caf50]'
-                                            }`}
+                                                }`}
                                         >
                                             <Filter size={13} />
                                             {filterUnread ? 'Unread only' : 'All notifications'}
                                         </button>
-                                        <button onClick={handleMarkAllRead} 
+                                        <button onClick={handleMarkAllRead}
                                             className="px-4 py-2.5 rounded-xl text-[11px] font-black flex items-center gap-1.5 transition-all active:scale-95 bg-white text-[#5a6157] border border-[#2d342b]/10 hover:bg-[#4caf50] hover:text-white hover:border-[#4caf50]"
                                         >
                                             <CheckCheck size={13} />
@@ -707,16 +699,14 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.03 }}
-                                                    className={`relative px-8 py-6 transition-all group flex gap-6 cursor-pointer border-l-[4px] ${
-                                                        !n.isRead 
-                                                            ? 'bg-[#4caf50]/[0.02] border-l-[#4caf50]' 
+                                                    className={`relative px-8 py-6 transition-all group flex gap-6 cursor-pointer border-l-[4px] ${!n.isRead
+                                                            ? 'bg-[#4caf50]/[0.02] border-l-[#4caf50]'
                                                             : 'bg-white border-l-transparent hover:bg-[#fcfdfa]'
-                                                    }`}
+                                                        }`}
                                                     onClick={() => hasAction ? handleNotifNavigate(n) : handleMarkRead(n.notificationId)}
                                                 >
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
-                                                        !n.isRead ? 'bg-white border-[#4caf50]/20 shadow-sm' : 'bg-[#f4f7f1] border-transparent'
-                                                    }`}>
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${!n.isRead ? 'bg-white border-[#4caf50]/20 shadow-sm' : 'bg-[#f4f7f1] border-transparent'
+                                                        }`}>
                                                         <TypeIcon type={resolveNotiType(n.type)} size={22} />
                                                     </div>
                                                     <div className="grow min-w-0">
@@ -734,11 +724,10 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                                         <div className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-2">
                                                                 {entity.type && (
-                                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-[3px] rounded-md ${
-                                                                        entity.type === 'review' 
-                                                                            ? 'bg-purple-100 text-purple-800' 
+                                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-[3px] rounded-md ${entity.type === 'review'
+                                                                            ? 'bg-purple-100 text-purple-800'
                                                                             : 'bg-emerald-100 text-emerald-800'
-                                                                    }`}>
+                                                                        }`}>
                                                                         {entity.type === 'review' ? '● Review Task' : '● Develop Task'}
                                                                     </span>
                                                                 )}
@@ -776,7 +765,6 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                             <BellRing size={28} className="text-on-surface-variant/20" />
                                         </div>
                                         <p className="text-lg font-bold text-on-surface/30">No notifications found</p>
-                                        <p className="text-sm text-on-surface-variant/20 mt-1">Try adjusting your filters or search</p>
                                     </div>
                                 )}
                             </div>
@@ -784,24 +772,23 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                             {/* ─ Modal Footer ─ */}
                             {totalNotiPages > 1 && (
                                 <div className="shrink-0 px-10 py-6 flex justify-between items-center border-t border-[#2d342b]/8 bg-[#fcfdfa]">
-                                    <button 
+                                    <button
                                         disabled={notiPage === 0}
                                         onClick={() => setNotiPage(p => Math.max(0, p - 1))}
                                         className="flex items-center gap-1.5 text-[12px] font-bold text-on-surface-variant disabled:opacity-20 hover:bg-on-surface/5 px-4 py-2.5 rounded-xl transition-all"
                                     >
                                         <ChevronLeft size={16} /> Previous
                                     </button>
-                                    
+
                                     <div className="flex gap-1.5">
                                         {Array.from({ length: totalNotiPages }).map((_, i) => (
-                                            <button 
+                                            <button
                                                 key={i}
                                                 onClick={() => setNotiPage(i)}
-                                                className={`w-9 h-9 rounded-lg text-[11px] font-bold transition-all ${
-                                                    notiPage === i 
-                                                        ? 'text-white shadow-md' 
+                                                className={`w-9 h-9 rounded-lg text-[11px] font-bold transition-all ${notiPage === i
+                                                        ? 'text-white shadow-md'
                                                         : 'bg-transparent text-on-surface-variant hover:bg-on-surface/5'
-                                                }`}
+                                                    }`}
                                                 style={notiPage === i ? { background: '#4caf50' } : {}}
                                             >
                                                 {i + 1}
@@ -809,7 +796,7 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                         ))}
                                     </div>
 
-                                    <button 
+                                    <button
                                         disabled={notiPage >= totalNotiPages - 1}
                                         onClick={() => setNotiPage(p => p + 1)}
                                         className="flex items-center gap-1.5 text-[12px] font-bold text-on-surface-variant disabled:opacity-20 hover:bg-on-surface/5 px-4 py-2.5 rounded-xl transition-all"
@@ -827,9 +814,9 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
             <AnimatePresence>
                 {confirmState.open && (
                     <>
-                        <motion.div key="confirm-backdrop" 
+                        <motion.div key="confirm-backdrop"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[1000]" 
+                            className="fixed inset-0 z-[1000]"
                             style={{ background: 'rgba(45,47,44,0.3)', backdropFilter: 'blur(12px)' }}
                             onClick={() => setConfirmState(prev => ({ ...prev, open: false }))} />
                         <motion.div key="confirm-panel"
@@ -847,11 +834,11 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
                                             <CheckCircle2 size={40} className="transform rotate-3" />
                                         </div>
                                     </div>
-                                    
+
                                     <h3 className="text-2xl font-black mb-3 text-[#1a1f18]" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '-0.02em' }}>
                                         {confirmState.type === 'task' ? 'Accept New Task?' : 'Accept Review?'}
                                     </h3>
-                                    
+
                                     <p className="text-base text-[#5a6157] leading-relaxed px-4">
                                         Would you like to start working on this? This will update the status to <span className="font-extrabold text-[#4caf50]">In Progress</span>.
                                     </p>
@@ -867,17 +854,17 @@ export function Header({ title, showSearch = true, tabs = [], onBack, actionButt
 
                                 {/* Actions */}
                                 <div className="px-8 pb-10 pt-6 flex flex-col gap-3">
-                                    <button 
-                                        onClick={handleConfirmAccept} 
+                                    <button
+                                        onClick={handleConfirmAccept}
                                         disabled={confirmState.loading}
                                         className="w-full py-4.5 rounded-2xl text-[16px] font-black tracking-wide transition-all bg-[#4caf50] text-white hover:brightness-105 active:scale-[0.97] flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(76,175,80,0.3)] disabled:opacity-50"
                                     >
                                         {confirmState.loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
                                         {confirmState.loading ? 'Accepting...' : 'Yes, start now'}
                                     </button>
-                                    
-                                    <button 
-                                        onClick={() => setConfirmState(prev => ({ ...prev, open: false }))} 
+
+                                    <button
+                                        onClick={() => setConfirmState(prev => ({ ...prev, open: false }))}
                                         disabled={confirmState.loading}
                                         className="w-full py-3.5 rounded-2xl text-[14px] font-bold transition-all text-[#5a6157] hover:bg-[#f4f7f1] active:scale-[0.98] disabled:opacity-50"
                                     >

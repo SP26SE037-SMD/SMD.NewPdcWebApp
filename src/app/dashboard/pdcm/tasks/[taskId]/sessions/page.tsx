@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, store } from '@/store';
 import { setSessions, updateSession, removeSession, addSession } from '@/store/slices/syllabusSlice';
-import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil } from 'lucide-react';
+import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil, Eye } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { SessionService, SessionItem } from '@/services/session.service';
 import { SyllabusService } from '@/services/syllabus.service';
@@ -258,14 +258,14 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             {/* ── Page Header ── */}
             <div className="flex justify-between items-end mb-4">
                 <div>
-                    <h1 className="text-xl font-extrabold text-on-surface tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Syllabus Sessions
+                    <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        Sessions
                     </h1>
-                    <p className="text-[10px] font-light text-on-surface-variant flex items-center gap-2">
+                    <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
                         <span>{sessions.length} sessions created</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span className="text-primary-600 font-bold">Recommended max: {recommendedMax} sessions</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                        <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
+                        <span>Recommended max: {recommendedMax} sessions</span>
+                        <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
                         <span>{credit} credits</span>
                     </p>
                 </div>
@@ -316,11 +316,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                 <div className="space-y-6">
                     {/* Table Header */}
                     <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
-                        <div className="col-span-1">ID</div>
+                        <div className="col-span-1">No.</div>
                         <div className="col-span-3">Session Title</div>
-                        <div className="col-span-5">Content Summary</div>
-                        <div className="col-span-2">Status</div>
-                        <div className="col-span-1 text-right">Actions</div>
+                        <div className="col-span-6">Content Summary</div>
+                        <div className="col-span-2 text-right">Actions</div>
                     </div>
 
                     {/* Scrollable Sessions List Container */}
@@ -354,8 +353,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 <div key={session.sessionId || `local-${index}`}
                                     className="grid grid-cols-12 items-center px-6 py-3 bg-surface-container-lowest rounded-xl hover:shadow-lg hover:shadow-on-surface/5 transition-all group border border-transparent hover:border-primary/10"
                                 >
-                                    <div className="col-span-1 font-mono text-[10px]" style={{ color: '#5a6157' }}>
-                                        #{String(session.sessionNumber).padStart(3, '0')}
+                                    <div className="col-span-1 font-black text-sm" style={{ color: '#adb4a8' }}>
+                                        {session.sessionNumber}
                                     </div>
                                     <div className="col-span-3">
                                         <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
@@ -366,7 +365,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             <span className="text-[9px] font-bold text-slate-400">• {session.duration || 50} MIN</span>
                                         </div>
                                     </div>
-                                    <div className="col-span-5 pr-8">
+                                    <div className="col-span-6 pr-8">
                                         {contentParts.length > 0 ? (
                                             <div className="space-y-2">
                                                 {contentParts.map((part, pi) => (
@@ -384,22 +383,23 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             <p className="text-sm italic" style={{ color: '#adb4a8' }}>No content assigned yet.</p>
                                         )}
                                     </div>
-                                    <div className="col-span-2">
-                                        {session.sessionId ? (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-surface-variant text-on-surface-variant">SAVED</span>
-                                        ) : (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-surface-variant text-on-surface-variant">DRAFT</span>
-                                        )}
-                                    </div>
-                                    <div className="col-span-1 flex items-center justify-end gap-1.5">
+                                    <div className="col-span-2 flex items-center justify-end gap-1.5">
                                         <button onClick={() => handleStartEdit(index)}
-                                            className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200 hover:shadow-md hover:shadow-emerald-500/10 active:scale-90"
+                                            className="h-8 px-2 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-all duration-200"
+                                            title="View Session"
+                                        >
+                                            <Eye size={13} strokeWidth={2.5} className="mr-1" />
+                                            <span className="text-[10px] font-bold">View</span>
+                                        </button>
+                                        <button onClick={() => handleStartEdit(index)}
+                                            className="h-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200"
                                             title="Edit Session"
                                         >
-                                            <Pencil size={13} strokeWidth={2.5} />
+                                            <Pencil size={13} strokeWidth={2.5} className="mr-1" />
+                                            <span className="text-[10px] font-bold">Edit</span>
                                         </button>
                                         <button onClick={() => handleDeleteSession(index)}
-                                            className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all duration-200 hover:shadow-md hover:shadow-red-500/10 active:scale-90"
+                                            className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
                                             title="Delete Session"
                                         >
                                             <Trash2 size={13} strokeWidth={2.5} />

@@ -82,7 +82,7 @@ export const ReviewTaskService = {
   getReviewTasks: async (accountId: string, status?: string | string[], page: number = 0, size: number = 10) => {
     // For single status or no status
     if (!Array.isArray(status)) {
-        const queryParams = new URLSearchParams({ accountId, page: page.toString(), size: size.toString() });
+        const queryParams = new URLSearchParams({ reviewerId: accountId, page: page.toString(), size: size.toString() });
         if (status) {
             queryParams.append('status', status);
         }
@@ -91,7 +91,7 @@ export const ReviewTaskService = {
 
     // For multiple statuses (e.g. COMPLETED = APPROVED + REVISION_REQUESTED)
     const results = await Promise.all(status.map(async (s) => {
-        const queryParams = new URLSearchParams({ accountId, status: s, page: page.toString(), size: size.toString() });
+        const queryParams = new URLSearchParams({ reviewerId: accountId, status: s, page: page.toString(), size: size.toString() });
         return await apiClient.get<ReviewTasksPaginatedResponse>(`/api/review-tasks?${queryParams.toString()}`);
     }));
 

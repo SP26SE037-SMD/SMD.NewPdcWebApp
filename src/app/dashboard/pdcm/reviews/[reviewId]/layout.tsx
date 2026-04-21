@@ -235,8 +235,8 @@ export default function PDCMReviewLayout({
     ];
 
     const globalHeaderTabs = [
-        { id: 'develop', label: 'Develop Syllabus', isActive: false, onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'Peer Review', isActive: true, onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        { id: 'develop', label: 'My Task', isActive: false, onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'peer-review', label: 'My Review Task', isActive: true, onClick: () => router.push('/dashboard/pdcm/peer-review') },
     ];
     ;
 
