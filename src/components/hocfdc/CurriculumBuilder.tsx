@@ -462,7 +462,7 @@ export default function CurriculumBuilder({
   }, [semesterCount, hasSemesterZero]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] gap-6 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] gap-6 overflow-hidden font-['Plus_Jakarta_Sans']">
       {/* Left: Design Canvas */}
       <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-2 pb-12">
         <div className="flex items-center justify-between mb-2">
@@ -485,6 +485,7 @@ export default function CurriculumBuilder({
           </button>
         </div>
 
+        {/* Build Semesters*/}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Prefix Semester 0 Trigger - Positioned before Semester 1 */}
           {!hasSemesterZero && (

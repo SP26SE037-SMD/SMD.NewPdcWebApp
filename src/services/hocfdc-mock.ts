@@ -8,7 +8,7 @@ yesterday.setHours(14, 30, 0, 0);
 const today = new Date();
 today.setHours(9, 15, 0, 0);
 
-export const MOCK_MAJORS: any[] = [
+export const MOCK_MAJORS: Major[] = [
     {
         majorId: "major-se-001",
         majorCode: "SE",
@@ -47,7 +47,7 @@ export const MOCK_MAJORS: any[] = [
     }
 ];
 
-export const MOCK_CURRICULUMS: any[] = [
+export const MOCK_CURRICULUMS: CurriculumFramework[] = [
     {
         curriculumId: "curr-se-2024",
         curriculumCode: "K19-SWE-2024",

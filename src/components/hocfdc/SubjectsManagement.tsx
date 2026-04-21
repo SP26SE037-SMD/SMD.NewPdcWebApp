@@ -4,43 +4,50 @@ import { useState, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  BookOpen,
+  Plus,
+  Search,
   Loader2,
+  GraduationCap,
+  Layers,
+  ChevronRight,
+  Clock,
+  LayoutGrid,
+  List,
+  Filter,
+  Target,
+  Building2,
+  MoreHorizontal,
   ChevronDown,
   AlertCircle,
   RefreshCw,
+  ChevronLeft,
+  Calendar,
+  Upload,
 } from "lucide-react";
 import {
   SubjectService,
   Subject,
   SUBJECT_STATUS,
 } from "@/services/subject.service";
-import { useToast } from "@/components/ui/Toast";
 
-const STATUS_CONFIG: Record<string, { label: string; class: string }> = {
-  [SUBJECT_STATUS.DRAFT]: { 
-    label: "DRAFT", 
-    class: "bg-slate-100 text-slate-500" 
-  },
-  [SUBJECT_STATUS.DEFINED]: { 
-    label: "DEFINED", 
-    class: "bg-blue-50 text-blue-700" 
-  },
-  [SUBJECT_STATUS.WAITING_SYLLABUS]: { 
-    label: "WAITING SYLLABUS", 
-    class: "bg-amber-50 text-amber-700" 
-  },
-  [SUBJECT_STATUS.PENDING_REVIEW]: { 
-    label: "PENDING REVIEW", 
-    class: "bg-blue-50 text-blue-700" 
-  },
-  [SUBJECT_STATUS.COMPLETED]: { 
-    label: "PUBLISHED", 
-    class: "bg-emerald-50 text-emerald-700" 
-  },
-  [SUBJECT_STATUS.ARCHIVED]: { 
-    label: "ARCHIVED", 
-    class: "bg-rose-50 text-rose-700" 
-  },
+const STATUS_COLORS: Record<string, string> = {
+  [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
+  [SUBJECT_STATUS.DEFINED]: "text-blue-600 bg-blue-50 border-blue-100",
+  [SUBJECT_STATUS.WAITING_SYLLABUS]:
+    "text-indigo-600 bg-indigo-50 border-indigo-100",
+  [SUBJECT_STATUS.PENDING_REVIEW]:
+    "text-amber-600 bg-amber-50 border-amber-100",
+  [SUBJECT_STATUS.COMPLETED]:
+    "text-emerald-600 bg-emerald-50 border-emerald-100",
+  [SUBJECT_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
+};
+
+const DEPT_COLORS: Record<string, string> = {
+  "Software Engineering": "bg-blue-50 text-blue-600 border-blue-100",
+  "Artificial Intelligence": "bg-violet-50 text-violet-600 border-violet-100",
+  "Digital Business": "bg-amber-50 text-amber-600 border-amber-100",
+  "Humanities & Social Sciences": "bg-rose-50 text-rose-600 border-rose-100",
 };
 
 export default function SubjectsManagement({
@@ -67,10 +74,13 @@ export default function SubjectsManagement({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { showToast } = useToast();
 
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [viewMode] = useState<"list">("list");
+  const [direction, setDirection] = useState(0); // 1 = next, -1 = prev
+
+  // For smooth typing without immediate re-renders
   const [localSearch, setLocalSearch] = useState(currentSearch);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -88,14 +98,16 @@ export default function SubjectsManagement({
     setIsImporting(true);
     try {
       await SubjectService.importSubjects(file);
-      showToast("Subjects imported successfully!", "success");
-      router.refresh();
+      alert("Subjects imported successfully!");
+      router.refresh(); // Refresh Server Component data
       if (currentPage !== 0 || currentSearch !== "" || currentStatus !== "") {
         updateUrlParams({ page: 0, search: "", status: "" });
       }
     } catch (error) {
       console.error(error);
-      showToast(error instanceof Error ? error.message : "Failed to import subjects", "error");
+      alert(
+        error instanceof Error ? error.message : "Failed to import subjects",
+      );
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -158,34 +170,46 @@ export default function SubjectsManagement({
   };
 
   const handlePageChange = (newPage: number) => {
+    setDirection(newPage > currentPage ? 1 : -1);
     updateUrlParams({ page: newPage });
   };
 
+  const paginationVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 20 : direction < 0 ? -20 : 0,
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 20 : direction > 0 ? -20 : 0,
+      opacity: 0,
+    }),
+  };
+
   return (
-    <div className="pt-8 px-10 pb-12 max-w-7xl mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#2d3335] mb-2 font-headline uppercase">
-            SUBJECT MANAGEMENT
-          </h1>
-          <p className="text-[#5a6062] font-medium flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: "18px" }}>info</span>
-            Managing {initialTotalElements} active subjects across primary departments
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
+    <div className="flex flex-col h-[calc(100vh-80px)] bg-white overflow-hidden">
+      {/* Sub Header */}
+      <div className="px-8 py-5 border-b border-zinc-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white shrink-0">
+        <h1 className="text-2xl font-black text-primary tracking-tighter uppercase">
+          Subject Management
+        </h1>
+        <div className="flex items-center gap-4">
+          <button
             onClick={handleImportClick}
             disabled={isImporting}
-            className="px-5 py-3 bg-[#ebeef0] text-[#5a6062] font-bold rounded-xl hover:bg-[#e5e9eb] transition-all flex items-center gap-2 disabled:opacity-50"
+            className="px-6 py-2.5 bg-zinc-100 text-zinc-600 text-xs font-black uppercase tracking-[0.2em] rounded-lg hover:bg-zinc-200 transition-all flex items-center gap-2 disabled:opacity-50"
           >
             {isImporting ? (
-              <Loader2 size={18} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
             ) : (
-              <span className="material-symbols-outlined text-lg">download</span>
+              <Upload size={14} strokeWidth={3} />
             )}
-            IMPORT EXCEL
+            Import Excel
           </button>
           <input
             type="file"
@@ -194,59 +218,69 @@ export default function SubjectsManagement({
             accept=".xlsx, .xls, .csv"
             className="hidden"
           />
-          <button 
+          <button
             onClick={() => router.push("/dashboard/hocfdc/subjects/new")}
-            className="px-6 py-3 bg-gradient-to-br from-[#2d6a4f] to-[#1f5e44] text-[#e6ffee] font-bold rounded-xl shadow-lg shadow-[#2d6a4f]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+            className="px-6 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-[0.2em] rounded-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 flex items-center gap-2"
           >
-            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-            NEW SUBJECT
+            <Plus size={14} strokeWidth={3} />
+            New Subject
           </button>
         </div>
       </div>
 
-      {/* Filters & Stats Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Search & Filters Container */}
-        <div className="md:col-span-3 bg-[#f1f4f5] p-6 rounded-2xl flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[280px] relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5a6062]">search</span>
-            <input 
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border-none rounded-xl focus:ring-2 focus:ring-[#b1f0ce] text-sm placeholder:text-zinc-400 outline-none" 
-              placeholder="Search by name, code or faculty..." 
-              type="text"
-            />
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="p-6 space-y-6 flex-1 overflow-y-auto min-h-0">
+        {/* Filters & View Toggle */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 max-w-[1600px] mx-auto w-full">
+          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+            {/* Search */}
+            <div className="relative w-full sm:w-80">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Search code, name, department..."
+                value={localSearch}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-100 rounded-full py-3 pl-12 pr-4 text-base font-medium focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+              />
+            </div>
+
             {/* Status Dropdown */}
-            <div className="relative">
-              <button 
+            <div className="relative w-full sm:w-56">
+              <button
                 onClick={() => setIsStatusOpen(!isStatusOpen)}
-                className="bg-white border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-[#b1f0ce] text-[#5a6062] flex items-center gap-2 min-w-[160px] justify-between"
+                className="w-full flex items-center justify-between px-6 py-3 bg-white border border-zinc-100 rounded-full text-xs font-black uppercase tracking-widest text-zinc-500 hover:border-zinc-300 transition-all shadow-sm"
               >
-                {currentStatus ? currentStatus.replace(/_/g, " ") : "All Statuses"}
-                <ChevronDown size={16} className={`transition-transform duration-300 ${isStatusOpen ? "rotate-180" : ""}`} />
+                {currentStatus
+                  ? currentStatus.replace("_", " ")
+                  : "View all statuses"}
+                <ChevronDown
+                  size={14}
+                  className={`opacity-40 transition-transform ${isStatusOpen ? "rotate-180" : ""}`}
+                />
               </button>
+
               <AnimatePresence>
                 {isStatusOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#ebeef0] rounded-2xl shadow-xl z-50 overflow-hidden p-1 min-w-[200px]"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-2xl shadow-xl z-50 overflow-hidden p-1"
                   >
                     {["", ...Object.values(SUBJECT_STATUS)].map((status) => (
                       <button
                         key={status}
                         onClick={() => handleFilterChange(status)}
-                        className={`w-full text-left px-5 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-colors ${
+                        className={`w-full text-left px-5 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-colors ${
                           currentStatus === status
-                            ? "bg-[#2d6a4f] text-white"
-                            : "text-[#5a6062] hover:bg-[#f1f4f5]"
+                            ? "bg-primary text-white"
+                            : "text-zinc-500 hover:bg-zinc-50"
                         }`}
                       >
-                        {status === "" ? "All Statuses" : status.replace(/_/g, " ")}
+                        {status === "" ? "Show All" : status.replace(/_/g, " ")}
                       </button>
                     ))}
                   </motion.div>
@@ -255,25 +289,29 @@ export default function SubjectsManagement({
             </div>
 
             {/* Sort Dropdown */}
-            <div className="relative">
-              <button 
+            <div className="relative w-full sm:w-64">
+              <button
                 onClick={() => setIsSortOpen(!isSortOpen)}
-                className="bg-white border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-[#b1f0ce] text-[#5a6062] flex items-center gap-2 min-w-[180px] justify-between"
+                className="w-full flex items-center justify-between px-6 py-3 bg-white border border-zinc-100 rounded-full text-xs font-black uppercase tracking-widest text-zinc-500 hover:border-zinc-300 transition-all shadow-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-lg">sort</span>
+                  <RefreshCw size={12} className="opacity-40" />
                   {currentSortBy === "subjectCode" ? "Code" : "Credits"} 
-                  ({currentDirection.toUpperCase()})
+                  ({currentDirection === "asc" ? "ASC" : "DESC"})
                 </div>
-                <ChevronDown size={16} className={`transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  size={14}
+                  className={`opacity-40 transition-transform ${isSortOpen ? "rotate-180" : ""}`}
+                />
               </button>
+
               <AnimatePresence>
                 {isSortOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full right-0 mt-2 bg-white border border-[#ebeef0] rounded-2xl shadow-xl z-50 overflow-hidden p-1 min-w-[220px]"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-2xl shadow-xl z-50 overflow-hidden p-1"
                   >
                     {[
                       { label: "Code (A-Z)", sort: "subjectCode", dir: "asc" },
@@ -284,10 +322,10 @@ export default function SubjectsManagement({
                       <button
                         key={`${opt.sort}-${opt.dir}`}
                         onClick={() => handleSortChange(opt.sort, opt.dir)}
-                        className={`w-full text-left px-5 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-colors ${
+                        className={`w-full text-left px-5 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-colors ${
                           currentSortBy === opt.sort && currentDirection === opt.dir
-                            ? "bg-[#2d6a4f] text-white"
-                            : "text-[#5a6062] hover:bg-[#f1f4f5]"
+                            ? "bg-primary text-white"
+                            : "text-zinc-500 hover:bg-zinc-50"
                         }`}
                       >
                         {opt.label}
@@ -298,179 +336,192 @@ export default function SubjectsManagement({
               </AnimatePresence>
             </div>
           </div>
-        </div>
 
-        {/* Mini Stats */}
-        <div className="bg-[#b1f0ce] p-6 rounded-2xl flex flex-col justify-between shadow-sm border border-[#2d6a4f]/10">
-          <p className="text-[#014931] font-bold text-xs uppercase tracking-widest">Active Credits</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-[#014931]">1,402</span>
-            <span className="text-xs text-[#29664c] font-medium">+12 this term</span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-black text-zinc-300 uppercase tracking-widest">
+              {initialTotalElements} subjects
+            </span>
           </div>
         </div>
-      </div>
 
-      {/* Main Data Table Container */}
-      <div className="bg-white rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(45,51,53,0.04)] border border-[#ebeef0]">
         <AnimatePresence mode="wait">
           {error ? (
-            <div className="p-20 text-center space-y-4">
-              <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-[#2d3335]">Failed to load subjects</h3>
-              <p className="text-sm text-[#5a6062] max-w-sm mx-auto">{error}</p>
-              <button 
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-32 text-red-400 w-full"
+            >
+              <AlertCircle className="mb-4" size={32} />
+              <p className="font-black text-xs uppercase tracking-widest mb-4 text-center max-w-xs">
+                {error}
+              </p>
+              <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-rose-100 transition-colors flex items-center gap-2 mx-auto"
+                className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-600 rounded-full text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-colors"
               >
                 <RefreshCw size={14} />
                 Retry Connection
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <>
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#f1f4f5] border-b-0">
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Code</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Subject Name</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Department</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Credits</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest">Time</th>
-                    <th className="px-8 py-5 text-[11px] font-extrabold text-[#5a6062] uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#ebeef0]">
-                  {initialData.length > 0 ? (
-                    initialData.map((subject, idx) => (
-                      <motion.tr 
-                        key={subject.subjectId}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.03 }}
-                        className="group hover:bg-[#f1f4f5] transition-colors cursor-pointer"
-                        onClick={() => router.push(`/dashboard/hocfdc/subjects/${subject.subjectId}`)}
-                      >
-                        <td className="px-8 py-6">
-                          <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold font-mono">
-                            {subject.subjectCode}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-[#2d3335] text-sm group-hover:text-[#2d6a4f] transition-colors">
-                              {subject.subjectName}
-                            </span>
-                            <span className="text-[11px] text-[#5a6062] line-clamp-1 italic max-w-xs">
-                              {subject.description || "Projected description pending."}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-sm font-medium text-[#2d3335]">
-                            {subject.department?.departmentName || "General Academic"}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full tracking-wide shadow-sm border border-black/5 ${STATUS_CONFIG[subject.status]?.class || "bg-slate-100 text-slate-500"}`}>
-                            {STATUS_CONFIG[subject.status]?.label || subject.status?.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-sm font-bold text-[#2d3335]">
-                            {subject.credits.toFixed(1)}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-[11px] font-bold text-[#5a6062] uppercase bg-[#f1f4f5] px-2 py-0.5 rounded">
-                            {subject.timeAllocation || "0h"}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/dashboard/hocfdc/subjects/${subject.subjectId}`);
-                              }}
-                              className="p-2 text-[#adb3b5] hover:text-[#2d6a4f] transition-colors hover:bg-white rounded-lg"
-                            >
-                              <span className="material-symbols-outlined text-lg">edit</span>
-                            </button>
-                            <button 
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-2 text-[#adb3b5] hover:text-[#a73b21] transition-colors hover:bg-white rounded-lg"
-                            >
-                              <span className="material-symbols-outlined text-lg">more_vert</span>
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-8 py-20 text-center">
-                        <div className="flex flex-col items-center opacity-30">
-                          <span className="material-symbols-outlined text-6xl mb-4">book_5</span>
-                          <p className="text-sm font-bold uppercase tracking-widest text-[#2d3335]">No subjects match your criteria</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              {/* Pagination Footer */}
-              {initialTotalPages > 1 && (
-                <div className="px-8 py-5 bg-[#f1f4f5] flex items-center justify-between border-t border-[#ebeef0]">
-                  <span className="text-[11px] font-bold text-[#5a6062] uppercase tracking-widest">
-                    Showing {initialData.length} of {initialTotalElements} entries
-                  </span>
-                  <div className="flex gap-2">
-                    <button 
-                      disabled={currentPage === 0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePageChange(currentPage - 1);
-                      }}
-                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-[#5a6062] hover:bg-white/80 transition-colors border border-black/5 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                    >
-                      <span className="material-symbols-outlined">chevron_left</span>
-                    </button>
-                    
-                    {[...Array(initialTotalPages)].map((_, i) => (
-                      <button 
-                        key={i}
-                        onClick={() => handlePageChange(i)}
-                        className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-xs transition-all ${
-                          currentPage === i 
-                            ? "bg-[#2d6a4f] text-white shadow-lg shadow-[#2d6a4f]/20" 
-                            : "bg-white text-[#5a6062] hover:bg-[#f1f4f5] border border-black/5"
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-
-                    <button 
-                      disabled={currentPage === initialTotalPages - 1}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePageChange(currentPage + 1);
-                      }}
-                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-[#5a6062] hover:bg-white/80 transition-colors border border-black/5 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                    >
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </button>
+            /* LIST VIEW */
+            <motion.div
+              key={`list-${currentPage}`}
+              custom={direction}
+              variants={paginationVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 },
+              }}
+              className="space-y-8"
+            >
+              <div className="bg-white border border-zinc-100 rounded-3xl overflow-hidden shadow-sm">
+                <div className="grid grid-cols-12 px-8 py-4 border-b border-zinc-100 bg-primary/[0.1]">
+                  <div className="col-span-1 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Code
                   </div>
+                  <div className="col-span-4 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Subject Name
+                  </div>
+                  <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Department
+                  </div>
+                  <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Status
+                  </div>
+                  <div className="col-span-1 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Credits
+                  </div>
+                  <div className="col-span-1 text-xs font-black uppercase tracking-widest text-zinc-500">
+                    Time
+                  </div>
+                  <div className="col-span-1" />
                 </div>
-              )}
-            </>
+
+                {initialData.map((subject, idx) => (
+                  <motion.div
+                    key={subject.subjectId}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/hocfdc/subjects/${subject.subjectId}`,
+                      )
+                    }
+                    className="grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 hover:bg-zinc-50/60 transition-colors cursor-pointer group items-center"
+                  >
+                    <div className="col-span-1">
+                      <span className="text-sm font-black text-primary uppercase tracking-widest">
+                        {subject.subjectCode}
+                      </span>
+                    </div>
+                    <div className="col-span-4 space-y-0.5">
+                      <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
+                        {subject.subjectName}
+                      </p>
+                      <p className="text-xs text-zinc-400 font-medium line-clamp-1 italic">
+                        {subject.description || "No description provided."}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <span
+                        className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border bg-zinc-50 text-zinc-500 border-zinc-100`}
+                      >
+                        {subject.department?.departmentName || "General"}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span
+                        className={`text-xs font-black uppercase tracking-widest px-3 py-2 rounded-xl border whitespace-nowrap shadow-sm ${STATUS_COLORS[subject.status] || STATUS_COLORS.DRAFT}`}
+                      >
+                        {subject.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="col-span-1">
+                      <span className="text-base font-black text-zinc-900">
+                        {subject.credits}
+                      </span>
+                      <span className="text-xs text-zinc-400 ml-1"></span>
+                    </div>
+                    <div className="col-span-1">
+                      <span className="text-xs font-black text-zinc-400">
+                        {subject.timeAllocation}
+                      </span>
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <ChevronRight
+                        size={14}
+                        className="text-zinc-200 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+
+                {initialData.length === 0 && (
+                  <div className="py-20 text-center text-zinc-300">
+                    <BookOpen
+                      size={32}
+                      strokeWidth={1}
+                      className="mx-auto mb-3"
+                    />
+                    <p className="font-black text-[10px] uppercase tracking-widest">
+                      No subjects match your search
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Fixed Pagination At Bottom */}
+      {initialTotalPages > 1 && (
+        <div className="px-8 py-4 border-t border-zinc-100 bg-white flex items-center justify-between shrink-0">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block pb-1">
+            Showing <span className="text-zinc-900">{initialData.length}</span>{" "}
+            of <span className="text-zinc-900">{initialTotalElements}</span>{" "}
+            Subjects
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage === 0}
+              onClick={() => handlePageChange(currentPage - 1)}
+              className="w-8 h-8 rounded-lg border border-zinc-100 flex items-center justify-center text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex gap-1">
+              {[...Array(initialTotalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => handlePageChange(i)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${
+                    currentPage === i
+                      ? "bg-primary text-white shadow-md shadow-primary/20"
+                      : "border border-zinc-100 text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={currentPage === initialTotalPages - 1}
+              onClick={() => handlePageChange(currentPage + 1)}
+              className="w-8 h-8 rounded-lg border border-zinc-100 flex items-center justify-center text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

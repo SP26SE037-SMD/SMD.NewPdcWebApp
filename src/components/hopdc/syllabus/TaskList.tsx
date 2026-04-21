@@ -15,6 +15,7 @@ import {
   SyllabusService,
 } from "@/services/syllabus.service";
 import { SubjectService } from "@/services/subject.service";
+import { CloPloService } from "@/services/cloplo.service";
 import {
   TASK_STATUS,
   TASK_TYPE,
@@ -204,6 +205,7 @@ interface TaskRowProps {
   isCompleting: boolean;
   currentUser: User | null;
   onManageSources: (syllabusId: string, syllabusName: string) => void;
+  sprintDeadline?: string;
 }
 
 function TaskRow({
@@ -223,6 +225,7 @@ function TaskRow({
   isCompleting,
   currentUser,
   onManageSources,
+  sprintDeadline,
 }: TaskRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -235,6 +238,8 @@ function TaskRow({
     queryKey: ["review-tasks-by-task", task.taskId],
     queryFn: () => ReviewTaskService.getReviewTasksByTaskId(task.taskId),
     enabled: isExpanded,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: subjectDetailRes } = useQuery({
@@ -246,10 +251,15 @@ function TaskRow({
   const subjectDetail = subjectDetailRes;
 
   const reviewTasks = reviewTasksRes?.data?.content || [];
+  const latestReview = reviewTasks[0];
+  const isLatestFromHoCFDC = latestReview?.reviewer?.role === "HOCFDC";
+
   const hasActiveReview = reviewTasks.some(
     (r: any) =>
       r.status === REVIEW_TASK_STATUS.PENDING ||
-      r.status === REVIEW_TASK_STATUS.IN_PROGRESS,
+      r.status === REVIEW_TASK_STATUS.IN_PROGRESS ||
+      r.isAccepted === null ||
+      r.isAccepted === undefined,
   );
 
   const handleCreateReview = async (payload: any) => {
@@ -257,11 +267,13 @@ function TaskRow({
     await queryClient.invalidateQueries({
       queryKey: ["review-tasks-by-task", task.taskId],
     });
+    router.refresh();
   };
 
   const goToSubjectDetail = () => {
+    const isReadOnly = task.status === TASK_STATUS.DONE;
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}`,
+      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}${isReadOnly ? "&readOnly=true" : ""}`,
     );
   };
 
@@ -304,18 +316,16 @@ function TaskRow({
 
         <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-1 flex items-center justify-center">
-            {!isReusedSubject && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-400 hover:text-zinc-900"
-              >
-                {isExpanded ? (
-                  <ChevronDown size={20} />
-                ) : (
-                  <ChevronRight size={20} />
-                )}
-              </button>
-            )}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-2 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-400 hover:text-zinc-900"
+            >
+              {isExpanded ? (
+                <ChevronDown size={20} />
+              ) : (
+                <ChevronRight size={20} />
+              )}
+            </button>
           </div>
 
           <div className="lg:col-span-4 space-y-2">
@@ -524,20 +534,34 @@ function TaskRow({
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(true)}
-                    disabled={hasActiveReview}
+                    disabled={hasActiveReview || isDone || isLatestFromHoCFDC}
                     className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-100 px-5 py-3 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all shadow-sm rounded-xl active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                     title={
-                      hasActiveReview
-                        ? "A review is already in progress"
-                        : "Assign Reviewer"
+                      isDone
+                        ? "Task is already completed"
+                        : hasActiveReview
+                          ? "A review is already in progress"
+                          : isLatestFromHoCFDC
+                            ? "Review from HoCFDC must be acknowledged first"
+                            : "Assign Reviewer"
                     }
                   >
                     <PlusCircle size={16} />
-                    {hasActiveReview ? "Review Active" : "Assign Reviewer"}
+                    {isDone 
+                      ? "Task Finished" 
+                      : hasActiveReview 
+                        ? "Review Active" 
+                        : isLatestFromHoCFDC
+                          ? "HoCFDC Locked"
+                          : "Assign Reviewer"}
                   </button>
-                  {hasActiveReview && (
+                  {(hasActiveReview || isDone || isLatestFromHoCFDC) && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-zinc-900 text-white text-[9px] font-bold rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      Ongoing review must be finished first
+                      {isDone 
+                        ? "Cannot assign reviewer to a finished task" 
+                        : isLatestFromHoCFDC
+                          ? "Review feedback from HoCFDC must be acknowledged first"
+                          : "Ongoing review must be finished first"}
                     </div>
                   )}
                 </div>
@@ -548,7 +572,7 @@ function TaskRow({
       </div>
 
       <AnimatePresence>
-        {!isReusedSubject && isExpanded && (
+        {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -577,11 +601,13 @@ function TaskRow({
                 </div>
               ) : reviewTasks.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
-                  {reviewTasks.map((review: ReviewTaskItem) => (
+                  {reviewTasks.map((review: ReviewTaskItem, idx: number) => (
                     <ReviewTaskItemRow
                       key={review.reviewId}
                       review={review}
                       onRecreateTask={() => setIsModalOpen(true)}
+                      isLatest={idx === 0}
+                      isTaskDone={isDone}
                     />
                   ))}
                 </div>
@@ -604,6 +630,9 @@ function TaskRow({
         taskId={task.taskId}
         taskName={task.taskName}
         reviewers={pdcmAccounts}
+        taskDeadline={task.deadline}
+        sprintDeadline={sprintDeadline}
+        assigneeId={task.account?.accountId}
       />
 
       <CreateSyllabusModal
@@ -637,7 +666,23 @@ export function TaskList({ sprintId }: TaskListProps) {
   const searchParams = useSearchParams();
   const curriculumId = searchParams.get("curriculumId") || "";
 
-  const goToReceiveTasks = () => {
+  const goToReceiveTasks = async () => {
+    // Clear context when manually navigating back
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("hopdc_last_sprint_id");
+      localStorage.removeItem("hopdc_last_curriculum_id");
+    }
+    
+    // Aggressive revalidation of all dashboard data
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["sprints"] }),
+      queryClient.invalidateQueries({ queryKey: ["hopdc-receive-task-curriculum-detail"] }),
+      queryClient.invalidateQueries({ queryKey: ["syllabus"] }),
+      queryClient.invalidateQueries({ queryKey: ["assignments"] }),
+      queryClient.invalidateQueries({ queryKey: ["review-tasks-by-task"] })
+    ]);
+    
+    router.refresh();
     router.push("/dashboard/hopdc/sprint-management");
   };
 
@@ -664,12 +709,16 @@ export function TaskList({ sprintId }: TaskListProps) {
     queryFn: () =>
       TaskService.getTasksBySprintIdAndDepartmentId(sprintId, departmentId),
     enabled: !!sprintId && !!departmentId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: sprintRes } = useQuery({
     queryKey: ["sprint", sprintId],
     queryFn: () => SprintService.getSprintById(sprintId),
     enabled: !!sprintId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const sprint = sprintRes?.data;
@@ -694,6 +743,25 @@ export function TaskList({ sprintId }: TaskListProps) {
   const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] =
     useState("");
 
+  const taskTypes = useMemo(() => {
+    const types = Array.from(new Set(tasks.map((t) => t.type || "OTHER")));
+    return types.sort();
+  }, [tasks]);
+
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  // Set default type when tasks load
+  useMemo(() => {
+    if (taskTypes.length > 0 && !selectedType) {
+      setSelectedType(taskTypes[0]);
+    }
+  }, [taskTypes, selectedType]);
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedType) return tasks;
+    return tasks.filter((t) => (t.type || "OTHER") === selectedType);
+  }, [tasks, selectedType]);
+
   const saveTaskMutation = useMutation({
     mutationFn: async ({
       taskId,
@@ -703,6 +771,19 @@ export function TaskList({ sprintId }: TaskListProps) {
       payload: Parameters<typeof TaskService.updateTask>[1];
     }) => {
       const result = await TaskService.updateTask(taskId, payload);
+
+      // Get subjectId for the task to update CLO status
+      const targetTask = tasks.find((t) => t.taskId === taskId);
+      if (targetTask?.subjectId) {
+        try {
+          await CloPloService.updateClosStatus(
+            targetTask.subjectId,
+            "INTERNAL_REVIEW",
+          );
+        } catch (error) {
+          console.warn("Soft fail: Unable to update CLOs to INTERNAL_REVIEW", error);
+        }
+      }
 
       // Transition the active syllabus to IN_PROGRESS upon HoPDC assignment
       if (payload.syllabusId && user?.accountId) {
@@ -962,18 +1043,43 @@ export function TaskList({ sprintId }: TaskListProps) {
         )}
       </div>
 
+      {taskTypes.length > 0 && (
+        <div className="flex flex-wrap gap-2 p-1.5 bg-zinc-100/50 rounded-2xl w-fit border border-zinc-200">
+          {taskTypes.map((type) => (
+            <button
+              key={type}
+              onClick={() => setSelectedType(type)}
+              className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+                selectedType === type
+                  ? "bg-white text-[var(--primary)] shadow-sm shadow-zinc-200 border border-zinc-200"
+                  : "text-zinc-500 hover:text-zinc-700 hover:bg-white/50"
+              }`}
+            >
+              {type.replace(/_/g, " ")}
+              <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${
+                selectedType === type ? "bg-[var(--primary)] text-white" : "bg-zinc-200 text-zinc-600"
+              }`}>
+                {tasks.filter(t => (t.type || "OTHER") === type).length}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-4">
-        {tasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-base font-medium text-zinc-500">
-            No tasks found for this sprint.
+            No tasks found for {selectedType?.replace(/_/g, " ") || "this type"}.
           </div>
         ) : (
-          tasks.map((task, index) => (
-            <TaskRow
+          filteredTasks.map((task) => {
+            const originalIndex = tasks.findIndex(t => t.taskId === task.taskId);
+            return (
+              <TaskRow
               key={task.taskId}
               task={task}
               pdcmAccounts={pdcmAccounts}
-              syllabusOptions={syllabiByTaskId[task.taskId] || []}
+              syllabusOptions={syllabiByTaskId[task.taskId]}
               onSave={handleSaveTask}
               isSaving={
                 saveTaskMutation.isPending &&
@@ -981,7 +1087,7 @@ export function TaskList({ sprintId }: TaskListProps) {
               }
               saveError={saveErrorByTaskId[task.taskId]}
               saveSuccess={saveSuccessByTaskId[task.taskId]}
-              isSyllabusLoading={syllabiQueries[index]?.isLoading ?? false}
+              isSyllabusLoading={syllabiQueries[originalIndex]?.isLoading ?? false}
               selection={selectionByTaskId[task.taskId] || {}}
               onSelectionChange={(field, value) =>
                 handleSelectionChange(task.taskId, field, value)
@@ -996,8 +1102,10 @@ export function TaskList({ sprintId }: TaskListProps) {
                 setSelectedSyllabusNameForSources(name);
                 setIsSourcesModalOpen(true);
               }}
+              sprintDeadline={sprint?.endDate}
             />
-          ))
+            );
+          })
         )}
       </div>
       <ManageSyllabusSourcesModal

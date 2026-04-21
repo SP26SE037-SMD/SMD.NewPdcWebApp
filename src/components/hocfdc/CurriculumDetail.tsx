@@ -46,10 +46,13 @@ import {
 } from "@/services/curriculum.service";
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
 import { GroupService } from "@/services/group.service";
+import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
+import { useToast } from "@/components/ui/Toast";
 
 export default function CurriculumDetail({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // New Feature State
   const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
@@ -82,10 +85,16 @@ export default function CurriculumDetail({ id }: { id: string }) {
   const statusMutation = useMutation({
     mutationFn: (newStatus: string) =>
       CurriculumService.updateCurriculumStatus(id, newStatus as any),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
-      router.refresh();
+    onSuccess: (res) => {
+      if (res.status === 1000) {
+        showToast("Status updated successfully", "success");
+        queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+        router.refresh();
+      } else {
+        showToast(res.message || "Failed to update status", "error");
+      }
     },
+    onError: (err: any) => showToast(err.message || "Connection error", "error"),
   });
 
   const curriculum = curriculumData?.data;
@@ -140,6 +149,15 @@ export default function CurriculumDetail({ id }: { id: string }) {
     [CURRICULUM_STATUS.PUBLISHED]:
       "text-emerald-600 bg-emerald-50 border-emerald-100",
     [CURRICULUM_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
+  };
+
+  const SUBJECT_STATUS_COLORS: Record<string, string> = {
+    DRAFT: "text-zinc-500 bg-zinc-50 border-zinc-100",
+    DEFINED: "text-blue-500 bg-blue-50 border-blue-100",
+    WAITING_SYLLABUS: "text-indigo-500 bg-indigo-50 border-indigo-100",
+    PENDING_REVIEW: "text-amber-500 bg-amber-50 border-amber-100",
+    COMPLETED: "text-emerald-500 bg-emerald-50 border-emerald-100",
+    ARCHIVED: "text-red-500 bg-red-50 border-red-100",
   };
 
   const handleStatusTransition = (newStatus: string) => {
@@ -357,7 +375,10 @@ export default function CurriculumDetail({ id }: { id: string }) {
             >
               <Target size={16} /> Matrix
             </button>
-            {safeCurrentIdx >= ALL_STATUS_ORDER.findIndex(s => s.id === CURRICULUM_STATUS.SYLLABUS_DEVELOP) && (
+            {safeCurrentIdx >=
+              ALL_STATUS_ORDER.findIndex(
+                (s) => s.id === CURRICULUM_STATUS.SYLLABUS_DEVELOP,
+              ) && (
               <button
                 onClick={() =>
                   router.push(`/dashboard/hocfdc/framework-execution/${id}`)
@@ -508,6 +529,13 @@ export default function CurriculumDetail({ id }: { id: string }) {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                                   {sub.subjectCode}
                                 </span>
+                                {sub.status && (
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${SUBJECT_STATUS_COLORS[sub.status] || "text-zinc-400 bg-zinc-50 border-zinc-100"}`}
+                                  >
+                                    {sub.status.replace(/_/g, " ")}
+                                  </span>
+                                )}
                               </div>
                               <h4 className="text-sm font-black text-zinc-900 leading-snug mb-3 group-hover:text-primary transition-colors">
                                 {sub.subjectName}
@@ -534,9 +562,18 @@ export default function CurriculumDetail({ id }: { id: string }) {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">
                                   {sub.subjectCode}
                                 </span>
-                                <span className="text-[8px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                                  Combo
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {sub.status && (
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${SUBJECT_STATUS_COLORS[sub.status] || "text-zinc-400 bg-zinc-50 border-zinc-100"}`}
+                                    >
+                                      {sub.status.replace(/_/g, " ")}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                    Combo
+                                  </span>
+                                </div>
                               </div>
                               <h4 className="text-sm font-black text-indigo-950 leading-snug mb-3 pl-1">
                                 {sub.subjectName}
@@ -750,6 +787,13 @@ export default function CurriculumDetail({ id }: { id: string }) {
                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
                           {sub.subjectCode}
                         </span>
+                        {sub.status && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${SUBJECT_STATUS_COLORS[sub.status] || "text-zinc-400 bg-zinc-50 border-zinc-100"}`}
+                          >
+                            {sub.status.replace(/_/g, " ")}
+                          </span>
+                        )}
                       </div>
                       <h4 className="text-sm font-black text-zinc-900 leading-snug mb-3 group-hover:text-emerald-700 transition-colors">
                         {sub.subjectName}

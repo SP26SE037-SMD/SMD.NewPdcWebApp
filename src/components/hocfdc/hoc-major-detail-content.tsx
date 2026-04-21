@@ -48,13 +48,13 @@ export default function HocMajorDetailContent() {
 
   // Curriculums Query for this Major
   const { data: curriculumResponse, isLoading: isCurriculumsLoading } = useQuery({
-    queryKey: ["major-curriculums-hoc", majorCode],
-    queryFn: () => CurriculumService.getCurriculums({ search: majorCode, size: 100 }),
-    enabled: !!majorCode,
+    queryKey: ["major-curriculums-hoc", majorId],
+    queryFn: () => CurriculumService.getCurriculumsByMajorId(majorId || ""),
+    enabled: !!majorId,
   });
 
   const major = majorDetail?.data;
-  const curriculums = curriculumResponse?.data?.content || [];
+  const curriculums = curriculumResponse?.data || [];
 
   if (isDetailLoading) {
     return (

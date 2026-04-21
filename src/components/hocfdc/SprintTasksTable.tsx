@@ -273,6 +273,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
             <th className="px-6 py-5 font-black">Task Name</th>
             <th className="px-6 py-5 font-black">Assignee</th>
             <th className="px-6 py-5 font-black">Syllabus Name</th>
+            <th className="px-6 py-5 font-black">Subject Status</th>
             <th className="px-6 py-5 font-black">Deadline</th>
             <th className="px-6 py-5 font-black">Status</th>
             <th className="px-6 py-5 font-black text-right">Actions</th>
@@ -329,17 +330,37 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               {/* Syllabus Name */}
               <td className="px-6 py-5">
                 <div className="flex items-center gap-2">
-                  {task.syllabus?.syllabusName === "Unnamed Syllabus" ||
-                  !task.syllabus?.syllabusName ? (
+                  {task.syllabus.syllabusName === "Unnamed Syllabus" ||
+                  !task.syllabus.syllabusName ? (
                     <span className="text-xs text-zinc-400 italic font-medium tracking-tight">
                       No Syllabus
                     </span>
                   ) : (
                     <div className="px-3 py-1.5 bg-primary text-white text-[10px] font-black tracking-widest rounded-lg shadow-sm">
-                      {task.syllabus?.syllabusName}
+                      {task.syllabus.syllabusName}
                     </div>
                   )}
                 </div>
+              </td>
+
+              {/* Subject Status */}
+              <td className="px-6 py-5">
+                {(() => {
+                  const status = task.subjectStatus || task.subjectsDetail?.[0]?.status;
+                  if (!status) return <span className="text-xs text-zinc-400 italic font-medium">N/A</span>;
+                  
+                  let colorClass = "text-zinc-600 bg-zinc-50 border-zinc-100";
+                  if (status === 'COMPLETED' || status === 'PUBLISHED') colorClass = "text-emerald-600 bg-emerald-50 border-emerald-100";
+                  if (status === 'PENDING_REVIEW') colorClass = "text-amber-600 bg-amber-50 border-amber-100";
+                  if (status === 'IN_PROGRESS') colorClass = "text-blue-600 bg-blue-50 border-blue-100";
+                  if (status === 'WAITING_SYLLABUS') colorClass = "text-rose-600 bg-rose-50 border-rose-100";
+
+                  return (
+                    <div className={`px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest inline-block ${colorClass}`}>
+                      {status.replace('_', ' ')}
+                    </div>
+                  );
+                })()}
               </td>
 
               {/* Deadline */}
@@ -382,7 +403,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                   <button
                     onClick={() =>
                       router.push(
-                        `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}`,
+                        `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
                       )
                     }
                     className="px-2.5 py-1.5 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-zinc-800 transition-all shadow-sm flex items-center gap-1.5 ml-auto group/btn"

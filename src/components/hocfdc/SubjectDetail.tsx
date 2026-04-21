@@ -408,9 +408,9 @@ export default function SubjectDetail({
 
                                 <div className="bg-white rounded-3xl border border-zinc-100 p-8 shadow-sm">
                                     <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6">Strategic Mapping</h3>
-                                    {(subject as any).mappingPLOs && (subject as any).mappingPLOs.length > 0 ? (
+                                    {subject.mappingPLOs && subject.mappingPLOs.length > 0 ? (
                                         <div className="flex flex-wrap gap-2">
-                                            {(subject as any).mappingPLOs?.map((plo: any) => (
+                                            {subject.mappingPLOs?.map(plo => (
                                                 <div key={plo} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-[10px] font-black uppercase tracking-widest">
                                                     {plo}
                                                 </div>

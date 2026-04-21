@@ -1,6 +1,5 @@
 import NewSubjectContent from "@/components/hopdc/SubjectIntakeNewContent";
 import { Metadata } from "next";
-import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "New Subject | HOPDC Dashboard | SMD",
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewSubjectPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <NewSubjectContent />
-    </Suspense>
-  );
+  return <NewSubjectContent />;
 }

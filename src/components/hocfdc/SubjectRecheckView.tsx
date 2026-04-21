@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SubjectService } from "@/services/subject.service";
 import { CloPloService } from "@/services/cloplo.service";
 import { CurriculumService } from "@/services/curriculum.service";
@@ -20,16 +20,113 @@ import {
   Calendar,
   FileText,
   Building2,
+  CheckCircle2,
   Check,
+  X,
+  Send,
+  Loader2
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { ReviewTaskService, REVIEW_TASK_STATUS } from "@/services/review-task.service";
+import { useToast } from "@/components/ui/Toast";
+import { TaskService } from "@/services/task.service";
 
 export default function SubjectRecheckView() {
   const router = useRouter();
-  const { curriculumId, subjectId } = useParams() as {
-    curriculumId: string;
-    subjectId: string;
+  const params = useParams();
+  const curriculumId = params.curriculumId as string;
+  const subjectId = params.subjectId as string;
+  const sprintId = params.sprintId as string;
+  
+  const searchParams = useSearchParams();
+  const taskId = searchParams.get("taskId") || "";
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [titleTask, setTitleTask] = useState("");
+  const [comment, setComment] = useState("");
+  const [isAffectedSyllabus, setIsAffectedSyllabus] = useState(false);
+
+  // Approve Mutation
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      if (subject?.status === 'PENDING_REVIEW') {
+        return SubjectService.updateSubjectStatus(subjectId, 'COMPLETED');
+      }
+      return Promise.resolve();
+    },
+    onSuccess: () => {
+      showToast("Subject approved successfully", "success");
+      setIsApproveModalOpen(false);
+      
+      const effectiveSprintId = taskDetailResp?.data?.sprintId || sprintId;
+      
+      // Redirect to sprint page
+      const sprintUrl = `/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${effectiveSprintId}`;
+      router.push(sprintUrl);
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    },
+    onError: (error: any) => {
+      showToast(error?.message || "Failed to approve subject", "error");
+    },
+  });
+
+  // Fetch Task Detail to check type (REUSED_SUBJECT tasks are locked to isAffectedSyllabus = false)
+  const { data: taskDetailResp } = useQuery({
+    queryKey: ["task", taskId],
+    queryFn: () => TaskService.getTaskById(taskId),
+    enabled: !!taskId,
+  });
+
+  const taskType = taskDetailResp?.data?.type;
+  const isReusedSubject = taskType === "REUSED_SUBJECT";
+
+  // Force false if it's a reused subject
+  useEffect(() => {
+    if (isReusedSubject) {
+      setIsAffectedSyllabus(false);
+    }
+  }, [isReusedSubject]);
+
+  const revisionMutation = useMutation({
+    mutationFn: (payload: any) => ReviewTaskService.createHoCFDCReviewTask(payload),
+    onSuccess: () => {
+      showToast("Revision request created successfully", "success");
+      setIsModalOpen(false);
+      setTitleTask("");
+      setComment("");
+      setIsAffectedSyllabus(false);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      router.back();
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to create revision request", "error");
+    },
+  });
+
+  const handleSubmitRevision = () => {
+    if (!titleTask || !comment) {
+      showToast("Please fill in all fields", "warning");
+      return;
+    }
+
+    revisionMutation.mutate({
+      titleTask,
+      comment,
+      status: REVIEW_TASK_STATUS.REVISION_REQUESTED,
+      taskId,
+      reviewerId: user?.accountId || "",
+      isAccepted: false, // For HoCFDC, this is a revision, not acceptance
+      isAffectedSyllabus,
+    });
   };
 
   // 1. Fetch Subject Info
@@ -140,9 +237,19 @@ export default function SubjectRecheckView() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="px-6 py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-rose-100 transition-all flex items-center gap-2 active:scale-95">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-rose-100 transition-all flex items-center gap-2 active:scale-95"
+          >
             <Activity size={14} />
             Revision request
+          </button>
+          <button 
+            onClick={() => setIsApproveModalOpen(true)}
+            className="px-6 py-3 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-emerald-100 transition-all flex items-center gap-2 active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            Approve Subject
           </button>
         </div>
       </div>
@@ -576,6 +683,147 @@ export default function SubjectRecheckView() {
           </section>
         </div>
       </div>
+
+      {/* Revision Request Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-[500px] bg-white border border-zinc-200 shadow-2xl rounded-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            {/* Simple Header */}
+            <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-rose-50 text-rose-500 flex items-center justify-center rounded-xl">
+                  <Activity size={20} />
+                </div>
+                <h2 className="text-xl font-black tracking-tight text-zinc-900">Request Revision</h2>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="w-10 h-10 flex items-center justify-center hover:bg-zinc-100 rounded-xl transition-all text-zinc-400 hover:text-zinc-900"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-8 bg-white space-y-6">
+              <div className="space-y-6">
+                {/* Task Title */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-zinc-400 ml-1">
+                    Revision Title
+                  </label>
+                  <input
+                    type="text"
+                    value={titleTask}
+                    onChange={(e) => setTitleTask(e.target.value)}
+                    placeholder="Enter short description of the revision..."
+                    className="w-full px-5 py-4 rounded-xl bg-zinc-50 border border-zinc-200 focus:border-rose-500 focus:ring-0 transition-all text-sm font-bold text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </div>
+
+                {/* Case Selection Toggle - Simplified */}
+                <div className={`p-5 rounded-2xl border transition-all ${isAffectedSyllabus ? 'bg-rose-50/30 border-rose-200' : 'bg-zinc-50/30 border-zinc-100'} ${isReusedSubject ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-black uppercase tracking-widest ${isAffectedSyllabus ? 'text-rose-600' : 'text-zinc-600'}`}>
+                          Affects Syllabus Structure
+                        </p>
+                        {isReusedSubject && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-zinc-200 text-zinc-500 rounded-full">
+                            Locked
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-500 font-medium leading-normal mt-1">
+                        {isReusedSubject 
+                          ? "Reused subjects do not require syllabus structural changes."
+                          : "This will move Task to TO DO and Subject to WAITING SYLLABUS."
+                        }
+                      </p>
+                    </div>
+                    
+                    <button
+                      onClick={() => !isReusedSubject && setIsAffectedSyllabus(!isAffectedSyllabus)}
+                      disabled={isReusedSubject}
+                      className={`relative w-14 h-7 rounded-full transition-all duration-200 flex items-center px-1 shrink-0 ${isAffectedSyllabus ? 'bg-rose-500' : 'bg-zinc-200'} ${isReusedSubject ? 'cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-200 transform ${isAffectedSyllabus ? 'translate-x-7' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Feedback Comment */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-zinc-400 ml-1">
+                    Detailed Instructions
+                  </label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Describe exactly what needs to be changed..."
+                    rows={4}
+                    className="w-full px-5 py-4 rounded-2xl bg-zinc-50 border border-zinc-200 focus:border-rose-500 focus:ring-0 transition-all text-sm font-bold text-zinc-900 placeholder:text-zinc-400 resize-none min-h-[140px]"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4 pt-2">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn-charcoal flex-1 h-14 px-8"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitRevision}
+                  disabled={revisionMutation.isPending}
+                  className={`flex-[2] h-14 px-10 bg-rose-500 text-white font-bold rounded-2xl shadow-xl shadow-rose-500/20 flex items-center justify-center gap-3 transition-all active:scale-95 ${revisionMutation.isPending ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-y-[-2px] hover:bg-rose-600'}`}
+                >
+                  {revisionMutation.isPending ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <>
+                      <span className="text-sm font-bold uppercase tracking-widest">Submit Request</span>
+                      <Send size={20} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Approve Confirmation Modal */}
+      {isApproveModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white border border-zinc-200 shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300 p-10">
+            <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mb-8 mx-auto">
+              <CheckCircle2 className="text-emerald-500" size={32} />
+            </div>
+            <h3 className="text-3xl font-extrabold text-zinc-900 mb-3 tracking-tight text-center">Confirm Approval?</h3>
+            <p className="text-zinc-500 leading-relaxed mb-10 font-medium text-center">
+              Are you sure you want to approve this subject? This will set the status to <span className="text-emerald-600 font-bold">COMPLETED</span> and move the workflow forward.
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsApproveModalOpen(false)} 
+                className="btn-charcoal flex-1 h-14 px-8"
+              >
+                Review
+              </button>
+              <button 
+                onClick={() => approveMutation.mutate()} 
+                disabled={approveMutation.isPending} 
+                className={`flex-1 h-14 px-10 bg-emerald-500 text-white font-bold rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all active:scale-95 ${approveMutation.isPending ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-y-[-2px] hover:bg-emerald-600'}`}
+              >
+                {approveMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} strokeWidth={3} />}
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

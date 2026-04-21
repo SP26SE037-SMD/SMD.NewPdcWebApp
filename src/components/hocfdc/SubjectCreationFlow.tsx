@@ -61,13 +61,14 @@ export default function SubjectCreationFlow() {
                 minBloomLevel: formData.minBloomLevel,
                 // These are currently fixed for simplified flow/mock
                 departmentId: "DEPT_001",
-                scoringScale: 10,
+                electiveId: "",
+                scoringScale: "10",
                 description: formData.description,
                 studentTasks: "",
                 timeAllocation: "",
                 degreeLevel: "BACHELOR",
                 minToPass: 4,
-            } as any);
+            });
             router.push("/dashboard/hocfdc/curriculums");
         } catch (error) {
             console.error(error);
