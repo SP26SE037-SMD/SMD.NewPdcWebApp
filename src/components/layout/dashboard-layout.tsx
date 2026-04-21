@@ -221,6 +221,11 @@ export default function DashboardLayout({
               icon: BookOpen,
               label: "Curriculums",
             },
+            {
+              href: "/dashboard/hocfdc/requests",
+              icon: "inbox",
+              label: "Requests",
+            },
           ],
         },
         {
@@ -237,11 +242,15 @@ export default function DashboardLayout({
         {
           group: "Core Management",
           items: [
-            
             {
               href: "/dashboard/vice-principal/manage-majors",
               icon: "school",
               label: "Manage Majors",
+            },
+            {
+              href: "/dashboard/vice-principal/requests",
+              icon: "inbox",
+              label: "Requests",
             },
             {
               href: "/dashboard/vice-principal/digital-enactment",

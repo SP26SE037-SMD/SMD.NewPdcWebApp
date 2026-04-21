@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedback Form Tester — SMD System</title>
+  <meta name="description"
+    content="Test giao diện Feedback Form, quản lý section, câu hỏi và xem báo cáo cho hệ thống SMD." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- SIDEBAR NAV -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="#4285F4" />
+          <path d="M8 9h12M8 14h12M8 19h8" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>Feedback Tester</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebar-toggle-btn" aria-label="Toggle Sidebar">&#9776;</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-tab="forms" id="nav-forms">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
+        <span>Quản lý Form</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="builder" id="nav-builder">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+        <span>Form Builder</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="submissions" id="nav-submissions">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </svg>
+        <span>Submissions</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="report" id="nav-report">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10M12 20V4M6 20v-6" />
+        </svg>
+        <span>Báo cáo</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="config-section">
+        <label class="config-label">Base URL</label>
+        <input type="text" id="base-url" class="config-input" value="http://43.207.156.116"
+          placeholder="http://43.207.156.116/" />
+      </div>
+      <div class="config-section">
+        <label class="config-label">JWT Token</label>
+        <textarea id="jwt-token" class="config-input token-input"
+          rows="3">Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0YWlrdHNlMTg0NzYzQGZwdC5lZHUudm4iLCJhY2NvdW50SWQiOiJhN2U5N2IwNS00ZmNlLTRmNjUtOWIwMS1iZDhjYWZhZjNhOWEiLCJzY29wZSI6IlBMT1NfQ1JFQVRFIEFDQ09VTlRfUkVBRCBHUk9VUF9SRUFEIE1BUFBJTkdfREVMRVRFIEdST1VQX0NSRUFURSBTVUJKRUNUX1JFQUQgU1VCSkVDVF9VUERBVEUgUFJFUkVRVUlTSVRFX01BTkFHRV9TVUJKRUNUUyBQTE9TX1JFQUQgUExPU19ERUxFVEUgRkVFREJBQ0tfVklFVyBNQVBQSU5HX0NSRUFURSBGRUVEQkFDS19NQU5BR0UgQ1VSUklDVUxVTV9SRUFEIFNVQkpFQ1RfREVMRVRFIE1BUFBJTkdfUkVBRCBNQVBQSU5HX1VQREFURSBTWUxMQUJVU19SRUFEIFBSRVJFUVVJU0lURV9SRUFEIFBMT1NfVVBEQVRFIENVUlJJQ1VMVU1fREVMRVRFIERFUEFSVE1FTlRfUkVBRCBTVUJKRUNUX0NSRUFURSBDVVJSSUNVTFVNX0NSRUFURSBTWUxMQUJVU19BUFBST1ZFIENVUlJJQ1VMVU1fVVBEQVRFIEdST1VQX1VQREFURSBTWUxMQUJVU19SRVZJRVcgQ0xPU19DUkVBVEUiLCJpc3MiOiJzbWQiLCJleHAiOjE3NzY5ODI4ODgsImlhdCI6MTc3NjYyMjg4OCwianRpIjoiMDFlZGY0NzYtMzRkNS00ODhkLWJkZTYtNWQzZTRmNmU2MTkyIn0.xBV4G4NSkpwZh1kJWkH3ITLOjlmJ2VzW-SYrE5cTzcyTyXiqAT2i7wN7O31JrFzYesS2Zt34_5-Db_tiYNdW4Q</textarea>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ===== TAB: FORM LIST ===== -->
+    <section class="tab-panel active" id="tab-forms">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Quản lý Form</h1>
+          <p class="page-subtitle">Tạo, quản lý và theo dõi các Feedback Form theo Curriculum</p>
+        </div>
+        <button class="btn btn-primary" id="btn-open-create-modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Tạo Form mới
+        </button>
+      </div>
+
+      <!-- Curriculum Filter -->
+      <div class="filter-bar card">
+        <div class="filter-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="curriculum-id-filter">Curriculum ID (UUID)</label>
+            <input type="text" id="curriculum-id-filter" class="form-input"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+          </div>
+          <button class="btn btn-outline" id="btn-load-forms">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+            </svg>
+            Tải Forms
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Cards Grid -->
+      <div class="forms-grid" id="forms-grid">
+        <div class="empty-state" id="forms-empty">
+          <div class="empty-icon">📋</div>
+          <h3>Chưa có form nào</h3>
+          <p>Nhập Curriculum ID và nhấn "Tải Forms" để xem danh sách, hoặc tạo mới.</p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== TAB: FORM BUILDER ===== -->
+    <section class="tab-panel" id="tab-builder">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Form Builder</h1>
+          <p class="page-subtitle">Thiết kế cấu trúc form: thêm Section và Question</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" id="btn-load-full-schema">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+            </svg>
+            Tải Schema
+          </button>
+          <button class="btn btn-warning" id="btn-open-schedule-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            ⏰ Hẹn giờ
+          </button>
+          <button class="btn btn-success" id="btn-trigger-build">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            🚀 Publish
+          </button>
+
+        </div>
+      </div>
+
+      <div class="builder-input-bar card">
+        <div class="form-group flex-1">
+          <label class="form-label" for="builder-form-id">Form ID để thiết kế</label>
+          <input type="text" id="builder-form-id" class="form-input" placeholder="uuid-form" />
+        </div>
+        <div class="polling-status" id="polling-status" style="display:none">
+          <div class="spinner"></div>
+          <span>Đang chờ Google Form được tạo...</span>
+        </div>
+        <div class="lock-status" id="lock-status" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d93025" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span style="color:var(--red); font-weight:600">Form Active — Editing Limited</span>
+        </div>
+
+      </div>
+
+      <div class="builder-layout">
+        <!-- Left: Sections Panel -->
+        <div class="sections-panel card">
+          <div class="panel-header">
+            <h3>Các Section</h3>
+            <button class="btn btn-sm btn-primary" id="btn-add-section">+ Section</button>
+          </div>
+          <div class="sections-list" id="sections-list">
+            <div class="empty-state-sm">Tải schema để xem sections</div>
+          </div>
+        </div>
+
+        <!-- Right: Question Editor -->
+        <div class="questions-panel card">
+          <div class="panel-header">
+            <h3 id="active-section-title">Chọn một Section</h3>
+            <button class="btn btn-sm btn-primary" id="btn-add-question" disabled>+ Câu hỏi</button>
+          </div>
+          <div class="questions-list" id="questions-list">
+            <div class="empty-state-sm">Chọn section để xem câu hỏi</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== TAB: SUBMISSIONS ===== -->
+    <section class="tab-panel" id="tab-submissions">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Danh sách Submissions</h1>
+          <p class="page-subtitle">Xem các câu trả lời đã được nộp</p>
+        </div>
+      </div>
+      <div class="filter-bar card">
+        <div class="filter-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="sub-form-id">Form ID</label>
+            <input type="text" id="sub-form-id" class="form-input" placeholder="uuid-form" />
+          </div>
+          <button class="btn btn-outline" id="btn-load-submissions">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+            </svg>
+            Tải Submissions
+          </button>
+        </div>
+      </div>
+      <div class="submissions-container" id="submissions-container">
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          <h3>Chưa có submission nào</h3>
+          <p>Nhập Form ID và nhấn "Tải Submissions"</p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== TAB: REPORT ===== -->
+    <section class="tab-panel" id="tab-report">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Báo cáo Feedback</h1>
+          <p class="page-subtitle">Tổng hợp kết quả và thống kê câu trả lời</p>
+        </div>
+      </div>
+      <div class="filter-bar card">
+        <div class="filter-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="report-form-id">Form ID</label>
+            <input type="text" id="report-form-id" class="form-input" placeholder="uuid-form" />
+          </div>
+          <button class="btn btn-outline" id="btn-load-report">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+            </svg>
+            Tải Báo cáo
+          </button>
+        </div>
+      </div>
+      <div class="report-container" id="report-container">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <h3>Chưa có dữ liệu báo cáo</h3>
+          <p>Nhập Form ID và nhấn "Tải Báo cáo"</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ===== MODAL: CREATE FORM ===== -->
+  <div class="modal-overlay" id="modal-create-form">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Tạo Form mới</h2>
+        <button class="modal-close" data-close="modal-create-form">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe"></div>
+          <div class="form-group">
+            <label class="form-label" for="new-curriculum-id">Curriculum ID <span class="required">*</span></label>
+            <input type="text" id="new-curriculum-id" class="form-input"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-form-type">Form Type <span class="required">*</span></label>
+            <div class="select-wrapper">
+              <select id="new-form-type" class="form-input form-select">
+                <option value="MIDTERM">MIDTERM</option>
+                <option value="FINAL">FINAL</option>
+                <option value="GENERAL">GENERAL</option>
+                <option value="WEEKLY">WEEKLY</option>
+                <option value="custom">Tùy chỉnh...</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="custom-form-type-group" style="display:none">
+            <label class="form-label" for="custom-form-type">Tên Form Type tùy chỉnh</label>
+            <input type="text" id="custom-form-type" class="form-input" placeholder="Nhập loại form..." />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-create-form">Hủy</button>
+        <button class="btn btn-primary" id="btn-create-form">Tạo Form</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: ADD SECTION ===== -->
+  <div class="modal-overlay" id="modal-add-section">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Thêm Section mới</h2>
+        <button class="modal-close" data-close="modal-add-section">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe"></div>
+          <div class="form-group">
+            <label class="form-label" for="section-title">Tiêu đề Section</label>
+            <input type="text" id="section-title" class="form-input" placeholder="VD: Thông tin chung" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="section-action">After Section Action</label>
+            <div class="select-wrapper">
+              <select id="section-action" class="form-input form-select">
+                <option value="NEXT">NEXT — Sang section tiếp theo</option>
+                <option value="SUBMIT">SUBMIT — Nộp form</option>
+                <option value="GO_TO_SECTION">GO_TO_SECTION — Nhảy đến section cụ thể</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="target-section-group" style="display:none">
+            <label class="form-label" for="target-section-id">Target Section ID <span class="required">*</span></label>
+            <input type="text" id="target-section-id" class="form-input" placeholder="uuid-section" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-add-section">Hủy</button>
+        <button class="btn btn-primary" id="btn-save-section">Thêm Section</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: ADD QUESTION ===== -->
+  <div class="modal-overlay" id="modal-add-question">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2>Thêm Câu hỏi mới</h2>
+        <button class="modal-close" data-close="modal-add-question">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe gf-stripe-purple"></div>
+          <div class="form-group">
+            <label class="form-label" for="question-content">Nội dung câu hỏi <span class="required">*</span></label>
+            <input type="text" id="question-content" class="form-input"
+              placeholder="VD: Bạn đánh giá chất lượng giảng dạy như thế nào?" />
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="question-type">Loại câu hỏi <span class="required">*</span></label>
+              <div class="select-wrapper">
+                <select id="question-type" class="form-input form-select">
+                  <option value="SHORT_TEXT">SHORT_TEXT — Văn bản ngắn</option>
+                  <option value="PARAGRAPH">PARAGRAPH — Văn bản dài</option>
+                  <option value="RADIO">RADIO — Chọn một</option>
+                  <option value="CHECKBOX">CHECKBOX — Chọn nhiều</option>
+                  <option value="DROPDOWN">DROPDOWN — Danh sách thả</option>
+                  <option value="LINEAR_SCALE">LINEAR_SCALE — Thang điểm</option>
+                  <option value="DATE">DATE — Ngày</option>
+                  <option value="TIME">TIME — Giờ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="question-required">Bắt buộc</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="question-required" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Options section (shown for RADIO, CHECKBOX, DROPDOWN) -->
+          <div id="options-section" style="display:none">
+            <div class="options-header">
+              <label class="form-label">Danh sách lựa chọn</label>
+              <button class="btn btn-sm btn-ghost" id="btn-add-option">+ Thêm lựa chọn</button>
+            </div>
+            <div id="options-list" class="options-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-add-question">Hủy</button>
+        <button class="btn btn-primary" id="btn-save-question">Thêm Câu hỏi</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: EDIT FORM ===== -->
+  <div class="modal-overlay" id="modal-edit-form">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Chỉnh sửa Form</h2>
+        <button class="modal-close" data-close="modal-edit-form">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe"></div>
+          <div class="form-group">
+            <label class="form-label">Form ID</label>
+            <input type="text" id="edit-form-id" class="form-input" readonly style="background:var(--surface-2)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-form-type">Form Type <span class="required">*</span></label>
+            <input type="text" id="edit-form-type" class="form-input" placeholder="VD: MIDTERM, FINAL..." />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-edit-form">Hủy</button>
+        <button class="btn btn-primary" id="btn-update-form">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: EDIT SECTION ===== -->
+  <div class="modal-overlay" id="modal-edit-section">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Chỉnh sửa Section</h2>
+        <button class="modal-close" data-close="modal-edit-section">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe"></div>
+          <div class="form-group">
+            <label class="form-label" for="edit-section-title">Tiêu đề Section</label>
+            <input type="text" id="edit-section-title" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-section-action">After Section Action</label>
+            <div class="select-wrapper">
+              <select id="edit-section-action" class="form-input form-select">
+                <option value="NEXT">NEXT — Sang section tiếp theo</option>
+                <option value="SUBMIT">SUBMIT — Nộp form</option>
+                <option value="GO_TO_SECTION">GO_TO_SECTION — Nhảy đến section cụ thể</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="edit-target-section-group" style="display:none">
+            <label class="form-label" for="edit-target-section-id">Target Section ID <span
+                class="required">*</span></label>
+            <input type="text" id="edit-target-section-id" class="form-input" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-edit-section">Hủy</button>
+        <button class="btn btn-primary" id="btn-update-section">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: EDIT QUESTION ===== -->
+  <div class="modal-overlay" id="modal-edit-question">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2>Chỉnh sửa Câu hỏi</h2>
+        <button class="modal-close" data-close="modal-edit-question">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe gf-stripe-purple"></div>
+          <div class="form-group">
+            <label class="form-label" for="edit-question-content">Nội dung câu hỏi <span
+                class="required">*</span></label>
+            <input type="text" id="edit-question-content" class="form-input" />
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="edit-question-type">Loại câu hỏi <span class="required">*</span></label>
+              <div class="select-wrapper">
+                <select id="edit-question-type" class="form-input form-select">
+                  <option value="SHORT_TEXT">SHORT_TEXT — Văn bản ngắn</option>
+                  <option value="PARAGRAPH">PARAGRAPH — Văn bản dài</option>
+                  <option value="RADIO">RADIO — Chọn một</option>
+                  <option value="CHECKBOX">CHECKBOX — Chọn nhiều</option>
+                  <option value="DROPDOWN">DROPDOWN — Danh sách thả</option>
+                  <option value="LINEAR_SCALE">LINEAR_SCALE — Thang điểm</option>
+                  <option value="DATE">DATE — Ngày</option>
+                  <option value="TIME">TIME — Giờ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="edit-question-required">Bắt buộc</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="edit-question-required" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="edit-options-section" style="display:none">
+            <div class="options-header">
+              <label class="form-label">Danh sách lựa chọn</label>
+              <button class="btn btn-sm btn-ghost" id="btn-edit-add-option">+ Thêm lựa chọn</button>
+            </div>
+            <div id="edit-options-list" class="options-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-edit-question">Hủy</button>
+        <button class="btn btn-primary" id="btn-update-question">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: SCHEDULE CLOSE ===== -->
+  <div class="modal-overlay" id="modal-schedule-close">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Hẹn giờ đóng Form</h2>
+        <button class="modal-close" data-close="modal-schedule-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="google-form-card">
+          <div class="gf-header-stripe gf-stripe-orange"></div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px">
+            Thiết lập thời gian Google Form sẽ tự động ngừng nhận phản hồi.
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="schedule-close-at">Đóng lúc (Giờ địa phương) <span
+                class="required">*</span></label>
+            <input type="datetime-local" id="schedule-close-at" class="form-input" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-schedule-close">Hủy</button>
+        <button class="btn btn-primary" id="btn-save-schedule">Lưu cài đặt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="api-log-panel" id="api-log-panel">
+    <div class="api-log-header">
+      <span>🔌 API Log</span>
+      <div class="log-controls">
+        <button class="btn-icon" id="btn-clear-log" title="Xóa log">🗑</button>
+        <button class="btn-icon" id="btn-toggle-log" title="Thu gọn">▼</button>
+      </div>
+    </div>
+    <div class="api-log-body" id="api-log-body"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MajorService } from "@/services/major.service";
 import { PoService } from "@/services/po.service";
@@ -15,16 +15,33 @@ import {
   Calendar,
   BookOpen,
   Plus,
+  ClipboardList,
+  FileText,
+  ExternalLink,
+  Zap,
+  Wrench,
+  MessageSquare,
+  BarChart3,
 } from "lucide-react";
+import { FormService, FeedbackForm } from "@/services/form.service";
+import FeedbackFormsTab from "./FeedbackFormsTab";
+import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 export default function HocMajorDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const majorCode = params.majorCode as string;
-  const [activeTab, setActiveTab] = useState<"OVERVIEW" | "CURRICULUMS">("OVERVIEW");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as "OVERVIEW" | "CURRICULUMS" | "FORMS") || "OVERVIEW";
+
+  const [activeTab, setActiveTab] = useState<"OVERVIEW" | "CURRICULUMS" | "FORMS">(initialTab);
+  const [selectedCurrIdForForms, setSelectedCurrIdForForms] = useState<string>("");
+  const [isCreatingForm, setIsCreatingForm] = useState(false);
+  const [newFormType, setNewFormType] = useState("MIDTERM");
 
   // Major Details Query
   const {
@@ -54,7 +71,67 @@ export default function HocMajorDetailContent() {
   });
 
   const major = majorDetail?.data;
-  const curriculums = curriculumResponse?.data?.content || [];
+  const curriculums = useMemo(() => curriculumResponse?.data?.content || [], [curriculumResponse?.data?.content]);
+  
+  // Stabilize curriculum selection logic
+  useEffect(() => {
+    if (activeTab === "FORMS" && !selectedCurrIdForForms && curriculums.length > 0) {
+      const firstId = curriculums[0].curriculumId;
+      if (firstId) setSelectedCurrIdForForms(firstId);
+    }
+  }, [activeTab, curriculums, selectedCurrIdForForms]);
+
+  // Feedback Forms Query
+  const { 
+    data: formsRaw, 
+    isLoading: isFormsLoading, 
+    refetch: refetchForms 
+  } = useQuery({
+    queryKey: ["major-forms-hoc", selectedCurrIdForForms],
+    queryFn: () => FormService.getForms(selectedCurrIdForForms),
+    enabled: activeTab === "FORMS" && !!selectedCurrIdForForms,
+  });
+
+  // Handle both possible response styles: direct array (from guide) or wrapped with .data
+  const forms: FeedbackForm[] = useMemo(() => {
+    return Array.isArray(formsRaw) 
+      ? formsRaw 
+      : (formsRaw as any)?.data || [];
+  }, [formsRaw]);
+
+
+  const handleTriggerBuild = async (formId: string) => {
+    try {
+      await FormService.triggerBuild(formId);
+      showToast("Triggering Google Form build...", "success");
+      refetchForms();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || "Build trigger failed", "error");
+    }
+  };
+
+  const handleCreateForm = async () => {
+    if (!selectedCurrIdForForms) {
+      showToast("Please select a curriculum first", "error");
+      return;
+    }
+    setUpdatingForm(true);
+    try {
+      await FormService.createForm({
+        curriculumId: selectedCurrIdForForms,
+        formType: newFormType,
+      });
+      showToast("Feedback Form draft created", "success");
+      setIsCreatingForm(false);
+      refetchForms();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || "Creation failed", "error");
+    } finally {
+      setUpdatingForm(false);
+    }
+  };
+
+  const [updatingForm, setUpdatingForm] = useState(false);
 
   if (isDetailLoading) {
     return (
@@ -131,6 +208,16 @@ export default function HocMajorDetailContent() {
               >
                 Curriculum List
               </button>
+              <button
+                onClick={() => setActiveTab("FORMS")}
+                className={`px-6 py-2.5 text-xs font-black uppercase tracking-[0.1em] rounded-lg transition-all ${
+                  activeTab === "FORMS"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                Feedback Forms
+              </button>
             </div>
           </div>
         </div>
@@ -182,7 +269,7 @@ export default function HocMajorDetailContent() {
                 </div>
               </section>
             </motion.div>
-          ) : (
+          ) : activeTab === "CURRICULUMS" ? (
             <motion.div
               key="curriculums"
               initial={{ opacity: 0, y: 10 }}
@@ -288,9 +375,109 @@ export default function HocMajorDetailContent() {
                 </table>
               </div>
             </motion.div>
+          ) : (
+            <motion.div
+              key="forms"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <FeedbackFormsTab 
+                forms={forms}
+                majorCode={majorCode}
+                curriculums={curriculums}
+                selectedCurrId={selectedCurrIdForForms}
+                onCurrChange={setSelectedCurrIdForForms}
+                onCreateForm={() => setIsCreatingForm(true)}
+                isLoading={isFormsLoading}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
+
+      {/* Create Form Modal */}
+      <AnimatePresence>
+        {isCreatingForm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCreatingForm(false)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden p-8"
+            >
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Create Feedback Form</h2>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono">
+                    Initialize metadata before building sections
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Form Type / Period</label>
+                       <select 
+                         value={newFormType === "MIDTERM" || newFormType === "FINAL" || newFormType === "GENERAL" || newFormType === "WEEKLY" ? newFormType : "__OTHER__"}
+                         onChange={(e) => {
+                           if (e.target.value !== "__OTHER__") setNewFormType(e.target.value);
+                           else setNewFormType("");
+                         }}
+                         className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                       >
+                          <option value="MIDTERM">MIDTERM FEEDBACK</option>
+                          <option value="FINAL">FINAL FEEDBACK</option>
+                          <option value="GENERAL">GENERAL SURVEY</option>
+                          <option value="WEEKLY">WEEKLY CHECK-IN</option>
+                          <option value="__OTHER__">Other (custom)...</option>
+                       </select>
+                       {(newFormType !== "MIDTERM" && newFormType !== "FINAL" && newFormType !== "GENERAL" && newFormType !== "WEEKLY") && (
+                         <input
+                           autoFocus
+                           value={newFormType}
+                           onChange={(e) => setNewFormType(e.target.value.toUpperCase())}
+                           placeholder="e.g. SEMESTER_CHECK or SPRINT_RETRO"
+                           className="w-full bg-white border-2 border-indigo-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+                         />
+                       )}
+                    </div>
+
+                   <div className="space-y-2 opacity-50">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Associated Curriculum</label>
+                      <div className="w-full bg-zinc-100 border border-zinc-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-zinc-500">
+                         {curriculums.find(c => c.curriculumId === selectedCurrIdForForms)?.curriculumCode || "Select in tab..."}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setIsCreatingForm(false)}
+                    className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateForm}
+                    disabled={updatingForm}
+                    className="flex-[2] bg-zinc-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary transition-all shadow-xl shadow-zinc-900/10 disabled:opacity-50"
+                  >
+                    {updatingForm ? "Synchronizing..." : "Initialize Form Draft"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
