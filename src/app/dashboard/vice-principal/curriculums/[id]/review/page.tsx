@@ -232,18 +232,7 @@ export default function VicePrincipalReviewPage() {
 						curriculum?.curriculumName ||
 						"Computer Science"}
 				</h1>
-				<div className="flex items-center gap-4">
-					<span className="px-3 py-1 bg-[#b1f0ce] text-[#1d5c42] text-xs font-bold rounded-full uppercase tracking-wider">
-						{curriculum?.status || "Active Proposal"}
-					</span>
-					<span className="text-sm text-[#5a6062] flex items-center gap-1 font-medium">
-						<Calendar size={14} />
-						Last updated{" "}
-						{curriculum?.updatedAt
-							? new Date(curriculum.updatedAt).toLocaleDateString()
-							: "2 days ago"}
-					</span>
-				</div>
+
 			</div>
 
 			{/* Sub-navigation Tabs */}
@@ -597,7 +586,7 @@ export default function VicePrincipalReviewPage() {
 				)}
 
 				{activeTab === "review" && (
-					<div className="max-w-4xl pt-0 pb-6">
+					<div className="max-w-4xl mx-auto pt-0 pb-6">
 						<div className="bg-[#ffffff] p-6 md:p-8 rounded-3xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] border border-[#dee3e6]">
 							<div className="mb-6 pb-4 border-b border-[#dee3e6]">
 								<h2 className="text-2xl font-bold tracking-tight text-[#2d3335]" style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}>

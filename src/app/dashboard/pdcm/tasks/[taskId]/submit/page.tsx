@@ -38,14 +38,18 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     const { data: sessionsRes } = useQuery({
         queryKey: ['sessions', syllabusId],
         queryFn: () => (syllabusId ? SessionService.getDetailedSessions(syllabusId, undefined) : null),
-        enabled: !!syllabusId
+        enabled: !!syllabusId,
+        staleTime: 0,
+        refetchOnMount: 'always'
     });
 
     // Fetch Materials to ensure count is accurate
     const { data: materialsRes } = useQuery({
         queryKey: ['pdcm-materials', syllabusId, 'DRAFT'],
         queryFn: () => (syllabusId ? MaterialService.getMaterialsBySyllabusId(syllabusId, 'DRAFT') : null),
-        enabled: !!syllabusId
+        enabled: !!syllabusId,
+        staleTime: 0,
+        refetchOnMount: 'always'
     });
 
     // Fetch Assessments (already synced in Assessments tab, but safe to fetch here too if needed)
@@ -53,7 +57,9 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     const { data: assessmentsRes } = useQuery({
         queryKey: ['assessments', syllabusId],
         queryFn: () => (syllabusId ? AssessmentService.getAssessmentsBySyllabusId(syllabusId) : null),
-        enabled: !!syllabusId
+        enabled: !!syllabusId,
+        staleTime: 0,
+        refetchOnMount: 'always'
     });
 
     // Memoized fallbacks to prevent Redux selector warnings

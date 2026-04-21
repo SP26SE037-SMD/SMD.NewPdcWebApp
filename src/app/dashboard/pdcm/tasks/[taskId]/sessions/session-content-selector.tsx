@@ -233,7 +233,7 @@ export function SessionContentSelector({ materials, value, onChange }: SessionCo
                     <div className="max-h-[300px] overflow-y-auto p-2 custom-scrollbar">
                         {materials.length === 0 ? (
                             <div className="p-4 text-center text-zinc-400 text-sm">
-                                No DRAFT materials available in this syllabus.
+                                No materials found in this syllabus.
                             </div>
                         ) : (
                             <div className="flex flex-col gap-1">

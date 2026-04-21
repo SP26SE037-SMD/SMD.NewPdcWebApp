@@ -212,13 +212,9 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             {/* ── Page Header ── */}
             <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div className="space-y-1">
-                    <p className="text-[9px] uppercase font-bold tracking-[0.15em] text-primary/80 leading-none">Active Configuration</p>
-                    <h1 className="text-xl font-extrabold text-on-surface tracking-tight mb-0.5" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Syllabus Assessments
+                    <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-0.5" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        Assessments
                     </h1>
-                    <p className="text-[10px] font-light text-on-surface-variant max-w-xl leading-tight">
-                        {syllabusData?.data?.subjectName || 'this course'}
-                    </p>
                 </div>
 
                 <div className="flex gap-4 self-start md:self-end">
@@ -258,7 +254,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                     <div>
                                         <h3 className="text-sm font-bold text-on-surface" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                             {ass.categoryName} - Part {ass.part}
-                                            {!ass.assessmentId && <span className="ml-2 text-[8px] font-bold uppercase bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full inline-block">Draft</span>}
                                         </h3>
                                         <div className="flex items-center space-x-2 mt-0.5">
                                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
@@ -277,6 +272,11 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                         <p className="text-lg font-bold text-on-surface leading-none">{ass.weight}%</p>
                                     </div>
                                     <div className="flex items-center space-x-1">
+                                        <button onClick={() => setExpandedIndex(index)}
+                                            className="p-1 px-2 text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center gap-1 border border-primary/20 shadow-xs">
+                                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                            <span className="text-[10px] font-bold">View</span>
+                                        </button>
                                         <button onClick={() => setExpandedIndex(index)}
                                             className="p-1 px-2 text-on-surface-variant hover:bg-surface-container rounded-md transition-colors flex items-center gap-1 border border-outline-variant/20 shadow-xs">
                                             <span className="material-symbols-outlined text-[16px]">edit</span>

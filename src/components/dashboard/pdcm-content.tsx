@@ -126,7 +126,7 @@ const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcc
                         }}
                         className="btn-pdcm-ghost px-5 py-2 rounded-lg text-sm"
                     >
-                        <span className="material-symbols-outlined transition-colors" style={{ fontSize: '18px' }}>edit</span>Edit
+                        <span className="material-symbols-outlined transition-colors" style={{ fontSize: '18px' }}>task</span>Do Task
                     </button>
                 )}
             </div>
@@ -412,8 +412,8 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
 
 
     const headerTabs = [
-        { id: 'develop', label: 'Develop Syllabus', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'Peer Review', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        { id: 'develop', label: 'My Task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
     ];
 
     const statusTabs = [
@@ -442,7 +442,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="max-w-2xl">
                             <h1 className="text-4xl font-extrabold tracking-tight mb-3" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                Project Workspace
+                                {navTab === 'develop' ? 'My Task' : 'My Review Task'}
                             </h1>
                         </div>
                     </div>
@@ -496,7 +496,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                                     <div className="flex items-center gap-3 mb-8">
                                         <span className="material-symbols-outlined text-3xl" style={{ color: C.primary, fontVariationSettings: "'FILL' 1" }}>edit_document</span>
                                         <h2 className="text-2xl font-bold" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                            Develop Syllabus - {statusTabs.find(t => t.id === statusTab)?.label}
+                                            My Task - {statusTabs.find(t => t.id === statusTab)?.label}
                                         </h2>
                                     </div>
                                     
@@ -520,7 +520,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                                     <div className="flex items-center gap-3 mb-8">
                                         <span className="material-symbols-outlined text-3xl" style={{ color: C.primary, fontVariationSettings: "'FILL' 1" }}>rate_review</span>
                                         <h2 className="text-2xl font-bold" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                            Peer Review Pipeline - {statusTabs.find(t => t.id === statusTab)?.label}
+                                            My Review Task - {statusTabs.find(t => t.id === statusTab)?.label}
                                         </h2>
                                     </div>
                                     

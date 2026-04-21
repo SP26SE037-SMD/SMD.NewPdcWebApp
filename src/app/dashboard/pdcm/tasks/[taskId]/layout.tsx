@@ -89,8 +89,8 @@ export default function TaskWorkspaceLayout({
     }));
 
     const globalHeaderTabs = [
-        { id: 'develop', label: 'Develop Syllabus', isActive: true, onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'Peer Review', isActive: false, onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        { id: 'develop', label: 'My Task', isActive: true, onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'peer-review', label: 'My Review Task', isActive: false, onClick: () => router.push('/dashboard/pdcm/peer-review') },
     ];
 
     const sidebarSubContent = (

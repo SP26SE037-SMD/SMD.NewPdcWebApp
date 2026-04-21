@@ -186,8 +186,15 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                     <button onClick={() => setExpandedIndex(index)} className="px-3 py-1.5 bg-surface-container rounded-lg text-[11px] font-bold">Edit</button>
-                                     <button onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : setDeleteConfirm({ id: null, index })} className="p-1.5 text-error"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                                     <button onClick={() => setExpandedIndex(index)} className="px-3 py-1.5 border border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-[11px] font-bold flex items-center gap-1">
+                                         <Eye size={12} /> View
+                                     </button>
+                                     <button onClick={() => setExpandedIndex(index)} className="px-3 py-1.5 bg-surface-container rounded-lg text-[11px] font-bold flex items-center gap-1">
+                                         <Pencil size={12} /> Edit
+                                     </button>
+                                     <button onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : setDeleteConfirm({ id: null, index })} className="p-1.5 text-error">
+                                         <Trash2 size={18} />
+                                     </button>
                                 </div>
                             </div>
                         </div>

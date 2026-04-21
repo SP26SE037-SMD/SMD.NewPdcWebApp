@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { NotificationPanel } from "./NotificationPanel";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +11,7 @@ import {
   BookOpen,
   Globe,
   User,
-  LogOut,
+  Power,
   Search,
   Bell,
   Menu,
@@ -63,28 +64,26 @@ const SidebarItem = ({
 
   const content = (
     <div
-      className={`relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
-        active || (hasSubItems && isAnySubActive)
+      className={`relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${active || (hasSubItems && isAnySubActive)
           ? isHoPDC || true // We want the clean white/green look for VP too
             ? "bg-white shadow-[0_4px_20px_rgba(45,52,43,0.06)] border border-black/5 text-[#1d5c42]"
             : "bg-primary text-white shadow-lg shadow-primary/20"
           : disabled
             ? "text-zinc-300 cursor-not-allowed"
             : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 shadow-none hover:translate-x-1"
-      }`}
+        }`}
       onClick={() => hasSubItems && setIsOpen(!isOpen)}
     >
       <div className="flex items-center gap-3">
         {/* Icon Rendering */}
         {typeof icon === "string" ? (
           <span
-            className={`material-symbols-outlined transition-all duration-300 ${
-              active || isAnySubActive
+            className={`material-symbols-outlined transition-all duration-300 ${active || isAnySubActive
                 ? "text-[#2d6a4f]"
                 : !disabled
                   ? "group-hover:scale-110 text-zinc-400 group-hover:text-[#2d6a4f]"
                   : "text-zinc-300"
-            }`}
+              }`}
             style={{
               fontSize: "22px",
               fontVariationSettings:
@@ -103,11 +102,10 @@ const SidebarItem = ({
         {/* Label */}
         {!collapsed && (
           <span
-            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden transition-colors ${
-              active || isAnySubActive
+            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden transition-colors ${active || isAnySubActive
                 ? "font-bold text-[#1d5c42]"
                 : "font-semibold text-zinc-500"
-            }`}
+              }`}
           >
             {label}
           </span>
@@ -157,11 +155,10 @@ const SidebarItem = ({
               <Link
                 key={sub.href}
                 href={sub.href}
-                className={`flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
-                  sub.active
+                className={`flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${sub.active
                     ? "text-primary bg-primary/5"
                     : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
-                }`}
+                  }`}
               >
                 <div
                   className={`w-1 h-1 rounded-full ${sub.active ? "bg-primary" : "bg-zinc-200"}`}
@@ -237,7 +234,7 @@ export default function DashboardLayout({
         {
           group: "Core Management",
           items: [
-            
+
             {
               href: "/dashboard/vice-principal/manage-majors",
               icon: "school",
@@ -391,26 +388,12 @@ export default function DashboardLayout({
 
         {/* User Footer */}
         <div className="p-4 border-t border-border/50 space-y-2">
-          {user?.role === "VP" && isSidebarOpen && (
-            <div className="px-2 pb-4 space-y-4">
-              <div className="space-y-1">
-                <Link
-                  href="#"
-                  className="flex items-center gap-3 px-4 py-2 text-zinc-500 hover:text-[#2d6a4f] text-sm font-medium transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    help
-                  </span>
-                  Help Center
-                </Link>
-              </div>
-            </div>
-          )}
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group"
           >
-            <LogOut
+            <Power
               size={20}
               className="group-hover:-translate-x-1 transition-transform"
             />
@@ -479,10 +462,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative w-10 h-10 flex items-center justify-center text-muted hover:bg-background rounded-full transition-colors">
-              <Bell size={20} strokeWidth={1.5} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
-            </button>
+            <NotificationPanel />
             <div className="h-8 w-px bg-border mx-2" />
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
