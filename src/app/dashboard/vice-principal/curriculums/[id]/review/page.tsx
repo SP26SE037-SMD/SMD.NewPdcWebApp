@@ -299,7 +299,7 @@ export default function VicePrincipalReviewPage() {
 			<div className="ml-4">
 				{activeTab === "overview" && (
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-						<div className="lg:col-span-8 flex flex-col gap-8">
+						<div className="lg:col-span-12 flex flex-col gap-8">
 							{/* Core Description inherited from before */}
 							<section className="bg-[#ffffff] rounded-2xl p-8 shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)]">
 								<h3
@@ -344,85 +344,44 @@ export default function VicePrincipalReviewPage() {
 									</div>
 								</div>
 							</section>
-
-							<section className="bg-[#f1f4f5] rounded-2xl p-8">
-								<div className="flex items-center justify-between mb-8">
-									<div className="flex items-center gap-3">
-										<span className="p-2 bg-[#b1f0ce] text-[#2d6a4f] rounded-lg material-symbols-outlined">
-											stars
-										</span>
-										<h3
-											className="text-xl font-bold tracking-tight"
-											style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-										>
-											Program Objectives (POs)
-										</h3>
-									</div>
-									<span className="text-xs font-semibold text-[#5a6062] bg-[#dee3e6] px-3 py-1 rounded-full">
-										{(pos && pos.length) || 0} Outcomes Defined
-									</span>
-								</div>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									{pos && pos.length > 0 ? (
-										pos.map((po: any, idx: number) => (
-											<div
-												key={po.poId || idx}
-												className={`bg-[#ffffff] p-6 rounded-xl border-l-4 ${idx === 0 ? "border-[#2d6a4f]" : "border-[#2d6a4f]/40"} transition-transform hover:-translate-y-1`}
-											>
-												<span className="text-xs font-bold text-[#2d6a4f] mb-2 block">
-													{po.poCode || `PO-0${idx + 1}`}
-												</span>
-												<p className="text-sm text-[#5a6062] leading-snug">
-													{po.description || "No description available."}
-												</p>
-											</div>
-										))
-									) : (
-										<div className="text-center py-8 col-span-2 text-[#5a6062]">
-											No POs mapped currently.
-										</div>
-									)}
-								</div>
-							</section>
-						</div>
-
-						<div className="lg:col-span-4 flex flex-col gap-8">
-							{/* Review Status Sidebar inherited and stylized from HTML */}
-							<section className="bg-[#1d5c42] text-white p-8 rounded-xl shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)] overflow-hidden relative">
-								<div className="relative z-10">
-									<h3 className="text-lg font-bold mb-2">Review Status</h3>
-									<p className="text-[#e6ffee] text-sm mb-6 opacity-80 leading-relaxed">
-										Current phase: VP Curriculum Structure Final Enactment.
-									</p>
-									<button
-										onClick={handleApprove}
-										disabled={mutation.isPending || isSubmittingReview}
-										className="w-full py-3 bg-white text-[#2d6a4f] rounded-xl font-bold text-sm hover:bg-[#b1f0ce] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-									>
-										{mutation.isPending || isSubmittingReview ? (
-											<Loader2 size={16} className="animate-spin" />
-										) : (
-											<span className="material-symbols-outlined text-sm">
-												verified
-											</span>
-										)}
-										{mutation.isPending || isSubmittingReview ? "Processing..." : "Approve Structure"}
-									</button>
-								</div>
-								<span
-									className="material-symbols-outlined absolute -bottom-6 -right-6 text-[#014931] text-9xl opacity-20 rotate-12"
-									style={{ fontVariationSettings: "'FILL' 1" }}
-								>
-									verified
-								</span>
-							</section>
 						</div>
 					</div>
 				)}
 
 				{activeTab === "info" && (
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-						<div className="lg:col-span-8">
+						<div className="lg:col-span-12 flex flex-col gap-8">
+							{/* Curriculum Basic Information */}
+							<section className="bg-[#ffffff] rounded-2xl p-8 shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)]">
+								<h3
+									className="text-xl font-bold mb-6 text-[#1d5c42] flex items-center gap-2"
+									style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+								>
+									<span className="material-symbols-outlined">library_books</span>
+									General Information
+								</h3>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+									<div className="p-5 bg-[#f1f4f5] rounded-xl border border-[#dee3e6] shadow-sm">
+										<p className="text-[10px] font-bold text-[#5a6062] uppercase tracking-widest mb-1">Curriculum Code</p>
+										<p className="text-[#2d3335] font-black">{curriculum?.curriculumCode || "N/A"}</p>
+									</div>
+									<div className="p-5 bg-[#f1f4f5] rounded-xl border border-[#dee3e6] shadow-sm">
+										<p className="text-[10px] font-bold text-[#5a6062] uppercase tracking-widest mb-1">Curriculum Name</p>
+										<p className="text-[#2d3335] font-black">{curriculum?.curriculumName || "N/A"}</p>
+									</div>
+									<div className="p-5 bg-[#f1f4f5] rounded-xl border border-[#dee3e6] shadow-sm">
+										<p className="text-[10px] font-bold text-[#5a6062] uppercase tracking-widest mb-1">Major Specialization</p>
+										<p className="text-[#2d3335] font-black">{curriculum?.major?.majorName || curriculum?.major?.majorCode || "N/A"}</p>
+									</div>
+									<div className="p-5 bg-[#b1f0ce]/30 rounded-xl border border-[#2d6a4f]/20 shadow-sm">
+										<p className="text-[10px] font-bold text-[#2d6a4f] uppercase tracking-widest mb-1">Timeline Enactment</p>
+										<p className="text-[#1d5c42] font-black">
+											{curriculum?.startYear ? `${curriculum.startYear} - ${curriculum.endYear}` : "Pending"}
+										</p>
+									</div>
+								</div>
+							</section>
+
 							<section className="bg-[#f1f4f5] p-1 rounded-xl">
 								<div className="bg-[#ffffff] p-8 rounded-lg shadow-[0px_4px_20px_rgba(45,51,53,0.04),_0px_2px_8px_rgba(45,51,53,0.08)] h-full">
 									<div className="flex justify-between items-center mb-8">
@@ -436,7 +395,7 @@ export default function VicePrincipalReviewPage() {
 											{plos?.length || 0} PLOs
 										</span>
 									</div>
-									<div className="space-y-8">
+									<div className="space-y-8 max-h-[65vh] overflow-y-auto pr-4 custom-scrollbar">
 										{plos && plos.length > 0 ? (
 											plos.map((plo: any, idx: number) => (
 												<div
@@ -480,53 +439,6 @@ export default function VicePrincipalReviewPage() {
 								>
 									PO to PLO Matrix
 								</h2>
-							</div>
-							<div className="bg-[#ffffff] p-6 rounded-2xl shadow-sm border border-[#dee3e6] flex items-center gap-6 min-w-[320px]">
-								<div className="relative w-24 h-24">
-									<svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-										<circle
-											className="stroke-[#e5e9eb]"
-											cx="18"
-											cy="18"
-											fill="none"
-											r="16"
-											strokeWidth="3"
-										></circle>
-										<circle
-											className="stroke-[#2d6a4f]"
-											cx="18"
-											cy="18"
-											fill="none"
-											r="16"
-											strokeDasharray="100"
-											strokeDashoffset="15"
-											strokeLinecap="round"
-											strokeWidth="3"
-										></circle>
-									</svg>
-									<div className="absolute inset-0 flex items-center justify-center">
-										<span
-											className="text-2xl font-bold text-[#2d6a4f]"
-											style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-										>
-											85%
-										</span>
-									</div>
-								</div>
-								<div>
-									<h4
-										className="font-bold text-[#2d3335]"
-										style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-									>
-										Alignment Score
-									</h4>
-									<p className="text-xs text-[#5a6062] mb-2">
-										Current matrix health
-									</p>
-									<span className="px-2 py-1 bg-[#b1f0ce] text-[#1d5c42] text-[10px] font-bold uppercase rounded-md tracking-wider">
-										High Alignment
-									</span>
-								</div>
 							</div>
 						</section>
 
