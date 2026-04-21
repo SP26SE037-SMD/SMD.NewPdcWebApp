@@ -1,11 +1,23 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { TaskList } from "./syllabus/TaskList";
 
 export default function AssignTaskContent() {
   const searchParams = useSearchParams();
   const sprintId = searchParams.get("sprintId") || "";
+  const curriculumId = searchParams.get("curriculumId") || "";
+
+  // Persist context for redirection after review synthesis
+  useEffect(() => {
+    if (sprintId && typeof window !== "undefined") {
+      localStorage.setItem("hopdc_last_sprint_id", sprintId);
+    }
+    if (curriculumId && typeof window !== "undefined") {
+      localStorage.setItem("hopdc_last_curriculum_id", curriculumId);
+    }
+  }, [sprintId, curriculumId]);
 
   if (!sprintId) {
     return (

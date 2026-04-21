@@ -9,19 +9,29 @@ import {
   Clock,
   Eye,
   Check,
+  XCircle,
   RefreshCcw,
   ShieldCheck,
+  X,
+  Info,
+  Loader2,
 } from "lucide-react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ReviewTaskItem,
   REVIEW_TASK_STATUS,
 } from "@/services/review-task.service";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { TaskService, TASK_STATUS } from "@/services/task.service";
+import { useToast } from "@/components/ui/Toast";
 
 interface ReviewTaskItemRowProps {
   review: ReviewTaskItem;
   onRecreateTask?: () => void;
+  isLatest?: boolean;
+  isTaskDone?: boolean;
 }
 
 const getReviewStatusConfig = (status?: string) => {
@@ -59,10 +69,35 @@ const getReviewStatusConfig = (status?: string) => {
   }
 };
 
-export function ReviewTaskItemRow({ review, onRecreateTask }: ReviewTaskItemRowProps) {
+export function ReviewTaskItemRow({
+  review,
+  onRecreateTask,
+  isLatest = false,
+  isTaskDone = false,
+}: ReviewTaskItemRowProps) {
   const router = useRouter();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const config = getReviewStatusConfig(review.status);
+  const isHoCFDC = review.reviewer?.role === "HOCFDC";
   const StatusIcon = config.icon;
+
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: () =>
+      TaskService.updateTaskStatus(review.task.taskId, TASK_STATUS.DONE),
+    onSuccess: (res) => {
+      if (res.status === 1000) {
+        showToast("Feedback acknowledged. Task marked as DONE.", "success");
+        setIsDetailModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      } else {
+        showToast(res.message || "Failed to update task status", "error");
+      }
+    },
+    onError: (err: any) =>
+      showToast(err.message || "Connection error", "error"),
+  });
 
   const formatDate = (dateStr: string) => {
     try {
@@ -93,28 +128,54 @@ export function ReviewTaskItemRow({ review, onRecreateTask }: ReviewTaskItemRowP
         </div>
 
         <div className="space-y-0.5">
-          <p className="text-sm font-black text-zinc-900 leading-tight">
+          <p className="text-sm font-black text-zinc-900 leading-tight flex items-center gap-2">
             Reviewer: {review.reviewer?.fullName || "Unknown"}
+            {isHoCFDC && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                from Head of Curriculum Framework DC
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-            <span className="flex items-center gap-1">
-              <Calendar size={10} /> DUE: {formatDate(review.dueDate)}
-            </span>
+            {!isHoCFDC && (
+              <span className="flex items-center gap-1">
+                <Calendar size={10} /> DUE: {formatDate(review.dueDate)}
+              </span>
+            )}
             {review.reviewDate && (
               <span className="flex items-center gap-1 text-emerald-500">
-                <CheckCircle2 size={10} /> DONE: {formatDate(review.reviewDate)}
+                <CheckCircle2 size={10} /> Review at:{" "}
+                {formatDate(review.reviewDate)}
               </span>
             )}
-            {typeof review.isAccepted === "boolean" && (
-              <span className={`flex items-center gap-1 text-emerald-600 px-1.5 py-0.5 rounded-full border border-emerald-200 bg-emerald-50`}>
-                <ShieldCheck size={10} /> SYNTHESIZED
-              </span>
-            )}
-            {(review.isAccepted === null || review.isAccepted === undefined) && 
-             (review.status === REVIEW_TASK_STATUS.APPROVED || review.status === REVIEW_TASK_STATUS.REVISION_REQUESTED) && (
-              <span className={`flex items-center gap-1 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 animate-pulse`}>
-                <Clock size={10} /> AWAITING SYNTHESIS
-              </span>
+            {!isHoCFDC && (
+              <>
+                {review.isAccepted === true && (
+                  <span
+                    className={`flex items-center gap-1 text-emerald-600 px-1.5 py-0.5 rounded-full border border-emerald-200 bg-emerald-50`}
+                  >
+                    <ShieldCheck size={10} /> ACCEPTED
+                  </span>
+                )}
+                {review.isAccepted === false && (
+                  <span
+                    className={`flex items-center gap-1 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-200 bg-rose-50`}
+                  >
+                    <XCircle size={10} /> OVERRIDEN
+                  </span>
+                )}
+                {(review.isAccepted === null ||
+                  review.isAccepted === undefined) &&
+                  (review.status === REVIEW_TASK_STATUS.APPROVED ||
+                    review.status ===
+                      REVIEW_TASK_STATUS.REVISION_REQUESTED) && (
+                    <span
+                      className={`flex items-center gap-1 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 animate-pulse`}
+                    >
+                      <Clock size={10} /> WAITING ACCEPTENCE
+                    </span>
+                  )}
+              </>
             )}
           </div>
         </div>
@@ -126,27 +187,117 @@ export function ReviewTaskItemRow({ review, onRecreateTask }: ReviewTaskItemRowP
 
         {review.status !== REVIEW_TASK_STATUS.PENDING && (
           <button
-            onClick={() =>
-              router.push(`/dashboard/hopdc/reviews/${review.reviewId}`)
-            }
+            onClick={() => {
+              if (isHoCFDC) {
+                setIsDetailModalOpen(true);
+              } else {
+                router.push(`/dashboard/hopdc/reviews/${review.reviewId}`);
+              }
+            }}
             className="h-8 w-8 flex items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:border-[#0b7a47] hover:bg-emerald-50 hover:text-[#0b7a47] transition-all duration-200 shadow-sm"
-            title="View Synthesis & Reconciliation"
+            title={
+              isHoCFDC
+                ? "View Revision Request"
+                : "View Synthesis & Reconciliation"
+            }
           >
             <Eye size={14} />
           </button>
         )}
-        
-        {typeof review.isAccepted === "boolean" && review.status === REVIEW_TASK_STATUS.REVISION_REQUESTED && onRecreateTask && (
-          <button
-            onClick={onRecreateTask}
-            className="h-8 flex items-center gap-1.5 px-3 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-black uppercase text-[10px] tracking-wider transition-all"
-            title="Create new iteration for Reviewer"
-          >
-            <RefreshCcw size={12} />
-            Re-assign Review
-          </button>
-        )}
+
+        {!isHoCFDC &&
+          typeof review.isAccepted === "boolean" &&
+          review.status === REVIEW_TASK_STATUS.REVISION_REQUESTED &&
+          onRecreateTask && (
+            <button
+              onClick={onRecreateTask}
+              className="h-8 flex items-center gap-1.5 px-3 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-black uppercase text-[10px] tracking-wider transition-all"
+              title="Create new iteration for Reviewer"
+            >
+              <RefreshCcw size={12} />
+              Re-assign Review
+            </button>
+          )}
       </div>
+
+      {/* Detail Modal for HoCFDC Revision Request */}
+      {isDetailModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-[500px] bg-white border border-zinc-200 shadow-2xl rounded-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            {/* Simple Header */}
+            <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 text-primary flex items-center justify-center rounded-lg">
+                  <ShieldCheck size={18} />
+                </div>
+                <h2 className="text-lg font-black tracking-tight text-zinc-900">
+                  Revision Details
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 rounded-lg transition-all text-zinc-400 hover:text-zinc-900"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 bg-white space-y-6">
+              <div className="space-y-5">
+                {/* Task Title Section */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
+                    Revision Title
+                  </label>
+                  <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-xl">
+                    <p className="text-sm font-bold text-zinc-900 leading-tight">
+                      {review.titleTask}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Comment Section */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
+                    Expert Feedback
+                  </label>
+                  <div className="p-5 bg-zinc-50/50 border border-zinc-100 rounded-2xl min-h-[100px]">
+                    <p className="text-sm font-medium text-zinc-600 leading-relaxed">
+                      {review.comment || "No detailed feedback provided."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Footer */}
+              <div className="pt-2">
+                <button
+                  onClick={() => updateTaskStatusMutation.mutate()}
+                  disabled={updateTaskStatusMutation.isPending || !isLatest || isTaskDone}
+                  className="w-full px-4 py-3.5 bg-zinc-200 text-zinc-900 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updateTaskStatusMutation.isPending ? (
+                    <>
+                      Processing...
+                      <Loader2 size={16} className="animate-spin" />
+                    </>
+                  ) : (!isLatest || isTaskDone) ? (
+                    <>
+                      Modified
+                      <Check size={16} />
+                    </>
+                  ) : (
+                    <>
+                      Acknowledge Feedback
+                      <Check size={16} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,12 +340,13 @@ const ReviewStatusStepper = ({ status }: { status: string }) => {
                       isActiveNode || isCompletedNode
                         ? isRevision && idx === 2
                           ? "#f43f5e" // Red for Revision
-                          : "#4caf50" // Green for others
+                          : "var(--primary)" // Green for others
                         : "#e4e4e7", // Grey for inactive
                   }}
                   className="w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm transition-colors duration-300"
                 >
-                  {isCompletedNode || (isActiveNode && isApproved && idx === 2) ? (
+                  {isCompletedNode ||
+                  (isActiveNode && isApproved && idx === 2) ? (
                     <Check size={8} className="text-white stroke-[4]" />
                   ) : isActiveNode && isRevision && idx === 2 ? (
                     <AlertCircle size={10} className="text-white" />
@@ -212,7 +364,7 @@ const ReviewStatusStepper = ({ status }: { status: string }) => {
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: isCompletedNode ? "100%" : "0%" }}
-                    className={`absolute inset-0 bg-[#4caf50]/40`}
+                    className={`absolute inset-0 bg-[var(--primary)]/40`}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
@@ -223,17 +375,17 @@ const ReviewStatusStepper = ({ status }: { status: string }) => {
       </div>
       <div className="flex justify-between items-center px-0.5 mt-1">
         <span
-          className={`text-[10px] font-bold ${activeIdx >= 0 ? (isPending ? "text-[#4caf50]" : "text-zinc-400") : "text-zinc-400"}`}
+          className={`text-[10px] font-bold ${activeIdx >= 0 ? (isPending ? "text-[var(--primary)]" : "text-zinc-400") : "text-zinc-400"}`}
         >
           Pending
         </span>
         <span
-          className={`text-[10px] font-bold ${activeIdx >= 1 ? (isInProgress ? "text-[#4caf50]" : "text-zinc-400") : "text-zinc-400"}`}
+          className={`text-[10px] font-bold ${activeIdx >= 1 ? (isInProgress ? "text-[var(--primary)]" : "text-zinc-400") : "text-zinc-400"}`}
         >
           In Progress
         </span>
         <span
-          className={`text-[10px] font-bold ${activeIdx >= 2 ? (isRevision ? "text-rose-500" : "text-[#4caf50]") : "text-zinc-400"}`}
+          className={`text-[10px] font-bold ${activeIdx >= 2 ? (isRevision ? "text-rose-500" : "text-[var(--primary)]") : "text-zinc-400"}`}
         >
           {isRevision ? "Revision Req" : isApproved ? "Approved" : "Done"}
         </span>

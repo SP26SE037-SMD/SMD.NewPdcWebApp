@@ -8,6 +8,7 @@ import { SyllabusService } from "@/services/syllabus.service";
 import { TaskService } from "@/services/task.service";
 import { RootState } from "@/store";
 import { useSubjectMappingLogic } from "@/components/hopdc/hook/CloPloMappingLogic";
+import { SubjectClo } from "@/services/cloplo.service";
 
 interface CreatedSyllabusItem {
   syllabusId: string;
@@ -41,7 +42,7 @@ export function useNewSubjectLogic() {
       );
       const tasks = res?.data?.content || [];
       return (
-        tasks.find((t: any) => t.subjectId === subjectId) || null
+        tasks.find((t) => t.subjectId === subjectId) || null
       );
     },
     enabled: !!sprintId && !!subjectId && !!user?.departmentId,
@@ -51,6 +52,22 @@ export function useNewSubjectLogic() {
     "subject" | "mapping" | "syllabus"
   >("subject");
   const [isCreateCloModalOpen, setIsCreateCloModalOpen] = useState(false);
+  const [isUpdateCloModalOpen, setIsUpdateCloModalOpen] = useState(false);
+  const [cloToEdit, setCloToEdit] = useState<SubjectClo | null>(null);
+
+  const handleCloEdit = (clo: SubjectClo) => {
+    setCloToEdit(clo);
+    setIsUpdateCloModalOpen(true);
+  };
+
+  const handleCloModalClose = () => {
+    setIsCreateCloModalOpen(false);
+  };
+
+  const handleUpdateCloModalClose = () => {
+    setIsUpdateCloModalOpen(false);
+    setCloToEdit(null);
+  };
   const [isCreateSyllabusModalOpen, setIsCreateSyllabusModalOpen] =
     useState(false);
   const [syllabusNotice, setSyllabusNotice] = useState<string>("");
@@ -229,6 +246,14 @@ export function useNewSubjectLogic() {
     setActiveTab,
     isCreateCloModalOpen,
     setIsCreateCloModalOpen,
+    isUpdateCloModalOpen,
+    handleUpdateCloModalClose,
+    cloToEdit,
+    handleCloEdit,
+    handleCloModalClose,
+    hasUnsavedChanges: mappingLogic.hasUnsavedChanges,
+    addedCount: mappingLogic.addedCount,
+    deletedCount: mappingLogic.deletedCount,
     isCreateSyllabusModalOpen,
     setIsCreateSyllabusModalOpen,
     syllabusNotice,

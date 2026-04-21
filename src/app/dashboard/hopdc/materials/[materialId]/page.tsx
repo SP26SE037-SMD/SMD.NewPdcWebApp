@@ -127,6 +127,8 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
             try {
                 if (b.blockStyle && b.blockStyle.startsWith('{')) {
                     parsedStyle = JSON.parse(b.blockStyle);
+                } else {
+                    parsedStyle = { align: b.blockStyle || 'left' };
                 }
             } catch {
                 parsedStyle = { align: 'left' };
@@ -232,7 +234,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                                                 className="w-full text-left text-[11px] font-bold py-2 truncate transition-all rounded-xl px-3 hover:translate-x-1"
                                                 style={{
                                                     background: activeAnchor === item.id ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-                                                    color: activeAnchor === item.id ? '#4caf50' : '#5a6157',
+                                                    color: activeAnchor === item.id ? 'var(--primary)' : '#5a6157',
                                                     paddingLeft: item.type === 'H2' ? '24px' : undefined
                                                 }}
                                             >
@@ -313,7 +315,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                 <button
                     onClick={() => setIsInfoModalOpen(true)}
                     className="fixed bottom-10 right-10 z-[100] flex items-center gap-2 px-5 py-3 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-white"
-                    style={{ background: '#4caf50', color: '#ffffff' }}
+                    style={{ background: 'var(--primary)', color: '#ffffff' }}
                 >
                     <Info size={16} />
                     Syllabus Info

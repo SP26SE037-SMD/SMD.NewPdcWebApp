@@ -20,7 +20,7 @@ interface MaterialEvaluateModalProps {
 }
 
 const C = {
-    primary: '#4caf50',
+    primary: 'var(--primary)',
     primaryDark: '#388e3c',
     primaryLight: '#e8f5e9',
     danger: '#ef4444',

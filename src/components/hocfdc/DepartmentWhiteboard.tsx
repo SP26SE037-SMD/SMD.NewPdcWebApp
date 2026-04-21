@@ -216,10 +216,10 @@ export const DepartmentWhiteboard: React.FC<DepartmentWhiteboardProps> = ({ subj
                 ...edge,
                 style: { 
                     strokeWidth: isMatchedEdge ? 3 : 2, 
-                    stroke: isMatchedEdge ? '#4caf50' : '#d4d4d8' 
+                    stroke: isMatchedEdge ? 'var(--primary)' : '#d4d4d8' 
                 },
                 animated: true,
-                markerEnd: { type: MarkerType.ArrowClosed, color: isMatchedEdge ? '#4caf50' : '#d4d4d8' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: isMatchedEdge ? 'var(--primary)' : '#d4d4d8' },
             };
         });
 
@@ -266,7 +266,7 @@ export const DepartmentWhiteboard: React.FC<DepartmentWhiteboardProps> = ({ subj
                 <MiniMap 
                     className="bg-white border-zinc-100 shadow-xl rounded-3xl overflow-hidden pointer-events-none"
                     nodeColor={(n) => {
-                        if (n.data.isMatched) return '#4caf50';
+                        if (n.data.isMatched) return 'var(--primary)';
                         return '#f4f4f5';
                     }}
                     nodeBorderRadius={14}

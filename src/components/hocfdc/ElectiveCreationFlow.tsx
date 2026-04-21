@@ -49,7 +49,7 @@ export default function ElectiveCreationFlow() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
-            await SubjectService.createSubject(formData as any);
+            await SubjectService.createElective(formData);
             router.push("/dashboard/hocfdc/curriculums");
         } catch (error) {
             console.error(error);

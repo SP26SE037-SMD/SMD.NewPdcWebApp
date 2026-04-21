@@ -6,6 +6,7 @@ import { CloPloService } from "@/services/cloplo.service";
 import { PLO } from "@/services/curriculum.service";
 import { BLOOM_LEVELS } from "@/components/hopdc/interface/Interface";
 import { GenerateCloModal } from "@/components/hopdc/subject/GenerateCloModal";
+
 interface CreateCloModalProps {
   subjectId: string;
   subjectName: string;
@@ -26,7 +27,6 @@ export function CreateCloModal({
   onSuccess,
 }: CreateCloModalProps) {
   const [cloCode, setCloCode] = useState("");
-  const [cloName, setCloName] = useState("");
   const [description, setDescription] = useState("");
   const [bloomLevel, setBloomLevel] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +43,6 @@ export function CreateCloModal({
 
   const handleReset = () => {
     setCloCode("");
-    setCloName("");
     setDescription("");
     setBloomLevel("");
     setError("");
@@ -97,12 +96,9 @@ export function CreateCloModal({
   };
 
   const handleGenerateSuccess = (generatedClo: {
-    cloName: string;
     description: string;
     bloomLevel: number;
   }) => {
-    // AI only returns cloName/description, these values are copied into the create form.
-    setCloName(generatedClo.cloName || "");
     setDescription(generatedClo.description || "");
     setBloomLevel(generatedClo.bloomLevel);
     setCheckResult(null);
@@ -118,11 +114,6 @@ export function CreateCloModal({
 
     if (!cloCode.trim()) {
       setError("CLO Code is required.");
-      return;
-    }
-
-    if (!cloName.trim()) {
-      setError("CLO Name is required.");
       return;
     }
 
@@ -147,7 +138,7 @@ export function CreateCloModal({
       await CloPloService.createClo(subjectId, [
         {
           cloCode: cloCode.trim(),
-          cloName: cloName.trim(),
+          cloName: cloCode.trim(), // Using code as name
           description: description.trim(),
           bloomLevel: String(bloomLevel),
         },
@@ -214,19 +205,6 @@ export function CreateCloModal({
               Generate AI
             </button>
           </div>
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-600 mb-2">
-              CLO Name
-            </label>
-            <input
-              type="text"
-              value={cloName}
-              onChange={(e) => setCloName(e.target.value)}
-              placeholder="CLO Name"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 placeholder-zinc-400 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors"
-              disabled={isSubmitting}
-            />
-          </div>
 
           <div>
             <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-600 mb-2">
@@ -244,22 +222,22 @@ export function CreateCloModal({
 
           <div>
             <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-600 mb-2">
-              Bloom Level
+              Bloom Level {minBloomLevel > 0 && <span className="text-emerald-600 ml-1">(Min Level {minBloomLevel} required)</span>}
             </label>
             <select
               value={bloomLevel}
               onChange={(e) =>
                 setBloomLevel(e.target.value ? Number(e.target.value) : "")
               }
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors appearance-none cursor-pointer"
               disabled={isSubmitting || isChecking}
             >
               <option value="" disabled>
-                Select Bloom Level of CLO
+                Select Bloom Level
               </option>
-              {BLOOM_LEVELS.map((level) => (
+              {BLOOM_LEVELS.filter(level => level.value >= minBloomLevel).map((level) => (
                 <option key={level.value} value={level.value}>
-                  {level.label}
+                  Level {level.label}
                 </option>
               ))}
             </select>

@@ -11,6 +11,7 @@ import {
   XCircle,
   Trash2,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,7 @@ import {
   SPRINT_STATUS,
   SprintStatus,
 } from "@/services/sprint.service";
-import { CurriculumService } from "@/services/curriculum.service";
+import { CurriculumService, CURRICULUM_STATUS } from "@/services/curriculum.service";
 import { CreateSprintModal } from "@/components/hocfdc/CreateSprintModal";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -75,6 +76,10 @@ export const SprintsManagement = ({
       if (res.status === 1000) {
         showToast(`Sprint updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprints"] });
+        
+        if (res.data?.status === SPRINT_STATUS.COMPLETED) {
+          window.location.reload();
+        }
       } else {
         showToast(res.message || "Update failed", "error");
       }
@@ -146,13 +151,22 @@ export const SprintsManagement = ({
           </>
         }
         extraHeader={
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95"
-          >
-            <Plus size={16} strokeWidth={3} />
-            Initialize Sprint
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP}
+              className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
+            >
+              <Plus size={16} strokeWidth={3} />
+              Initialize Sprint
+            </button>
+            {curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5 bg-amber-50/50 px-3 py-1 rounded-lg border border-amber-100">
+                <AlertCircle size={12} />
+                Available only in Syllabus Development status
+              </p>
+            )}
+          </div>
         }
         searchQuery={searchQuery}
         setSearchQuery={(q) => {
@@ -182,7 +196,7 @@ export const SprintsManagement = ({
             index={idx}
             formatDate={formatDate}
             detailHref={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
-            actions={(total, closed, tasksLoading) => (
+            actions={(total, closed, tasksLoading, ready) => (
               <>
                 {sprint.status === SPRINT_STATUS.PLANNING && (
                   <button
@@ -210,13 +224,13 @@ export const SprintsManagement = ({
                     START SPRINT
                   </button>
                 )}
-
+ 
                 {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
                   <button
                     onClick={() => {
-                      if (closed < total) {
+                      if (total > 0 && ready < total) {
                         showToast(
-                          `Cannot complete: ${total - closed} tasks still in progress`,
+                          `Cannot complete: All tasks must be DONE and all subjects must be COMPLETED or PUBLISHED. (${ready}/${total} ready)`,
                           "error",
                         );
                         return;
@@ -229,11 +243,11 @@ export const SprintsManagement = ({
                     disabled={
                       updateStatusMutation.isPending ||
                       tasksLoading ||
-                      (total > 0 && closed < total)
+                      (total > 0 && ready < total)
                     }
                     title={
-                      total > 0 && closed < total
-                        ? `Complete all ${total} tasks to close sprint`
+                      total > 0 && ready < total
+                        ? `Ensure all tasks are DONE and subjects are COMPLETED/PUBLISHED to close sprint`
                         : ""
                     }
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-3 text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"

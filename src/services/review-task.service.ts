@@ -212,4 +212,20 @@ export const ReviewTaskService = {
         { credentials: "include" }
     );
   },
+
+  createHoCFDCReviewTask: async (payload: {
+    titleTask: string;
+    comment: string;
+    status: string;
+    taskId: string;
+    reviewerId: string;
+    isAccepted: boolean;
+    isAffectedSyllabus?: boolean;
+  }) => {
+    return await apiClient.post<ReviewTaskSingleResponse>(
+        `/api/review-tasks/hocfdc`,
+        payload,
+        { credentials: "include" }
+    );
+  },
 };

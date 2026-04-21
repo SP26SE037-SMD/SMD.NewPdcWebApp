@@ -41,7 +41,7 @@ export default function GroupManagement() {
     useEffect(() => {
         const fetchSubjects = async () => {
             const resp = await SubjectService.getSubjects({ search: "" });
-            setAvailableSubjects(resp.data.content as any);
+            setAvailableSubjects(resp.data.content);
         };
         fetchSubjects();
     }, []);

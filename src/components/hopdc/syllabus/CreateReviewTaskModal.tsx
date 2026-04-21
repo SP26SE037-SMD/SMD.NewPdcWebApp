@@ -12,6 +12,9 @@ interface CreateReviewTaskModalProps {
   taskId: string;
   taskName: string;
   reviewers: DepartmentAccount[];
+  taskDeadline?: string;
+  sprintDeadline?: string;
+  assigneeId?: string;
 }
 
 export function CreateReviewTaskModal({
@@ -21,33 +24,54 @@ export function CreateReviewTaskModal({
   taskId,
   taskName,
   reviewers,
+  taskDeadline,
+  sprintDeadline,
+  assigneeId,
 }: CreateReviewTaskModalProps) {
   const [reviewerId, setReviewerId] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [reviewDate, setReviewDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
+  // Filter out the person who is assigned to the task
+  const filteredReviewers = reviewers.filter(r => r.accountId !== assigneeId);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-GB");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reviewerId || !dueDate || !reviewDate) {
-      setError("Please select a reviewer, review date, and set a due date.");
+    setError("");
+
+    if (!reviewerId || !dueDate) {
+      setError("Please select a reviewer and set an audit deadline.");
       return;
     }
 
+    // Validation logic
+    const selectedAuditDeadline = new Date(dueDate);
+
+    if (sprintDeadline) {
+      const sprintDeadlineDate = new Date(sprintDeadline);
+      sprintDeadlineDate.setHours(0, 0, 0, 0);
+      selectedAuditDeadline.setHours(0, 0, 0, 0);
+
+      if (selectedAuditDeadline >= sprintDeadlineDate) {
+        setError(`Audit deadline must be before sprint deadline (${formatDate(sprintDeadline)}).`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
-    setError("");
     try {
       await onSubmit({
         taskId,
         reviewerId,
         titleTask: `Review for ${taskName}`,
-        commentMaterial: "",
-        commentSession: "",
-        commentAssessment: "",
-        reviewDate: `${reviewDate}T00:00:00Z`,
         dueDate: `${dueDate}T00:00:00Z`,
         status: REVIEW_TASK_STATUS.PENDING,
       });
@@ -55,7 +79,6 @@ export function CreateReviewTaskModal({
       // Reset form
       setReviewerId("");
       setDueDate("");
-      setReviewDate("");
     } catch (err: any) {
       setError(err.message || "Failed to create review task.");
     } finally {
@@ -103,30 +126,12 @@ export function CreateReviewTaskModal({
               className="w-full bg-white border-2 border-zinc-100 rounded-2xl px-4 py-3 text-sm font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all cursor-pointer"
             >
               <option value="">Select a PDCM Lead...</option>
-              {reviewers.map((r) => (
+              {filteredReviewers.map((r) => (
                 <option key={r.accountId} value={r.accountId}>
                   {r.fullName} ({r.email})
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Review date */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-              <Calendar size={12} /> Audit Review Date
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={reviewDate}
-                onChange={(e) => {
-                  setReviewDate(e.target.value);
-                  setError("");
-                }}
-                className="w-full bg-white border-2 border-zinc-100 rounded-2xl px-4 py-3 text-sm font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all"
-              />
-            </div>
           </div>
 
           {/* Due date */}

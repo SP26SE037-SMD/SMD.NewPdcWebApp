@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import {
   SprintService,
@@ -11,7 +11,7 @@ import {
   SprintStatus,
 } from "@/services/sprint.service";
 import { RootState } from "@/store";
-import { SprintCard } from "@/components/common/sprint/SprintCard";
+import { SprintCard, calculateRemainingDays } from "@/components/common/sprint/SprintCard";
 import { SprintListLayout } from "@/components/common/sprint/SprintListLayout";
 
 export const SprintsReceive = ({
@@ -23,12 +23,18 @@ export const SprintsReceive = ({
 }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const departmentId = user?.departmentId;
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>(
     SPRINT_STATUS.IN_PROGRESS,
   );
   const [page, setPage] = useState(0);
   const size = 100;
+
+  // Force API call on mount to sync with DB
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["sprints"] });
+  }, [queryClient]);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
@@ -43,7 +49,9 @@ export const SprintsReceive = ({
       const commonParams = {
         page,
         size,
-        status: statusFilter === "ALL" ? undefined : statusFilter,
+        status: statusFilter === "OVERDUE" 
+          ? SPRINT_STATUS.IN_PROGRESS 
+          : (statusFilter === "ALL" ? undefined : statusFilter),
         search: searchQuery || undefined,
       };
 
@@ -57,10 +65,20 @@ export const SprintsReceive = ({
       });
     },
     enabled: Boolean(accountId || curriculumId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const sprints: SprintItem[] = (data?.data?.content || []).filter(
-    (sprint) => statusFilter === "ALL" || sprint.status === statusFilter,
+    (sprint) => {
+      if (statusFilter === "OVERDUE") {
+        return sprint.status === SPRINT_STATUS.IN_PROGRESS && calculateRemainingDays(sprint.endDate) <= 0;
+      }
+      if (statusFilter === SPRINT_STATUS.IN_PROGRESS) {
+        return sprint.status === SPRINT_STATUS.IN_PROGRESS && calculateRemainingDays(sprint.endDate) > 0;
+      }
+      return statusFilter === "ALL" || sprint.status === statusFilter;
+    }
   );
   const totalPages = data?.data?.totalPages || 0;
 
@@ -79,6 +97,7 @@ export const SprintsReceive = ({
   const statusOptions = [
     { id: SPRINT_STATUS.IN_PROGRESS, label: "In Progress" },
     { id: SPRINT_STATUS.COMPLETED, label: "Completed" },
+    { id: "OVERDUE", label: "Overdue" },
   ];
 
   const getSprintHref = (sprint: SprintItem) => {

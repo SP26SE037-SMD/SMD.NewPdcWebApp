@@ -12,6 +12,7 @@ import { SyllabusService } from "@/services/syllabus.service";
 import { MaterialService } from "@/services/material.service";
 import { SessionService } from "@/services/session.service";
 import { AssessmentService } from "@/services/assessment.service";
+import { useSyllabusWorkspace } from "@/hooks/useSyllabusWorkspace";
 import { SyllabusWorkspaceView } from "@/components/common/syllabus/SyllabusWorkspaceView";
 import {
   ArrowLeft,
@@ -46,11 +47,11 @@ export default function HoPDCReviewSynthesisPage({
   // Granular Component Evaluations (Local State for reconciliation)
   const [hopdcEvaluations, setHopdcEvaluations] = useState<{
     materials: Record<string, { status: string; note: string }>;
-    sessions: { status: string; note: string };
+    sessions: Record<string, { status: string; note: string }>;
     assessments: { status: string; note: string };
   }>({
     materials: {},
-    sessions: { status: "PENDING", note: "" },
+    sessions: {},
     assessments: { status: "PENDING", note: "" },
   });
 
@@ -58,6 +59,8 @@ export default function HoPDCReviewSynthesisPage({
     queryKey: ["review-task", reviewId],
     queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
     enabled: !!reviewId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const taskDetails = routeTaskData?.data;
@@ -66,36 +69,35 @@ export default function HoPDCReviewSynthesisPage({
     queryKey: ["task-detail", taskDetails?.task?.taskId],
     queryFn: () => TaskService.getTaskById(taskDetails?.task?.taskId!),
     enabled: !!taskDetails?.task?.taskId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const task = taskDetails;
   const parentTask = parentTaskRes?.data;
+  
+  // Extract real task data from the response wrapper
+  const actualParentTask = (parentTask as any)?.data || parentTask;
 
   const actualSyllabusId =
-    parentTask?.syllabus?.syllabusId ||
-    (parentTask as any)?.syllabusId ||
+    actualParentTask?.syllabus?.syllabusId ||
+    actualParentTask?.syllabusId ||
     (task as any)?.syllabusId ||
     (task?.task as any)?.syllabusId;
 
   useEffect(() => {
     if (task) {
       if (task.isAccepted !== undefined) setIsAccepted(task.isAccepted);
-      if (task.content) setFinalComment(task.content);
+      if (task.comment) setFinalComment(task.comment);
+      else if (task.content) setFinalComment(task.content);
 
       // Map reviewer comments to initial HoPDC state
       setHopdcEvaluations({
-        materials: {}, // We'll let the user fill this or derive from API
-        sessions: {
-          status: task.commentSession ? "REVISION_REQUESTED" : "APPROVED",
-          note:
-            task.commentSession ||
-            "Session 4 duration (45 mins) is too brief to cover both theory and practice. Please expand to 90 mins.\nTeaching method in Session 7 still heavily relies on traditional lecturing. Integrate more active learning (group discussions, problem-solving).\nThe sequence from Session 10 to 11 jumps too fast between concepts. A recap block is necessary.",
-        },
+        materials: {},
+        sessions: {},
         assessments: {
-          status: task.commentAssessment ? "REVISION_REQUESTED" : "APPROVED",
-          note:
-            task.commentAssessment ||
-            "The weight of the Final Project (70%) is disproportionately high. It should not exceed 50% according to university guidelines.\n'Group Presentation' criteria is vaguely defined. Please specify the rubrics for communication skills and teamwork.\nMid-term Quiz question types should be explicitly stated (e.g., Multiple Choice, Essay, coding).",
+          status: "PENDING",
+          note: task.commentAssessment || "",
         },
       });
     }
@@ -119,19 +121,14 @@ export default function HoPDCReviewSynthesisPage({
           );
         } else {
           await MaterialService.updateMaterialStatus(id, status);
-          // Success toast removed as requested
         }
-      } else if (type === "sessions" && actualSyllabusId) {
-        if (actualSyllabusId.startsWith("ebc49")) {
+      } else if (type === "sessions") {
+        if (!id || id.startsWith("ebc49")) {
           console.warn(
-            "[SYNTHESIS DEBUG] Skipping API call for mock syllabus ID (sessions)",
+            "[SYNTHESIS DEBUG] Skipping API call for mock/empty session ID",
           );
         } else {
-          await SessionService.updateSyllabusSessionsStatus(
-            actualSyllabusId,
-            status as any,
-          );
-          // Success toast removed
+          await SessionService.updateSessionStatus(id, status);
         }
       } else if (type === "assessments" && actualSyllabusId) {
         if (actualSyllabusId.startsWith("ebc49")) {
@@ -143,30 +140,50 @@ export default function HoPDCReviewSynthesisPage({
             actualSyllabusId,
             status as any,
           );
-          // Success toast removed
         }
       }
 
       // Sync local state
       setHopdcEvaluations((prev) => {
-        if (type === "material") {
+        const stateKey = type === "material" ? "materials" : type;
+        
+        if (stateKey === "materials" || stateKey === "sessions") {
+          const currentCategory = prev[stateKey];
           return {
             ...prev,
-            materials: {
-              ...prev.materials,
-              [id]: { status, note: prev.materials[id]?.note || "" },
+            [stateKey]: {
+              ...currentCategory,
+              [id]: { status, note: (currentCategory as any)[id]?.note || "" },
             },
           };
         }
+        
         return {
           ...prev,
-          [type]: { status, note: prev[type]?.note || "" },
+          [type as "assessments"]: { 
+            status, 
+            note: prev.assessments?.note || "" 
+          },
         };
       });
 
       if (actualSyllabusId) {
-        queryClient.invalidateQueries({
-          queryKey: ["syllabus", actualSyllabusId],
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["syllabus-workspace-materials", actualSyllabusId] }),
+          queryClient.invalidateQueries({ queryKey: ["syllabus-workspace-sessions", actualSyllabusId] }),
+          queryClient.invalidateQueries({ queryKey: ["syllabus-workspace-assessments", actualSyllabusId] }),
+        ]);
+
+        // IMPORTANT: Clear local override after persistence so server data becomes source of truth again.
+        // This allows cascading updates (e.g. material update affecting sessions) to reflect in UI.
+        setHopdcEvaluations((prev) => {
+          const stateKey = type === "material" ? "materials" : type;
+          if (stateKey === "materials" || stateKey === "sessions") {
+            const nextCategory = { ...prev[stateKey] };
+            delete (nextCategory as any)[id];
+            return { ...prev, [stateKey]: nextCategory };
+          }
+          return prev;
         });
       }
     } catch (error: any) {
@@ -174,32 +191,137 @@ export default function HoPDCReviewSynthesisPage({
         `[SYNTHESIS ERROR] Failed to update ${type} status:`,
         error,
       );
-      showToast(`Error: ${error.message || "Immediate sync failed."}`, "error");
+      showToast(`Error: ${error.message || "Immediate sync failed."}`, "error", 10000);
     }
   };
 
+  const { materials, sessions, assessments } = useSyllabusWorkspace(actualSyllabusId);
+
+  const getPredictedStatus = () => {
+    if (isAccepted === null || !task) return null;
+    const currentStatus = task.status;
+    if (currentStatus === REVIEW_TASK_STATUS.APPROVED) {
+      return isAccepted
+        ? REVIEW_TASK_STATUS.APPROVED
+        : REVIEW_TASK_STATUS.REVISION_REQUESTED;
+    }
+    if (currentStatus === REVIEW_TASK_STATUS.REVISION_REQUESTED) {
+      return isAccepted
+        ? REVIEW_TASK_STATUS.REVISION_REQUESTED
+        : REVIEW_TASK_STATUS.APPROVED;
+    }
+    return currentStatus;
+  };
+
+  const isReadOnly = task?.isAccepted !== null && task?.isAccepted !== undefined;
+
   const handleSaveSynthesis = async () => {
     if (isAccepted === null) {
-      showToast("Please select Approve or Reject before submitting.", "error");
+      showToast("Please select Approve or Reject before submitting.", "error", 10000);
+      return;
+    }
+
+    const predicted = getPredictedStatus();
+
+    // 1. Resolve final statuses for all components
+    // Sessions (Individual Statuses)
+    const finalSessionStatuses = (sessions || []).map((s: any) => {
+      const evalStatus = hopdcEvaluations.sessions[s.session]?.status;
+      return evalStatus || s.status;
+    });
+
+    // Assessments (Group Status)
+    const finalAssessmentsStatus =
+      hopdcEvaluations.assessments.status !== "PENDING"
+        ? hopdcEvaluations.assessments.status
+        : (assessments[0]?.status || "PENDING_REVIEW");
+
+    // Materials (Individual Statuses)
+    const finalMaterialStatuses = (materials || []).map((m: any) => {
+      const evalStatus = hopdcEvaluations.materials[m.materialId]?.status;
+      return evalStatus || m.status;
+    });
+
+    // 2. GLOBAL VALIDATION: No PENDING_REVIEW allowed
+    const hasPendingSession = finalSessionStatuses.some((s: string) => s === "PENDING_REVIEW" || s === "PENDING");
+    const hasPendingAssessment = finalAssessmentsStatus === "PENDING_REVIEW" || finalAssessmentsStatus === "PENDING";
+    const hasPendingMaterial = finalMaterialStatuses.some((s: string) => s === "PENDING_REVIEW" || s === "PENDING");
+
+    if (hasPendingSession || hasPendingAssessment || hasPendingMaterial) {
+      showToast(
+        "Every item must be explicitly reviewed. Please set all Sessions, Assessments, and Materials to either APPROVED or REVISION REQUESTED.",
+        "error",
+        10000,
+      );
+      return;
+    }
+
+    // 3. SPECIFIC VALIDATION: If chosing APPROVED, all items must be APPROVED
+    if (predicted === REVIEW_TASK_STATUS.APPROVED) {
+      const allSessionsApproved = finalSessionStatuses.every((s: string) => s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE");
+      const allAssessmentsApproved = finalAssessmentsStatus === "APPROVED" || finalAssessmentsStatus === "ACCEPTED" || finalAssessmentsStatus === "ACTIVE";
+      const allMaterialsApproved = finalMaterialStatuses.every((s: string) => s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE");
+
+      if (!allSessionsApproved || !allAssessmentsApproved || !allMaterialsApproved) {
+        showToast(
+          "Cannot approve review task while some items are still set to REVISION REQUESTED.",
+          "error",
+          10000,
+        );
+        return;
+      }
+    }
+
+    // 4. COMMENT VALIDATION: Mandatory only when OVERRIDING (isAccepted === false)
+    if (isAccepted === false && !finalComment.trim()) {
+      showToast("Please provide a synthesis comment explaining your decision to override the review.", "error", 10000);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await ReviewTaskService.updateReviewTaskAcceptance(reviewId, isAccepted);
+      await ReviewTaskService.updateReviewTaskAcceptance(reviewId, isAccepted, finalComment);
 
-      showToast("Final decision submitted successfully.", "success");
-      
-      // Refresh relevant data
+      showToast("Synthesis submitted successfully.", "success");
+
+      // Refresh all relevant data across the dashboard
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["review-task", reviewId] });
-      queryClient.invalidateQueries({ queryKey: ["syllabus", actualSyllabusId] });
+      queryClient.invalidateQueries({ queryKey: ["review-task"] }); 
+      if (task?.task?.taskId) {
+        queryClient.invalidateQueries({ queryKey: ["review-tasks-by-task", task.task.taskId] });
+      }
+      if (actualParentTask?.sprintId) {
+        queryClient.invalidateQueries({ queryKey: ["sprint", actualParentTask.sprintId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["sprints"] }); 
+      queryClient.invalidateQueries({
+        queryKey: ["syllabus", actualSyllabusId],
+      });
+      
+      router.refresh();
+ 
+      // Redirect back to specific assignments page
+      // Prioritize localStorage context as it's more robust than async fetch data
+      let finalSprintId = actualParentTask?.sprintId;
+      let finalCurriculumId = actualParentTask?.curriculumId;
 
-      // Redirect back to sprint management
-      router.push("/dashboard/hopdc/sprint-management");
+      if (typeof window !== "undefined") {
+        const storedSprintId = localStorage.getItem("hopdc_last_sprint_id");
+        const storedCurriculumId = localStorage.getItem("hopdc_last_curriculum_id");
+        if (storedSprintId) finalSprintId = storedSprintId;
+        if (storedCurriculumId) finalCurriculumId = storedCurriculumId;
+      }
+
+      if (finalSprintId && finalCurriculumId) {
+        router.push(
+          `/dashboard/hopdc/assignments?sprintId=${finalSprintId}&curriculumId=${finalCurriculumId}`,
+        );
+      } else {
+        router.push("/dashboard/hopdc/sprint-management");
+      }
     } catch (error: any) {
       console.error("[SYNTHESIS ERROR] Submission failed:", error);
-      showToast(error.message || "Failed to submit final decision.", "error");
+      showToast(error.message || "Failed to submit final decision.", "error", 10000);
     } finally {
       setIsSubmitting(false);
     }
@@ -237,21 +359,15 @@ export default function HoPDCReviewSynthesisPage({
   const reviewerComments = {
     materials: {
       status: task.commentMaterial ? "REVISION_REQUESTED" : "ACCEPTED",
-      note:
-        task.commentMaterial ||
-        "The textbook selected for references needs to be updated to the latest 2024 edition.\nSupplementary slides for Part 2 are missing source citations.\nConsider adding more interactive reading materials for self-study.",
+      note: task.commentMaterial || "",
     },
     sessions: {
       status: task.commentSession ? "REVISION_REQUESTED" : "ACCEPTED",
-      note:
-        task.commentSession ||
-        "Session 4 duration (45 mins) is too brief to cover both theory and practice. Please expand to 90 mins.\nTeaching method in Session 7 still heavily relies on traditional lecturing. Integrate more active learning (group discussions, problem-solving).\nThe sequence from Session 10 to 11 jumps too fast between concepts. A recap block is necessary.",
+      note: task.commentSession || "",
     },
     assessments: {
       status: task.commentAssessment ? "REVISION_REQUESTED" : "ACCEPTED",
-      note:
-        task.commentAssessment ||
-        "The weight of the Final Project (70%) is disproportionately high. It should not exceed 50% according to university guidelines.\n'Group Presentation' criteria is vaguely defined. Please specify the rubrics for communication skills and teamwork.\nMid-term Quiz question types should be explicitly stated (e.g., Multiple Choice, Essay, coding).",
+      note: task.commentAssessment || "",
     },
   };
 
@@ -287,7 +403,7 @@ export default function HoPDCReviewSynthesisPage({
             <div
               className={`px-5 py-2.5 rounded-2xl border-2 flex items-center gap-3 transition-all ${
                 task.status === REVIEW_TASK_STATUS.APPROVED
-                  ? "bg-[#4caf50] text-white border-[#4caf50] shadow-[0_0_15px_rgba(76,175,80,0.6)]"
+                  ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_15px_rgba(76,175,80,0.6)]"
                   : "bg-red-500 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]"
               }`}
             >
@@ -311,7 +427,7 @@ export default function HoPDCReviewSynthesisPage({
                     mode="SYNTHESIS"
                     evaluations={hopdcEvaluations}
                     overallFeedback={reviewerComments}
-                    onUpdateStatus={handleUpdateComponentStatus}
+                    onUpdateStatus={isReadOnly ? undefined : handleUpdateComponentStatus}
                     onOpenMaterial={(m) => {
                       router.push(
                         `/dashboard/hopdc/reviews/${reviewId}/materials/${m.materialId}?title=${encodeURIComponent(m.title)}`,
@@ -349,31 +465,42 @@ export default function HoPDCReviewSynthesisPage({
                 {/* Large Toggle Controls */}
                 <div className="grid grid-cols-2 gap-3 p-1.5 bg-[#f1f5eb] rounded-2xl border border-[#dee1d8]/50">
                   <button
-                    onClick={() => setIsAccepted(true)}
+                    onClick={() => !isReadOnly && setIsAccepted(true)}
+                    disabled={isReadOnly}
                     className={`py-6 rounded-xl flex flex-col items-center justify-center gap-2 transition-all group ${
                       isAccepted === true
-                        ? "bg-white text-[#4caf50] shadow-md ring-1 ring-black/5"
-                        : "text-[#adb4a8] hover:text-[#5a6157] hover:bg-white/50"
+                        ? "bg-white text-[var(--primary)] shadow-md ring-1 ring-black/5"
+                        : isReadOnly 
+                          ? "opacity-50 cursor-not-allowed text-[#adb4a8]"
+                          : "text-[#adb4a8] hover:text-[#5a6157] hover:bg-white/50"
                     }`}
                   >
                     <CheckCircle2
                       size={28}
                       className={
                         isAccepted === true
-                          ? "text-[#4caf50]"
+                          ? "text-[var(--primary)]"
                           : "text-[#adb4a8] group-hover:text-[#5a6157]"
                       }
                     />
-                    <span className="text-[11px] font-black uppercase tracking-widest">
-                      Accept Review
-                    </span>
+                    <div className="text-center px-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest block">
+                        Accept Review
+                      </span>
+                      <span className="text-[8px] font-bold opacity-70 uppercase tracking-tighter">
+                        Result: {task.status === "APPROVED" ? "APPROVED" : "REVISION REQUESTED"}
+                      </span>
+                    </div>
                   </button>
                   <button
-                    onClick={() => setIsAccepted(false)}
+                    onClick={() => !isReadOnly && setIsAccepted(false)}
+                    disabled={isReadOnly}
                     className={`py-6 rounded-xl flex flex-col items-center justify-center gap-2 transition-all group ${
                       isAccepted === false
                         ? "bg-white text-rose-500 shadow-md ring-1 ring-black/5"
-                        : "text-[#adb4a8] hover:text-[#5a6157] hover:bg-white/50"
+                        : isReadOnly
+                          ? "opacity-50 cursor-not-allowed text-[#adb4a8]"
+                          : "text-[#adb4a8] hover:text-[#5a6157] hover:bg-white/50"
                     }`}
                   >
                     <XCircle
@@ -384,48 +511,79 @@ export default function HoPDCReviewSynthesisPage({
                           : "text-[#adb4a8] group-hover:text-[#5a6157]"
                       }
                     />
-                    <span className="text-[11px] font-black uppercase tracking-widest">
-                      Reject Review
-                    </span>
+                    <div className="text-center px-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest block">
+                        Override Review
+                      </span>
+                      <span className="text-[8px] font-bold opacity-70 uppercase tracking-tighter">
+                        Result: {task.status === "APPROVED" ? "REVISION REQUESTED" : "APPROVED"}
+                      </span>
+                    </div>
                   </button>
                 </div>
 
-                {/* Large Comment Area */}
-                <div className="flex-1 flex flex-col space-y-3">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare size={16} className="text-[#adb4a8]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#adb4a8]">
-                      Head of Department's Comment
-                    </span>
+
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare size={12} className="text-[var(--primary)]" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a6157]">
+                        Final Synthesis Comment
+                      </span>
+                    </div>
+                    {!isReadOnly && isAccepted === false && (
+                      <span className="text-[9px] font-black text-rose-500/80 uppercase tracking-widest bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100/50 shadow-sm">
+                        Required
+                      </span>
+                    )}
                   </div>
-                  <textarea
-                    placeholder="Enter your final synthesis summary, instructions for the creator, or reason for overriding the reviewer's decision..."
-                    value={finalComment}
-                    onChange={(e) => setFinalComment(e.target.value)}
-                    className="w-full flex-1 bg-[#f1f5eb]/50 border-none rounded-2xl p-6 text-sm font-medium focus:ring-4 focus:ring-primary-500/10 transition-all placeholder:text-[#adb4a8] resize-none custom-scrollbar"
-                  />
+                  
+                  <div className="flex-1">
+                    <textarea
+                      value={finalComment}
+                      onChange={(e) => setFinalComment(e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder={isReadOnly ? "" : "Summarize the final decision and provide guidance for the curriculum creator..."}
+                      className={`w-full h-full min-h-[180px] p-6 rounded-[2rem] bg-[#f8faf7] border border-[#dee1d8] focus:ring-4 focus:ring-[var(--primary)]/10 focus:border-[var(--primary)] transition-all resize-none text-sm text-[#454d43] leading-relaxed placeholder:text-[#adb4a8] custom-scrollbar ${
+                        isReadOnly ? "cursor-not-allowed opacity-80 bg-[#f1f5eb]/30" : "shadow-inner"
+                      }`}
+                    />
+                  </div>
                 </div>
 
-                {/* Submit Actions */}
-                <div className="pt-6 border-t border-[#dee1d8]/50">
+                {isReadOnly && (
+                  <div className="mt-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center gap-3">
+                    <ShieldCheck size={20} className="text-emerald-500" />
+                    <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+                      This task has been synthesized
+                    </span>
+                  </div>
+                )}
+
+                {/* Submit Action */}
+                {!isReadOnly && (
                   <button
                     onClick={handleSaveSynthesis}
                     disabled={isSubmitting || isAccepted === null}
-                    className="w-full h-16 rounded-2xl bg-[#2d342b] text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-black hover:-translate-y-1 active:translate-y-0 transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-3 group"
+                    className={`mt-6 w-full py-5 rounded-2xl flex items-center justify-center gap-3 transition-all font-black uppercase text-[12px] tracking-[0.15em] shadow-lg ${
+                      isAccepted === null
+                        ? "bg-[#dee1d8] text-[#adb4a8] cursor-not-allowed shadow-none"
+                        : "bg-[var(--primary)] text-white hover:bg-primary-700 hover:-translate-y-0.5 active:translate-y-0"
+                    } ${isSubmitting ? "opacity-70" : ""}`}
                   >
                     {isSubmitting ? (
-                      <Loader2 size={20} className="animate-spin" />
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Processing...
+                      </>
                     ) : (
                       <>
-                        <Save
-                          size={18}
-                          className="group-hover:scale-110 transition-transform"
-                        />
+                        <Send size={18} />
                         Submit Final Decision
                       </>
                     )}
                   </button>
-                </div>
+                )}
               </div>
             </div>
           </div>

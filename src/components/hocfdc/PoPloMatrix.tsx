@@ -199,7 +199,7 @@ export default function PoPloMatrix({
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Optional Stats Header when in Edit Mode */}
       {mode === "edit" && (
-        <div className="mb-8 bg-white rounded-3xl p-8 shadow-sm border border-zinc-100 flex items-center justify-between gap-12 relative overflow-hidden group">
+        <div className="mb-8 bg-white rounded-2xl p-8 shadow-sm border border-zinc-100 flex items-center justify-between gap-12 relative overflow-hidden group">
           <div className="flex items-center gap-10">
             <div className="relative w-32 h-32">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -284,7 +284,7 @@ export default function PoPloMatrix({
       )}
 
       {/* The Matrix Table */}
-      <div className="bg-white rounded-3xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col flex-1">
+      <div className="bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col flex-1">
         <div className="overflow-auto relative custom-scrollbar flex-1">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-40">

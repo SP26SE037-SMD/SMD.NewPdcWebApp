@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { Loader2 } from "lucide-react";
@@ -68,6 +68,18 @@ export default function SprintManagementContent() {
   const selectedCurriculumId = searchParams.get("curriculumId");
   const selectedSprintId = searchParams.get("sprintId");
 
+  const queryClient = useQueryClient();
+
+  // Force revalidation of all management data on mount
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["sprints"] });
+    if (selectedCurriculumId) {
+      queryClient.invalidateQueries({ 
+        queryKey: ["hopdc-receive-task-curriculum-detail", selectedCurriculumId] 
+      });
+    }
+  }, [queryClient, selectedCurriculumId]);
+
   const {
     data: curriculum,
     isLoading: isCurriculumLoading,
@@ -75,6 +87,8 @@ export default function SprintManagementContent() {
   } = useQuery({
     queryKey: ["hopdc-receive-task-curriculum-detail", selectedCurriculumId],
     enabled: Boolean(selectedCurriculumId),
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       if (!selectedCurriculumId) {
         return null;

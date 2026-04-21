@@ -59,7 +59,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   // Fetch Subjects for selection
   const { data: subjectsRes } = useQuery({
     queryKey: ["subjects-curriculum-dept", curriculumId, departmentId],
-    queryFn: () => SubjectService.getSubjects({ departmentId, size: 100 } as any),
+    queryFn: () => SubjectService.getSubjects({ curriculumId, departmentId, size: 100 }),
     enabled: isOpen && !!curriculumId && !!departmentId
   });
 
