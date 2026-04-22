@@ -202,17 +202,6 @@ export default function CurriculumInfoStep({
         </section>
 
         <section className="col-span-12 lg:col-span-4 space-y-8">
-          <div className="bg-primary-900 rounded-2xl p-8 text-white shadow-2xl shadow-primary-900/20 relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/10">
-                <Info className="text-primary-300" size={24} />
-              </div>
-              <h4 className="text-xl font-bold mb-3 tracking-tight">Institutional Standards</h4>
-              <p className="text-primary-100/70 text-sm leading-relaxed font-medium">Standardizing identity ensures that curriculum versions are traceable across academic auditing cycles.</p>
-            </div>
-          </div>
-
           <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-[0_10px_40px_rgba(0,0,0,0.02)] sticky top-10">
             <div className="flex items-center justify-between mb-8">
               <h4 className="font-black text-zinc-900 text-[10px] uppercase tracking-[0.2em]">Configuration Audit</h4>
