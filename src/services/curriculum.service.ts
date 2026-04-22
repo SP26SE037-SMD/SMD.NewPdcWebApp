@@ -141,8 +141,8 @@ export const CurriculumService = {
     return apiClient.post<CurriculumFramework>("/api/curriculums", payload);
   },
 
-  getPloByCurriculumId: async (curriculumId: string, status?: string) => {
-    const params = new URLSearchParams({ page: "0", size: "50" });
+  getPloByCurriculumId: async (curriculumId: string, status?: string, size: number = 50) => {
+    const params = new URLSearchParams({ page: "0", size: size.toString() });
     if (status) {
       params.append("status", status);
     }
