@@ -138,7 +138,9 @@ export default function TasksPage() {
 
   const handleRowClick = (task: TaskItem) => {
     if (task.status === "IN_PROGRESS" || task.status === "TO_DO") {
-      router.push(`/dashboard/hocfdc/tasks/${task.taskId}`);
+      const majorId = task.majorId || task.major?.majorId;
+      const url = `/dashboard/hocfdc/tasks/${task.taskId}${majorId ? `?majorId=${majorId}` : ""}`;
+      router.push(url);
     }
   };
 
@@ -354,9 +356,9 @@ export default function TasksPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(
-                              `/dashboard/hocfdc/tasks/${task.taskId}`
-                            );
+                            const majorId = task.majorId || task.major?.majorId;
+                            const url = `/dashboard/hocfdc/tasks/${task.taskId}${majorId ? `?majorId=${majorId}` : ""}`;
+                            router.push(url);
                           }}
                           className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-bold text-primary transition hover:bg-primary hover:text-on-primary active:scale-95"
                         >

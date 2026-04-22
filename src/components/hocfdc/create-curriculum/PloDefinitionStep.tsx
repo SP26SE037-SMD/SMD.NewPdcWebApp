@@ -96,7 +96,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
     mutationFn: (payload: any[]) =>
       CurriculumService.bulkCreatePLOs(curriculumId!, payload),
     onSuccess: () => {
-      toast.success("Outcomes synchronized");
+      toast.success("PLOs saved successfully!");
       localStorage.removeItem(DRAFT_KEY);
       queryClient.invalidateQueries({
         queryKey: ["curriculum-plos", curriculumId],

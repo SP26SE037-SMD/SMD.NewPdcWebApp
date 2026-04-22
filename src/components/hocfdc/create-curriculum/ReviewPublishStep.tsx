@@ -210,32 +210,36 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
   // 3. Finalize Mutation
   const finalizeMutation = useMutation({
     mutationFn: async () => {
-      // 1. Update curriculum status
-      await CurriculumService.updateCurriculumStatus(
-        curriculumId!,
-        CURRICULUM_STATUS.STRUCTURE_REVIEW,
-      );
+      const toastId = toast.loading("Submitting curriculum for review...");
+      try {
+        // 1. Update curriculum status
+        await CurriculumService.updateCurriculumStatus(
+          curriculumId!,
+          CURRICULUM_STATUS.STRUCTURE_REVIEW,
+        );
 
-      // 2. Create review task (request)
-      const curriculumName = curriculum?.curriculumNameEn || curriculum?.curriculumName || "Untitled Curriculum";
-      const majorName = major?.majorName || "Unknown Major";
-      
-      await RequestService.createRequest({
-        title: `Review curriculum ${curriculumName}`,
-        content: `Review curriculum ${curriculumName} of major ${majorName}`,
-        status: "PENDING",
-        createdById: user?.accountId || "",
-        curriculumId: curriculumId!,
-        majorId: majorId as string,
-      });
+        // 2. Create review task (request)
+        const curriculumName = curriculum?.curriculumNameEn || curriculum?.curriculumName || "Untitled Curriculum";
+        const majorName = major?.majorName || "Unknown Major";
+        
+        await RequestService.createRequest({
+          title: `Review: ${curriculum?.curriculumCode || curriculumName}`.substring(0, 50),
+          content: `Review curriculum ${curriculumName} of major ${majorName}`,
+          status: "PENDING",
+          createdById: user?.accountId || "",
+          curriculumId: curriculumId!,
+          majorId: majorId as string,
+        });
+        
+        toast.success("Curriculum submitted successfully!", { id: toastId });
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || "Submission failed", { id: toastId });
+        throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Curriculum submitted for structure review");
       queryClient.invalidateQueries({ queryKey: ["curriculum", curriculumId] });
       router.push("/dashboard/hocfdc/curriculums?submitted=true&status=STRUCTURE_REVIEW");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Submission failed");
     },
   });
 
