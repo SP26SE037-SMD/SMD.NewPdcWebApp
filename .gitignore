@@ -4,7 +4,7 @@
 .pnp.*
 
 # Next.js
-/.next/
+.next/
 /out/
 /build
 
