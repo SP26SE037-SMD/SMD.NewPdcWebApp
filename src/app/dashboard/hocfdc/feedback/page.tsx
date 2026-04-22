@@ -789,10 +789,10 @@ export default function HocfdcFeedbackPage() {
             >
               {DEFAULT_FORM_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {type === "MIDTERM" ? "Midterm" : type === "FINAL" ? "Final" : type === "GENERAL" ? "General" : type === "WEEKLY" ? "Weekly" : type}
                 </option>
               ))}
-              <option value="CUSTOM">CUSTOM</option>
+              <option value="CUSTOM">Custom</option>
             </select>
           </div>
 
@@ -1100,9 +1100,9 @@ export default function HocfdcFeedbackPage() {
                 }
                 className="w-full rounded-lg border border-outline/20 bg-surface px-3 py-2 text-sm outline-none transition focus:border-primary/40"
               >
-                <option value="NEXT">NEXT</option>
-                <option value="SUBMIT">SUBMIT</option>
-                <option value="GO_TO_SECTION">GO_TO_SECTION</option>
+                <option value="NEXT">Next Section</option>
+                <option value="SUBMIT">Submit Form</option>
+                <option value="GO_TO_SECTION">Go to Section</option>
               </select>
 
               {sectionForm.afterSectionAction === "GO_TO_SECTION" && (

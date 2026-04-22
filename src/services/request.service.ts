@@ -62,6 +62,7 @@ export interface RequestItem {
     comment?: string;
     status: string;
     createdBy?: RequestCreatedBy;
+    createdById?: string;
     curriculum?: RequestCurriculum;
     major?: RequestMajor;
     createdAt?: string;
