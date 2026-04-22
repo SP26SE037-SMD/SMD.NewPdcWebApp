@@ -72,8 +72,8 @@ export default function HoCFDCDashboardContent() {
     });
   }, [majors, sortBy, sortDir, curriculumCountsMap]);
 
-  const handleOpenDetail = (code: string) => {
-    router.push(`/dashboard/hocfdc/manage-majors/${encodeURIComponent(code)}`);
+  const handleOpenDetail = (id: string) => {
+    router.push(`/dashboard/hocfdc/${encodeURIComponent(id)}`);
   };
 
   if (!user) return null;
@@ -290,7 +290,7 @@ export default function HoCFDCDashboardContent() {
 
                   <div className="mt-auto pt-6">
                     <button
-                      onClick={() => handleOpenDetail(major.majorCode)}
+                      onClick={() => handleOpenDetail(major.majorId)}
                       className="w-full py-3.5 bg-zinc-100 text-zinc-900 border border-zinc-200 text-xs font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2 group/btn"
                     >
                       View Detail

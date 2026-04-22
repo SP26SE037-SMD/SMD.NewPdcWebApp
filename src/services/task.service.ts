@@ -148,6 +148,7 @@ export interface TaskQueryParams {
   status?: TaskStatus | string | string[];
   sprintId?: string;
   accountId?: string;
+  majorId?: string;
   departmentId?: string;
   syllabusId?: string;
   page?: number;
@@ -237,6 +238,7 @@ export const TaskService = {
     if (params?.status && typeof params.status === 'string') queryParams.append("status", params.status);
     if (params?.sprintId) queryParams.append("sprintId", params.sprintId);
     if (params?.accountId) queryParams.append("accountId", params.accountId);
+    if (params?.majorId) queryParams.append("majorId", params.majorId);
     if (params?.departmentId)
       queryParams.append("departmentId", params.departmentId);
     if (params?.syllabusId) queryParams.append("syllabusId", params.syllabusId);

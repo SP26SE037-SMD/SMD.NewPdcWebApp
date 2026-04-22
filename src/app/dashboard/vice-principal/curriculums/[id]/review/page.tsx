@@ -13,8 +13,9 @@ import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { RequestService } from "@/services/request.service";
-import { Loader2, Calendar, CheckCircle } from "lucide-react";
+import { Loader2, Calendar, CheckCircle, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function VicePrincipalReviewPage() {
 	const { id } = useParams() as { id: string };
@@ -34,6 +35,8 @@ export default function VicePrincipalReviewPage() {
 	const [requestId, setRequestId] = useState<string | null>(null);
 	const [reviewComment, setReviewComment] = useState("");
 	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+	const [showConfirmModal, setShowConfirmModal] = useState(false);
+	const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
 
 	React.useEffect(() => {
 		if (typeof window !== "undefined") {
@@ -166,25 +169,29 @@ export default function VicePrincipalReviewPage() {
 			showToast("Missing Request ID or Curriculum ID", "error");
 			return;
 		}
+		
+		setConfirmAction("approve");
+		setShowConfirmModal(true);
+	};
 
-		if (confirm("Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.")) {
-			setIsSubmittingReview(true);
-			const toastId = showToast("Approving curriculum structure...", "loading");
+	const executeApprove = async () => {
+		setIsSubmittingReview(true);
+		const toastId = showToast("Approving curriculum structure...", "loading");
+		
+		try {
+			// 1. Update Request to APPROVED
+			await RequestService.updateRequestStatus(requestId!, "APPROVED", reviewComment);
 			
-			try {
-				// 1. Update Request to APPROVED
-				await RequestService.updateRequestStatus(requestId, "APPROVED", reviewComment);
-				
-				// 2. Update Curriculum to STRUCTURE_APPROVED (via mutation to trigger side effects)
-				await mutation.mutateAsync(CURRICULUM_STATUS.STRUCTURE_APPROVED);
+			// 2. Update Curriculum to STRUCTURE_APPROVED (via mutation to trigger side effects)
+			await mutation.mutateAsync(CURRICULUM_STATUS.STRUCTURE_APPROVED);
 
-				showToast("Curriculum structure approved successfully!", "success", toastId);
-			} catch (error: any) {
-				console.error("Approve Error:", error);
-				showToast(error.message || "Failed to approve structure", "error", toastId);
-			} finally {
-				setIsSubmittingReview(false);
-			}
+			showToast("Curriculum structure approved successfully!", "success", toastId);
+			setShowConfirmModal(false);
+		} catch (error: any) {
+			console.error("Approve Error:", error);
+			showToast(error.message || "Failed to approve structure", "error", toastId);
+		} finally {
+			setIsSubmittingReview(false);
 		}
 	};
 	
@@ -199,25 +206,29 @@ export default function VicePrincipalReviewPage() {
 			return;
 		}
 
-		if (confirm("Are you sure you want to request a revision for this curriculum? It will be marked as REJECTED and curriculum status will revert to DRAFT.")) {
-			setIsSubmittingReview(true);
-			const toastId = showToast("Rejecting and requesting revision...", "loading");
+		setConfirmAction("reject");
+		setShowConfirmModal(true);
+	};
 
-			try {
-				// 1. Update Request to REJECTED
-				await RequestService.updateRequestStatus(requestId, "REJECTED", reviewComment);
-				
-				// 2. Update Curriculum back to DRAFT
-				await CurriculumService.updateCurriculumStatus(effectiveId, CURRICULUM_STATUS.DRAFT);
+	const executeReject = async () => {
+		setIsSubmittingReview(true);
+		const toastId = showToast("Rejecting and requesting revision...", "loading");
 
-				showToast("Revision requested successfully", "success", toastId);
-				router.push(`/dashboard/vice-principal/digital-enactment`);
-			} catch (error: any) {
-				console.error("Reject Error:", error);
-				showToast(error.message || "Failed to request revision", "error", toastId);
-			} finally {
-				setIsSubmittingReview(false);
-			}
+		try {
+			// 1. Update Request to REJECTED
+			await RequestService.updateRequestStatus(requestId!, "REJECTED", reviewComment);
+			
+			// 2. Update Curriculum back to DRAFT
+			await CurriculumService.updateCurriculumStatus(effectiveId, CURRICULUM_STATUS.DRAFT);
+
+			showToast("Revision requested successfully", "success", toastId);
+			setShowConfirmModal(false);
+			router.push(`/dashboard/vice-principal/digital-enactment`);
+		} catch (error: any) {
+			console.error("Reject Error:", error);
+			showToast(error.message || "Failed to request revision", "error", toastId);
+		} finally {
+			setIsSubmittingReview(false);
 		}
 	};
 
@@ -670,6 +681,71 @@ export default function VicePrincipalReviewPage() {
 					</div>
 				)}
 			</div>
+
+			<AnimatePresence>
+				{showConfirmModal && (
+					<div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							onClick={() => !isSubmittingReview && setShowConfirmModal(false)}
+							className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
+						/>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95, y: 20 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.95, y: 20 }}
+							className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
+						>
+							<div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-10 rounded-full -mr-16 -mt-16 ${confirmAction === "approve" ? 'bg-[#2d6a4f]' : 'bg-rose-500'}`} />
+							
+							<div className="relative">
+								<div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8 ${confirmAction === "approve" ? 'bg-[#2d6a4f]/10 text-[#2d6a4f]' : 'bg-rose-500/10 text-rose-500'}`}>
+									<span className="material-symbols-outlined text-4xl font-bold">
+										{confirmAction === "approve" ? 'verified_user' : 'assignment_return'}
+									</span>
+								</div>
+
+								<h3 className="text-3xl font-black text-[#2d3335] tracking-tight mb-4" style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+									{confirmAction === "approve" ? 'Approve Structure?' : 'Request Revision?'}
+								</h3>
+								<p className="text-[#5a6062] text-sm leading-relaxed mb-10 font-medium">
+									{confirmAction === "approve" 
+										? 'Are you sure you want to officially approve this curriculum structure? This will notify the faculty and allow them to begin syllabus development.' 
+										: 'Are you sure you want to request a revision? This curriculum will be sent back to the development team for updates based on your feedback.'}
+								</p>
+
+								<div className="flex flex-col gap-4">
+									<button
+										onClick={confirmAction === "approve" ? executeApprove : executeReject}
+										disabled={isSubmittingReview}
+										className={`w-full py-5 rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 active:scale-[0.98] shadow-lg ${
+											confirmAction === "approve" 
+												? 'bg-[#2d6a4f] text-white shadow-[#2d6a4f]/25 hover:bg-[#1d5c42]' 
+												: 'bg-rose-500 text-white shadow-rose-500/25 hover:bg-rose-600'
+										}`}
+									>
+										{isSubmittingReview ? <Loader2 className="animate-spin" size={20} /> : (
+											<span className="material-symbols-outlined text-[20px]">
+												{confirmAction === "approve" ? 'check_circle' : 'send'}
+											</span>
+										)}
+										{confirmAction === "approve" ? 'Yes, Approve Now' : 'Yes, Request Revision'}
+									</button>
+									<button
+										onClick={() => setShowConfirmModal(false)}
+										disabled={isSubmittingReview}
+										className="w-full py-5 rounded-2xl font-bold text-sm text-[#5a6062] hover:bg-[#f1f4f5] transition-colors"
+									>
+										Cancel and Review
+									</button>
+								</div>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

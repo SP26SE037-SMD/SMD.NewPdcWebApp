@@ -346,9 +346,9 @@ export default function ManageMajorsContent() {
     setWizardStep(3);
   };
 
-  const handleOpenDetail = (code: string) => {
+  const handleOpenDetail = (id: string) => {
     router.push(
-      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(code)}`,
+      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(id)}`,
     );
   };
 

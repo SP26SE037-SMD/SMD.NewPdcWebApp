@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import {
@@ -17,7 +18,11 @@ import {
   ArrowRight,
   X,
   Eye,
+  Wrench,
+  FastForward,
 } from "lucide-react";
+import { toast } from "sonner";
+import { TaskService } from "@/services/task.service";
 import {
   RequestItem,
   RequestService,
@@ -29,6 +34,7 @@ import {
 } from "@/services/curriculum.service";
 
 export default function RequestsPage() {
+  const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
@@ -226,6 +232,60 @@ export default function RequestsPage() {
     }
   };
 
+  const handleFixCurriculum = async (request: RequestItem) => {
+    // Try multiple ways to get the majorId
+    const majorId = request.majorId || request.major?.majorId || request.curriculum?.major?.majorId || request.curriculum?.majorId;
+    
+    console.log("Attempting to fix curriculum for request:", request.requestId, "MajorID:", majorId);
+
+    if (!majorId) {
+      toast.error("Major information missing for this request");
+      return;
+    }
+
+    const toastId = toast.loading("Finding associated task...");
+    try {
+      // Increase size to 100 to ensure we find it in the list if filtering isn't perfect
+      const res = await TaskService.getTasks({ majorId, size: 100 });
+      
+      // Fallback search in case the API returned more tasks than requested or if filtering was client-side
+      const task = res?.data?.content?.find(t => 
+        t.majorId === majorId || 
+        t.major?.majorId === majorId || 
+        t.curriculumId === request.targetId
+      );
+      
+      if (task) {
+        toast.success("Task found, redirecting...", { id: toastId });
+        if (router) {
+          router.push(`/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`);
+        } else {
+          console.error("Router instance is missing!");
+          window.location.href = `/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`;
+        }
+      } else {
+        console.warn("Task search returned:", res?.data?.content);
+        toast.error("Could not find the original task for this curriculum. Please go to Tasks menu directly.", { id: toastId });
+      }
+    } catch (err) {
+      console.error("Navigation error:", err);
+      toast.error("Failed to navigate to task detail", { id: toastId });
+    }
+  };
+
+  const handleContinueToSprint = (request: RequestItem) => {
+    const curriculumId = request.curriculum?.curriculumId;
+    if (curriculumId) {
+      if (router) {
+        router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
+      } else {
+        window.location.href = `/dashboard/hocfdc/curriculums/${curriculumId}`;
+      }
+    } else {
+      toast.error("Curriculum information missing");
+    }
+  };
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: totalElements };
     requests.forEach((req) => {
@@ -398,7 +458,7 @@ export default function RequestsPage() {
                          </div>
                       </td>
                       <td className="p-5">
-                        <div className="flex justify-center">
+                        <div className="flex justify-center gap-2">
                           <button
                             onClick={() => handleOpenDetail(req.requestId)}
                             className="inline-flex items-center gap-2 rounded-xl border border-outline/20 px-3 py-1.5 text-xs font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface"
@@ -406,6 +466,29 @@ export default function RequestsPage() {
                             <Eye className="h-3.5 w-3.5" />
                             View Detail
                           </button>
+
+                          {req.status === "APPROVED" && (
+                            <button
+                              onClick={() => handleContinueToSprint(req)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/20"
+                            >
+                              <FastForward className="h-3.5 w-3.5" />
+                              Continue
+                            </button>
+                          )}
+
+                          {req.status === "REJECTED" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFixCurriculum(req);
+                              }}
+                              className="inline-flex items-center gap-2 rounded-xl bg-error/10 px-4 py-1.5 text-xs font-bold text-error transition hover:bg-error/20 active:scale-95"
+                            >
+                              <Wrench className="h-3.5 w-3.5" />
+                              Update Curriculum
+                            </button>
+                          )}
                         </div>
                       </td>
                     </motion.tr>
@@ -605,73 +688,100 @@ export default function RequestsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm font-medium">Loading request detail...</p>
             </div>
-          ) : selectedRequest ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</p>
-                  <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.status}</p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created At</p>
-                  <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.createdAt)}</p>
-                </div>
-              </div>
+          ) : (
+            <>
+              {selectedRequest ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</p>
+                      <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.status}</p>
+                    </div>
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created At</p>
+                      <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.createdAt)}</p>
+                    </div>
+                  </div>
 
-              <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Title</p>
-                <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.title}</p>
-              </div>
+                  <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Title</p>
+                    <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.title}</p>
+                  </div>
 
-              <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Content</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.content}</p>
-              </div>
+                  <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Content</p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.content}</p>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
-                  <p className="mt-1 text-sm text-on-surface">
-                    {selectedRequest.createdBy?.fullName
-                      || selectedRequest.createdBy?.email
-                      || (selectedRequest.createdBy?.accountId
-                          ? `User (${selectedRequest.createdBy.accountId.slice(0, 8)}...)`
-                          : "-")}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
-                  <p className="mt-1 text-sm text-on-surface">
-                    {selectedRequest.curriculum?.curriculumCode || "-"}
-                    {selectedRequest.curriculum?.curriculumName
-                      ? ` - ${selectedRequest.curriculum.curriculumName}`
-                      : ""}
-                  </p>
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
+                      <p className="mt-1 text-sm text-on-surface">
+                        {selectedRequest.createdBy?.fullName
+                          || selectedRequest.createdBy?.email
+                          || (selectedRequest.createdBy?.accountId
+                              ? `User (${selectedRequest.createdBy.accountId.slice(0, 8)}...)`
+                              : "-")}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
+                      <p className="mt-1 text-sm text-on-surface">
+                        {selectedRequest.curriculum?.curriculumCode || "-"}
+                        {selectedRequest.curriculum?.curriculumName
+                          ? ` - ${selectedRequest.curriculum.curriculumName}`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Major</p>
-                  <p className="mt-1 text-sm text-on-surface">{selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}</p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Updated At</p>
-                  <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.updatedAt)}</p>
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Major</p>
+                      <p className="mt-1 text-sm text-on-surface">{selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}</p>
+                    </div>
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Updated At</p>
+                      <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.updatedAt)}</p>
+                    </div>
+                  </div>
 
-              {selectedRequest.comment && (
-                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Comment</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.comment}</p>
+                  {selectedRequest.comment && (
+                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Comment</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.comment}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-14 text-center text-sm text-on-surface-variant">
+                  No detail data.
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="py-14 text-center text-sm text-on-surface-variant">
-              No detail data.
-            </div>
+
+              {selectedRequest && !detailLoading && (
+                <div className="mt-8 flex justify-end gap-3 border-t border-outline/10 pt-6">
+                  {selectedRequest.status === "APPROVED" && (
+                    <button
+                      onClick={() => handleContinueToSprint(selectedRequest)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-on-primary transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+                    >
+                      <FastForward className="h-4 w-4" />
+                      Continue to Sprint Planning
+                    </button>
+                  )}
+                  {selectedRequest.status === "REJECTED" && (
+                    <button
+                      onClick={() => handleFixCurriculum(selectedRequest)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-error px-6 py-2.5 text-sm font-bold text-on-primary transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-error/20"
+                    >
+                      <Wrench className="h-4 w-4" />
+                      Update Curriculum
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
