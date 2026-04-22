@@ -95,12 +95,7 @@ const ALL_STATUS_ORDER = [
   },
 ];
 
-const currentIdx = ALL_STATUS_ORDER.findIndex(
-  (s) => s.id === (curriculum?.curriculumStatus || curriculum?.status),
-);
-const safeCurrentIdx = currentIdx === -1 ? 0 : currentIdx;
-
-const renderStatusStepper = () => (
+const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
   <div className="relative group/stepper w-full mt-1">
     <div className="flex items-center overflow-x-auto no-scrollbar scroll-smooth snap-x w-full py-2 justify-between">
       {ALL_STATUS_ORDER.map((statusItem, idx) => {
@@ -295,7 +290,9 @@ export default function CurriculumDetail({ id }: { id: string }) {
             </div>
           </div>
 
-          <div>{renderStatusStepper()}</div>
+          <div>
+            <StatusStepper safeCurrentIdx={safeCurrentIdx} />
+          </div>
 
           {/* Premium Tab Bar */}
           <div className="flex flex-wrap gap-x-8 gap-y-1 overflow-x-auto no-scrollbar">
