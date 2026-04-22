@@ -16,6 +16,7 @@ import StepNavigation from "./StepNavigation";
 interface StepProps {
   onNext?: () => void;
   onBack?: () => void;
+  curriculumIdProp?: string;
 }
 
 interface Outcome {
@@ -25,9 +26,9 @@ interface Outcome {
   tags: string[];
 }
 
-export default function PloDefinitionStep({ onNext, onBack }: StepProps) {
+export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: StepProps) {
   const searchParams = useSearchParams();
-  const curriculumId = searchParams.get("id");
+  const curriculumId = curriculumIdProp || searchParams.get("id");
   const queryClient = useQueryClient();
 
   const DRAFT_KEY = `pdcm-plo-draft-${curriculumId}`;

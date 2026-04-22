@@ -1,10 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CurriculumService } from "@/services/curriculum.service";
 import CurriculumBuilder from "@/components/hocfdc/CurriculumBuilder";
 import CurriculumDetail from "@/components/hocfdc/CurriculumDetail";
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
+import PloDefinitionStep from "@/components/hocfdc/create-curriculum/PloDefinitionStep";
+import MappingStep from "@/components/hocfdc/create-curriculum/MappingStep";
+import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
 import {
   ChevronLeft,
   Layers,
@@ -14,15 +18,42 @@ import {
   Calendar,
   Target,
   Rocket,
+  BookOpen,
+  Network,
+  Layout,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
+
+const TABS = [
+  { id: "info", label: "Curriculum Info", icon: BookOpen },
+  { id: "plo", label: "PLOs Definition", icon: Target },
+  { id: "mapping", label: "PO-PLO Mapping", icon: Network },
+  { id: "semester", label: "Semester Structure", icon: Layout },
+] as const;
 
 export default function BuilderPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"info" | "plo" | "mapping" | "semester">("semester");
+
+  const createMutation = useMutation({
+    mutationFn: (payload: any) => CurriculumService.updateCurriculum(id, payload),
+    onSuccess: (response: any) => {
+      showToast("Curriculum identity updated", "success");
+      queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+    },
+    onError: (error: any) => {
+      showToast(error?.response?.data?.message || "Operation failed", "error");
+    }
+  });
+
+  const handleSaveStep1 = (data: any, proceed: boolean = false) => {
+    createMutation.mutate(data);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["curriculum-details", id],
