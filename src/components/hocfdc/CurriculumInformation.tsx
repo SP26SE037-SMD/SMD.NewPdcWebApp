@@ -453,7 +453,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
       )}
       <div className="flex-1 flex overflow-hidden">
         {/* Main Vertical Grid Canvas */}
-        <div className="flex-1 flex flex-col overflow-y-auto w-full no-scrollbar bg-zinc-50/50">
+        <div className="flex-1 flex flex-col overflow-y-auto w-full no-scrollbar bg-zinc-50">
           {/* Embedded Toolbar for Combo Selector */}
           {isEmbedded && combos.length > 0 && (
             <div className="flex items-center justify-end px-8 pt-4 pb-2 sticky top-0 bg-zinc-50/90 backdrop-blur z-20">
@@ -481,38 +481,44 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
           )}
           
           <div className="p-8">
-            <div className="grid grid-cols-2 2xl:grid-cols-3 gap-8 pb-32">
+            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-8 pb-24">
             {mappedSubjects
               .sort(
                 (a: any, b: any) => Number(a.semesterNo) - Number(b.semesterNo),
               )
-              .map((semester: any) => (
+              .map((semester: any) => {
+                const semesterCredits = (semester.subjects || []).reduce(
+                  (acc: number, sub: any) => acc + (sub.credit ?? sub.credits ?? 0),
+                  0,
+                );
+
+                return (
                 <div key={semester.semesterNo} className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-zinc-900 text-white flex items-center justify-center font-black text-sm shadow-xl shadow-zinc-900/10">
+                      <div className="w-11 h-11 rounded-2xl bg-white border border-zinc-200 text-zinc-700 flex items-center justify-center font-black text-sm shadow-sm">
                         {semester.semesterNo}
                       </div>
                       <div>
-                        <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest leading-none mb-1">
+                        <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest leading-none mb-1">
                           Semester {semester.semesterNo}
                         </h3>
-                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
                           Academic Block
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-black text-zinc-900">
+                      <p className="text-[11px] font-black text-zinc-900">
                         {semester.subjects?.length || 0} Subjects
                       </p>
-                      <p className="text-[10px] font-bold text-zinc-400 uppercase">
-                        Loadout
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase">
+                        {semesterCredits} Credits
                       </p>
                     </div>
                   </div>
 
-                  <div className="bg-white/40 border border-zinc-100 rounded-[2rem] p-4 flex flex-col gap-3 min-h-[400px] shadow-sm backdrop-blur-sm">
+                  <div className="bg-white border border-zinc-200 rounded-4xl p-4 flex flex-col gap-3 min-h-[420px] shadow-sm">
                     {(() => {
                       const subjects = semester.subjects || [];
                       const standalones = subjects.filter(
@@ -549,7 +555,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           {standalones.map((sub: any) => (
                             <div
                               key={sub.subjectId}
-                              className="p-5 rounded-[1.5rem] bg-white border border-zinc-100 shadow-sm transition-all group hover:border-primary/20 hover:shadow-md"
+                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all duration-200 group hover:border-zinc-300 hover:shadow-md"
                             >
                               <div className="flex justify-between items-start mb-3">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">
@@ -563,10 +569,13 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                                   </span>
                                 )}
                               </div>
-                              <h4 className="text-sm font-black text-zinc-900 leading-snug mb-3 group-hover:text-primary transition-colors">
+                              <h4 className="text-sm font-black text-zinc-900 leading-snug mb-3">
                                 {sub.subjectName}
                               </h4>
-                              <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-50">
+                              <p className="mb-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-semibold leading-relaxed text-zinc-900 line-clamp-2">
+                                {sub.description?.trim() || "No description provided."}
+                              </p>
+                              <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-100">
                                 <div className="flex items-center gap-1.5 text-zinc-400">
                                   <Layers size={12} />
                                   <span className="text-[10px] font-black uppercase tracking-widest">
@@ -581,9 +590,9 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           {activeComboSubjects.map((sub: any) => (
                             <div
                               key={`combo-${sub.subjectId}`}
-                              className="p-5 rounded-[1.5rem] bg-indigo-50 border border-indigo-100 shadow-sm transition-all relative overflow-hidden group hover:shadow-md"
+                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-indigo-200 hover:shadow-md"
                             >
-                              <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-400" />
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-200" />
                               <div className="flex justify-between items-start mb-3 pl-1">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">
                                   {sub.subjectCode}
@@ -604,6 +613,9 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                               <h4 className="text-sm font-black text-indigo-950 leading-snug mb-3 pl-1">
                                 {sub.subjectName}
                               </h4>
+                              <p className="mb-3 ml-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-semibold leading-relaxed text-zinc-900 line-clamp-2">
+                                {sub.description?.trim() || "No description provided."}
+                              </p>
                               <div className="flex items-center justify-between mt-auto pt-3 border-t border-indigo-100/50 pl-1">
                                 <div className="flex items-center gap-1.5 text-indigo-400">
                                   <Layers size={12} />
@@ -633,7 +645,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                                     subjects: groupSubs,
                                   })
                                 }
-                                className="p-5 rounded-[1.5rem] bg-emerald-50 border border-emerald-200 shadow-sm transition-all cursor-pointer relative overflow-hidden group hover:bg-emerald-100 hover:shadow-md hover:-translate-y-1"
+                                className="p-5 rounded-3xl bg-white border border-emerald-200 shadow-sm transition-all cursor-pointer relative overflow-hidden group hover:bg-emerald-50/40 hover:shadow-md"
                               >
                                 <div className="absolute top-0 right-4 w-12 h-2 bg-emerald-200 rounded-b-lg opacity-50" />
                                 <div className="flex justify-between items-start mb-3">
@@ -656,7 +668,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           })}
 
                           {(!subjects || subjects.length === 0) && (
-                            <div className="flex-1 flex flex-col items-center justify-center text-zinc-200 border-2 border-dashed border-zinc-100 rounded-[2rem] py-12">
+                            <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200 rounded-4xl py-12 bg-white">
                               <Box size={24} strokeWidth={1} />
                               <p className="text-[10px] font-black uppercase tracking-widest mt-2">
                                 Zero Registry
@@ -668,52 +680,52 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     })()}
                   </div>
                 </div>
-              ))}
+              )})}
           </div>
         </div>
         </div>
 
         {/* Right Sidebar: Analytics & Metadata */}
-        <div className="w-[400px] border-l border-zinc-100 bg-white flex flex-col shrink-0 h-fit">
+        <div className="w-[400px] border-l border-zinc-200 bg-white flex flex-col shrink-0 h-fit">
           <div className="p-8 space-y-10">
             {/* Summary Stats */}
-            <section className="space-y-6">
+            <section className="space-y-6 rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
                   Framework Summary
                 </h2>
-                <Target size={16} className="text-zinc-200" />
+                <Target size={16} className="text-emerald-300" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 bg-zinc-50 border border-zinc-100 rounded-3xl">
+                <div className="p-5 bg-white border border-emerald-100 rounded-3xl shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {totalCredits}
                   </p>
-                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     Total Credits
                   </p>
                 </div>
-                <div className="p-5 bg-zinc-50 border border-zinc-100 rounded-3xl">
+                <div className="p-5 bg-white border border-indigo-100 rounded-3xl shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {totalSubjects}
                   </p>
-                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     Subjects
                   </p>
                 </div>
-                <div className="p-5 bg-zinc-50 border border-zinc-100 rounded-3xl">
+                <div className="p-5 bg-white border border-zinc-200 rounded-3xl shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {semesterCount}
                   </p>
-                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     Semesters
                   </p>
                 </div>
-                <div className="p-5 bg-zinc-50 border border-zinc-100 rounded-3xl">
+                <div className="p-5 bg-white border border-amber-100 rounded-3xl shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {curriculum.startYear}
                   </p>
-                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     Intake Year
                   </p>
                 </div>

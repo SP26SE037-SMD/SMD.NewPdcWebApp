@@ -238,22 +238,6 @@ export default function CurriculumsManagement({
               })}
             </div>
 
-            {/* Search Bar Refined */}
-            <div className="py-3 flex items-center gap-4 flex-1 max-w-md">
-              <div className="relative flex-1 group">
-                <Search
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Search by code, name or major..."
-                  value={localSearch}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-zinc-50 border-2 border-zinc-50 rounded-2xl py-3 pl-14 pr-6 text-sm font-bold text-zinc-900 placeholder:text-zinc-300 focus:border-primary-100 focus:bg-white focus:shadow-lg focus:shadow-primary/5 transition-all outline-none"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -306,7 +290,8 @@ export default function CurriculumsManagement({
                         }
                       >
                         {/* Decorative Background */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-100 to-transparent rounded-full -mr-32 -mt-32 blur-3xl opacity-0 group-hover:opacity-30 transition-all duration-700" />\n                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-zinc-100 to-transparent rounded-full -ml-24 -mb-24 blur-2xl opacity-0 group-hover:opacity-50 transition-all duration-700 delay-100" />
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-100 to-transparent rounded-full -mr-32 -mt-32 blur-3xl opacity-0 group-hover:opacity-30 transition-all duration-700" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-zinc-100 to-transparent rounded-full -ml-24 -mb-24 blur-2xl opacity-0 group-hover:opacity-50 transition-all duration-700 delay-100" />
 
                         {/* Major Identity */}
                         <div className="w-20 h-20 md:w-24 md:h-24 rounded-[1.25rem] bg-zinc-50/80 backdrop-blur-sm border border-zinc-100 flex flex-col items-center justify-center gap-2 shrink-0 group-hover:bg-white group-hover:border-primary-200 group-hover:shadow-lg transition-all duration-300">
@@ -380,7 +365,7 @@ export default function CurriculumsManagement({
                                 }}
                               >
                                 <PencilLine size={14} />
-                                Open Builder
+                                Edit Draft
                                 <ArrowRight
                                   size={14}
                                   className="group-hover/btn:translate-x-1 transition-transform"
@@ -408,7 +393,7 @@ export default function CurriculumsManagement({
                               }}
                             >
                               <Eye size={14} />
-                              View Blueprint
+                              View Details
                             </button>
                           )}
                         </div>
@@ -426,7 +411,7 @@ export default function CurriculumsManagement({
                         <BookOpen size={40} strokeWidth={1} />
                       </div>
                       <h4 className="text-xl font-bold text-zinc-400 mb-2">
-                        No Records Found
+                        No Curriculum Found
                       </h4>
                       <p className="font-bold text-[10px] uppercase tracking-[0.2em] text-zinc-300">
                         Try adjusting your filters or search terms
