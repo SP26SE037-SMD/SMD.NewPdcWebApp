@@ -167,6 +167,13 @@ export default function TaskDetailPage() {
     }
     setSubmitting(true);
     try {
+      // 1. Update curriculum status to STRUCTURE_REVIEW
+      await CurriculumService.updateCurriculumStatus(
+        curriculum.curriculumId,
+        CURRICULUM_STATUS.STRUCTURE_REVIEW
+      );
+
+      // 2. Create the request
       await RequestService.createRequest({
         title,
         content,

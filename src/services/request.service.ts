@@ -149,4 +149,11 @@ export const RequestService = {
     updateRequest: (id: string, data: RequestUpdatePayload) => {
         return apiClient.put<RequestDetailResponse>(`/api/requests/${id}`, data);
     },
+
+    updateRequestStatus: async (id: string, status: string, comment: string = "") => {
+        return apiClient.patch<RequestDetailResponse>(
+            `/api/requests/${id}/status?status=${status}&comment=${encodeURIComponent(comment)}`,
+            {}
+        );
+    },
 };
