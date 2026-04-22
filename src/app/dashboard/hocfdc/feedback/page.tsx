@@ -116,8 +116,11 @@ export default function HocfdcFeedbackPage() {
     targetSectionId: "",
   });
 
-  const [questionMode, setQuestionMode] = useState<QuestionEditorMode>("create");
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [questionMode, setQuestionMode] =
+    useState<QuestionEditorMode>("create");
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null,
+  );
   const [addingQuestion, setAddingQuestion] = useState(false);
   const [questionForm, setQuestionForm] = useState<{
     content: string;
@@ -128,7 +131,9 @@ export default function HocfdcFeedbackPage() {
     type: "TEXT",
     isRequired: true,
   });
-  const [questionOptions, setQuestionOptions] = useState<QuestionOptionDraft[]>([]);
+  const [questionOptions, setQuestionOptions] = useState<QuestionOptionDraft[]>(
+    [],
+  );
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(
     null,
   );
@@ -141,8 +146,9 @@ export default function HocfdcFeedbackPage() {
 
   const selectedSection = useMemo(
     () =>
-      schema?.sections?.find((section) => section.sectionId === selectedSectionId) ||
-      null,
+      schema?.sections?.find(
+        (section) => section.sectionId === selectedSectionId,
+      ) || null,
     [schema, selectedSectionId],
   );
 
@@ -323,7 +329,10 @@ export default function HocfdcFeedbackPage() {
     try {
       const response = await FeedbackFormService.triggerBuild(targetFormId);
       setSuccess(response?.message || "Publish request sent successfully.");
-      showToast(response?.message || "Publish request sent successfully.", "success");
+      showToast(
+        response?.message || "Publish request sent successfully.",
+        "success",
+      );
       await loadForms(curriculumId);
     } catch (err: any) {
       const message = err?.message || "Failed to publish feedback form";
@@ -345,7 +354,8 @@ export default function HocfdcFeedbackPage() {
     setError(null);
 
     try {
-      const response = await FeedbackFormService.getFormFullSchema(targetFormId);
+      const response =
+        await FeedbackFormService.getFormFullSchema(targetFormId);
       const normalizedSchema = normalizeSchema(response as any, targetFormId);
 
       setDesignerFormId(targetFormId);
@@ -353,7 +363,9 @@ export default function HocfdcFeedbackPage() {
       setSelectedSectionId((prev) => {
         if (
           prev &&
-          normalizedSchema.sections.some((section) => section.sectionId === prev)
+          normalizedSchema.sections.some(
+            (section) => section.sectionId === prev,
+          )
         ) {
           return prev;
         }
@@ -466,9 +478,9 @@ export default function HocfdcFeedbackPage() {
     } catch (err: any) {
       const message =
         err?.message ||
-          (sectionMode === "edit"
-            ? "Failed to update section"
-            : "Failed to add section");
+        (sectionMode === "edit"
+          ? "Failed to update section"
+          : "Failed to add section");
       setError(message);
       showToast(message, "error");
     } finally {
@@ -501,11 +513,15 @@ export default function HocfdcFeedbackPage() {
   };
 
   const removeQuestionOption = (optionId: string) => {
-    setQuestionOptions((prev) => prev.filter((option) => option.id !== optionId));
+    setQuestionOptions((prev) =>
+      prev.filter((option) => option.id !== optionId),
+    );
   };
 
   const handleEditQuestion = (question: FeedbackFormQuestion) => {
-    const safeType = isValidQuestionType(question.type) ? question.type : "TEXT";
+    const safeType = isValidQuestionType(question.type)
+      ? question.type
+      : "TEXT";
 
     setQuestionMode("edit");
     setEditingQuestionId(question.questionId);
@@ -520,7 +536,8 @@ export default function HocfdcFeedbackPage() {
         .map((option) => {
           const optionText = (option.optionText || option.text || "").trim();
           const nextSectionId =
-            (option.nextSectionId || option.goToSectionId || "")?.toString() || "";
+            (option.nextSectionId || option.goToSectionId || "")?.toString() ||
+            "";
           return optionText
             ? createOptionDraft(optionText, nextSectionId)
             : null;
@@ -573,7 +590,9 @@ export default function HocfdcFeedbackPage() {
       return;
     }
 
-    const optionsPayload = questionNeedsOptions ? buildQuestionOptionsPayload() : [];
+    const optionsPayload = questionNeedsOptions
+      ? buildQuestionOptionsPayload()
+      : [];
 
     if (questionNeedsOptions && optionsPayload.length === 0) {
       setError("Please add at least one option for selected question type.");
@@ -611,9 +630,9 @@ export default function HocfdcFeedbackPage() {
     } catch (err: any) {
       const message =
         err?.message ||
-          (questionMode === "edit"
-            ? "Failed to update question"
-            : "Failed to add question");
+        (questionMode === "edit"
+          ? "Failed to update question"
+          : "Failed to add question");
       setError(message);
       showToast(message, "error");
     } finally {
@@ -682,18 +701,19 @@ export default function HocfdcFeedbackPage() {
   };
 
   return (
-    <div className="space-y-8 p-4">
+    <div className="max-w-6xl mx-auto pt-12 pb-12 px-6">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5"
       >
         <div>
           <h1 className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent">
             Feedback Center
           </h1>
           <p className="mt-2 max-w-2xl text-base text-on-surface-variant">
-            Create and manage feedback forms by selecting major, then curriculum.
+            Create and manage feedback forms by selecting major, then
+            curriculum.
           </p>
         </div>
 
@@ -729,9 +749,11 @@ export default function HocfdcFeedbackPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl"
+        className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl mb-5"
       >
-        <h2 className="mb-4 text-lg font-bold text-on-surface">Create Feedback</h2>
+        <h2 className="mb-4 text-lg font-bold text-on-surface">
+          Create Feedback
+        </h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -771,7 +793,10 @@ export default function HocfdcFeedbackPage() {
                   : "Select curriculum"}
               </option>
               {curriculums.map((curriculum) => (
-                <option key={curriculum.curriculumId} value={curriculum.curriculumId}>
+                <option
+                  key={curriculum.curriculumId}
+                  value={curriculum.curriculumId}
+                >
                   {curriculum.curriculumCode} - {curriculum.curriculumName}
                 </option>
               ))}
@@ -789,7 +814,15 @@ export default function HocfdcFeedbackPage() {
             >
               {DEFAULT_FORM_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type === "MIDTERM" ? "Midterm" : type === "FINAL" ? "Final" : type === "GENERAL" ? "General" : type === "WEEKLY" ? "Weekly" : type}
+                  {type === "MIDTERM"
+                    ? "Midterm"
+                    : type === "FINAL"
+                      ? "Final"
+                      : type === "GENERAL"
+                        ? "General"
+                        : type === "WEEKLY"
+                          ? "Weekly"
+                          : type}
                 </option>
               ))}
               <option value="CUSTOM">Custom</option>
@@ -828,7 +861,7 @@ export default function HocfdcFeedbackPage() {
 
         {selectedCurriculum && (
           <div className="mt-4 rounded-2xl border border-outline/20 bg-surface-container-lowest p-3 text-xs text-on-surface-variant">
-            Selected curriculum: {selectedCurriculum.curriculumCode} - {" "}
+            Selected curriculum: {selectedCurriculum.curriculumCode} -{" "}
             {selectedCurriculum.curriculumName}
           </div>
         )}
@@ -838,7 +871,7 @@ export default function HocfdcFeedbackPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl"
+        className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl mb-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-on-surface">Feedback Forms</h2>
@@ -855,12 +888,16 @@ export default function HocfdcFeedbackPage() {
         ) : !curriculumId ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-outline/30 py-14 text-center text-on-surface-variant">
             <ClipboardList className="h-8 w-8 text-outline" />
-            <p className="text-sm font-semibold">Choose a curriculum to view forms.</p>
+            <p className="text-sm font-semibold">
+              Choose a curriculum to view forms.
+            </p>
           </div>
         ) : forms.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-outline/30 py-14 text-center text-on-surface-variant">
             <ClipboardList className="h-8 w-8 text-outline" />
-            <p className="text-sm font-semibold">No feedback forms found for this curriculum.</p>
+            <p className="text-sm font-semibold">
+              No feedback forms found for this curriculum.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -963,7 +1000,8 @@ export default function HocfdcFeedbackPage() {
           <div>
             <h2 className="text-lg font-bold text-on-surface">Form Designer</h2>
             <p className="mt-1 text-xs text-on-surface-variant">
-              Load form schema, then create, edit, or delete sections and questions.
+              Load form schema, then create, edit, or delete sections and
+              questions.
             </p>
           </div>
 
@@ -1021,7 +1059,9 @@ export default function HocfdcFeedbackPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <button
-                          onClick={() => setSelectedSectionId(section.sectionId)}
+                          onClick={() =>
+                            setSelectedSectionId(section.sectionId)
+                          }
                           className="flex-1 text-left"
                         >
                           <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
@@ -1031,7 +1071,10 @@ export default function HocfdcFeedbackPage() {
                             {section.title || "Untitled section"}
                           </p>
                           <p className="mt-1 text-xs text-on-surface-variant">
-                            Action: {section.actionAfter || section.afterSectionAction || "NEXT"}
+                            Action:{" "}
+                            {section.actionAfter ||
+                              section.afterSectionAction ||
+                              "NEXT"}
                             {" | "}
                             {questionCount} question(s)
                           </p>
@@ -1046,7 +1089,9 @@ export default function HocfdcFeedbackPage() {
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteSection(section.sectionId)}
+                            onClick={() =>
+                              handleDeleteSection(section.sectionId)
+                            }
                             className="rounded-md border border-error/20 p-1.5 text-error transition hover:bg-error/10"
                             title="Delete section"
                           >
@@ -1138,7 +1183,10 @@ export default function HocfdcFeedbackPage() {
 
           <div className="rounded-2xl border border-outline/20 bg-surface p-4">
             <h3 className="mb-3 text-sm font-bold text-on-surface">
-              Questions {selectedSection ? `- ${selectedSection.title || "Selected section"}` : ""}
+              Questions{" "}
+              {selectedSection
+                ? `- ${selectedSection.title || "Selected section"}`
+                : ""}
             </h3>
 
             {selectedSection ? (
@@ -1167,7 +1215,9 @@ export default function HocfdcFeedbackPage() {
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteQuestion(question.questionId)}
+                              onClick={() =>
+                                handleDeleteQuestion(question.questionId)
+                              }
                               className="rounded-md border border-error/20 p-1.5 text-error transition hover:bg-error/10"
                               title="Delete question"
                             >
@@ -1182,7 +1232,8 @@ export default function HocfdcFeedbackPage() {
 
                         {!!question.options?.length && (
                           <p className="mt-1 text-xs text-on-surface-variant">
-                            Options: {question.options
+                            Options:{" "}
+                            {question.options
                               .map((opt) => opt.text || opt.optionText)
                               .filter(Boolean)
                               .join(", ")}
@@ -1200,7 +1251,9 @@ export default function HocfdcFeedbackPage() {
                 <div className="mt-4 space-y-3 rounded-xl border border-outline/20 bg-surface-container-lowest p-3">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      {questionMode === "edit" ? "Edit Question" : "Add Question"}
+                      {questionMode === "edit"
+                        ? "Edit Question"
+                        : "Add Question"}
                     </h4>
 
                     {questionMode === "edit" && (
@@ -1217,7 +1270,10 @@ export default function HocfdcFeedbackPage() {
                   <input
                     value={questionForm.content}
                     onChange={(e) =>
-                      setQuestionForm((prev) => ({ ...prev, content: e.target.value }))
+                      setQuestionForm((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }))
                     }
                     placeholder="Question content"
                     className="w-full rounded-lg border border-outline/20 bg-surface px-3 py-2 text-sm outline-none transition focus:border-primary/40"
@@ -1229,7 +1285,8 @@ export default function HocfdcFeedbackPage() {
                       onChange={(e) =>
                         setQuestionForm((prev) => ({
                           ...prev,
-                          type: e.target.value as FeedbackCreateQuestionPayload["type"],
+                          type: e.target
+                            .value as FeedbackCreateQuestionPayload["type"],
                         }))
                       }
                       className="w-full rounded-lg border border-outline/20 bg-surface px-3 py-2 text-sm outline-none transition focus:border-primary/40"
@@ -1353,7 +1410,9 @@ export default function HocfdcFeedbackPage() {
             className="w-full max-w-xl rounded-3xl border border-outline/20 bg-surface p-5 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h4 className="text-xl font-bold text-on-surface">Confirm Delete</h4>
+            <h4 className="text-xl font-bold text-on-surface">
+              Confirm Delete
+            </h4>
             <p className="mt-2 text-sm text-on-surface-variant">
               {deleteConfirm.message}
             </p>
