@@ -50,6 +50,7 @@ interface PrerequisiteError {
 interface StepProps {
   onNext?: () => void;
   onBack?: () => void;
+  curriculumIdProp?: string;
 }
 
 // Custom Tree Node Component (Cloned from CurriculumBuilder)
@@ -79,14 +80,14 @@ const TreeNode = ({ label, icon, childrenList, defaultOpen = false }: any) => {
   );
 };
 
-export default function CourseBuilderStep({ onNext, onBack }: StepProps) {
+export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: StepProps) {
   const [rightTab, setRightTab] = useState<"WAREHOUSE" | "GROUPS" | "TREE">(
     "WAREHOUSE",
   );
   const [search, setSearch] = useState("");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const searchParams = useSearchParams();
-  const curriculumId = searchParams.get("id");
+  const curriculumId = curriculumIdProp || searchParams.get("id");
   const queryClient = useQueryClient();
 
   // Curriculum State
