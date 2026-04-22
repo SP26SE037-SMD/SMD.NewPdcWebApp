@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
 	CurriculumService,
 	CURRICULUM_STATUS,
@@ -13,17 +13,24 @@ import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { RequestService } from "@/services/request.service";
-import { Loader2, Calendar } from "lucide-react";
+import { Loader2, Calendar, CheckCircle } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 export default function VicePrincipalReviewPage() {
 	const { id } = useParams() as { id: string };
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const { showToast } = useToast();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "info" | "matrix" | "structure" | "review"
 	>("overview");
 	
+	const searchParams = useSearchParams();
+	const majorIdFromUrl = searchParams.get("majorId");
+	const curIdFromUrl = searchParams.get("curriculumId");
+	
+	const effectiveId = id || curIdFromUrl || "";
 	const [requestId, setRequestId] = useState<string | null>(null);
 	const [reviewComment, setReviewComment] = useState("");
 	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -36,13 +43,15 @@ export default function VicePrincipalReviewPage() {
 
 	// Queries
 	const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
-		queryKey: ["curriculum-details", id],
-		queryFn: () => CurriculumService.getCurriculumById(id),
+		queryKey: ["curriculum-details", effectiveId],
+		queryFn: () => CurriculumService.getCurriculumById(effectiveId),
+		enabled: !!effectiveId,
 	});
 
 	const { data: subjectsData, isLoading: isLoadingSub } = useQuery({
-		queryKey: ["curriculum-mapped-subjects", id],
-		queryFn: () => CurriculumGroupSubjectService.getSubjectsByCurriculum(id),
+		queryKey: ["curriculum-mapped-subjects", effectiveId],
+		queryFn: () => CurriculumGroupSubjectService.getSubjectsByCurriculum(effectiveId),
+		enabled: !!effectiveId,
 	});
 
 	const { data: groupData, isLoading: isLoadingGroups } = useQuery({
@@ -51,19 +60,24 @@ export default function VicePrincipalReviewPage() {
 	});
 
 	const { data: plosData, isLoading: isLoadingPLOs } = useQuery({
-		queryKey: ["curriculum-plos", id],
-		queryFn: () => CurriculumService.getPLOsByCurriculumId(id),
-		enabled: !!id,
+		queryKey: ["curriculum-plos", effectiveId],
+		queryFn: () => CurriculumService.getPLOsByCurriculumId(effectiveId),
+		enabled: !!effectiveId,
 	});
 
 	const { data: mappingsData, isLoading: isLoadingMappings } = useQuery({
-		queryKey: ["po-plo-mappings", id],
-		queryFn: () => PoPloService.getMappingsByCurriculum(id),
-		enabled: !!id,
+		queryKey: ["po-plo-mappings", effectiveId],
+		queryFn: () => PoPloService.getMappingsByCurriculum(effectiveId),
+		enabled: !!effectiveId,
 	});
 
 	const majorId =
-		curriculumData?.data?.majorId || curriculumData?.data?.major?.majorId;
+		curriculumData?.data?.majorId || 
+		curriculumData?.data?.major?.majorId || 
+		curriculumData?.majorId || 
+		curriculumData?.major?.majorId || 
+		majorIdFromUrl;
+
 	const { data: posData, isLoading: isLoadingPOs } = useQuery({
 		queryKey: ["pos-major", majorId],
 		queryFn: () => PoService.getPOsByMajorId(majorId || ""),
@@ -96,14 +110,14 @@ export default function VicePrincipalReviewPage() {
 		},
 	});
 
-	const curriculum = curriculumData?.data;
-	const mappings = subjectsData?.data?.semesterMappings || [];
+	const curriculum = curriculumData?.data || curriculumData;
+	const mappings = subjectsData?.data?.semesterMappings || subjectsData?.semesterMappings || [];
 	const plos =
 		plosData?.data?.content ||
 		plosData?.data ||
 		(Array.isArray(plosData) ? plosData : []);
 	const pos = (posData?.data as any)?.content || posData?.data || [];
-	const poPloMappings = mappingsData?.data || [];
+	const poPloMappings = mappingsData?.data || mappingsData || [];
 
 	const stats = useMemo(() => {
 		let count = 0;
@@ -148,23 +162,26 @@ export default function VicePrincipalReviewPage() {
 	}
 
 	const handleApprove = async () => {
-		if (
-			confirm(
-				"Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.",
-			)
-		) {
+		if (!requestId || !effectiveId) {
+			showToast("Missing Request ID or Curriculum ID", "error");
+			return;
+		}
+
+		if (confirm("Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.")) {
 			setIsSubmittingReview(true);
+			const toastId = showToast("Approving curriculum structure...", "loading");
+			
 			try {
-				if (requestId) {
-					await RequestService.updateRequest(requestId, {
-						status: "APPROVED",
-						comment: reviewComment,
-					});
-				}
-				mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
-			} catch (e) {
-				console.error(e);
-				alert("Failed to approve request.");
+				// 1. Update Request to APPROVED
+				await RequestService.updateRequestStatus(requestId, "APPROVED", reviewComment);
+				
+				// 2. Update Curriculum to STRUCTURE_APPROVED (via mutation to trigger side effects)
+				await mutation.mutateAsync(CURRICULUM_STATUS.STRUCTURE_APPROVED);
+
+				showToast("Curriculum structure approved successfully!", "success", toastId);
+			} catch (error: any) {
+				console.error("Approve Error:", error);
+				showToast(error.message || "Failed to approve structure", "error", toastId);
 			} finally {
 				setIsSubmittingReview(false);
 			}
@@ -172,31 +189,32 @@ export default function VicePrincipalReviewPage() {
 	};
 	
 	const handleReject = async () => {
-		if (!reviewComment.trim()) {
-			alert("Please provide a comment for requesting revision (rejection).");
+		if (!requestId || !effectiveId) {
+			showToast("Missing Request ID or Curriculum ID", "error");
 			return;
 		}
-		if (
-			confirm(
-				"Are you sure you want to request a revision for this curriculum? It will be marked as REJECTED.",
-			)
-		) {
+
+		if (!reviewComment.trim()) {
+			showToast("Please provide feedback for the rejection", "error");
+			return;
+		}
+
+		if (confirm("Are you sure you want to request a revision for this curriculum? It will be marked as REJECTED and curriculum status will revert to DRAFT.")) {
 			setIsSubmittingReview(true);
+			const toastId = showToast("Rejecting and requesting revision...", "loading");
+
 			try {
-				if (requestId) {
-					await RequestService.updateRequest(requestId, {
-						status: "REJECTED",
-						comment: reviewComment,
-					});
-				} else {
-					alert("No active request ID found. Cannot reject.");
-					return;
-				}
-				alert("Request rejected successfully!");
+				// 1. Update Request to REJECTED
+				await RequestService.updateRequestStatus(requestId, "REJECTED", reviewComment);
+				
+				// 2. Update Curriculum back to DRAFT
+				await CurriculumService.updateCurriculumStatus(effectiveId, CURRICULUM_STATUS.DRAFT);
+
+				showToast("Revision requested successfully", "success", toastId);
 				router.push(`/dashboard/vice-principal/digital-enactment`);
-			} catch (e) {
-				console.error(e);
-				alert("Failed to reject request.");
+			} catch (error: any) {
+				console.error("Reject Error:", error);
+				showToast(error.message || "Failed to request revision", "error", toastId);
 			} finally {
 				setIsSubmittingReview(false);
 			}

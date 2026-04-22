@@ -456,8 +456,8 @@ export default function RequestsPage() {
     </div>
 
     {showCreateModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-        <div className="w-full max-w-2xl rounded-3xl border border-outline/20 bg-surface p-6 shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="w-full max-w-2xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-xl font-bold text-on-surface">Create New Request</h2>
             <button
@@ -588,8 +588,8 @@ export default function RequestsPage() {
     )}
 
     {showDetailModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-        <div className="w-full max-w-3xl rounded-3xl border border-outline/20 bg-surface p-6 shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="w-full max-w-3xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-xl font-bold text-on-surface">Request Detail</h2>
             <button
@@ -608,11 +608,11 @@ export default function RequestsPage() {
           ) : selectedRequest ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</p>
                   <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.status}</p>
                 </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created At</p>
                   <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.createdAt)}</p>
                 </div>
@@ -629,7 +629,7 @@ export default function RequestsPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
                   <p className="mt-1 text-sm text-on-surface">
                     {selectedRequest.createdBy?.fullName
@@ -639,7 +639,7 @@ export default function RequestsPage() {
                           : "-")}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
                   <p className="mt-1 text-sm text-on-surface">
                     {selectedRequest.curriculum?.curriculumCode || "-"}
@@ -651,18 +651,18 @@ export default function RequestsPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Major</p>
                   <p className="mt-1 text-sm text-on-surface">{selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}</p>
                 </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Updated At</p>
                   <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.updatedAt)}</p>
                 </div>
               </div>
 
               {selectedRequest.comment && (
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
+                <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Comment</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.comment}</p>
                 </div>
