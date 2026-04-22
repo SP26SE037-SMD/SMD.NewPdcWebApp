@@ -8,6 +8,6 @@ export default function SprintBoardPage({
 }: { 
     params: Promise<{ curriculumId: string, sprintId: string }> 
 }) {
-    const { sprintId } = use(params);
-    return <SprintDetailView sprintId={sprintId} />;
+    const { sprintId, curriculumId } = use(params);
+    return <SprintDetailView sprintId={sprintId} curriculumId={curriculumId} />;
 }

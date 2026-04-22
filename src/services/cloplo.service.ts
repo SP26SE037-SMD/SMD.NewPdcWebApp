@@ -42,6 +42,19 @@ export interface CloCheckResponse {
   detectedLevel: string;
   suggestion: string;
 }
+
+export interface CloPloSubjectCurriculumMapping {
+  id: string;
+  cloId: string;
+  cloCode: string;
+  cloDescription: string;
+  ploId: string;
+  ploCode: string;
+  ploDescription: string;
+  contributionLevel: string;
+  createdAt: string;
+}
+
 export const CloPloService = {
   async getSubjectClos(
     subjectId: string,
@@ -56,6 +69,24 @@ export const CloPloService = {
     }
     return response.json();
   },
+
+  async getMappingsBySubjectAndCurriculum(
+    subjectId: string,
+    curriculumId: string
+  ): Promise<ApiResponse<CloPloSubjectCurriculumMapping[]>> {
+    const response = await fetch(`/api/clo-plo-mappings/subject/${subjectId}/curriculum/${curriculumId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { accept: "*/*" },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to fetch mappings");
+    }
+    return response.json();
+  },
+
   async createCloMapping(payload: {
     cloId: string;
     ploId: string;
@@ -110,6 +141,15 @@ export const CloPloService = {
     return response.json();
   },
 
+  async updateClo(cloId: string, payload: any): Promise<ApiResponse<any>> {
+    const response = await fetch(`/api/clos/${cloId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  },
   async deleteClo(cloId: string): Promise<ApiResponse<unknown>> {
     const response = await fetch(`/api/clos/${cloId}`, {
       method: "DELETE",
@@ -157,6 +197,15 @@ export const CloPloService = {
     return normalized;
   },
 
+  async bulkConfigure(payload: any): Promise<ApiResponse<any>> {
+    const response = await fetch(`/api/clo-plo-mappings/bulk`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  },
   async checkClo(payload: CloCheckRequest): Promise<CloCheckResponse> {
     const response = await fetch("/api/clos/check", {
       method: "POST",

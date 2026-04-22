@@ -49,6 +49,7 @@ export default function SubjectRecheckView() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "matrix" | "clos" | "prerequisites">("overview");
   const [titleTask, setTitleTask] = useState("");
   const [comment, setComment] = useState("");
   const [isAffectedSyllabus, setIsAffectedSyllabus] = useState(false);
@@ -153,16 +154,13 @@ export default function SubjectRecheckView() {
 
   // 4. Fetch Mappings for each CLO
   const { data: mappingsData, isLoading: isMappingLoading } = useQuery({
-    queryKey: ["clo-plo-mappings", subjectId],
+    queryKey: ["clo-plo-mappings-combined", subjectId, curriculumId],
     queryFn: async () => {
-      if (clos.length === 0) return [];
-      const mappingPromises = clos.map((clo: any) =>
-        CloPloService.getCloMappingsByCloId(clo.cloId),
-      );
-      const results = await Promise.all(mappingPromises);
-      return results.map((r) => r.data).flat();
+      if (!subjectId || !curriculumId) return [];
+      const res = await CloPloService.getMappingsBySubjectAndCurriculum(subjectId, curriculumId);
+      return res.data || [];
     },
-    enabled: clos.length > 0,
+    enabled: !!subjectId && !!curriculumId,
   });
 
   const mappings = mappingsData || [];
@@ -254,11 +252,44 @@ export default function SubjectRecheckView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 font-jakarta">
-        {/* Left Column: General Info */}
-        <div className="col-span-12 lg:col-span-4 space-y-8">
-          {/* 1. Core Profile */}
-          <section className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/50 relative overflow-hidden group">
+      <div className="flex border-b border-zinc-200 gap-8 uppercase tracking-[0.2em] text-[11px] font-black">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`pb-4 transition-all relative ${activeTab === "overview" ? "text-primary" : "text-zinc-400 hover:text-zinc-600"}`}
+        >
+          Overview
+          {activeTab === "overview" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-lg" />}
+        </button>
+        <button
+          onClick={() => setActiveTab("matrix")}
+          className={`pb-4 transition-all relative ${activeTab === "matrix" ? "text-primary" : "text-zinc-400 hover:text-zinc-600"}`}
+        >
+          Mappings Matrix
+          {activeTab === "matrix" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-lg" />}
+        </button>
+        <button
+          onClick={() => setActiveTab("clos")}
+          className={`pb-4 transition-all relative ${activeTab === "clos" ? "text-primary" : "text-zinc-400 hover:text-zinc-600"}`}
+        >
+          CLOs
+          {activeTab === "clos" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-lg" />}
+        </button>
+        <button
+          onClick={() => setActiveTab("prerequisites")}
+          className={`pb-4 transition-all relative ${activeTab === "prerequisites" ? "text-primary" : "text-zinc-400 hover:text-zinc-600"}`}
+        >
+          Prerequisites
+          {activeTab === "prerequisites" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-lg" />}
+        </button>
+      </div>
+
+      <div className="font-jakarta">
+        {/* Tab Content */}
+        {activeTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            {/* 1. Core Profile */}
+            <section className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/50 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-700 pointer-events-none">
               <BookOpen size={120} />
             </div>
@@ -286,7 +317,7 @@ export default function SubjectRecheckView() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100/50">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Layers size={10} className="text-indigo-400" />
+                      <Layers size={10} className="text-emerald-400" />
                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                         Credits
                       </p>
@@ -349,7 +380,7 @@ export default function SubjectRecheckView() {
                       Level {subject.minBloomLevel || 0}
                     </span>
                   </div>
-                  <div className="w-12 h-12 flex items-center justify-center bg-indigo-500/20 text-indigo-400 rounded-xl">
+                  <div className="w-12 h-12 flex items-center justify-center bg-emerald-& text-emerald-400 rounded-xl">
                     <Layers size={24} />
                   </div>
                 </div>
@@ -377,6 +408,8 @@ export default function SubjectRecheckView() {
           </section>
 
           {/* 3. Governance Card */}
+          </div>
+          <div className="space-y-8">
           <section className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-lg relative overflow-hidden">
             <div className="space-y-6">
               <div className="flex items-center gap-3">
@@ -437,15 +470,15 @@ export default function SubjectRecheckView() {
           </section>
 
           {/* 4. Student Tasks Card */}
-          <section className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 relative overflow-hidden group">
+          <section className="bg-emerald-& p-6 rounded-3xl border border-emerald-100 relative overflow-hidden group">
             <div className="relative">
               <div className="flex items-center gap-2 mb-4">
-                <Activity size={16} className="text-indigo-400" />
-                <h3 className="text-[10px] font-black text-indigo-900 uppercase tracking-[0.2em]">
+                <Activity size={16} className="text-emerald-400" />
+                <h3 className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em]">
                   Mandatory Student Tasks
                 </h3>
               </div>
-              <p className="text-xs text-indigo-900 font-medium leading-relaxed italic">
+              <p className="text-xs text-emerald-900 font-medium leading-relaxed italic">
                 "
                 {subject.studentTasks ||
                   "No specific tasks registered for this module."}
@@ -453,14 +486,17 @@ export default function SubjectRecheckView() {
               </p>
             </div>
           </section>
+          </div>
         </div>
+        )}
 
-        {/* Right Column: Matrix & CLOs */}
-        <div className="col-span-12 lg:col-span-8 space-y-8">
+        {/* Matrix Tab */}
+        {activeTab === "matrix" && (
+        <div className="space-y-8 animate-in fade-in duration-300">
           {/* Competency Alignment Matrix (CLO-PLO) */}
           <section className="bg-[#FCFCFD] p-8 rounded-[1.5rem] border border-zinc-200/60 shadow-sm">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
                 <Layers size={24} />
               </div>
               <div>
@@ -493,7 +529,7 @@ export default function SubjectRecheckView() {
                         </span>
                         {/* PLO Tooltip */}
                         <div className="absolute opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-4 bg-zinc-900 text-white rounded-xl shadow-2xl z-[100] text-left pointer-events-none">
-                          <div className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-2 border-b border-zinc-800 pb-2">
+                          <div className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2 border-b border-zinc-800 pb-2">
                             {plo.ploCode} Objective
                           </div>
                           <p className="text-[12px] font-medium leading-relaxed opacity-80">
@@ -509,7 +545,7 @@ export default function SubjectRecheckView() {
                   {clos.map((clo: any, idx: number) => (
                     <tr
                       key={clo.cloId}
-                      className="hover:bg-indigo-50/20 transition-colors group/row even:bg-zinc-50/50"
+                      className="hover:bg-emerald-& transition-colors group/row even:bg-zinc-50/50"
                     >
                       <td className="px-4 py-6 border-r-2 border-zinc-200 bg-zinc-100/20 relative group text-zinc-900 min-w-[200px] max-w-[200px]">
                         <div className="flex flex-col gap-1">
@@ -555,16 +591,16 @@ export default function SubjectRecheckView() {
                           <td
                             key={`${clo.cloId}-${plo.ploId}`}
                             className={`p-6 text-center border-b border-zinc-100 border-r border-zinc-100/50 transition-colors ${
-                              active ? "bg-indigo-50/40" : "bg-white/40"
+                              active ? "bg-emerald-&" : "bg-white/40"
                             }`}
                           >
                             <div className="flex flex-col items-center justify-center gap-1">
                               {active ? (
                                 <>
-                                  <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/50">
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-&">
                                     <Check size={16} strokeWidth={3} />
                                   </div>
-                                  <span className="text-[9px] font-black text-indigo-700/50 uppercase tracking-tighter">
+                                  <span className="text-[9px] font-black text-emerald-& uppercase tracking-tighter">
                                     {level === "High"
                                       ? "High"
                                       : level === "Medium"
@@ -596,7 +632,12 @@ export default function SubjectRecheckView() {
               </div>
             )}
           </section>
+        </div>
+        )}
 
+        {/* CLOs Tab */}
+        {activeTab === "clos" && (
+        <div className="space-y-8 animate-in fade-in duration-300">
           {/* Outcome Specifications */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 px-4">
@@ -626,9 +667,14 @@ export default function SubjectRecheckView() {
               ))}
             </div>
           </section>
+        </div>
+        )}
 
+        {/* Prerequisites Tab */}
+        {activeTab === "prerequisites" && (
+        <div className="space-y-8 animate-in fade-in duration-300">
           {/* Prerequisites Section */}
-          <section className="col-span-12 bg-white rounded-3xl border border-zinc-100 p-8 shadow-2xl space-y-8">
+          <section className="bg-white rounded-3xl border border-zinc-100 p-8 shadow-2xl space-y-8">
             <div className="flex items-center justify-between px-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-emerald-50 text-emerald-500 flex items-center justify-center rounded-2xl">
@@ -682,6 +728,7 @@ export default function SubjectRecheckView() {
             )}
           </section>
         </div>
+        )}
       </div>
 
       {/* Revision Request Modal */}

@@ -60,7 +60,7 @@ export function useSubjectMappingLogic() {
     queryKey: ["clo-plo-mappings", subjectId, curriculumId],
     enabled: !!subjectId && !!curriculumId,
     queryFn: () =>
-      CloPloService.getMappingBySubjectAndCurriculum(subjectId!, curriculumId!),
+      CloPloService.getMappingsBySubjectAndCurriculum(subjectId!, curriculumId!),
   });
 
   const persistedMappings = persistedMappingsData?.data || [];

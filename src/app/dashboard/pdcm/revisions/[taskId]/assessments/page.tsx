@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { setAssessments, addAssessment, updateAssessment, removeAssessment } from '@/store/slices/syllabusSlice';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, Pencil, Trash2, AlertCircle, Plus, BookOpen, Target, FileText } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { AssessmentService, AssessmentItem, AssessmentCategory, AssessmentType } from '@/services/assessment.service';
 import { SyllabusService } from '@/services/syllabus.service';

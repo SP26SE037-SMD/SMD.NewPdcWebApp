@@ -35,8 +35,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PoPloMatrix from "@/components/hocfdc/PoPloMatrix";
 
-export default function CurriculumReviewPage() {
-  const { id } = useParams() as { id: string };
+export default function CurriculumReviewPage({ curriculumIdProp, isEmbedded = false }: { curriculumIdProp?: string, isEmbedded?: boolean }) {
+  const params = useParams() as { id: string };
+  const id = curriculumIdProp || params.id;
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -168,8 +169,9 @@ export default function CurriculumReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 pb-20">
+    <div className={`bg-zinc-50/50 ${isEmbedded ? 'h-full flex-1 overflow-y-auto' : 'min-h-screen pb-20'}`}>
       {/* Sticky Header */}
+      {!isEmbedded && (
       <div className="bg-white/80 backdrop-blur-xl border-b border-zinc-100 sticky top-0 z-50 px-8 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -219,8 +221,34 @@ export default function CurriculumReviewPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="max-w-6xl mx-auto mt-12 px-8 space-y-10">
+      {isEmbedded && (
+        <div className="flex justify-between items-center p-6 border-b border-zinc-100 bg-white sticky top-0 z-50">
+          <div className="flex flex-col">
+            <span className="text-[12px] font-black text-emerald-500 uppercase tracking-widest">
+              Simulation Active
+            </span>
+            <span className="text-sm font-bold text-zinc-400">
+              {stats.totalSubjects} Subjects • {stats.totalCredits} Credits
+            </span>
+          </div>
+          <button
+            onClick={handleConfirm}
+            disabled={mutation.isPending}
+            className="px-8 py-3 bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-primary transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
+          >
+            {mutation.isPending ? (
+              <Loader2 className="animate-spin" size={14} />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
+            Confirm Structure
+          </button>
+        </div>
+      )}
+
+      <div className={`max-w-6xl mx-auto space-y-10 ${isEmbedded ? 'py-8 px-6' : 'mt-12 px-8'}`}>
         {/* Curriculum Outcomes (PLOs) */}
         <div className="bg-white p-8 rounded-[1.5rem] border border-zinc-100 shadow-sm">
           <div className="flex items-center gap-4 mb-8">

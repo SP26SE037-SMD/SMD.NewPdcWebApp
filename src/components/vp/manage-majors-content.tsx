@@ -1185,13 +1185,13 @@ export default function ManageMajorsContent() {
                               </span>
                             </td>
                             <td className="px-6 py-6 text-sm text-[#5a6062] font-medium">
-                              {new Date(
-                                major.createdAt || Date.now(),
+                              {major.createdAt ? new Date(
+                                major.createdAt,
                               ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "2-digit",
                                 year: "numeric",
-                              })}
+                              }) : "N/A"}
                             </td>
                             <td className="px-8 py-6 text-right">
                               <div className="flex items-center justify-end gap-2">

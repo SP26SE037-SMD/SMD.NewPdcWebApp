@@ -54,7 +54,7 @@ export default function HocMajorDetailContent() {
   });
 
   const major = majorDetail?.data;
-  const curriculums = curriculumResponse?.data || [];
+  const curriculums = (curriculumResponse as any)?.data || curriculumResponse || [];
 
   if (isDetailLoading) {
     return (
@@ -231,7 +231,7 @@ export default function HocMajorDetailContent() {
                     {isCurriculumsLoading ? (
                       <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-zinc-200" /></td></tr>
                     ) : curriculums.length > 0 ? (
-                      curriculums.map((curr) => (
+                      curriculums.map((curr: any) => (
                         <tr key={curr.curriculumId} className="hover:bg-zinc-50/50 transition-colors group">
                           <td className="px-8 py-6">
                             <span className="text-sm font-black text-primary uppercase tracking-widest">{curr.curriculumCode}</span>

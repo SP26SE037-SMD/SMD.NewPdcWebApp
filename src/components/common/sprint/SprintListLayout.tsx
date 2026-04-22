@@ -80,10 +80,10 @@ export const SprintListLayout = ({
                 <button
                   key={status.id}
                   onClick={() => setStatusFilter(status.id)}
-                  className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap ${
+                  className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap outline-none ${
                     statusFilter === status.id
-                      ? "bg-zinc-900 text-white shadow-md"
-                      : "text-zinc-400 hover:text-zinc-900"
+                      ? "bg-[#409b43] text-white shadow-md shadow-[#409b43]/30"
+                      : "text-zinc-500 hover:text-zinc-900"
                   }`}
                 >
                   {status.label}
@@ -105,7 +105,7 @@ export const SprintListLayout = ({
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] relative whitespace-nowrap transition-all duration-300 ${
                   isActive
-                    ? "text-[#0b7a47] bg-[#0b7a47]/5 border-[#0b7a47]"
+                    ? "text-[#409b43] bg-[#409b43]/5 border-[#409b43]"
                     : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50"
                 }`}
               >
@@ -113,7 +113,7 @@ export const SprintListLayout = ({
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#0b7a47] rounded-t-full"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#409b43] rounded-t-full"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}

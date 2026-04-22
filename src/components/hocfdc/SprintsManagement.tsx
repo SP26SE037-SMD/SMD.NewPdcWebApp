@@ -31,8 +31,10 @@ import { SprintListLayout } from "@/components/common/sprint/SprintListLayout";
 
 export const SprintsManagement = ({
   curriculumId,
+  isEmbedded = false
 }: {
   curriculumId: string;
+  isEmbedded?: boolean;
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -127,28 +129,30 @@ export const SprintsManagement = ({
     <>
       <SprintListLayout
         title={
-          <>
-            <button
-              onClick={() => router.back()}
-              className="w-10 h-10 flex items-center justify-center bg-white border border-zinc-100 rounded-xl text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group"
-            >
-              <ChevronLeft
-                className="group-hover:-translate-x-0.5 transition-transform"
-                size={20}
-              />
-            </button>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-baseline gap-3">
-                Manage Sprints
-                <span className="text-4xl font-black text-zinc-400">
-                  for {curriculum?.curriculumName || "..."}
-                </span>
-              </h1>
-              <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
-                Subject Development & Execution
-              </p>
-            </div>
-          </>
+          !isEmbedded && (
+            <>
+              <button
+                onClick={() => router.back()}
+                className="w-10 h-10 flex items-center justify-center bg-white border border-zinc-100 rounded-xl text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group"
+              >
+                <ChevronLeft
+                  className="group-hover:-translate-x-0.5 transition-transform"
+                  size={20}
+                />
+              </button>
+              <div className="space-y-1">
+                <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-baseline gap-3">
+                  Manage Sprints
+                  <span className="text-4xl font-black text-zinc-400">
+                    for {curriculum?.curriculumName || "..."}
+                  </span>
+                </h1>
+                <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                  Subject Development & Execution
+                </p>
+              </div>
+            </>
+          )
         }
         extraHeader={
           <div className="flex flex-col items-end gap-2">
@@ -196,88 +200,8 @@ export const SprintsManagement = ({
             index={idx}
             formatDate={formatDate}
             detailHref={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
-            actions={(total, closed, tasksLoading, ready) => (
+            actions={(total, closed, tasksLoading) => (
               <>
-                {sprint.status === SPRINT_STATUS.PLANNING && (
-                  <button
-                    onClick={() => {
-                      if (total === 0) {
-                        showToast("Cannot start an empty sprint. Please add tasks first.", "error");
-                        return;
-                      }
-                      handleStatusChange(
-                        sprint.sprintId,
-                        SPRINT_STATUS.IN_PROGRESS,
-                      );
-                    }}
-                    disabled={updateStatusMutation.isPending || tasksLoading || total === 0}
-                    title={total === 0 ? "Add tasks to this sprint before starting" : ""}
-                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-3 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
-                  >
-                    {updateStatusMutation.isPending &&
-                    updateStatusMutation.variables?.sprintId ===
-                      sprint.sprintId ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Play size={12} fill="currentColor" />
-                    )}
-                    START SPRINT
-                  </button>
-                )}
- 
-                {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
-                  <button
-                    onClick={() => {
-                      if (total > 0 && ready < total) {
-                        showToast(
-                          `Cannot complete: All tasks must be DONE and all subjects must be COMPLETED or PUBLISHED. (${ready}/${total} ready)`,
-                          "error",
-                        );
-                        return;
-                      }
-                      handleStatusChange(
-                        sprint.sprintId,
-                        SPRINT_STATUS.COMPLETED,
-                      );
-                    }}
-                    disabled={
-                      updateStatusMutation.isPending ||
-                      tasksLoading ||
-                      (total > 0 && ready < total)
-                    }
-                    title={
-                      total > 0 && ready < total
-                        ? `Ensure all tasks are DONE and subjects are COMPLETED/PUBLISHED to close sprint`
-                        : ""
-                    }
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-3 text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
-                  >
-                    {updateStatusMutation.isPending &&
-                    updateStatusMutation.variables?.sprintId ===
-                      sprint.sprintId ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <CheckCircle2 size={12} />
-                    )}
-                    COMPLETE SPRINT
-                  </button>
-                )}
-
-                {sprint.status === SPRINT_STATUS.COMPLETED && (
-                  <button
-                    onClick={() =>
-                      handleStatusChange(
-                        sprint.sprintId,
-                        SPRINT_STATUS.IN_PROGRESS,
-                      )
-                    }
-                    disabled={updateStatusMutation.isPending}
-                    className="flex items-center gap-2 bg-zinc-100 text-zinc-600 px-4 py-3 text-[9px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all rounded-xl disabled:opacity-50"
-                  >
-                    <RotateCcw size={12} /> RE-OPEN
-                  </button>
-                )}
-
                 {sprint.status === SPRINT_STATUS.PLANNING && (
                   <button
                     onClick={() => {
@@ -302,25 +226,7 @@ export const SprintsManagement = ({
                 )}
 
                 {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
-                  <button
-                    onClick={() => {
-                      if (
-                        confirm(
-                          "Confirm SPRINT CANCELLATION? This will halt all associated task flows.",
-                        )
-                      ) {
-                        handleStatusChange(
-                          sprint.sprintId,
-                          SPRINT_STATUS.CANCELLED,
-                        );
-                      }
-                    }}
-                    disabled={updateStatusMutation.isPending}
-                    className="p-3 bg-white border border-zinc-100 text-rose-300 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50"
-                    title="Cancel Sprint"
-                  >
-                    <XCircle size={14} />
-                  </button>
+                  <></>
                 )}
 
                 <Link
