@@ -24,7 +24,8 @@ import {
   LayoutGrid,
   Layers,
   Network,
-  Rocket,
+  ClipboardList,
+  CheckSquare,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
@@ -194,7 +195,17 @@ export default function DashboardLayout({
             {
               href: "/dashboard/hocfdc",
               icon: LayoutDashboard,
-              label: "General",
+              label: "Major",
+            },
+            {
+              href: "/dashboard/hocfdc/tasks",
+              icon: CheckSquare,
+              label: "Tasks",
+            },
+            {
+              href: "/dashboard/hocfdc/requests",
+              icon: ClipboardList,
+              label: "Requests",
             },
             {
               href: "/dashboard/hocfdc/subjects",
@@ -408,58 +419,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Top Bar */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-border flex items-center justify-between px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-8">
-            <div className="relative w-[600px] h-10 bg-zinc-50 border border-zinc-100 rounded-full flex items-center px-4 overflow-hidden group">
-              <div
-                className="flex items-center gap-2 bg-primary text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest z-10 shadow-lg shadow-primary/20 flex-shrink-0"
-                style={{ fontFamily: "var(--font-plus-jakarta)" }}
-              >
-                <Rocket size={12} strokeWidth={3} />
-                <span>System Live</span>
-              </div>
-
-              <div className="flex-1 overflow-hidden relative ml-4 h-full flex items-center">
-                <motion.div
-                  initial={{ x: "100%" }}
-                  animate={{ x: "-100%" }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 45,
-                    ease: "linear",
-                  }}
-                  className="whitespace-nowrap text-xs font-bold text-zinc-500 flex items-center gap-12"
-                >
-                  <span className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Sprint 4 Syllabuses are now open for Peer Review. Deadline:
-                    April 15th.
-                  </span>
-                  <span className="flex items-center gap-2 text-zinc-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
-                    New Feature: You can now track revision history in the
-                    Review Cycle Logs.
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    System Maintenance scheduled for Sunday (April 10) at 02:00
-                    AM UTC.
-                  </span>
-                  <span
-                    className="flex items-center gap-2 text-primary"
-                    style={{ fontFamily: "var(--font-plus-jakarta)" }}
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Welcome to SMD PDC Management System. Ensuring Global
-                    Syllabus Standards.
-                  </span>
-                </motion.div>
-
-                {/* Fade effect at both ends */}
-                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-zinc-50 to-transparent z-[5]"></div>
-                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-zinc-50 to-transparent z-[5]"></div>
-              </div>
-            </div>
-          </div>
+          <div className="flex-1"></div>
 
           <div className="flex items-center gap-6">
             <NotificationPanel />

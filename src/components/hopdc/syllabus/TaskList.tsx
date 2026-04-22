@@ -252,7 +252,7 @@ function TaskRow({
 
   const reviewTasks = reviewTasksRes?.data?.content || [];
   const latestReview = reviewTasks[0];
-  const isLatestFromHoCFDC = latestReview?.reviewer?.role === "HOCFDC";
+  const isLatestFromHoCFDC = ((latestReview as any)?.reviewer as any)?.role === "HOCFDC";
 
   const hasActiveReview = reviewTasks.some(
     (r: any) =>
@@ -776,7 +776,7 @@ export function TaskList({ sprintId }: TaskListProps) {
       const targetTask = tasks.find((t) => t.taskId === taskId);
       if (targetTask?.subjectId) {
         try {
-          await CloPloService.updateClosStatus(
+          await (CloPloService as any).updateClosStatus(
             targetTask.subjectId,
             "INTERNAL_REVIEW",
           );

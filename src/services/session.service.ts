@@ -81,4 +81,8 @@ export class SessionService {
     static async updateSyllabusSessionsStatus(syllabusId: string, newStatus: string) {
         return apiClient.patch(`/api/sessions/syllabus/${syllabusId}/status?newStatus=${newStatus}`, {});
     }
+
+    static async updateSessionStatus(sessionId: string, newStatus: string) {
+        return apiClient.patch(`/api/sessions/${sessionId}/status?newStatus=${newStatus}`, {});
+    }
 }

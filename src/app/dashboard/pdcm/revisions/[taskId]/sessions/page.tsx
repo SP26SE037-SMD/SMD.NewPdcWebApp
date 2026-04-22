@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, store } from '@/store';
 import { setSessions, updateSession, removeSession, addSession } from '@/store/slices/syllabusSlice';
-import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil } from 'lucide-react';
+import { Loader2, Eye, RefreshCw, Plus, Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { SessionService, SessionItem } from '@/services/session.service';
 import { SyllabusService } from '@/services/syllabus.service';

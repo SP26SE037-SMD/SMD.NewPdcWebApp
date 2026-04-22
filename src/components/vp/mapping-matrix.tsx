@@ -2,13 +2,7 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-
-const fetchPoPloMappings = async (curriculumId?: string) => {
-	if (!curriculumId) return null;
-	const res = await fetch(`/api/po-plo-mappings/curriculum/${curriculumId}`);
-	if (!res.ok) throw new Error("Failed to fetch PO-PLO mappings");
-	return res.json();
-};
+import { PoPloService } from "@/services/poplo.service";
 
 export default function MappingMatrix({
 	curriculumId,
@@ -17,7 +11,7 @@ export default function MappingMatrix({
 }) {
 	const { data: mappingRes, isLoading } = useQuery({
 		queryKey: ["po-plo-mappings", curriculumId],
-		queryFn: () => fetchPoPloMappings(curriculumId),
+		queryFn: () => PoPloService.getMappingsByCurriculum(curriculumId!),
 		enabled: !!curriculumId,
 	});
 
@@ -50,80 +44,57 @@ export default function MappingMatrix({
 	};
 
 	if (isLoading)
-		return <div className="p-20 text-center">Loading mapping matrix...</div>;
+		return <div className="p-10 text-center text-zinc-500">Loading mapping matrix...</div>;
 
 	return (
-		<div className="grid grid-cols-12 gap-8 items-start">
-			{/* Main Grid Content */}
-			<section className="col-span-12 lg:col-span-12">
-				<div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden p-8">
-					<div className="flex items-center justify-between mb-6">
-						<h3 className="text-xl font-bold font-headline">
-							Outcome Correlation Grid
-						</h3>
-						<div className="flex items-center gap-6 text-xs font-semibold text-on-surface-variant">
-							<div className="flex items-center gap-2">
-								<span className="w-3 h-3 rounded-full bg-primary"></span> High
-							</div>
-							<div className="flex items-center gap-2">
-								<span className="w-3 h-3 rounded-full bg-primary-container"></span>{" "}
-								Medium
-							</div>
-							<div className="flex items-center gap-2">
-								<span className="w-3 h-3 rounded-full bg-surface-container-highest"></span>{" "}
-								Low/None
-							</div>
+		<div className="w-full pb-8">
+			<section className="w-full">
+				<div className="overflow-x-auto no-scrollbar">
+					{pos.length === 0 || plos.length === 0 ? (
+						<div className="p-8 text-center text-zinc-400 italic border rounded-xl bg-zinc-50/50">
+							No PO-PLO mappings found for this curriculum.
 						</div>
-					</div>
-					<div className="overflow-x-auto">
-						{pos.length === 0 || plos.length === 0 ? (
-							<div className="p-10 text-center text-on-surface-variant italic border rounded-xl bg-surface">
-								No PO-PLO mappings found for this curriculum.
-							</div>
-						) : (
-							<table className="w-full border-separate border-spacing-2">
+					) : (
+						<div className="bg-white border border-zinc-200 rounded-[1.25rem] overflow-hidden shadow-sm inline-block min-w-full">
+							<table className="w-full border-collapse">
 								<thead>
-									<tr>
-										<th className="w-1/3 p-4 text-left font-bold text-on-surface-variant bg-surface-container-low rounded-lg">
-											Program Outcomes (PO)
+									<tr className="border-b border-zinc-200">
+										<th className="px-8 py-5 text-left text-[11px] font-black text-zinc-500 uppercase tracking-widest sticky left-0 z-10 bg-white min-w-[250px]">
+											Program Objectives (PO)
 										</th>
 										{plos.map((plo: any) => (
 											<th
 												key={plo.id}
-												className="p-4 text-center text-[10px] uppercase tracking-tighter bg-surface-container-low rounded-lg w-20"
+												className="px-6 py-5 text-center text-[11px] font-bold text-zinc-500 uppercase tracking-widest hover:bg-zinc-50 cursor-help transition-colors min-w-[100px]"
+												title={plo.desc}
 											>
 												{plo.code}
-												<br />
-												<span
-													className="font-normal normal-case line-clamp-1"
-													title={plo.desc}
-												>
-													{plo.desc}
-												</span>
 											</th>
 										))}
 									</tr>
 								</thead>
-								<tbody className="text-sm">
-									{pos.map((po: any) => (
-										<tr key={po.id}>
+								<tbody>
+									{pos.map((po: any, index: number) => (
+										<tr key={po.id} className={index !== pos.length - 1 ? "border-b border-zinc-100" : ""}>
 											<td
-												className="p-4 font-medium bg-surface rounded-lg"
+												className="px-8 py-6 bg-white sticky left-0 z-10 cursor-help"
 												title={po.desc}
 											>
-												{po.code} {po.desc}
+												<span className="font-bold text-[13px] text-[#2c533e]">{po.code}</span>
 											</td>
 											{plos.map((plo: any) => {
 												const mapped = isMapped(po.id, plo.id);
 												return (
 													<td
 														key={plo.id}
-														className={`p-4 text-center rounded-lg ${mapped ? "bg-primary/10" : "bg-surface-container"}`}
+														className="px-6 py-6 text-center"
 													>
-														{mapped && (
-															<span className="material-symbols-outlined text-primary text-xl font-bold">
-																check
-															</span>
+														{mapped ? (
+															<div className="mx-auto flex items-center justify-center w-8 h-8 bg-[#bdf0d4] text-[#18593a] rounded-lg">
+																<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+															</div>
+														) : (
+															<span className="text-zinc-300 font-bold text-lg">—</span>
 														)}
 													</td>
 												);
@@ -132,8 +103,8 @@ export default function MappingMatrix({
 									))}
 								</tbody>
 							</table>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 			</section>
 

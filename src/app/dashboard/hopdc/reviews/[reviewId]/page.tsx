@@ -88,7 +88,7 @@ export default function HoPDCReviewSynthesisPage({
   useEffect(() => {
     if (task) {
       if (task.isAccepted !== undefined) setIsAccepted(task.isAccepted);
-      if (task.comment) setFinalComment(task.comment);
+      if (task.content) setFinalComment(task.content);
       else if (task.content) setFinalComment(task.content);
 
       // Map reviewer comments to initial HoPDC state
@@ -191,7 +191,7 @@ export default function HoPDCReviewSynthesisPage({
         `[SYNTHESIS ERROR] Failed to update ${type} status:`,
         error,
       );
-      showToast(`Error: ${error.message || "Immediate sync failed."}`, "error", 10000);
+      showToast(`Error: ${error.message || "Immediate sync failed."}`, "error");
     }
   };
 
@@ -217,7 +217,7 @@ export default function HoPDCReviewSynthesisPage({
 
   const handleSaveSynthesis = async () => {
     if (isAccepted === null) {
-      showToast("Please select Approve or Reject before submitting.", "error", 10000);
+      showToast("Please select Approve or Reject before submitting.", "error");
       return;
     }
 
@@ -250,8 +250,7 @@ export default function HoPDCReviewSynthesisPage({
     if (hasPendingSession || hasPendingAssessment || hasPendingMaterial) {
       showToast(
         "Every item must be explicitly reviewed. Please set all Sessions, Assessments, and Materials to either APPROVED or REVISION REQUESTED.",
-        "error",
-        10000,
+        "error"
       );
       return;
     }
@@ -266,7 +265,6 @@ export default function HoPDCReviewSynthesisPage({
         showToast(
           "Cannot approve review task while some items are still set to REVISION REQUESTED.",
           "error",
-          10000,
         );
         return;
       }
@@ -274,13 +272,13 @@ export default function HoPDCReviewSynthesisPage({
 
     // 4. COMMENT VALIDATION: Mandatory only when OVERRIDING (isAccepted === false)
     if (isAccepted === false && !finalComment.trim()) {
-      showToast("Please provide a synthesis comment explaining your decision to override the review.", "error", 10000);
+      showToast("Please provide a synthesis comment explaining your decision to override the review.", "error");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await ReviewTaskService.updateReviewTaskAcceptance(reviewId, isAccepted, finalComment);
+      await ReviewTaskService.updateReviewTaskAcceptance(reviewId, isAccepted);
 
       showToast("Synthesis submitted successfully.", "success");
 
@@ -321,7 +319,7 @@ export default function HoPDCReviewSynthesisPage({
       }
     } catch (error: any) {
       console.error("[SYNTHESIS ERROR] Submission failed:", error);
-      showToast(error.message || "Failed to submit final decision.", "error", 10000);
+      showToast(error.message || "Failed to submit final decision.", "error");
     } finally {
       setIsSubmitting(false);
     }

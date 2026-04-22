@@ -15,15 +15,14 @@ export default function ReuseSubjectContent() {
     clos,
     isPloLoading,
     isCloLoading,
-    localMapping,
-    setLocalMapping,
-    localContributionLevel,
-    setLocalContributionLevel,
+    isMappingLoading,
+    matrixMappings,
+    toggleMapping,
+    isMapped,
+    syncMatrix,
     submittingKey,
-    createdMappings,
     mappingNotice,
-    createSingleMapping,
-    createAllMappings,
+    deletingCloId,
     goToReceiveTasks,
   } = useSubjectMappingLogic();
 
@@ -107,26 +106,14 @@ export default function ReuseSubjectContent() {
             clos={clos}
             isPloLoading={isPloLoading}
             isCloLoading={isCloLoading}
-            createdMappings={createdMappings}
-            localMapping={localMapping}
-            localContributionLevel={localContributionLevel}
+            isMappingLoading={isMappingLoading}
+            matrixMappings={matrixMappings}
+            toggleMapping={toggleMapping}
+            isMapped={isMapped}
+            syncMatrix={syncMatrix}
             submittingKey={submittingKey}
             mappingNotice={mappingNotice}
-            onLocalMappingChange={(cloId, ploId) =>
-              setLocalMapping((prev) => ({
-                ...prev,
-                [cloId]: ploId,
-              }))
-            }
-            onLocalContributionLevelChange={(cloId, level) =>
-              setLocalContributionLevel((prev) => ({
-                ...prev,
-                [cloId]: level,
-              }))
-            }
-            onCreateSingleMapping={createSingleMapping}
-            onCreateAllMappings={createAllMappings}
-            deletingCloId={null}
+            deletingCloId={deletingCloId}
             iconBgColor="bg-violet-50"
             iconTextColor="text-violet-700"
           />

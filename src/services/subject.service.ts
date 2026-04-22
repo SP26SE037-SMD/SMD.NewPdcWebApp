@@ -98,7 +98,7 @@ export interface SubjectDetail {
   decisionNo: string | null;
   tool: string | null;
   approvedDate: string | null;
-  status?: string;
+  status?: string; curriculumId?: string;
   createdAt?: string;
   department?: {
     departmentId: string;
@@ -109,10 +109,13 @@ export interface SubjectDetail {
 }
 
 export const SubjectService = {
+  createElective: async (data: any): Promise<ApiResponse<any>> => {
+    return apiClient.post<ApiResponse<any>>("/api/electives", data);
+  },
   async getSubjects(params?: {
     search?: string;
     searchBy?: string;
-    status?: string;
+    status?: string; curriculumId?: string;
     departmentId?: string;
     page?: number;
     size?: number;
@@ -123,7 +126,7 @@ export const SubjectService = {
     if (params?.search) queryParams.append("search", params.search);
     if (params?.searchBy)
       queryParams.append("searchBy", params.searchBy || "code");
-    if (params?.status) queryParams.append("status", params.status);
+    if (params?.status) queryParams.append("status", params.status); if (params?.curriculumId) queryParams.append("curriculumId", params.curriculumId);
     if (params?.departmentId)
       queryParams.append("departmentId", params.departmentId);
     if (params?.page !== undefined)
@@ -216,6 +219,13 @@ export const SubjectService = {
     return response.json();
   },
 
+  async updateSubjectStatus(subjectId: string, newStatus: string): Promise<ApiResponseWithoutData> {
+    const response = await fetch(`/api/subjects/${subjectId}/status?status=${newStatus}`, {
+      method: "PATCH",
+      credentials: "include",
+    });
+    return response.json();
+  },
   async updateSubjectStatusesBulk(
     curriculumId: string,
     newStatus: string,

@@ -80,7 +80,7 @@ export function ReviewTaskItemRow({
   const queryClient = useQueryClient();
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const config = getReviewStatusConfig(review.status);
-  const isHoCFDC = review.reviewer?.role === "HOCFDC";
+  const isHoCFDC = (review.reviewer as any)?.role === "HOCFDC";
   const StatusIcon = config.icon;
 
   const updateTaskStatusMutation = useMutation({
@@ -263,7 +263,7 @@ export function ReviewTaskItemRow({
                   </label>
                   <div className="p-5 bg-zinc-50/50 border border-zinc-100 rounded-2xl min-h-[100px]">
                     <p className="text-sm font-medium text-zinc-600 leading-relaxed">
-                      {review.comment || "No detailed feedback provided."}
+                      {((review as any).comment || (review as any).comments) || "No detailed feedback provided."}
                     </p>
                   </div>
                 </div>

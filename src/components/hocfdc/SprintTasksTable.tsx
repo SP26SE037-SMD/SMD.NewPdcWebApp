@@ -26,17 +26,18 @@ interface SprintTasksTableProps {
   sprintId: string;
   sprintEndDate?: string;
   sprintStatus?: string;
+  curriculumId: string;
 }
 
 export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
   sprintId,
   sprintEndDate,
   sprintStatus,
+  curriculumId,
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const { curriculumId } = useParams() as { curriculumId: string };
 
   const { data: tasksRes, isLoading } = useQuery({
     queryKey: ["tasks", sprintId],
@@ -330,14 +331,14 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               {/* Syllabus Name */}
               <td className="px-6 py-5">
                 <div className="flex items-center gap-2">
-                  {task.syllabus.syllabusName === "Unnamed Syllabus" ||
-                  !task.syllabus.syllabusName ? (
+                  {task.syllabus?.syllabusName === "Unnamed Syllabus" ||
+                  !task.syllabus?.syllabusName ? (
                     <span className="text-xs text-zinc-400 italic font-medium tracking-tight">
                       No Syllabus
                     </span>
                   ) : (
                     <div className="px-3 py-1.5 bg-primary text-white text-[10px] font-black tracking-widest rounded-lg shadow-sm">
-                      {task.syllabus.syllabusName}
+                      {task.syllabus?.syllabusName}
                     </div>
                   )}
                 </div>
@@ -350,9 +351,9 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                   if (!status) return <span className="text-xs text-zinc-400 italic font-medium">N/A</span>;
                   
                   let colorClass = "text-zinc-600 bg-zinc-50 border-zinc-100";
-                  if (status === 'COMPLETED' || status === 'PUBLISHED') colorClass = "text-emerald-600 bg-emerald-50 border-emerald-100";
+                  if (status === ('COMPLETED' as any) || status === ('PUBLISHED' as any)) colorClass = "text-emerald-600 bg-emerald-50 border-emerald-100";
                   if (status === 'PENDING_REVIEW') colorClass = "text-amber-600 bg-amber-50 border-amber-100";
-                  if (status === 'IN_PROGRESS') colorClass = "text-blue-600 bg-blue-50 border-blue-100";
+                  if (status === ('IN_PROGRESS' as any)) colorClass = "text-blue-600 bg-blue-50 border-blue-100";
                   if (status === 'WAITING_SYLLABUS') colorClass = "text-rose-600 bg-rose-50 border-rose-100";
 
                   return (
@@ -406,11 +407,11 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                         `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
                       )
                     }
-                    className="px-2.5 py-1.5 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-zinc-800 transition-all shadow-sm flex items-center gap-1.5 ml-auto group/btn"
+                    className="px-2.5 py-1.5 bg-[#409b43] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-[#409b43]/20 flex items-center gap-1.5 ml-auto group/btn"
                   >
                     <CheckCircle2
                       size={14}
-                      className="text-emerald-400 group-hover/btn:scale-110 transition-transform"
+                      className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
                     />
                     recheck subject
                   </button>

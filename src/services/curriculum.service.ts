@@ -177,7 +177,7 @@ export const CurriculumService = {
   },
 
   updateCurriculumStatus: async (id: string, status: CurriculumStatus) => {
-    return apiClient.patch<CurriculumFramework>(
+    return apiClient.patch<APIResponse<CurriculumFramework>>(
       `/api/curriculums/${id}/status?status=${status}`,
       {},
     );
@@ -209,6 +209,9 @@ export const CurriculumService = {
     );
   },
 
+  deleteCurriculum: async (id: string): Promise<APIResponse<void>> => {
+    return apiClient.delete<APIResponse<void>>(`/api/curriculums/${id}`);
+  },
   deletePLO: async (ploId: string) => {
     return apiClient.delete<APIResponse<void>>(`/api/plos/${ploId}`);
   },

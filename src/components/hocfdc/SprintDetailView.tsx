@@ -16,6 +16,9 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  Play,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { SprintService, SPRINT_STATUS } from "@/services/sprint.service";
@@ -27,10 +30,12 @@ import { CreateTaskModal } from "./CreateTaskModal";
 
 interface SprintDetailViewProps {
   sprintId: string;
+  curriculumId: string;
 }
 
 export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   sprintId,
+  curriculumId,
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -208,6 +213,30 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
             </div>
 
             <div className="flex items-center gap-4">
+              {sprint.status === SPRINT_STATUS.PLANNING && (
+                <button
+                  onClick={() => {
+                    if (totalTasks === 0) {
+                      showToast("Cannot start an empty sprint. Please add tasks first.", "error");
+                      return;
+                    }
+                    handleStatusChange(
+                      sprint.sprintId,
+                      SPRINT_STATUS.IN_PROGRESS,
+                    );
+                  }}
+                  disabled={updateStatusMutation.isPending || tasksLoading || totalTasks === 0}
+                  className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
+                >
+                  {updateStatusMutation.isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Play size={16} fill="currentColor" />
+                  )}
+                  START SPRINT
+                </button>
+              )}
+
               {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
                 <button
                   onClick={() => {
@@ -234,6 +263,44 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   COMPLETE SPRINT
                 </button>
               )}
+
+              {sprint.status === SPRINT_STATUS.COMPLETED && (
+                <button
+                  onClick={() =>
+                    handleStatusChange(
+                      sprint.sprintId,
+                      SPRINT_STATUS.IN_PROGRESS,
+                    )
+                  }
+                  disabled={updateStatusMutation.isPending}
+                  className="flex items-center gap-2 bg-zinc-100 text-zinc-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all rounded-xl disabled:opacity-50"
+                >
+                  <RotateCcw size={16} /> RE-OPEN SPRINT
+                </button>
+              )}
+
+              {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
+                <button
+                  onClick={() => {
+                    if (
+                      confirm(
+                        "Confirm SPRINT CANCELLATION? This will halt all associated task flows.",
+                      )
+                    ) {
+                      handleStatusChange(
+                        sprint.sprintId,
+                        SPRINT_STATUS.CANCELLED,
+                      );
+                    }
+                  }}
+                  disabled={updateStatusMutation.isPending}
+                  className="px-6 py-4 bg-white border border-zinc-100 text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50 flex items-center justify-center"
+                  title="Cancel Sprint"
+                >
+                  <XCircle size={16} />
+                </button>
+              )}
+
               <button
                 onClick={() => setIsTaskModalOpen(true)}
                 className="flex items-center gap-3 bg-zinc-100 text-zinc-900 px-8 py-4 font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
@@ -279,10 +346,11 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           </div> */}
         </div>
 
-        <SprintTasksTable 
-          sprintId={sprintId} 
-          sprintEndDate={sprint.endDate} 
+        <SprintTasksTable
+          sprintId={sprintId}
+          sprintEndDate={sprint.endDate}
           sprintStatus={sprint.status}
+          curriculumId={curriculumId}
         />
       </div>
 

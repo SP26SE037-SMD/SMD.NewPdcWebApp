@@ -34,8 +34,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 import PoPloMatrix from "@/components/hocfdc/PoPloMatrix";
 
-export default function PoPloMappingPage() {
-  const { id: curriculumId } = useParams() as { id: string };
+export default function PoPloMappingPage({ curriculumIdProp, isEmbedded = false }: { curriculumIdProp?: string, isEmbedded?: boolean }) {
+  const params = useParams() as { id: string };
+  const curriculumId = curriculumIdProp || params.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -142,23 +143,25 @@ export default function PoPloMappingPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#F0F2F5] p-6 lg:p-10 font-sans selection:bg-indigo-100 overflow-hidden">
+    <div className={`${isEmbedded ? 'h-full flex flex-col' : 'h-[calc(100vh)] flex flex-col bg-[#F0F2F5] p-6 lg:p-10 font-sans selection:bg-indigo-100 overflow-hidden'}`}>
       {/* Dashboard Header */}
-      <div className="mb-8 relative">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 bg-white rounded-xl shadow-sm border border-zinc-100 text-zinc-400 hover:text-zinc-900 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2"
-            >
-              <ChevronLeft size={20} /> Repository
-            </button>
-            <h2 className="text-2xl font-black text-zinc-900 tracking-tight">
-              Alignment Matrix Management
-            </h2>
+      {!isEmbedded && (
+        <div className="mb-8 relative">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="p-2 bg-white rounded-xl shadow-sm border border-zinc-100 text-zinc-400 hover:text-zinc-900 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2"
+              >
+                <ChevronLeft size={20} /> Repository
+              </button>
+              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">
+                Alignment Matrix Management
+              </h2>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="flex-1 flex gap-8 min-h-0">
         {/* Main Interface: The Matrix Component */}
