@@ -117,7 +117,7 @@ export default function BuilderPage() {
     <div className={`space-y-6 ${isDraft ? "p-8" : ""}`}>
       {/* Header only for Builder Mode. Detail Mode has its own sticky header */}
       {isDraft && (
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 overflow-hidden mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-2 mb-4">
           <div className="space-y-4 max-w-2xl">
             <button
               onClick={() => router.back()}

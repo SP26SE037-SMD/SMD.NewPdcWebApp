@@ -208,6 +208,11 @@ export default function DashboardLayout({
               label: "Requests",
             },
             {
+              href: "/dashboard/hocfdc/feedback",
+              icon: Signature,
+              label: "Feedback",
+            },
+            {
               href: "/dashboard/hocfdc/subjects",
               icon: Box,
               label: "Subjects",
@@ -433,7 +438,7 @@ export default function DashboardLayout({
                   {user?.role}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-background to-white border border-border flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-linear-to-br from-background to-white border border-border flex items-center justify-center overflow-hidden">
                 <User size={20} className="text-muted" />
               </div>
             </div>
