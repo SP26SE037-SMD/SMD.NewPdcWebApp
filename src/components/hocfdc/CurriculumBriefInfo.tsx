@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CurriculumService } from "@/services/curriculum.service";
-import { Loader2, AlignLeft, GraduationCap, CheckCircle2, Award } from "lucide-react";
+import { Loader2, AlignLeft } from "lucide-react";
 
 export default function CurriculumBriefInfo({ id, isEmbedded }: { id: string, isEmbedded?: boolean }) {
   const { data, isLoading } = useQuery({
@@ -30,7 +30,7 @@ export default function CurriculumBriefInfo({ id, isEmbedded }: { id: string, is
                 <AlignLeft size={14} /> Fundamental Architecture
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-6">
                     <div>
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Official Code</label>
@@ -39,35 +39,12 @@ export default function CurriculumBriefInfo({ id, isEmbedded }: { id: string, is
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Nomenclature</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Curriculum Name</label>
                         <div className="text-sm font-bold text-zinc-900 bg-zinc-50 px-4 py-3 rounded-xl border border-zinc-100">
                             {curriculum.curriculumName}
                         </div>
                     </div>
                 </div>
-
-                <div className="space-y-6">
-                     <div>
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Discipline</label>
-                        <div className="text-sm font-bold text-zinc-900 bg-zinc-50 px-4 py-3 rounded-xl border border-zinc-100 flex items-center gap-3">
-                            <GraduationCap size={16} className="text-zinc-400" /> {curriculum.majorName}
-                        </div>
-                    </div>
-                     <div>
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">English Translation</label>
-                        <div className="text-sm font-bold text-zinc-900 bg-zinc-50 px-4 py-3 rounded-xl border border-zinc-100 flex items-center justify-between">
-                            <span className="truncate">{curriculum.englishCurriculumName || "Not Provided"}</span>
-                            <span className="text-[9px] text-zinc-400 uppercase tracking-widest bg-white px-2 py-1 rounded-md shadow-sm border border-zinc-100 shrink-0">EN</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-zinc-100">
-                 <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Architecture Definition</label>
-                 <p className="text-[13px] leading-relaxed text-zinc-600 font-medium">
-                     {curriculum.description || "The architectural foundation lacks an explicit description block."}
-                 </p>
             </div>
         </div>
     </div>

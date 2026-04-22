@@ -55,7 +55,7 @@ export default function MappingMatrix({
 							No PO-PLO mappings found for this curriculum.
 						</div>
 					) : (
-						<div className="bg-white border border-zinc-200 rounded-[1.25rem] overflow-hidden shadow-sm inline-block min-w-full">
+						<div className="bg-white border border-zinc-200 rounded-[1.25rem] overflow-visible shadow-sm inline-block min-w-full">
 							<table className="w-full border-collapse">
 								<thead>
 									<tr className="border-b border-zinc-200">
@@ -65,10 +65,16 @@ export default function MappingMatrix({
 										{plos.map((plo: any) => (
 											<th
 												key={plo.id}
-												className="px-6 py-5 text-center text-[11px] font-bold text-zinc-500 uppercase tracking-widest hover:bg-zinc-50 cursor-help transition-colors min-w-[100px]"
-												title={plo.desc}
+												className="px-6 py-5 text-center text-[11px] font-bold text-zinc-500 uppercase tracking-widest hover:bg-zinc-50 transition-colors min-w-[100px]"
 											>
-												{plo.code}
+												<div className="relative inline-flex items-center justify-center group/desc">
+													<span className="cursor-help">{plo.code}</span>
+													{plo.desc && (
+														<div className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 z-30 w-64 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-[12px] font-semibold normal-case tracking-normal text-zinc-900 shadow-xl opacity-0 translate-y-1 group-hover/desc:opacity-100 group-hover/desc:translate-y-0 transition-all">
+															{plo.desc}
+														</div>
+													)}
+												</div>
 											</th>
 										))}
 									</tr>
@@ -77,10 +83,16 @@ export default function MappingMatrix({
 									{pos.map((po: any, index: number) => (
 										<tr key={po.id} className={index !== pos.length - 1 ? "border-b border-zinc-100" : ""}>
 											<td
-												className="px-8 py-6 bg-white sticky left-0 z-10 cursor-help"
-												title={po.desc}
+												className="px-8 py-6 bg-white sticky left-0 z-10"
 											>
-												<span className="font-bold text-[13px] text-[#2c533e]">{po.code}</span>
+												<div className="relative inline-flex items-center group/desc">
+													<span className="font-bold text-[13px] text-[#2c533e] cursor-help">{po.code}</span>
+													{po.desc && (
+														<div className="pointer-events-none absolute top-full mt-2 left-0 z-30 w-80 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-[13px] font-semibold normal-case tracking-normal text-zinc-900 shadow-xl opacity-0 translate-y-1 group-hover/desc:opacity-100 group-hover/desc:translate-y-0 transition-all">
+															{po.desc}
+														</div>
+													)}
+												</div>
 											</td>
 											{plos.map((plo: any) => {
 												const mapped = isMapped(po.id, plo.id);
