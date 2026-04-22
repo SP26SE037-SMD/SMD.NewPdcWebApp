@@ -12,13 +12,15 @@ import { GroupService } from "@/services/group.service";
 import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
-import { RequestService } from "@/services/request.service";
+import { RequestService } from "@/services/request.service"; // Service logic updated
 import { Loader2, Calendar } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 export default function VicePrincipalReviewPage() {
 	const { id } = useParams() as { id: string };
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const { showToast } = useToast();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "info" | "matrix" | "structure" | "review"
@@ -29,10 +31,33 @@ export default function VicePrincipalReviewPage() {
 	const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
 	React.useEffect(() => {
+		const fetchRequestId = async () => {
+			try {
+				const response = await RequestService.getRequests({
+					curriculumId: id,
+					page: 0,
+					size: 1,
+				});
+				const firstRequest = response.data?.content?.[0];
+				if (firstRequest?.requestId) {
+					localStorage.setItem("requestId", firstRequest.requestId);
+					setRequestId(firstRequest.requestId);
+				}
+			} catch (error) {
+				console.error("Failed to fetch request ID:", error);
+			}
+		};
+
 		if (typeof window !== "undefined") {
-			setRequestId(localStorage.getItem("requestId"));
+			fetchRequestId();
 		}
-	}, []);
+
+		return () => {
+			if (typeof window !== "undefined") {
+				localStorage.removeItem("requestId");
+			}
+		};
+	}, [id]);
 
 	// Queries
 	const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
@@ -156,15 +181,12 @@ export default function VicePrincipalReviewPage() {
 			setIsSubmittingReview(true);
 			try {
 				if (requestId) {
-					await RequestService.updateRequest(requestId, {
-						status: "APPROVED",
-						comment: reviewComment,
-					});
+					await RequestService.updateRequestStatus(requestId, "APPROVED", reviewComment);
 				}
 				mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
 			} catch (e) {
 				console.error(e);
-				alert("Failed to approve request.");
+				showToast("Failed to approve request.", "error");
 			} finally {
 				setIsSubmittingReview(false);
 			}
@@ -173,7 +195,7 @@ export default function VicePrincipalReviewPage() {
 	
 	const handleReject = async () => {
 		if (!reviewComment.trim()) {
-			alert("Please provide a comment for requesting revision (rejection).");
+			showToast("Please provide a comment for requesting revision (rejection).", "error");
 			return;
 		}
 		if (
@@ -184,19 +206,16 @@ export default function VicePrincipalReviewPage() {
 			setIsSubmittingReview(true);
 			try {
 				if (requestId) {
-					await RequestService.updateRequest(requestId, {
-						status: "REJECTED",
-						comment: reviewComment,
-					});
+					await RequestService.updateRequestStatus(requestId, "REJECTED", reviewComment);
 				} else {
-					alert("No active request ID found. Cannot reject.");
+					showToast("No active request ID found. Cannot reject.", "error");
 					return;
 				}
-				alert("Request rejected successfully!");
+				showToast("Request rejected successfully!", "success");
 				router.push(`/dashboard/vice-principal/digital-enactment`);
 			} catch (e) {
 				console.error(e);
-				alert("Failed to reject request.");
+				showToast("Failed to reject request.", "error");
 			} finally {
 				setIsSubmittingReview(false);
 			}

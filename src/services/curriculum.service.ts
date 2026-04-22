@@ -132,7 +132,7 @@ export const CurriculumService = {
   },
 
   getCurriculumsByMajorId: async (majorId: string) => {
-    return apiClient.get<CurriculumFramework[]>(
+    return apiClient.get<APIResponse<CurriculumFramework[]>>(
       `/api/curriculums/major/${majorId}`,
     );
   },

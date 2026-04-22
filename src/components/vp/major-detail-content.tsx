@@ -56,18 +56,27 @@ export default function MajorDetailContent() {
     queryKey: ["major", majorCode],
     queryFn: () => MajorService.getMajorByCode(majorCode),
     enabled: !!majorCode,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
-  // Curriculums Query - same logic as hocfdc (search by majorCode)
+  // Curriculums Query - use specific majorId endpoint
   const { data: curriculumsResponse, isLoading: isCurriculumsLoading } =
     useQuery({
-      queryKey: ["major-curriculums", majorCode],
+      queryKey: ["major-curriculums", majorDetail?.data?.majorId],
       queryFn: () =>
-        CurriculumService.getCurriculums({ search: majorCode, size: 100 }),
-      enabled: !!majorCode,
+        CurriculumService.getCurriculumsByMajorId(
+          majorDetail?.data?.majorId || "",
+        ),
+      enabled: !!majorDetail?.data?.majorId,
+      staleTime: 0,
+      refetchOnMount: "always",
     });
 
-  const curriculums = curriculumsResponse?.data?.content || [];
+  const curriculums = curriculumsResponse?.data || [];
+  const hasSignedCurriculum = curriculums.some(
+    (curr: any) => curr.status === "SIGNED",
+  );
 
   // POs Query
   const { data: posResponse, isLoading: isPOsLoading } = useQuery({
@@ -77,6 +86,8 @@ export default function MajorDetailContent() {
         size: 100,
       }),
     enabled: !!majorDetail?.data?.majorId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Bulk PO Mutation
@@ -223,10 +234,11 @@ export default function MajorDetailContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pb-4 text-sm font-bold transition-all relative ${activeTab === tab.id
+                  className={`pb-4 text-sm font-bold transition-all relative ${
+                    activeTab === tab.id
                       ? "text-[#2d6a4f]"
                       : "text-[#5a6062] hover:text-[#2d6a4f]"
-                    }`}
+                  }`}
                 >
                   {tab.label}
                   {activeTab === tab.id && (
@@ -269,14 +281,16 @@ export default function MajorDetailContent() {
                       return (
                         <div key={step} className="relative z-10">
                           <div
-                            className={`w-4 h-4 rounded-full border-4 transition-all duration-500 scale-125 ${isActive
+                            className={`w-4 h-4 rounded-full border-4 transition-all duration-500 scale-125 ${
+                              isActive
                                 ? "bg-[#2d6a4f] border-[#b1f0ce]"
                                 : "bg-white border-[#ebeef0]"
-                              }`}
+                            }`}
                           />
                           <div
-                            className={`absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2d6a4f]" : "text-[#adb3b5]"
-                              }`}
+                            className={`absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider ${
+                              isActive ? "text-[#2d6a4f]" : "text-[#adb3b5]"
+                            }`}
                           >
                             {step}
                           </div>
@@ -295,7 +309,10 @@ export default function MajorDetailContent() {
                     </h3>
                   </div>
                   <p className="text-[#5a6062] text-lg leading-relaxed font-medium italic">
-                    "{major.description || "No description provided for this academic program."}"
+                    "
+                    {major.description ||
+                      "No description provided for this academic program."}
+                    "
                   </p>
                   <div className="mt-10 pt-8 border-t border-[#f1f4f5] flex items-center gap-12">
                     <div className="space-y-1">
@@ -332,29 +349,28 @@ export default function MajorDetailContent() {
                       <div className="py-12 flex justify-center">
                         <Loader2 className="animate-spin text-[#adb3b5]" />
                       </div>
-                    ) : (
-                      posResponse?.data?.content && posResponse.data.content.length > 0 ? (
-                        posResponse.data.content.map((po) => (
-                          <div
-                            key={po.poId}
-                            className="group flex gap-6 p-4 rounded-xl hover:bg-[#f8f9fa] transition-colors"
-                          >
-                            <div className="w-12 text-sm font-black text-[#2d6a4f] opacity-40 group-hover:opacity-100 transition-opacity pt-1">
-                              {po.poCode}
-                            </div>
-                            <div className="flex-1 text-[#5a6062] text-sm font-medium leading-relaxed">
-                              {po.description}
-                            </div>
+                    ) : posResponse?.data?.content &&
+                      posResponse.data.content.length > 0 ? (
+                      posResponse.data.content.map((po) => (
+                        <div
+                          key={po.poId}
+                          className="group flex gap-6 p-4 rounded-xl hover:bg-[#f8f9fa] transition-colors"
+                        >
+                          <div className="w-12 text-sm font-black text-[#2d6a4f] opacity-40 group-hover:opacity-100 transition-opacity pt-1">
+                            {po.poCode}
                           </div>
-                        ))
-                      ) : (
-                        <div className="py-16 border-2 border-dashed border-[#ebeef0] rounded-2xl flex flex-col items-center text-center space-y-3">
-                          <Target size={24} className="text-[#adb3b5]" />
-                          <p className="text-xs font-black text-[#adb3b5] uppercase tracking-widest">
-                            No Objectives Established
-                          </p>
+                          <div className="flex-1 text-[#5a6062] text-sm font-medium leading-relaxed">
+                            {po.description}
+                          </div>
                         </div>
-                      )
+                      ))
+                    ) : (
+                      <div className="py-16 border-2 border-dashed border-[#ebeef0] rounded-2xl flex flex-col items-center text-center space-y-3">
+                        <Target size={24} className="text-[#adb3b5]" />
+                        <p className="text-xs font-black text-[#adb3b5] uppercase tracking-widest">
+                          No Objectives Established
+                        </p>
+                      </div>
                     )}
                   </div>
                 </section>
@@ -517,12 +533,13 @@ export default function MajorDetailContent() {
               </h1>
               <div className="flex items-center gap-4">
                 <span
-                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${major.status === "PUBLISHED"
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${
+                    major.status === "PUBLISHED"
                       ? "bg-[#b1f0ce] text-[#1d5c42]"
                       : "bg-[#fcfeb9] text-[#60622d]"
-                    }`}
+                  }`}
                 >
-                  {major.status?.replace("_", " ")} PROPOSAL
+                  {major.status?.replace("_", " ")}
                 </span>
                 <span className="text-xs text-[#5a6062] flex items-center gap-1.5 font-medium">
                   <Calendar size={14} className="text-[#adb3b5]" />
@@ -531,20 +548,30 @@ export default function MajorDetailContent() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col items-end gap-2">
               {major.status === "INTERNAL_REVIEW" && (
-                <button
-                  onClick={() => updateStatusMutation.mutate("PUBLISHED")}
-                  disabled={updateStatusMutation.isPending}
-                  className="px-8 py-3 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {updateStatusMutation.isPending ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Rocket size={14} strokeWidth={2.5} />
+                <>
+                  <button
+                    onClick={() => updateStatusMutation.mutate("PUBLISHED")}
+                    disabled={
+                      updateStatusMutation.isPending || !hasSignedCurriculum
+                    }
+                    className="px-8 py-3 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-40 disabled:grayscale disabled:cursor-not-allowed"
+                  >
+                    {updateStatusMutation.isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Rocket size={14} strokeWidth={2.5} />
+                    )}
+                    Publish Major
+                  </button>
+                  {!hasSignedCurriculum && (
+                    <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100">
+                      <AlertCircle size={12} />
+                      Requires 1 SIGNED Curriculum to proceed
+                    </span>
                   )}
-                  Publish Portfolio
-                </button>
+                </>
               )}
             </div>
           </div>
@@ -558,10 +585,11 @@ export default function MajorDetailContent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveDetailTab(tab.id)}
-                className={`pb-4 text-sm font-bold transition-all relative ${activeDetailTab === tab.id
+                className={`pb-4 text-sm font-bold transition-all relative ${
+                  activeDetailTab === tab.id
                     ? "text-[#2d6a4f]"
                     : "text-[#5a6062] hover:text-[#2d6a4f]"
-                  }`}
+                }`}
               >
                 {tab.label}
                 {activeDetailTab === tab.id && (
@@ -602,42 +630,41 @@ export default function MajorDetailContent() {
                     }}
                   />
 
-                  {[
-                    "Drafting",
-                    "Internal Review",
-                    "Published",
-                    "Archived",
-                  ].map((step, idx) => {
-                    const statusOrder = [
-                      "DRAFT",
-                      "INTERNAL_REVIEW",
-                      "PUBLISHED",
-                      "ARCHIVED",
-                    ];
-                    const currentIdx = statusOrder.indexOf(major.status);
-                    const stepStatus = statusOrder[idx];
-                    const isActive = idx === currentIdx;
-                    const isCompleted = idx < currentIdx;
+                  {["Drafting", "Internal Review", "Published", "Archived"].map(
+                    (step, idx) => {
+                      const statusOrder = [
+                        "DRAFT",
+                        "INTERNAL_REVIEW",
+                        "PUBLISHED",
+                        "ARCHIVED",
+                      ];
+                      const currentIdx = statusOrder.indexOf(major.status);
+                      const stepStatus = statusOrder[idx];
+                      const isActive = idx === currentIdx;
+                      const isCompleted = idx < currentIdx;
 
-                    return (
-                      <div key={step} className="relative z-10">
-                        <div
-                          className={`w-4 h-4 rounded-full border-4 transition-all duration-500 scale-125 ${isActive
-                              ? "bg-[#2d6a4f] border-[#b1f0ce]"
-                              : isCompleted
-                                ? "bg-[#2d6a4f] border-[#2d6a4f]"
-                                : "bg-white border-[#ebeef0]"
+                      return (
+                        <div key={step} className="relative z-10">
+                          <div
+                            className={`w-4 h-4 rounded-full border-4 transition-all duration-500 scale-125 ${
+                              isActive
+                                ? "bg-[#2d6a4f] border-[#b1f0ce]"
+                                : isCompleted
+                                  ? "bg-[#2d6a4f] border-[#2d6a4f]"
+                                  : "bg-white border-[#ebeef0]"
                             }`}
-                        />
-                        <div
-                          className={`absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2d6a4f]" : "text-[#adb3b5]"
+                          />
+                          <div
+                            className={`absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider ${
+                              isActive ? "text-[#2d6a4f]" : "text-[#adb3b5]"
                             }`}
-                        >
-                          {step}
+                          >
+                            {step}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
@@ -762,7 +789,10 @@ export default function MajorDetailContent() {
                     <tbody className="divide-y divide-[#f1f4f5]">
                       {curriculums.length > 0 ? (
                         curriculums.map((curr) => (
-                          <tr key={curr.curriculumId} className="hover:bg-[#f8f9fa] transition-colors">
+                          <tr
+                            key={curr.curriculumId}
+                            className="hover:bg-[#f8f9fa] transition-colors"
+                          >
                             <td className="px-8 py-5 text-sm font-bold text-[#1d5c42]">
                               {curr.curriculumCode}
                             </td>
@@ -773,31 +803,40 @@ export default function MajorDetailContent() {
                               {curr.startYear} - {curr.endYear}
                             </td>
                             <td className="px-8 py-5">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                                curr.status === 'PUBLISHED'
-                                  ? 'bg-[#b1f0ce] text-[#1d5c42]'
-                                  : curr.status === 'STRUCTURE_REVIEW'
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : curr.status === 'DRAFT'
-                                  ? 'bg-[#f1f4f5] text-[#5a6062]'
-                                  : curr.status === 'ARCHIVED'
-                                  ? 'bg-rose-50 text-rose-600'
-                                  : 'bg-blue-50 text-blue-600'
-                              }`}>
-                                {curr.status?.replace(/_/g, ' ')}
+                              <span
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                                  curr.status === "PUBLISHED"
+                                    ? "bg-[#b1f0ce] text-[#1d5c42]"
+                                    : curr.status === "STRUCTURE_REVIEW"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : curr.status === "DRAFT"
+                                        ? "bg-[#f1f4f5] text-[#5a6062]"
+                                        : curr.status === "ARCHIVED"
+                                          ? "bg-rose-50 text-rose-600"
+                                          : "bg-blue-50 text-blue-600"
+                                }`}
+                              >
+                                {curr.status?.replace(/_/g, " ")}
                               </span>
                             </td>
                             <td className="px-8 py-5 text-right">
-                              {curr.status === 'STRUCTURE_REVIEW' ? (
+                              {curr.status === "STRUCTURE_REVIEW" ? (
                                 <button
-                                  onClick={() => router.push(`/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`)}
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`,
+                                    )
+                                  }
                                   className="inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-amber-600 transition-all shadow-sm active:scale-95"
                                 >
                                   Review
                                   <ChevronRight size={14} strokeWidth={2.5} />
                                 </button>
                               ) : (
-                                <button className="text-[#adb3b5] p-2 rounded-lg cursor-default" disabled>
+                                <button
+                                  className="text-[#adb3b5] p-2 rounded-lg cursor-default"
+                                  disabled
+                                >
                                   <ChevronRight size={18} />
                                 </button>
                               )}
@@ -809,7 +848,9 @@ export default function MajorDetailContent() {
                           <td colSpan={5} className="px-8 py-20 text-center">
                             <div className="flex flex-col items-center opacity-30">
                               <History size={48} className="mb-4" />
-                              <p className="text-sm font-bold uppercase tracking-widest">No Frameworks Established Yet</p>
+                              <p className="text-sm font-bold uppercase tracking-widest">
+                                No Frameworks Established Yet
+                              </p>
                             </div>
                           </td>
                         </tr>

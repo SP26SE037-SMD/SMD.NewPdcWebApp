@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import {
@@ -18,10 +18,7 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import {
-  RequestItem,
-  RequestService,
-} from "@/services/request.service";
+import { RequestItem, RequestService } from "@/services/request.service";
 import { Major, MajorService } from "@/services/major.service";
 import {
   CurriculumFramework,
@@ -66,7 +63,7 @@ export default function RequestsPage() {
     { id: "ALL", label: "All Requests" },
     { id: "PENDING", label: "Pending" },
     { id: "APPROVED", label: "Approved" },
-    { id: "REJECTED", label: "Rejected" }
+    { id: "REJECTED", label: "Rejected" },
   ];
 
   useEffect(() => {
@@ -251,431 +248,549 @@ export default function RequestsPage() {
 
   return (
     <>
-    <div className="space-y-8 p-4">
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Requests
-          </h1>
-          <p className="text-on-surface-variant mt-2 text-base max-w-xl">
-            Monitor, approve, and manage all change requests submitted across your departments seamlessly.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={fetchRequests}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+      <div className="max-w-6xl mx-auto pt-12 pb-12 px-6">
+        <div className="space-y-8 p-4">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Requests
+              </h1>
+              <p className="text-on-surface-variant mt-2 text-base max-w-xl">
+                Monitor, approve, and manage all change requests submitted
+                across your departments seamlessly.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchRequests}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCcw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
 
-          <button
-            onClick={openCreateModal}
-            className="group relative flex items-center gap-2 overflow-hidden rounded-2xl bg-linear-to-r from-primary to-primary/80 px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-105 active:scale-95"
+              <button
+                onClick={openCreateModal}
+                className="group relative flex items-center gap-2 overflow-hidden rounded-2xl bg-linear-to-r from-primary to-primary/80 px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-105 active:scale-95"
+              >
+                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                <ClipboardList className="h-4 w-4" />
+                <span>New Request</span>
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative max-w-xl"
           >
-            <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-            <ClipboardList className="h-4 w-4" />
-            <span>New Request</span>
-          </button>
-        </div>
-      </motion.div>
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/70" />
+            <input
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Search by request title"
+              className="w-full rounded-2xl border border-outline/20 bg-surface px-11 py-3 text-sm text-on-surface outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+            />
+          </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative max-w-xl"
-      >
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/70" />
-        <input
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search by request title"
-          className="w-full rounded-2xl border border-outline/20 bg-surface px-11 py-3 text-sm text-on-surface outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-        />
-      </motion.div>
-
-      <motion.div 
-         initial={{ opacity: 0, y: 20 }}
-         animate={{ opacity: 1, y: 0 }}
-         transition={{ delay: 0.15 }}
-         className="flex gap-2 overflow-x-auto pb-2 scrollbar-none"
-      >
-         {tabs.map((tab) => (
-           <button
-             key={tab.id}
-             onClick={() => setActiveTab(tab.id)}
-             className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap
-               ${activeTab === tab.id 
-                 ? 'bg-primary text-on-primary shadow-md shadow-primary/20' 
-                 : 'bg-surface hover:bg-surface-container border border-outline/20 text-on-surface-variant'
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex gap-2 overflow-x-auto pb-2 scrollbar-none"
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap
+               ${
+                 activeTab === tab.id
+                   ? "bg-primary text-on-primary shadow-md shadow-primary/20"
+                   : "bg-surface hover:bg-surface-container border border-outline/20 text-on-surface-variant"
                }`}
-           >
-             {tab.label}
-             <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-black/10 text-inherit">
-               {statusCounts[tab.id] ?? 0}
-             </span>
-           </button>
-         ))}
-      </motion.div>
+              >
+                {tab.label}
+                <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-black/10 text-inherit">
+                  {statusCounts[tab.id] ?? 0}
+                </span>
+              </button>
+            ))}
+          </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
-      >
-        {error && (
-          <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
-            {error}
-          </div>
-        )}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
+          >
+            {error && (
+              <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+                {error}
+              </div>
+            )}
 
-        <div className="overflow-x-auto rounded-2xl">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-surface-container-lowest/50">
-              <tr className="border-b border-outline/20">
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">No.</th>
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">Title</th>
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">Major</th>
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">Curriculum</th>
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">Status</th>
-                <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs whitespace-nowrap">Date Submitted</th>
-                <th className="p-5 font-semibold text-center text-on-surface-variant uppercase tracking-wider text-xs">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm font-medium">Loading requests...</p>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto rounded-2xl">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-container-lowest/50">
+                  <tr className="border-b border-outline/20">
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
+                      No.
+                    </th>
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
+                      Title
+                    </th>
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
+                      Major
+                    </th>
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
+                      Curriculum
+                    </th>
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
+                      Status
+                    </th>
+                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs whitespace-nowrap">
+                      Date Submitted
+                    </th>
+                    <th className="p-5 font-semibold text-center text-on-surface-variant uppercase tracking-wider text-xs">
+                      Actions
+                    </th>
                   </tr>
-                ) : requests.length > 0 ? (
-                  requests.map((req, idx) => (
-                    <motion.tr
-                      key={req.requestId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      className="group border-b border-outline/10 transition-all hover:bg-surface-container-lowest/80"
-                    >
-                      <td className="p-5 font-bold text-on-surface/80">{page * 10 + idx + 1}</td>
-                      <td className="p-5">
-                        <span className="font-semibold text-on-surface text-base group-hover:text-primary transition-colors">
-                          {req.title}
-                        </span>
-                        <p className="mt-1 line-clamp-2 text-xs text-on-surface-variant">
-                          {req.content}
-                        </p>
-                      </td>
-                      <td className="p-5 text-on-surface-variant">
-                        {req.major?.majorName || req.curriculum?.major?.majorName || "-"}
-                      </td>
-                      <td className="p-5 text-on-surface-variant">
-                        {req.curriculum?.curriculumCode || "-"}
-                      </td>
-                      <td className="p-5 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getStatusClass(req.status)}`}>
-                          {req.status === "PENDING" && <Clock className="h-3 w-3" />}
-                          {req.status === "APPROVED" && <CheckCircle2 className="h-3 w-3" />}
-                          {req.status === "REJECTED" && <XCircle className="h-3 w-3" />}
-                          {req.status}
-                        </span>
-                      </td>
-                      <td className="p-5 text-on-surface-variant">
-                         <div className="flex w-max items-center gap-2 rounded-lg bg-surface-container-lowest px-2.5 py-1 border border-outline/10">
-                            <CalendarDays className="w-4 h-4 text-primary/70" />
-                            <span className="font-medium whitespace-nowrap">{formatDate(req.createdAt)}</span>
-                         </div>
-                      </td>
-                      <td className="p-5">
-                        <div className="flex justify-center">
-                          <button
-                            onClick={() => handleOpenDetail(req.requestId)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-outline/20 px-3 py-1.5 text-xs font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            View Detail
-                          </button>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30"
+                      >
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <p className="text-sm font-medium">
+                            Loading requests...
+                          </p>
                         </div>
                       </td>
-                    </motion.tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30">
-                       <div className="flex flex-col items-center justify-center gap-3">
-                        <ClipboardList className="h-10 w-10 text-outline" />
-                        <p className="text-lg font-medium">No requests found</p>
-                        <p className="text-sm opacity-70">Try changing filter or search keyword.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-            </tbody>
-          </table>
-        </div>
+                    </tr>
+                  ) : requests.length > 0 ? (
+                    requests.map((req, idx) => (
+                      <motion.tr
+                        key={req.requestId}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className="group border-b border-outline/10 transition-all hover:bg-surface-container-lowest/80"
+                      >
+                        <td className="p-5 font-bold text-on-surface/80">
+                          {page * 10 + idx + 1}
+                        </td>
+                        <td className="p-5">
+                          <span className="font-semibold text-on-surface text-base group-hover:text-primary transition-colors">
+                            {req.title}
+                          </span>
+                          <p className="mt-1 line-clamp-2 text-xs text-on-surface-variant">
+                            {req.content}
+                          </p>
+                        </td>
+                        <td className="p-5 text-on-surface-variant">
+                          {req.major?.majorName ||
+                            req.curriculum?.major?.majorName ||
+                            "-"}
+                        </td>
+                        <td className="p-5 text-on-surface-variant">
+                          {req.curriculum?.curriculumCode || "-"}
+                        </td>
+                        <td className="p-5 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getStatusClass(req.status)}`}
+                          >
+                            {req.status === "PENDING" && (
+                              <Clock className="h-3 w-3" />
+                            )}
+                            {req.status === "APPROVED" && (
+                              <CheckCircle2 className="h-3 w-3" />
+                            )}
+                            {req.status === "REJECTED" && (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            {req.status}
+                          </span>
+                        </td>
+                        <td className="p-5 text-on-surface-variant">
+                          <div className="flex w-max items-center gap-2 rounded-lg bg-surface-container-lowest px-2.5 py-1 border border-outline/10">
+                            <CalendarDays className="w-4 h-4 text-primary/70" />
+                            <span className="font-medium whitespace-nowrap">
+                              {formatDate(req.createdAt)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => handleOpenDetail(req.requestId)}
+                              className="inline-flex items-center gap-2 rounded-xl border border-outline/20 px-3 py-1.5 text-xs font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View Detail
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30"
+                      >
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <ClipboardList className="h-10 w-10 text-outline" />
+                          <p className="text-lg font-medium">
+                            No requests found
+                          </p>
+                          <p className="text-sm opacity-70">
+                            Try changing filter or search keyword.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="flex items-center justify-between px-4 py-3">
-          <p className="text-xs font-medium text-on-surface-variant">
-            Total: {totalElements} requests
-          </p>
+            <div className="flex items-center justify-between px-4 py-3">
+              <p className="text-xs font-medium text-on-surface-variant">
+                Total: {totalElements} requests
+              </p>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-              disabled={page === 0 || loading}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-outline/20 bg-surface text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-
-            <span className="px-2 text-xs font-semibold text-on-surface-variant">
-              Page {page + 1} / {Math.max(1, totalPages)}
-            </span>
-
-            <button
-              onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-              disabled={loading || page >= totalPages - 1}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-outline/20 bg-surface text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-
-    {showCreateModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-        <div className="w-full max-w-2xl rounded-3xl border border-outline/20 bg-surface p-6 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-on-surface">Create New Request</h2>
-            <button
-              onClick={closeCreateModal}
-              className="rounded-xl p-2 text-on-surface-variant transition hover:bg-surface-container"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Major
-                </label>
-                <select
-                  value={createForm.majorId}
-                  onChange={(e) => handleMajorChange(e.target.value)}
-                  className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+                  disabled={page === 0 || loading}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-outline/20 bg-surface text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <option value="">
-                    {loadingMajors ? "Loading majors..." : "Select major"}
-                  </option>
-                  {majors.map((major) => (
-                    <option key={major.majorId} value={major.majorId}>
-                      {major.majorCode} - {major.majorName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
 
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Curriculum
-                </label>
-                <select
-                  value={createForm.curriculumId}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      curriculumId: e.target.value,
-                    }))
+                <span className="px-2 text-xs font-semibold text-on-surface-variant">
+                  Page {page + 1} / {Math.max(1, totalPages)}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setPage((prev) => Math.min(totalPages - 1, prev + 1))
                   }
-                  disabled={!createForm.majorId || loadingCurriculums}
-                  className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={loading || page >= totalPages - 1}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-outline/20 bg-surface text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <option value="">
-                    {loadingCurriculums
-                      ? "Loading curriculums..."
-                      : "Select curriculum"}
-                  </option>
-                  {curriculums.map((curriculum) => (
-                    <option
-                      key={curriculum.curriculumId}
-                      value={curriculum.curriculumId}
-                    >
-                      {curriculum.curriculumCode} - {curriculum.curriculumName}
-                    </option>
-                  ))}
-                </select>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
             </div>
+          </motion.div>
+        </div>
+      </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                Title
-              </label>
-              <input
-                value={createForm.title}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="Enter request title"
-                className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                Content
-              </label>
-              <textarea
-                value={createForm.content}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({ ...prev, content: e.target.value }))
-                }
-                placeholder="Describe your request"
-                rows={4}
-                className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                Comment (optional)
-              </label>
-              <textarea
-                value={createForm.comment}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({ ...prev, comment: e.target.value }))
-                }
-                placeholder="Additional comment"
-                rows={3}
-                className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-end gap-2">
-            <button
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={closeCreateModal}
-              className="rounded-xl border border-outline/20 px-4 py-2 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container"
+              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreateRequest}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create Request
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
+              <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+                <div>
+                  <h2 className="text-xl font-bold text-zinc-900">
+                    Create New Request
+                  </h2>
+                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
+                    System Change Governance
+                  </p>
+                </div>
+                <button
+                  onClick={closeCreateModal}
+                  className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-    {showDetailModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-        <div className="w-full max-w-3xl rounded-3xl border border-outline/20 bg-surface p-6 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-on-surface">Request Detail</h2>
-            <button
+              <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                      Target Major
+                    </label>
+                    <select
+                      value={createForm.majorId}
+                      onChange={(e) => handleMajorChange(e.target.value)}
+                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                    >
+                      <option value="">
+                        {loadingMajors ? "Loading majors..." : "Select major"}
+                      </option>
+                      {majors.map((major) => (
+                        <option key={major.majorId} value={major.majorId}>
+                          {major.majorCode} - {major.majorName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                      Curriculum Framework
+                    </label>
+                    <select
+                      value={createForm.curriculumId}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          curriculumId: e.target.value,
+                        }))
+                      }
+                      disabled={!createForm.majorId || loadingCurriculums}
+                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none disabled:opacity-50"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                    >
+                      <option value="">
+                        {loadingCurriculums
+                          ? "Loading curriculums..."
+                          : "Select curriculum"}
+                      </option>
+                      {curriculums.map((curriculum) => (
+                        <option
+                          key={curriculum.curriculumId}
+                          value={curriculum.curriculumId}
+                        >
+                          {curriculum.curriculumCode} -{" "}
+                          {curriculum.curriculumName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                    Request Title
+                  </label>
+                  <input
+                    value={createForm.title}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter a descriptive title for this request"
+                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                    Detailed Content
+                  </label>
+                  <textarea
+                    value={createForm.content}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }))
+                    }
+                    placeholder="Provide a detailed description of the proposed changes..."
+                    rows={4}
+                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                    Additional Justification (Optional)
+                  </label>
+                  <textarea
+                    value={createForm.comment}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        comment: e.target.value,
+                      }))
+                    }
+                    placeholder="Any additional notes or justification for this request..."
+                    rows={3}
+                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-3">
+                <button
+                  onClick={closeCreateModal}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateRequest}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Submit Request
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDetailModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setShowDetailModal(false)}
-              className="rounded-xl p-2 text-on-surface-variant transition hover:bg-surface-container"
+              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
             >
-              <X className="h-4 w-4" />
-            </button>
+              <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+                <div>
+                  <h2 className="text-xl font-bold text-zinc-900">
+                    Request Specification
+                  </h2>
+                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
+                    Detailed Governance Review
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                {detailLoading ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16 text-zinc-400">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="text-sm font-bold uppercase tracking-widest">Synchronizing Data...</p>
+                  </div>
+                ) : selectedRequest ? (
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Current Status</label>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-wider ${getStatusClass(selectedRequest.status)}`}>
+                          {selectedRequest.status === "PENDING" && <Clock size={12} />}
+                          {selectedRequest.status === "APPROVED" && <CheckCircle2 size={12} />}
+                          {selectedRequest.status === "REJECTED" && <XCircle size={12} />}
+                          {selectedRequest.status}
+                        </span>
+                      </div>
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Submission Timeline</label>
+                        <p className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                          <CalendarDays size={16} className="text-primary" />
+                          {formatDate(selectedRequest.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-50 rounded-3xl p-6 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-3">Request Overview</label>
+                      <h4 className="text-lg font-bold text-zinc-900 mb-3">{selectedRequest.title}</h4>
+                      <p className="text-zinc-600 leading-relaxed text-sm font-medium">
+                        {selectedRequest.content}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Originating Authority</label>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {selectedRequest.createdBy?.fullName || selectedRequest.createdBy?.email || "-"}
+                        </p>
+                      </div>
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Target Framework</label>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {selectedRequest.curriculum?.curriculumCode || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Academic Major</label>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}
+                        </p>
+                      </div>
+                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Last Modified</label>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {formatDate(selectedRequest.updatedAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedRequest.comment && (
+                      <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10 italic">
+                        <label className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-3">Decision Comment</label>
+                        <p className="text-zinc-700 text-sm font-medium leading-relaxed">
+                          "{selectedRequest.comment}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-14 text-center text-zinc-400 italic">
+                    No detailed metadata available for this entity.
+                  </div>
+                )}
+              </div>
+
+              <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-8 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-bold shadow-lg shadow-zinc-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </motion.div>
           </div>
-
-          {detailLoading ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-on-surface-variant">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm font-medium">Loading request detail...</p>
-            </div>
-          ) : selectedRequest ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</p>
-                  <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.status}</p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created At</p>
-                  <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.createdAt)}</p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Title</p>
-                <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.title}</p>
-              </div>
-
-              <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Content</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.content}</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
-                  <p className="mt-1 text-sm text-on-surface">
-                    {selectedRequest.createdBy?.fullName
-                      || selectedRequest.createdBy?.email
-                      || (selectedRequest.createdBy?.accountId
-                          ? `User (${selectedRequest.createdBy.accountId.slice(0, 8)}...)`
-                          : "-")}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
-                  <p className="mt-1 text-sm text-on-surface">
-                    {selectedRequest.curriculum?.curriculumCode || "-"}
-                    {selectedRequest.curriculum?.curriculumName
-                      ? ` - ${selectedRequest.curriculum.curriculumName}`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Major</p>
-                  <p className="mt-1 text-sm text-on-surface">{selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}</p>
-                </div>
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Updated At</p>
-                  <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.updatedAt)}</p>
-                </div>
-              </div>
-
-              {selectedRequest.comment && (
-                <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Comment</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.comment}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="py-14 text-center text-sm text-on-surface-variant">
-              No detail data.
-            </div>
-          )}
-        </div>
-      </div>
-    )}
+        )}
+      </AnimatePresence>
     </>
   );
 }
