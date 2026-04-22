@@ -11,6 +11,7 @@ import StepNavigation from "./StepNavigation";
 interface StepProps {
   onNext?: () => void;
   onBack?: () => void;
+  curriculumIdProp?: string;
 }
 
 interface OutcomeMapping {
@@ -18,9 +19,9 @@ interface OutcomeMapping {
   ploId: string;
 }
 
-export default function MappingStep({ onNext, onBack }: StepProps) {
+export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepProps) {
   const searchParams = useSearchParams();
-  const curriculumId = searchParams.get("id");
+  const curriculumId = curriculumIdProp || searchParams.get("id");
   const queryClient = useQueryClient();
 
   const [tempMappings, setTempMappings] = useState<Set<string>>(new Set());
