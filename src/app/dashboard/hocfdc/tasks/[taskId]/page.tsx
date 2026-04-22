@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { TaskService, TaskItem } from "@/services/task.service";
@@ -35,8 +35,11 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function TaskDetailPage() {
   const { taskId } = useParams() as { taskId: string };
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
+
+  const initialMajorId = searchParams.get("majorId");
 
   const [activeTab, setActiveTab] = useState<Tab>("major");
   const [task, setTask] = useState<TaskItem | null>(null);
@@ -53,9 +56,47 @@ export default function TaskDetailPage() {
     const load = async () => {
       try {
         const res = await TaskService.getTaskById(taskId);
-        const t = (res as any)?.data as TaskItem;
-        setTask(t);
-      } catch {
+        let rawTask = (res as any)?.data;
+        
+        console.log("[TaskDetail] Raw Response Data:", rawTask);
+
+        // Handle case where detail API returns a paginated-like structure
+        if (rawTask && rawTask.content && Array.isArray(rawTask.content) && rawTask.content.length > 0) {
+          rawTask = rawTask.content[0];
+          console.log("[TaskDetail] Extracted from content[0]:", rawTask);
+        }
+
+        if (rawTask) {
+          let mappedTask = TaskService.mapTaskApiToItem(rawTask);
+          
+          // Use majorId from URL if present and detail API returns null
+          if (!mappedTask.majorId && initialMajorId) {
+            console.log("[TaskDetail] Using majorId from URL:", initialMajorId);
+            mappedTask.majorId = initialMajorId;
+          }
+          
+          // FALLBACK: If majorId is still missing, try to find it in the list
+          if (!mappedTask.majorId && user?.accountId) {
+            console.log("[TaskDetail] majorId missing in detail, attempting fallback from task list...");
+            try {
+              const listRes = await TaskService.getTasks({ accountId: user.accountId, size: 100 });
+              const listTasks = listRes?.data?.content || [];
+              const taskFromList = listTasks.find(t => t.taskId === taskId);
+              
+              if (taskFromList && taskFromList.majorId) {
+                console.log("[TaskDetail] Found majorId in list fallback:", taskFromList.majorId);
+                mappedTask = { ...mappedTask, majorId: taskFromList.majorId, major: taskFromList.major };
+              }
+            } catch (fallbackErr) {
+              console.error("[TaskDetail] Fallback failed:", fallbackErr);
+            }
+          }
+
+          console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          setTask(mappedTask);
+        }
+      } catch (err) {
+        console.error("[TaskDetail] Failed to load task:", err);
         toast.error("Failed to load task");
       } finally {
         setLoadingTask(false);
@@ -66,18 +107,20 @@ export default function TaskDetailPage() {
 
   // Load major when task is ready
   useEffect(() => {
-    if (!task?.majorId) return;
+    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
+    if (!effectiveMajorId) return;
+
     const load = async () => {
       setLoadingMajor(true);
       try {
-        const res = await MajorService.getMajorById(task.majorId!);
+        const res = await MajorService.getMajorById(effectiveMajorId);
         setMajor((res as any)?.data as Major);
-        const posRes = await PoService.getPOsByMajorId(task.majorId!, { size: 100 });
+        const posRes = await PoService.getPOsByMajorId(effectiveMajorId, { size: 100 });
         setPos((posRes as any)?.data?.content || []);
 
         // Load existing curriculum for this major if any
         try {
-          const currRes = await CurriculumService.getCurriculumsByMajorId(task.majorId!);
+          const currRes = await CurriculumService.getCurriculumsByMajorId(effectiveMajorId);
           const currList = (currRes as any)?.data || [];
           if (currList.length > 0) setCurriculum(currList[0]);
         } catch {}
@@ -88,7 +131,7 @@ export default function TaskDetailPage() {
       }
     };
     load();
-  }, [task?.majorId]);
+  }, [task?.majorId, task?.major?.majorId, taskId, initialMajorId]);
 
   // Save curriculum info
   const handleSaveCurriculum = async (data: any, proceed?: boolean) => {
@@ -103,7 +146,7 @@ export default function TaskDetailPage() {
         saved = (res as any)?.data as CurriculumFramework;
       }
       setCurriculum(saved);
-      toast.success("Curriculum saved!");
+      toast.success("Curriculum info saved successfully!");
       if (proceed) setActiveTab("plo");
     } catch (e: any) {
       toast.error(e?.message || "Failed to save curriculum");
@@ -135,7 +178,7 @@ export default function TaskDetailPage() {
       toast.success("Request submitted successfully!");
       router.push("/dashboard/hocfdc/requests");
     } catch (e: any) {
-      toast.error(e?.message || "Failed to submit request");
+      toast.error(e?.response?.data?.message || e?.message || "Failed to submit request");
     } finally {
       setSubmitting(false);
     }
@@ -184,17 +227,6 @@ export default function TaskDetailPage() {
                   {task.major.majorCode}
                 </span>
               )}
-              <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
-                task.status === "IN_PROGRESS" ? "bg-secondary/10 text-secondary" : "bg-surface-container text-on-surface-variant"
-              }`}>
-                {task.status?.replace(/_/g, " ")}
-              </span>
-              {task.deadline && (
-                <span className="flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(task.deadline).toLocaleDateString("vi-VN")}
-                </span>
-              )}
             </div>
           </div>
 
@@ -238,7 +270,11 @@ export default function TaskDetailPage() {
           >
             {/* MAJOR DETAIL TAB */}
             {activeTab === "major" && (
-              <MajorDetailTab major={major} loading={loadingMajor} majorId={task.majorId} />
+              <MajorDetailTab 
+                major={major} 
+                loading={loadingMajor} 
+                majorId={task?.majorId || task?.major?.majorId || initialMajorId} 
+              />
             )}
 
             {/* PO TAB */}
@@ -430,11 +466,11 @@ function SubmitTab({
   onSubmit: (title: string, content: string) => void;
   onGoCreate: () => void;
 }) {
-  const [title, setTitle] = useState(`Curriculum submission for ${major?.majorName || "major"}`);
+  const [title, setTitle] = useState(`Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50));
   const [content, setContent] = useState(`Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`);
 
   useEffect(() => {
-    setTitle(`Curriculum submission for ${major?.majorName || "major"}`);
+    setTitle(`Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50));
     setContent(`Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`);
   }, [major, curriculum]);
 
@@ -460,10 +496,6 @@ function SubmitTab({
           <div className="flex justify-between text-sm">
             <span className="text-on-surface-variant font-medium">Major</span>
             <span className="font-bold text-on-surface">{major?.majorName || task.majorId}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-on-surface-variant font-medium">Status</span>
-            <span className="font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs uppercase">PENDING</span>
           </div>
         </div>
 

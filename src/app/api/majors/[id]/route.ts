@@ -13,7 +13,7 @@ export async function GET(
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        const backendResponse = await fetch(`${BACKEND_URL}/api/majors/code/${id}`, {
+        const backendResponse = await fetch(`${BACKEND_URL}/api/majors/${id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
