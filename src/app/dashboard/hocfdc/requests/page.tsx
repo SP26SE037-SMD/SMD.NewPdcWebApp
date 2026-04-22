@@ -631,7 +631,13 @@ export default function RequestsPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
-                  <p className="mt-1 text-sm text-on-surface">{selectedRequest.createdBy?.fullName || selectedRequest.createdBy?.email || "-"}</p>
+                  <p className="mt-1 text-sm text-on-surface">
+                    {selectedRequest.createdBy?.fullName
+                      || selectedRequest.createdBy?.email
+                      || (selectedRequest.createdBy?.accountId
+                          ? `User (${selectedRequest.createdBy.accountId.slice(0, 8)}...)`
+                          : "-")}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-outline/20 bg-surface-container-lowest p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
