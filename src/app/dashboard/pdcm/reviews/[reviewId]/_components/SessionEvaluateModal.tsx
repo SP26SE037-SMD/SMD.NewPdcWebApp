@@ -22,10 +22,13 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
 
     useEffect(() => {
         if (isOpen) {
-            setStatus(sessionsReview.status as any);
-            setNote(sessionsReview.note || '');
+            const newStatus = sessionsReview.status as any;
+            const newNote = sessionsReview.note || '';
+            
+            if (status !== newStatus) setStatus(newStatus);
+            if (note !== newNote) setNote(newNote);
         }
-    }, [isOpen, sessionsReview]);
+    }, [isOpen, sessionsReview, status, note]);
 
     if (!isOpen) return null;
 

@@ -33,6 +33,128 @@ import { SYLLABUS_STATUS } from "@/services/syllabus.service";
 import { ManageSyllabusSourcesModal } from "./syllabus/ManageSyllabusSourcesModal";
 import { SyllabusWorkspaceView } from "@/components/common/syllabus/SyllabusWorkspaceView";
 
+const StatusStepper = ({ currentStatus }: { currentStatus: string }) => {
+  // Normalize DB status strings to handle "in progress" -> "IN_PROGRESS" mismatches
+  const normalizedStatus = (currentStatus || "DRAFT")
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  // Determine dynamic branch state
+  const isRevision = normalizedStatus === SYLLABUS_STATUS.REVISION_REQUESTED;
+  const isApproved =
+    normalizedStatus === SYLLABUS_STATUS.APPROVED ||
+    normalizedStatus === SYLLABUS_STATUS.PUBLISHED;
+  const isPastDecision = isRevision || isApproved;
+
+  // Dynamically build the 4 steps representing the logical lifecycle
+  // Flow: Draft -> In Progress -> Pending Review -> [Decision] -> Published
+  const steps = [
+    {
+      id: SYLLABUS_STATUS.DRAFT,
+      label: "Draft",
+      icon: FileText,
+      color: "#94a3b8",
+    },
+    {
+      id: SYLLABUS_STATUS.IN_PROGRESS,
+      label: "In Progress",
+      icon: Settings,
+      color: "#3b82f6",
+    },
+    {
+      id: SYLLABUS_STATUS.PENDING_REVIEW,
+      label: "Pending Review",
+      icon: Search,
+      color: "#f59e0b",
+    },
+    {
+      id: "DECISION_NODE",
+      label: isRevision
+        ? "Revision Req"
+        : isApproved
+          ? "Approved"
+          : "Reviewing...",
+      icon: isRevision ? AlertCircleIcon : isApproved ? CheckCircle2 : Clock,
+      color: isRevision ? "#f43f5e" : isApproved ? "#10b981" : "#a1a1aa",
+    },
+    {
+      id: SYLLABUS_STATUS.PUBLISHED,
+      label: "Published",
+      icon: Rocket,
+      color: "#06b6d4",
+    },
+  ];
+
+  // Determine the active index based on current status
+  let activeIdx = 0; // Default is Draft
+  if (normalizedStatus === SYLLABUS_STATUS.IN_PROGRESS) {
+    activeIdx = 1;
+  } else if (
+    normalizedStatus === SYLLABUS_STATUS.PENDING_REVIEW ||
+    normalizedStatus === "REVIEWING"
+  ) {
+    activeIdx = 2;
+  } else if (isRevision || normalizedStatus === SYLLABUS_STATUS.APPROVED) {
+    activeIdx = 3; // Decision Node
+  } else if (normalizedStatus === SYLLABUS_STATUS.PUBLISHED) {
+    activeIdx = 4;
+  }
+
+  return (
+    <div className="flex items-center gap-1 overflow-hidden py-2 px-1">
+      {steps.map((statusItem, idx) => {
+        const isCompleted = idx < activeIdx;
+        const isActive = idx === activeIdx;
+        const Icon = statusItem.icon;
+
+        return (
+          <div key={statusItem.id} className="flex items-center">
+            <div className="flex flex-col items-center relative min-w-[70px]">
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: isActive ? 1.1 : 0.9,
+                  backgroundColor:
+                    isActive || isCompleted
+                      ? statusItem.color
+                      : "rgb(255, 255, 255)",
+                  borderColor:
+                    isActive || isCompleted
+                      ? statusItem.color
+                      : "rgb(244, 244, 245)",
+                  color:
+                    isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
+                }}
+                className="w-8 h-8 rounded-xl border-2 flex items-center justify-center shadow-sm transition-all duration-500 z-10 relative"
+              >
+                <Icon size={14} strokeWidth={2.5} />
+              </motion.div>
+              <span
+                className={`text-[10px] font-bold mt-1.5 whitespace-nowrap ${isActive ? "text-zinc-900" : "text-zinc-400"}`}
+              >
+                {statusItem.label}
+              </span>
+            </div>
+
+            {idx < steps.length - 1 && (
+              <div className="w-8 h-[2px] bg-zinc-100 mx-0.5 rounded-full relative overflow-hidden shrink-0">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: isCompleted ? "100%" : "0%",
+                    backgroundColor: statusItem.color,
+                  }}
+                  className="h-full"
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function NewSubjectContent() {
   const {
     user,
@@ -135,128 +257,6 @@ export default function NewSubjectContent() {
       color: "#06b6d4",
     },
   ];
-
-  const StatusStepper = ({ currentStatus }: { currentStatus: string }) => {
-    // Normalize DB status strings to handle "in progress" -> "IN_PROGRESS" mismatches
-    const normalizedStatus = (currentStatus || "DRAFT")
-      .toUpperCase()
-      .replace(/\s+/g, "_");
-
-    // Determine dynamic branch state
-    const isRevision = normalizedStatus === SYLLABUS_STATUS.REVISION_REQUESTED;
-    const isApproved =
-      normalizedStatus === SYLLABUS_STATUS.APPROVED ||
-      normalizedStatus === SYLLABUS_STATUS.PUBLISHED;
-    const isPastDecision = isRevision || isApproved;
-
-    // Dynamically build the 4 steps representing the logical lifecycle
-    // Flow: Draft -> In Progress -> Pending Review -> [Decision] -> Published
-    const steps = [
-      {
-        id: SYLLABUS_STATUS.DRAFT,
-        label: "Draft",
-        icon: FileText,
-        color: "#94a3b8",
-      },
-      {
-        id: SYLLABUS_STATUS.IN_PROGRESS,
-        label: "In Progress",
-        icon: Settings,
-        color: "#3b82f6",
-      },
-      {
-        id: SYLLABUS_STATUS.PENDING_REVIEW,
-        label: "Pending Review",
-        icon: Search,
-        color: "#f59e0b",
-      },
-      {
-        id: "DECISION_NODE",
-        label: isRevision
-          ? "Revision Req"
-          : isApproved
-            ? "Approved"
-            : "Reviewing...",
-        icon: isRevision ? AlertCircleIcon : isApproved ? CheckCircle2 : Clock,
-        color: isRevision ? "#f43f5e" : isApproved ? "#10b981" : "#a1a1aa",
-      },
-      {
-        id: SYLLABUS_STATUS.PUBLISHED,
-        label: "Published",
-        icon: Rocket,
-        color: "#06b6d4",
-      },
-    ];
-
-    // Determine the active index based on current status
-    let activeIdx = 0; // Default is Draft
-    if (normalizedStatus === SYLLABUS_STATUS.IN_PROGRESS) {
-      activeIdx = 1;
-    } else if (
-      normalizedStatus === SYLLABUS_STATUS.PENDING_REVIEW ||
-      normalizedStatus === "REVIEWING"
-    ) {
-      activeIdx = 2;
-    } else if (isRevision || normalizedStatus === SYLLABUS_STATUS.APPROVED) {
-      activeIdx = 3; // Decision Node
-    } else if (normalizedStatus === SYLLABUS_STATUS.PUBLISHED) {
-      activeIdx = 4;
-    }
-
-    return (
-      <div className="flex items-center gap-1 overflow-hidden py-2 px-1">
-        {steps.map((statusItem, idx) => {
-          const isCompleted = idx < activeIdx;
-          const isActive = idx === activeIdx;
-          const Icon = statusItem.icon;
-
-          return (
-            <div key={statusItem.id} className="flex items-center">
-              <div className="flex flex-col items-center relative min-w-[70px]">
-                <motion.div
-                  initial={false}
-                  animate={{
-                    scale: isActive ? 1.1 : 0.9,
-                    backgroundColor:
-                      isActive || isCompleted
-                        ? statusItem.color
-                        : "rgb(255, 255, 255)",
-                    borderColor:
-                      isActive || isCompleted
-                        ? statusItem.color
-                        : "rgb(244, 244, 245)",
-                    color:
-                      isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
-                  }}
-                  className="w-8 h-8 rounded-xl border-2 flex items-center justify-center shadow-sm transition-all duration-500 z-10 relative"
-                >
-                  <Icon size={14} strokeWidth={2.5} />
-                </motion.div>
-                <span
-                  className={`text-[10px] font-bold mt-1.5 whitespace-nowrap ${isActive ? "text-zinc-900" : "text-zinc-400"}`}
-                >
-                  {statusItem.label}
-                </span>
-              </div>
-
-              {idx < steps.length - 1 && (
-                <div className="w-8 h-[2px] bg-zinc-100 mx-0.5 rounded-full relative overflow-hidden shrink-0">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: isCompleted ? "100%" : "0%",
-                      backgroundColor: statusItem.color,
-                    }}
-                    className="h-full"
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
 
   const handleDeleteSyllabusClick = (id: string) => {
     setSyllabusToArchive(id);

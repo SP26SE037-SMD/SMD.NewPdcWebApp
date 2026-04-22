@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   useMutation,
   useQueries,
@@ -751,7 +751,7 @@ export function TaskList({ sprintId }: TaskListProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
   // Set default type when tasks load
-  useMemo(() => {
+  useEffect(() => {
     if (taskTypes.length > 0 && !selectedType) {
       setSelectedType(taskTypes[0]);
     }

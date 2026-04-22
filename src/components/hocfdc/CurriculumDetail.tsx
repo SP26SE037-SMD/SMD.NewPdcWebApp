@@ -22,7 +22,6 @@ import CurriculumBriefInfo from "./CurriculumBriefInfo";
 import CurriculumPLOs from "./CurriculumPLOs";
 import MappingMatrix from "@/components/vp/mapping-matrix";
 import { SprintsManagement } from "./SprintsManagement";
-import CurriculumReviewPage from "@/app/dashboard/hocfdc/curriculums/[id]/review/page";
 
 const TABS = [
   { id: "info", label: "Curriculum Info", icon: BookOpen },
@@ -33,6 +32,76 @@ const TABS = [
 ] as const;
 
 type TabType = (typeof TABS)[number]["id"];
+
+const ALL_STATUS_ORDER = [
+  { id: CURRICULUM_STATUS.DRAFT, label: "Draft", icon: FileText, color: "#94a3b8" },
+  { id: CURRICULUM_STATUS.STRUCTURE_REVIEW, label: "Structure Review", icon: Search, color: "#f59e0b" },
+  { id: CURRICULUM_STATUS.STRUCTURE_APPROVED, label: "Structure Approved", icon: CheckCircle2, color: "#10b981" },
+  { id: CURRICULUM_STATUS.SYLLABUS_DEVELOP, label: "Syllabus Develop", icon: Settings, color: "#3b82f6" },
+  { id: CURRICULUM_STATUS.FINAL_REVIEW, label: "Final Review", icon: ShieldCheck, color: "#8b5cf6" },
+  { id: CURRICULUM_STATUS.SIGNED, label: "Signed", icon: PenTool, color: "#f43f5e" },
+  { id: CURRICULUM_STATUS.PUBLISHED, label: "Published", icon: Rocket, color: "#06b6d4" },
+  { id: CURRICULUM_STATUS.ARCHIVED, label: "Archived", icon: Archive, color: "#71717a" },
+];
+
+const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
+  <div className="relative group/stepper w-full mt-4">
+    <div className="flex items-center overflow-x-auto no-scrollbar scroll-smooth snap-x w-full justify-between">
+      {ALL_STATUS_ORDER.map((statusItem, idx) => {
+        const isCompleted = idx < safeCurrentIdx;
+        const isActive = idx === safeCurrentIdx;
+        const Icon = statusItem.icon;
+
+        return (
+          <div key={statusItem.id} className={`flex items-center snap-center ${idx < ALL_STATUS_ORDER.length - 1 ? 'flex-1' : ''}`}>
+            <div className="flex flex-col items-center relative group w-24">
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: isActive ? 1.15 : 1,
+                  backgroundColor: isCompleted ? "var(--primary)" : isActive ? statusItem.color : "rgb(255, 255, 255)",
+                  borderColor: isCompleted ? "var(--primary)" : isActive ? statusItem.color : "rgb(244, 244, 245)",
+                  color: isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
+                }}
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-500 z-10 relative`}
+              >
+                <Icon size={14} strokeWidth={2.5} />
+              </motion.div>
+              <motion.span
+                animate={{
+                  color: isActive || isCompleted ? "rgb(24, 24, 27)" : "rgb(161, 161, 170)",
+                  opacity: isActive || isCompleted ? 1 : 0.6,
+                }}
+                className={`text-[9px] font-black uppercase tracking-widest mt-2 whitespace-nowrap text-center max-w-[100px] leading-tight`}
+              >
+                {statusItem.label}
+              </motion.span>
+            </div>
+            {idx < ALL_STATUS_ORDER.length - 1 && (
+              <div className="flex-1 h-[2px] bg-zinc-200 mx-2 rounded-full relative overflow-hidden min-w-[20px]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: isCompleted ? "100%" : "0%", backgroundColor: isCompleted ? "var(--primary)" : statusItem.color }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  className="h-full"
+                />
+                {isActive && (
+                  <motion.div
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                    className="absolute inset-0 bg-indigo-200/40"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+  </div>
+);
 
 export default function CurriculumDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -69,82 +138,6 @@ export default function CurriculumDetail({ id }: { id: string }) {
   const curriculum = data?.data;
   const [activeTab, setActiveTab] = useState<TabType>("info");
 
-  const ALL_STATUS_ORDER = [
-    { id: CURRICULUM_STATUS.DRAFT, label: "Draft", icon: FileText, color: "#94a3b8" },
-    { id: CURRICULUM_STATUS.STRUCTURE_REVIEW, label: "Structure Review", icon: Search, color: "#f59e0b" },
-    { id: CURRICULUM_STATUS.STRUCTURE_APPROVED, label: "Structure Approved", icon: CheckCircle2, color: "#10b981" },
-    { id: CURRICULUM_STATUS.SYLLABUS_DEVELOP, label: "Syllabus Develop", icon: Settings, color: "#3b82f6" },
-    { id: CURRICULUM_STATUS.FINAL_REVIEW, label: "Final Review", icon: ShieldCheck, color: "#8b5cf6" },
-    { id: CURRICULUM_STATUS.SIGNED, label: "Signed", icon: PenTool, color: "#f43f5e" },
-    { id: CURRICULUM_STATUS.PUBLISHED, label: "Published", icon: Rocket, color: "#06b6d4" },
-    { id: CURRICULUM_STATUS.ARCHIVED, label: "Archived", icon: Archive, color: "#71717a" },
-  ];
-
-  const currentIdx = ALL_STATUS_ORDER.findIndex(
-    (s) => s.id === (curriculum?.curriculumStatus || curriculum?.status),
-  );
-  const safeCurrentIdx = currentIdx === -1 ? 0 : currentIdx;
-
-  const StatusStepper = () => (
-    <div className="relative group/stepper w-full mt-4">
-      <div className="flex items-center overflow-x-auto no-scrollbar scroll-smooth snap-x w-full justify-between">
-        {ALL_STATUS_ORDER.map((statusItem, idx) => {
-          const isCompleted = idx < safeCurrentIdx;
-          const isActive = idx === safeCurrentIdx;
-          const Icon = statusItem.icon;
-
-          return (
-            <div key={statusItem.id} className={`flex items-center snap-center ${idx < ALL_STATUS_ORDER.length - 1 ? 'flex-1' : ''}`}>
-              <div className="flex flex-col items-center relative group w-24">
-                <motion.div
-                  initial={false}
-                  animate={{
-                    scale: isActive ? 1.15 : 1,
-                    backgroundColor: isCompleted ? "var(--primary)" : isActive ? statusItem.color : "rgb(255, 255, 255)",
-                    borderColor: isCompleted ? "var(--primary)" : isActive ? statusItem.color : "rgb(244, 244, 245)",
-                    color: isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
-                  }}
-                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-500 z-10 relative`}
-                >
-                  <Icon size={14} strokeWidth={2.5} />
-                </motion.div>
-                <motion.span
-                  animate={{
-                    color: isActive || isCompleted ? "rgb(24, 24, 27)" : "rgb(161, 161, 170)",
-                    opacity: isActive || isCompleted ? 1 : 0.6,
-                  }}
-                  className={`text-[9px] font-black uppercase tracking-widest mt-2 whitespace-nowrap text-center max-w-[100px] leading-tight`}
-                >
-                  {statusItem.label}
-                </motion.span>
-              </div>
-              {idx < ALL_STATUS_ORDER.length - 1 && (
-                <div className="flex-1 h-[2px] bg-zinc-200 mx-2 rounded-full relative overflow-hidden min-w-[20px]">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: isCompleted ? "100%" : "0%", backgroundColor: isCompleted ? "var(--primary)" : statusItem.color }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="h-full"
-                  />
-                  {isActive && (
-                    <motion.div
-                      animate={{ x: ["-100%", "100%"] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                      className="absolute inset-0 bg-indigo-200/40"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-      <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-    </div>
-  );
-
-
   if (isLoading || !curriculum) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -152,6 +145,11 @@ export default function CurriculumDetail({ id }: { id: string }) {
       </div>
     );
   }
+
+  const currentIdx = ALL_STATUS_ORDER.findIndex(
+    (s) => s.id === (curriculum?.curriculumStatus || curriculum?.status),
+  );
+  const safeCurrentIdx = currentIdx === -1 ? 0 : currentIdx;
 
   return (
     <div className="min-h-screen bg-zinc-50/50 flex flex-col font-sans">
@@ -204,7 +202,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
           </div>
           
           <div className="pt-1">
-            <StatusStepper />
+            <StatusStepper safeCurrentIdx={safeCurrentIdx} />
           </div>
 
           {/* Premium Tab Bar */}

@@ -19,16 +19,16 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+import { StoreProvider } from "@/store/StoreProvider";
+import ReactQueryProvider from "@/context/CreateQueryProvider";
+// import { WebSocketProvider } from "@/context/WebSocketProvider";
+import { ToastProvider } from "@/components/ui/Toast";
+
 export const metadata: Metadata = {
   title: "SMD - Syllabus Management and Digitalization System",
   description:
     "Next-generation academic curriculum management with AI-powered quality assurance.",
 };
-
-import { StoreProvider } from "@/store/StoreProvider";
-import ReactQueryProvider from "@/context/CreateQueryProvider";
-// import { WebSocketProvider } from "@/context/WebSocketProvider";
-import { ToastProvider } from "@/components/ui/Toast";
 
 export default function RootLayout({
   children,

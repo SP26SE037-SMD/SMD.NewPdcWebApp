@@ -49,34 +49,163 @@ import { GroupService } from "@/services/group.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { useToast } from "@/components/ui/Toast";
 
+const ALL_STATUS_ORDER = [
+  {
+    id: CURRICULUM_STATUS.DRAFT,
+    label: "Draft",
+    icon: FileText,
+    color: "#94a3b8",
+  },
+  {
+    id: CURRICULUM_STATUS.STRUCTURE_REVIEW,
+    label: "Structure Review",
+    icon: Search,
+    color: "#f59e0b",
+  },
+  {
+    id: CURRICULUM_STATUS.STRUCTURE_APPROVED,
+    label: "Structure Approved",
+    icon: CheckCircle2,
+    color: "#10b981",
+  },
+  {
+    id: CURRICULUM_STATUS.SYLLABUS_DEVELOP,
+    label: "Syllabus Develop",
+    icon: Settings,
+    color: "#3b82f6",
+  },
+  {
+    id: CURRICULUM_STATUS.FINAL_REVIEW,
+    label: "Final Review",
+    icon: ShieldCheck,
+    color: "#8b5cf6",
+  },
+  {
+    id: CURRICULUM_STATUS.SIGNED,
+    label: "Signed",
+    icon: PenTool,
+    color: "#f43f5e",
+  },
+  {
+    id: CURRICULUM_STATUS.PUBLISHED,
+    label: "Published",
+    icon: Rocket,
+    color: "#06b6d4",
+  },
+  {
+    id: CURRICULUM_STATUS.ARCHIVED,
+    label: "Archived",
+    icon: Archive,
+    color: "#71717a",
+  },
+];
+
+const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
+  <div className="relative group/stepper max-w-[550px]">
+    <div className="flex items-center px-6 py-4 bg-white border border-zinc-100 rounded-3xl shadow-sm overflow-x-auto no-scrollbar scroll-smooth snap-x">
+      {ALL_STATUS_ORDER.map((statusItem, idx) => {
+        const isCompleted = idx < safeCurrentIdx;
+        const isActive = idx === safeCurrentIdx;
+        const Icon = statusItem.icon;
+
+        return (
+          <div key={statusItem.id} className="flex items-center snap-center">
+            <div className="flex flex-col items-center relative group min-w-[120px]">
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: isActive ? 1.15 : 1,
+                  backgroundColor: isCompleted
+                    ? "var(--primary)"
+                    : isActive
+                      ? statusItem.color
+                      : "rgb(255, 255, 255)",
+                  borderColor: isCompleted
+                    ? "var(--primary)"
+                    : isActive
+                      ? statusItem.color
+                      : "rgb(244, 244, 245)",
+                  color:
+                    isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
+                }}
+                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-500 z-10 relative`}
+              >
+                <Icon size={18} strokeWidth={2.5} />
+              </motion.div>
+
+              <motion.span
+                animate={{
+                  color:
+                    isActive || isCompleted
+                      ? "rgb(24, 24, 27)"
+                      : "rgb(161, 161, 170)",
+                  opacity: isActive || isCompleted ? 1 : 0.6,
+                }}
+                className={`text-[9px] font-black uppercase tracking-widest mt-2 whitespace-nowrap text-center max-w-[100px] leading-tight`}
+              >
+                {statusItem.label}
+              </motion.span>
+            </div>
+
+            {idx < ALL_STATUS_ORDER.length - 1 && (
+              <div className="w-12 h-[3px] bg-zinc-100 mx-1 rounded-full relative overflow-hidden shrink-0">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: isCompleted ? "100%" : "0%",
+                    backgroundColor: isCompleted
+                      ? "var(--primary)"
+                      : statusItem.color,
+                  }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  className="h-full"
+                />
+                {isActive && (
+                  <motion.div
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2,
+                      ease: "linear",
+                    }}
+                    className="absolute inset-0 bg-indigo-200/40"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+  </div>
+);
+
 export default function CurriculumDetail({ id, isEmbedded = false }: { id: string; isEmbedded?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  // New Feature State
   const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
   const [activeElectiveGroup, setActiveElectiveGroup] = useState<any>(null);
 
-  // 1. Fetch Core Curriculum Details
   const { data: curriculumData, isLoading: isLoadingCore } = useQuery({
     queryKey: ["curriculum-details", id],
     queryFn: () => CurriculumService.getCurriculumById(id),
   });
 
-  // 2. Fetch Mapped Subjects by Semester (The "Builder" data)
   const { data: mappedData, isLoading: isLoadingMapped } = useQuery({
     queryKey: ["curriculum-mapped-subjects", id],
     queryFn: () => CurriculumGroupSubjectService.getSubjectsByCurriculum(id),
   });
 
-  // 3. Fetch PLOs
   const { data: ploData, isLoading: isLoadingPLOs } = useQuery({
     queryKey: ["curriculum-plos", id],
     queryFn: () => CurriculumService.getPLOsByCurriculumId(id),
   });
 
-  // 4. Fetch Groups for Simulation
   const { data: groupData, isLoading: isLoadingGroups } = useQuery({
     queryKey: ["warehouse-groups"],
     queryFn: () => GroupService.getGroups(),
@@ -134,23 +263,6 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
 
   if (!curriculum) return null;
 
-  const STATUS_COLORS: Record<string, string> = {
-    [CURRICULUM_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
-    [CURRICULUM_STATUS.STRUCTURE_REVIEW]:
-      "text-blue-600 bg-blue-50 border-blue-100",
-    [CURRICULUM_STATUS.STRUCTURE_APPROVED]:
-      "text-emerald-600 bg-emerald-50 border-emerald-100",
-    [CURRICULUM_STATUS.SYLLABUS_DEVELOP]:
-      "text-indigo-600 bg-indigo-50 border-indigo-100",
-    [CURRICULUM_STATUS.FINAL_REVIEW]:
-      "text-amber-600 bg-amber-50 border-amber-100",
-    [CURRICULUM_STATUS.SIGNED]:
-      "text-emerald-600 bg-emerald-50 border-emerald-100",
-    [CURRICULUM_STATUS.PUBLISHED]:
-      "text-emerald-600 bg-emerald-50 border-emerald-100",
-    [CURRICULUM_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
-  };
-
   const SUBJECT_STATUS_COLORS: Record<string, string> = {
     DRAFT: "text-zinc-500 bg-zinc-50 border-zinc-100",
     DEFINED: "text-blue-500 bg-blue-50 border-blue-100",
@@ -170,7 +282,6 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
     }
   };
 
-  // Calculate Stats
   const totalCredits = mappedSubjects.reduce(
     (acc: number, sem: any) =>
       acc +
@@ -189,145 +300,10 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
     ...mappedSubjects.map((s: any) => Number(s.semesterNo)),
   );
 
-  // Dynamic Sliding Lifecycle Stepper Logic
-  const ALL_STATUS_ORDER = [
-    {
-      id: CURRICULUM_STATUS.DRAFT,
-      label: "Draft",
-      icon: FileText,
-      color: "#94a3b8",
-    },
-    {
-      id: CURRICULUM_STATUS.STRUCTURE_REVIEW,
-      label: "Structure Review",
-      icon: Search,
-      color: "#f59e0b",
-    },
-    {
-      id: CURRICULUM_STATUS.STRUCTURE_APPROVED,
-      label: "Structure Approved",
-      icon: CheckCircle2,
-      color: "#10b981",
-    },
-    {
-      id: CURRICULUM_STATUS.SYLLABUS_DEVELOP,
-      label: "Syllabus Develop",
-      icon: Settings,
-      color: "#3b82f6",
-    },
-    {
-      id: CURRICULUM_STATUS.FINAL_REVIEW,
-      label: "Final Review",
-      icon: ShieldCheck,
-      color: "#8b5cf6",
-    },
-    {
-      id: CURRICULUM_STATUS.SIGNED,
-      label: "Signed",
-      icon: PenTool,
-      color: "#f43f5e",
-    },
-    {
-      id: CURRICULUM_STATUS.PUBLISHED,
-      label: "Published",
-      icon: Rocket,
-      color: "#06b6d4",
-    },
-    {
-      id: CURRICULUM_STATUS.ARCHIVED,
-      label: "Archived",
-      icon: Archive,
-      color: "#71717a",
-    },
-  ];
-
   const currentIdx = ALL_STATUS_ORDER.findIndex(
     (s) => s.id === curriculum.status,
   );
   const safeCurrentIdx = currentIdx === -1 ? 0 : currentIdx;
-
-  const StatusStepper = () => (
-    <div className="relative group/stepper max-w-[550px]">
-      <div className="flex items-center px-6 py-4 bg-white border border-zinc-100 rounded-3xl shadow-sm overflow-x-auto no-scrollbar scroll-smooth snap-x">
-        {ALL_STATUS_ORDER.map((statusItem, idx) => {
-          const isCompleted = idx < safeCurrentIdx;
-          const isActive = idx === safeCurrentIdx;
-          const Icon = statusItem.icon;
-
-          return (
-            <div key={statusItem.id} className="flex items-center snap-center">
-              <div className="flex flex-col items-center relative group min-w-[120px]">
-                <motion.div
-                  initial={false}
-                  animate={{
-                    scale: isActive ? 1.15 : 1,
-                    backgroundColor: isCompleted
-                      ? "var(--primary)"
-                      : isActive
-                        ? statusItem.color
-                        : "rgb(255, 255, 255)",
-                    borderColor: isCompleted
-                      ? "var(--primary)"
-                      : isActive
-                        ? statusItem.color
-                        : "rgb(244, 244, 245)",
-                    color:
-                      isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
-                  }}
-                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-500 z-10 relative`}
-                >
-                  <Icon size={18} strokeWidth={2.5} />
-                </motion.div>
-
-                <motion.span
-                  animate={{
-                    color:
-                      isActive || isCompleted
-                        ? "rgb(24, 24, 27)"
-                        : "rgb(161, 161, 170)",
-                    opacity: isActive || isCompleted ? 1 : 0.6,
-                  }}
-                  className={`text-[9px] font-black uppercase tracking-widest mt-2 whitespace-nowrap text-center max-w-[100px] leading-tight`}
-                >
-                  {statusItem.label}
-                </motion.span>
-              </div>
-
-              {idx < ALL_STATUS_ORDER.length - 1 && (
-                <div className="w-12 h-[3px] bg-zinc-100 mx-1 rounded-full relative overflow-hidden shrink-0">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: isCompleted ? "100%" : "0%",
-                      backgroundColor: isCompleted
-                        ? "var(--primary)"
-                        : statusItem.color,
-                    }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="h-full"
-                  />
-                  {isActive && (
-                    <motion.div
-                      animate={{ x: ["-100%", "100%"] }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 2,
-                        ease: "linear",
-                      }}
-                      className="absolute inset-0 bg-indigo-200/40"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-      <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-    </div>
-  );
 
   return (
     <div className={`bg-zinc-50/50 flex flex-col ${isEmbedded ? "h-full" : "min-h-screen"}`}>
@@ -362,7 +338,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
           </div>
 
           <div className="flex items-center gap-6">
-            <StatusStepper />
+            <StatusStepper safeCurrentIdx={safeCurrentIdx} />
 
             <button
               onClick={() =>
