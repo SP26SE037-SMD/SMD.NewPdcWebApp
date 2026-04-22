@@ -234,7 +234,7 @@ export default function RequestsPage() {
 
   const handleFixCurriculum = async (request: RequestItem) => {
     // Try multiple ways to get the majorId
-    const majorId = request.majorId || request.major?.majorId || request.curriculum?.major?.majorId || request.curriculum?.majorId;
+    const majorId = request.major?.majorId || request.curriculum?.major?.majorId;
     
     console.log("Attempting to fix curriculum for request:", request.requestId, "MajorID:", majorId);
 
@@ -252,7 +252,7 @@ export default function RequestsPage() {
       const task = res?.data?.content?.find(t => 
         t.majorId === majorId || 
         t.major?.majorId === majorId || 
-        t.curriculumId === request.targetId
+        t.curriculumId === request.curriculum?.curriculumId
       );
       
       if (task) {

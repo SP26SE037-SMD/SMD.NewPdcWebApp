@@ -7,13 +7,13 @@ import { RootState } from "@/store";
 import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 import { MajorService, Major } from "@/services/major.service";
 import { PoService, PO } from "@/services/po.service";
-import { CurriculumService, CurriculumFramework } from "@/services/curriculum.service";
-import { RequestService } from "@/services/request.service";
+import { CurriculumService, CurriculumFramework, CURRICULUM_STATUS } from "@/services/curriculum.service";
+import { RequestService, RequestItem } from "@/services/request.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X,
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
@@ -282,7 +282,7 @@ export default function TaskDetailPage() {
             <div className="flex items-center gap-3">
               {task.major && (
                 <button
-                  onClick={() => router.push(`/dashboard/hocfdc/${task.majorId || task.major.majorId}`)}
+                  onClick={() => router.push(`/dashboard/hocfdc/${task.majorId || task.major?.majorId}`)}
                   className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all flex items-center gap-2 group/major shadow-sm"
                 >
                   <Eye className="h-3.5 w-3.5 group-hover/major:scale-110 transition-transform" />

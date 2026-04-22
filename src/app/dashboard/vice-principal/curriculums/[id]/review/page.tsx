@@ -114,7 +114,7 @@ export default function VicePrincipalReviewPage() {
 	});
 
 	const curriculum = curriculumData?.data || curriculumData;
-	const mappings = subjectsData?.data?.semesterMappings || subjectsData?.semesterMappings || [];
+	const mappings = (subjectsData as any)?.data?.semesterMappings || (subjectsData as any)?.semesterMappings || [];
 	const plos =
 		plosData?.data?.content ||
 		plosData?.data ||
@@ -139,7 +139,7 @@ export default function VicePrincipalReviewPage() {
 	}, [mappings]);
 
 	const isMapped = (poId: string, ploId: string) => {
-		return poPloMappings.some(
+		return (poPloMappings as any[]).some(
 			(m: any) =>
 				(m.poId === poId || m.po?.poId === poId) &&
 				(m.ploId === ploId || m.plo?.ploId === ploId),
@@ -176,7 +176,7 @@ export default function VicePrincipalReviewPage() {
 
 	const executeApprove = async () => {
 		setIsSubmittingReview(true);
-		const toastId = showToast("Approving curriculum structure...", "loading");
+		showToast("Approving curriculum structure...", "info");
 		
 		try {
 			// 1. Update Request to APPROVED
@@ -185,11 +185,11 @@ export default function VicePrincipalReviewPage() {
 			// 2. Update Curriculum to STRUCTURE_APPROVED (via mutation to trigger side effects)
 			await mutation.mutateAsync(CURRICULUM_STATUS.STRUCTURE_APPROVED);
 
-			showToast("Curriculum structure approved successfully!", "success", toastId);
+			showToast("Curriculum structure approved successfully!", "success");
 			setShowConfirmModal(false);
 		} catch (error: any) {
 			console.error("Approve Error:", error);
-			showToast(error.message || "Failed to approve structure", "error", toastId);
+			showToast(error.message || "Failed to approve structure", "error");
 		} finally {
 			setIsSubmittingReview(false);
 		}
@@ -212,7 +212,7 @@ export default function VicePrincipalReviewPage() {
 
 	const executeReject = async () => {
 		setIsSubmittingReview(true);
-		const toastId = showToast("Rejecting and requesting revision...", "loading");
+		showToast("Rejecting and requesting revision...", "info");
 
 		try {
 			// 1. Update Request to REJECTED
@@ -221,12 +221,12 @@ export default function VicePrincipalReviewPage() {
 			// 2. Update Curriculum back to DRAFT
 			await CurriculumService.updateCurriculumStatus(effectiveId, CURRICULUM_STATUS.DRAFT);
 
-			showToast("Revision requested successfully", "success", toastId);
+			showToast("Revision requested successfully", "success");
 			setShowConfirmModal(false);
 			router.push(`/dashboard/vice-principal/digital-enactment`);
 		} catch (error: any) {
 			console.error("Reject Error:", error);
-			showToast(error.message || "Failed to request revision", "error", toastId);
+			showToast(error.message || "Failed to request revision", "error");
 		} finally {
 			setIsSubmittingReview(false);
 		}
