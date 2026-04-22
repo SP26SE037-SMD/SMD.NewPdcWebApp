@@ -31,7 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function MajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorCode = params.majorCode as string;
+  const majorId = params.majorId as string;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -53,18 +53,18 @@ export default function MajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major", majorCode],
-    queryFn: () => MajorService.getMajorByCode(majorCode),
-    enabled: !!majorCode,
+    queryKey: ["major", majorId],
+    queryFn: () => MajorService.getMajorById(majorId),
+    enabled: !!majorId,
   });
 
-  // Curriculums Query - same logic as hocfdc (search by majorCode)
+  // Curriculums Query
   const { data: curriculumsResponse, isLoading: isCurriculumsLoading } =
     useQuery({
-      queryKey: ["major-curriculums", majorCode],
+      queryKey: ["major-curriculums", majorId],
       queryFn: () =>
-        CurriculumService.getCurriculums({ search: majorCode, size: 100 }),
-      enabled: !!majorCode,
+        CurriculumService.getCurriculums({ majorId: majorId, size: 100 }),
+      enabled: !!majorId,
     });
 
   const curriculums = curriculumsResponse?.data?.content || [];
@@ -101,7 +101,7 @@ export default function MajorDetailContent() {
     mutationFn: (status: string) =>
       MajorService.updateMajorStatus(majorDetail?.data?.majorId || "", status),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["major", majorCode] });
+      queryClient.invalidateQueries({ queryKey: ["major", majorId] });
       showToast(
         `Major status updated to ${response.data.status.replace("_", " ")}.`,
         "success",
@@ -203,7 +203,7 @@ export default function MajorDetailContent() {
                 <button
                   onClick={() =>
                     router.push(
-                      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(major.majorCode)}/review`,
+                      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(major.majorId)}/review`,
                     )
                   }
                   className="px-8 py-3 bg-amber-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/10 active:scale-95 transition-all flex items-center gap-2"

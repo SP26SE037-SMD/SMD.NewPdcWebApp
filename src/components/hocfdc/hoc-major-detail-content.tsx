@@ -23,7 +23,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function HocMajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorCode = params.majorCode as string;
+  const majorIdFromParams = params.majorId as string;
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "CURRICULUMS">("OVERVIEW");
 
   // Major Details Query
@@ -32,9 +32,9 @@ export default function HocMajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major-hoc", majorCode],
-    queryFn: () => MajorService.getMajorByCode(majorCode),
-    enabled: !!majorCode,
+    queryKey: ["major-hoc", majorIdFromParams],
+    queryFn: () => MajorService.getMajorById(majorIdFromParams),
+    enabled: !!majorIdFromParams,
   });
 
   const majorId = majorDetail?.data?.majorId;
@@ -202,7 +202,7 @@ export default function HocMajorDetailContent() {
                 <button
                   onClick={() =>
                     router.push(
-                      `/dashboard/hocfdc/curriculums/new?majorCode=${majorCode}`,
+                      `/dashboard/hocfdc/curriculums/new?majorCode=${major?.majorCode}`,
                     )
                   }
                   className="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all shadow-xl shadow-primary/20 active:scale-95 group"
