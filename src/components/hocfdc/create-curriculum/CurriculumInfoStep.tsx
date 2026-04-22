@@ -176,18 +176,29 @@ export default function CurriculumInfoStep({
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">Academic Major</label>
-                  <div className="relative group">
-                    <select name="majorId" value={formData.majorId} onChange={handleInputChange} className={`w-full bg-zinc-50/50 border-2 border-zinc-100 rounded-2xl py-4 px-6 font-bold appearance-none outline-none transition-all duration-300 cursor-pointer ${formData.majorId ? "text-zinc-900" : "text-zinc-300"} focus:border-primary-300 focus:bg-white focus:shadow-lg focus:shadow-primary/5`}>
-                      <option value="" className="text-zinc-300 font-medium italic">Select Major (Non-Draft)</option>
-                      {majors.map((m: Major) => <option key={m.majorId} value={m.majorId} className="text-zinc-900 font-bold">{m.majorName} ({m.majorCode})</option>)}
-                    </select>
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300 group-focus-within:rotate-180 group-focus-within:text-primary">
-                      {isLoadingMajors ? <Loader2 className="animate-spin text-primary" size={18} /> : <ChevronDown className={`transition-colors duration-300 ${formData.majorId ? "text-primary" : "text-zinc-300"}`} size={20} />}
+                {initialData?.majorId ? (
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">Academic Major</label>
+                    <div className="w-full bg-primary/5 border-2 border-primary/10 rounded-2xl py-4 px-6">
+                      <p className="font-bold text-primary">
+                        {majors.find((m: Major) => m.majorId === formData.majorId)?.majorName || "Loading Major..."}
+                      </p>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">Academic Major</label>
+                    <div className="relative group">
+                      <select name="majorId" value={formData.majorId} onChange={handleInputChange} className={`w-full bg-zinc-50/50 border-2 border-zinc-100 rounded-2xl py-4 px-6 font-bold appearance-none outline-none transition-all duration-300 cursor-pointer ${formData.majorId ? "text-zinc-900" : "text-zinc-300"} focus:border-primary-300 focus:bg-white focus:shadow-lg focus:shadow-primary/5`}>
+                        <option value="" className="text-zinc-300 font-medium italic">Select Major (Non-Draft)</option>
+                        {majors.map((m: Major) => <option key={m.majorId} value={m.majorId} className="text-zinc-900 font-bold">{m.majorName} ({m.majorCode})</option>)}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300 group-focus-within:rotate-180 group-focus-within:text-primary">
+                        {isLoadingMajors ? <Loader2 className="animate-spin text-primary" size={18} /> : <ChevronDown className={`transition-colors duration-300 ${formData.majorId ? "text-primary" : "text-zinc-300"}`} size={20} />}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">Effective Start Year</label>
                   <input name="startYear" value={formData.startYear} onChange={handleInputChange} className={`w-full bg-zinc-50/50 border-2 rounded-2xl py-4 px-6 font-bold text-zinc-900 placeholder:text-zinc-300 outline-none transition-all duration-300 ${!validation.isStartYearValid ? "border-red-100 focus:border-red-300 focus:bg-red-50/10" : "border-zinc-100 focus:border-primary-300 focus:bg-white focus:shadow-lg focus:shadow-primary/5"}`} placeholder={currentYear.toString()} type="number" />
