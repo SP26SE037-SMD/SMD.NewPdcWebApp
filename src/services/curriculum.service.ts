@@ -97,12 +97,14 @@ export const CurriculumService = {
     status?: string;
     page?: number;
     size?: number;
+    majorId?: string;
     sort?: string[];
   }) {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.append("search", params.search);
     if (params?.searchBy) queryParams.append("searchBy", params.searchBy);
     if (params?.status) queryParams.append("status", params.status);
+    if (params?.majorId) queryParams.append("majorId", params.majorId);
     if (params?.page !== undefined)
       queryParams.append("page", params.page.toString());
     if (params?.size !== undefined)
