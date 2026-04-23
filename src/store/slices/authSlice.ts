@@ -10,7 +10,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  isLoading: true, // Start with loading to check session
+  isLoading: false, // Changed from true to false to prevent hydration mismatch
   error: null,
 };
 

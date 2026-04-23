@@ -18,9 +18,17 @@ export default function LoginForm() {
     const dispatch = useDispatch<AppDispatch>();
     const { showToast } = useToast();
 
-    const { user, error, isLoading } = useSelector((state: RootState) => state.auth);
+    const { user, error, isLoading: authLoading } = useSelector((state: RootState) => state.auth);
     const [urlError, setUrlError] = useState<string | null>(null);
     const [sessionExpired, setSessionExpired] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Prevent hydration mismatch by using a stable state until mounted
+    const isLoading = isMounted ? authLoading : false;
 
     // Initial error from URL
     useEffect(() => {
