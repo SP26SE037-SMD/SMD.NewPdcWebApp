@@ -217,7 +217,16 @@ export default function VicePrincipalReviewPage() {
           reviewComment,
         );
       }
-      mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
+
+      // Determine target curriculum status based on current status
+      const currentStatus = curriculum?.status;
+      let targetStatus: string = CURRICULUM_STATUS.STRUCTURE_APPROVED;
+
+      if (currentStatus === CURRICULUM_STATUS.FINAL_REVIEW) {
+        targetStatus = CURRICULUM_STATUS.SIGNED;
+      }
+
+      mutation.mutate(targetStatus as any);
     } catch (e) {
       console.error(e);
       alert("Failed to approve request.");
@@ -245,6 +254,15 @@ export default function VicePrincipalReviewPage() {
         alert("No active request ID found. Cannot reject.");
         return;
       }
+
+      // If in FINAL_REVIEW, rejection moves curriculum back to SYLLABUS_DEVELOP
+      if (curriculum?.status === CURRICULUM_STATUS.FINAL_REVIEW) {
+        await CurriculumService.updateCurriculumStatus(
+          effectiveId,
+          CURRICULUM_STATUS.SYLLABUS_DEVELOP,
+        );
+      }
+
       alert("Request rejected successfully!");
       router.push(`/dashboard/vice-principal/digital-enactment`);
     } catch (e) {

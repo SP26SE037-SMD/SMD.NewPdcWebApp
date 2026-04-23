@@ -27,7 +27,10 @@ import {
   Layers,
   Share2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { RequestService } from "@/services/request.service";
 import CurriculumInformation from "./CurriculumInformation";
 import CurriculumBriefInfo from "./CurriculumBriefInfo";
 import CurriculumPLOs from "./CurriculumPLOs";
@@ -215,6 +218,56 @@ export default function CurriculumDetail({ id }: { id: string }) {
   });
   const curriculum = data?.data;
   const [activeTab, setActiveTab] = useState<TabType>("info");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+
+  const searchParams = useSearchParams();
+  const isFromRejected = searchParams.get("isFromRejected") === "true";
+  const feedback = searchParams.get("feedback");
+
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const handleSubmitFinalReview = async () => {
+    if (!user?.accountId) {
+      showToast("User session not found. Please log in again.", "error");
+      return;
+    }
+
+    setIsSubmittingRequest(true);
+    try {
+      // 1. Update curriculum status to FINAL_REVIEW
+      await statusMutation.mutateAsync(CURRICULUM_STATUS.FINAL_REVIEW);
+
+      // 2. Create the request
+      const isResubmit = isFromRejected;
+      const title = isResubmit
+        ? `Resubmit Final Review: ${curriculum.curriculumCode}`
+        : `Final Review: ${curriculum.curriculumCode}`;
+      const content = isResubmit
+        ? `Resubmit final review for ${curriculum.curriculumName}`
+        : `Final review for ${curriculum.curriculumName}`;
+
+      await RequestService.createRequest({
+        title,
+        content,
+        createdById: user.accountId,
+        curriculumId: id,
+        majorId: curriculum.major?.majorId || curriculum.majorId || "",
+        status: "PENDING",
+      });
+
+      showToast(
+        isResubmit
+          ? "Resubmitted for final review successfully"
+          : "Submitted for final review successfully",
+        "success",
+      );
+    } catch (err: any) {
+      console.error("Final review submission error:", err);
+      showToast(err.message || "Failed to submit for final review", "error");
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
 
   if (isLoading || !curriculum) {
     return (
@@ -277,6 +330,24 @@ export default function CurriculumDetail({ id }: { id: string }) {
               )}
 
               {(curriculum.curriculumStatus || curriculum.status) ===
+                CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
+                <button
+                  onClick={handleSubmitFinalReview}
+                  disabled={isSubmittingRequest || statusMutation.isPending}
+                  className="px-5 py-2.5 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmittingRequest ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <ShieldCheck size={14} />
+                  )}
+                  {isFromRejected
+                    ? "Resubmit for Final Review"
+                    : "Submit for Final Review"}
+                </button>
+              )}
+
+              {(curriculum.curriculumStatus || curriculum.status) ===
                 CURRICULUM_STATUS.SIGNED && (
                 <button
                   onClick={() =>
@@ -334,6 +405,26 @@ export default function CurriculumDetail({ id }: { id: string }) {
 
       {/* Main Content Layout */}
       <div className="flex-1 w-full flex flex-col p-4 relative h-full">
+        {isFromRejected && feedback && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-5 bg-rose-50 border border-rose-100 rounded-3xl flex items-start gap-4 shadow-sm"
+          >
+            <div className="w-12 h-12 shrink-0 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500 shadow-inner">
+              <FileText size={24} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xs font-black text-rose-900 uppercase tracking-[0.2em] mb-1.5">
+                Reviewer Feedback (Request Revision)
+              </h4>
+              <p className="text-sm text-rose-700 font-bold leading-relaxed">
+                {feedback}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Tab Content Area */}
         <div className="flex-1 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden min-h-[500px] relative flex flex-col">
           <AnimatePresence mode="wait">

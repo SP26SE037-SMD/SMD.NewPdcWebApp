@@ -233,43 +233,58 @@ export default function RequestsPage() {
   };
 
   const handleFixCurriculum = async (request: RequestItem) => {
-    // Try multiple ways to get the majorId
-    const majorId = request.major?.majorId || request.curriculum?.major?.majorId;
-    
-    console.log("Attempting to fix curriculum for request:", request.requestId, "MajorID:", majorId);
+    const majorId =
+      request.major?.majorId || request.curriculum?.major?.majorId;
+    const curriculumId = request.curriculum?.curriculumId;
 
-    if (!majorId) {
-      toast.error("Major information missing for this request");
+    if (!curriculumId || !majorId) {
+      toast.error("Required information missing for this request");
       return;
     }
 
-    const toastId = toast.loading("Finding associated task...");
+    const toastId = toast.loading("Analyzing curriculum state...");
     try {
-      // Increase size to 100 to ensure we find it in the list if filtering isn't perfect
-      const res = await TaskService.getTasks({ majorId, size: 100 });
-      
-      // Fallback search in case the API returned more tasks than requested or if filtering was client-side
-      const task = res?.data?.content?.find(t => 
-        t.majorId === majorId || 
-        t.major?.majorId === majorId || 
-        t.curriculumId === request.curriculum?.curriculumId
-      );
-      
-      if (task) {
-        toast.success("Task found, redirecting...", { id: toastId });
-        if (router) {
-          router.push(`/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`);
+      // 1. Fetch current curriculum status
+      const curRes = await CurriculumService.getCurriculumById(curriculumId);
+      const curriculum = curRes?.data || curRes;
+      const status = curriculum?.status || curriculum?.curriculumStatus;
+
+      // 2. Logic branching based on status
+      if (status === "DRAFT") {
+        // Find task and navigate to task detail
+        const res = await TaskService.getTasks({ majorId, size: 100 });
+        const task = res?.data?.content?.find(
+          (t) =>
+            t.majorId === majorId ||
+            t.major?.majorId === majorId ||
+            t.curriculumId === curriculumId,
+        );
+
+        if (task) {
+          toast.success("Navigating to task builder...", { id: toastId });
+          router.push(
+            `/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`,
+          );
         } else {
-          console.error("Router instance is missing!");
-          window.location.href = `/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`;
+          toast.error("Original task not found. Please use the Tasks menu.", {
+            id: toastId,
+          });
         }
+      } else if (status === "SYLLABUS_DEVELOP") {
+        // Navigate to curriculum detail with feedback
+        toast.success("Navigating to syllabus workspace...", { id: toastId });
+        const feedback = request.comment || "";
+        router.push(
+          `/dashboard/hocfdc/curriculums/${curriculumId}?isFromRejected=true&feedback=${encodeURIComponent(feedback)}`,
+        );
       } else {
-        console.warn("Task search returned:", res?.data?.content);
-        toast.error("Could not find the original task for this curriculum. Please go to Tasks menu directly.", { id: toastId });
+        toast.error(`Curriculum is currently in ${status} status.`, {
+          id: toastId,
+        });
       }
     } catch (err) {
       console.error("Navigation error:", err);
-      toast.error("Failed to navigate to task detail", { id: toastId });
+      toast.error("Failed to analyze curriculum state", { id: toastId });
     }
   };
 
