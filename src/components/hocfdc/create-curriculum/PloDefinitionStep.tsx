@@ -96,7 +96,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
     mutationFn: (payload: any[]) =>
       CurriculumService.bulkCreatePLOs(curriculumId!, payload),
     onSuccess: () => {
-      toast.success("Outcomes synchronized");
+      toast.success("PLOs saved successfully!");
       localStorage.removeItem(DRAFT_KEY);
       queryClient.invalidateQueries({
         queryKey: ["curriculum-plos", curriculumId],
@@ -246,14 +246,18 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
           <button
             onClick={() => handleSaveDraft(false)}
             disabled={saveMutation.isPending || pendingOutcomes.length === 0}
-            className={`btn-pdcm-ghost px-8 py-4 rounded-2xl ${saveMutation.isPending || pendingOutcomes.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all ${
+              saveMutation.isPending || pendingOutcomes.length === 0 
+                ? "bg-zinc-100 text-zinc-400 cursor-not-allowed" 
+                : "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95"
+            }`}
           >
             {saveMutation.isPending ? (
               <Loader2 className="animate-spin" size={18} />
             ) : (
               <Save size={18} />
             )}
-            Save Draft
+            Save All PLOs
           </button>
         </div>
       </header>

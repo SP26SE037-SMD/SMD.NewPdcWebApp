@@ -97,9 +97,9 @@ export default function DigitalEnactmentContent() {
         if (curId) localStorage.setItem("curriculumId", curId);
         if (majId) localStorage.setItem("majorId", majId);
 
-        // Chuyển hướng đến trang review (Optional, nhưng thường sẽ đi tiếp sau khi click)
+        // Chuyển hướng đến trang review với majorId và curriculumId trên URL
         if (curId) {
-          router.push(`/dashboard/vice-principal/curriculums/${curId}/review`);
+          router.push(`/dashboard/vice-principal/curriculums/${curId}/review?majorId=${majId}&curriculumId=${curId}`);
         }
       }
     } catch (error) {

@@ -97,12 +97,14 @@ export const CurriculumService = {
     status?: string;
     page?: number;
     size?: number;
+    majorId?: string;
     sort?: string[];
   }) {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.append("search", params.search);
     if (params?.searchBy) queryParams.append("searchBy", params.searchBy);
     if (params?.status) queryParams.append("status", params.status);
+    if (params?.majorId) queryParams.append("majorId", params.majorId);
     if (params?.page !== undefined)
       queryParams.append("page", params.page.toString());
     if (params?.size !== undefined)
@@ -141,8 +143,8 @@ export const CurriculumService = {
     return apiClient.post<CurriculumFramework>("/api/curriculums", payload);
   },
 
-  getPloByCurriculumId: async (curriculumId: string, status?: string) => {
-    const params = new URLSearchParams({ page: "0", size: "50" });
+  getPloByCurriculumId: async (curriculumId: string, status?: string, size: number = 50) => {
+    const params = new URLSearchParams({ page: "0", size: size.toString() });
     if (status) {
       params.append("status", status);
     }

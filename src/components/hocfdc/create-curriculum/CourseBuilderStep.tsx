@@ -224,7 +224,7 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
     mutationFn: (data: any) =>
       CurriculumGroupSubjectService.bulkConfigure(data),
     onSuccess: () => {
-      toast.success("Curriculum flow synchronized");
+      toast.success("Draft saved successfully!");
       queryClient.invalidateQueries({
         queryKey: ["curriculum-mapped-subjects", curriculumId],
       });
@@ -568,7 +568,7 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
 
       <div className="grid grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
         {/* Curriculum Area (The Editorial Layout) */}
-        <div className="col-span-12 lg:col-span-8 space-y-12">
+        <div className="col-span-12 lg:col-span-8 space-y-12 max-h-[calc(100vh-250px)] overflow-y-auto pr-6 custom-scrollbar scroll-smooth">
           {/* Prefix Semester 0 Trigger - Positioned before Semester 1 */}
           {!hasSemesterZero && (
             <div className="group/prep border-b border-dashed border-zinc-100 pb-6 mb-2 flex items-center gap-4">

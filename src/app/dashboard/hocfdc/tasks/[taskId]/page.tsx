@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { TaskService, TaskItem } from "@/services/task.service";
+import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 import { MajorService, Major } from "@/services/major.service";
 import { PoService, PO } from "@/services/po.service";
-import { CurriculumService, CurriculumFramework } from "@/services/curriculum.service";
-import { RequestService } from "@/services/request.service";
+import { CurriculumService, CurriculumFramework, CURRICULUM_STATUS } from "@/services/curriculum.service";
+import { RequestService, RequestItem } from "@/services/request.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3,
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
@@ -35,8 +35,11 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function TaskDetailPage() {
   const { taskId } = useParams() as { taskId: string };
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
+
+  const initialMajorId = searchParams.get("majorId");
 
   const [activeTab, setActiveTab] = useState<Tab>("major");
   const [task, setTask] = useState<TaskItem | null>(null);
@@ -45,17 +48,60 @@ export default function TaskDetailPage() {
   const [curriculum, setCurriculum] = useState<CurriculumFramework | null>(null);
   const [loadingTask, setLoadingTask] = useState(true);
   const [loadingMajor, setLoadingMajor] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [savingCurriculum, setSavingCurriculum] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [rejectionRequest, setRejectionRequest] = useState<RequestItem | null>(null);
 
   // Load task
   useEffect(() => {
     const load = async () => {
       try {
         const res = await TaskService.getTaskById(taskId);
-        const t = (res as any)?.data as TaskItem;
-        setTask(t);
-      } catch {
+        let rawTask = (res as any)?.data;
+
+        console.log("[TaskDetail] Raw Response Data:", rawTask);
+
+        // Handle case where detail API returns a paginated-like structure
+        if (rawTask && rawTask.content && Array.isArray(rawTask.content) && rawTask.content.length > 0) {
+          rawTask = rawTask.content[0];
+          console.log("[TaskDetail] Extracted from content[0]:", rawTask);
+        }
+
+        if (rawTask) {
+          let mappedTask = TaskService.mapTaskApiToItem(rawTask);
+
+          // Use majorId from URL if present and detail API returns null
+          if (!mappedTask.majorId && initialMajorId) {
+            console.log("[TaskDetail] Using majorId from URL:", initialMajorId);
+            mappedTask.majorId = initialMajorId;
+          }
+
+          // FALLBACK: If majorId is still missing, try to find it in the list
+          if (!mappedTask.majorId && user?.accountId) {
+            console.log("[TaskDetail] majorId missing in detail, attempting fallback from task list...");
+            try {
+              const listRes = await TaskService.getTasks({ accountId: user.accountId, size: 100 });
+              const listTasks = listRes?.data?.content || [];
+              const taskFromList = listTasks.find(t => t.taskId === taskId);
+
+              if (taskFromList && taskFromList.majorId) {
+                console.log("[TaskDetail] Found majorId in list fallback:", taskFromList.majorId);
+                mappedTask = { ...mappedTask, majorId: taskFromList.majorId, major: taskFromList.major };
+              }
+            } catch (fallbackErr) {
+              console.error("[TaskDetail] Fallback failed:", fallbackErr);
+            }
+          }
+
+          console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          setTask(mappedTask);
+        }
+      } catch (err) {
+        console.error("[TaskDetail] Failed to load task:", err);
         toast.error("Failed to load task");
       } finally {
         setLoadingTask(false);
@@ -66,21 +112,23 @@ export default function TaskDetailPage() {
 
   // Load major when task is ready
   useEffect(() => {
-    if (!task?.majorId) return;
+    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
+    if (!effectiveMajorId) return;
+
     const load = async () => {
       setLoadingMajor(true);
       try {
-        const res = await MajorService.getMajorById(task.majorId!);
+        const res = await MajorService.getMajorById(effectiveMajorId);
         setMajor((res as any)?.data as Major);
-        const posRes = await PoService.getPOsByMajorId(task.majorId!, { size: 100 });
+        const posRes = await PoService.getPOsByMajorId(effectiveMajorId, { size: 100 });
         setPos((posRes as any)?.data?.content || []);
 
         // Load existing curriculum for this major if any
         try {
-          const currRes = await CurriculumService.getCurriculumsByMajorId(task.majorId!);
+          const currRes = await CurriculumService.getCurriculumsByMajorId(effectiveMajorId);
           const currList = (currRes as any)?.data || [];
           if (currList.length > 0) setCurriculum(currList[0]);
-        } catch {}
+        } catch { }
       } catch {
         toast.error("Failed to load major info");
       } finally {
@@ -88,7 +136,32 @@ export default function TaskDetailPage() {
       }
     };
     load();
-  }, [task?.majorId]);
+  }, [task?.majorId, task?.major?.majorId, taskId, initialMajorId]);
+
+  // Load rejection feedback if any
+  useEffect(() => {
+    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
+    if (!effectiveMajorId) return;
+
+    const checkRejection = async () => {
+      try {
+        const res = await RequestService.getRequests({
+          majorId: effectiveMajorId,
+          status: "REJECTED",
+          size: 1,
+          sortBy: "createdAt",
+          direction: "desc",
+        });
+        const latestRejected = res?.data?.content?.[0];
+        if (latestRejected) {
+          setRejectionRequest(latestRejected);
+        }
+      } catch (err) {
+        console.error("Failed to check rejection status:", err);
+      }
+    };
+    checkRejection();
+  }, [task?.majorId, task?.major?.majorId, initialMajorId]);
 
   // Save curriculum info
   const handleSaveCurriculum = async (data: any, proceed?: boolean) => {
@@ -103,7 +176,7 @@ export default function TaskDetailPage() {
         saved = (res as any)?.data as CurriculumFramework;
       }
       setCurriculum(saved);
-      toast.success("Curriculum saved!");
+      toast.success("Curriculum info saved successfully!");
       if (proceed) setActiveTab("plo");
     } catch (e: any) {
       toast.error(e?.message || "Failed to save curriculum");
@@ -124,6 +197,13 @@ export default function TaskDetailPage() {
     }
     setSubmitting(true);
     try {
+      // 1. Update curriculum status to STRUCTURE_REVIEW
+      await CurriculumService.updateCurriculumStatus(
+        curriculum.curriculumId,
+        CURRICULUM_STATUS.STRUCTURE_REVIEW
+      );
+
+      // 2. Create the request
       await RequestService.createRequest({
         title,
         content,
@@ -132,10 +212,16 @@ export default function TaskDetailPage() {
         curriculumId: curriculum.curriculumId,
         majorId: task.majorId,
       });
+
+      // 3. Update task status to DONE (Only for first-time submission)
+      if (!rejectionRequest) {
+        await TaskService.updateTaskStatus(taskId as string, TASK_STATUS.DONE);
+      }
+
       toast.success("Request submitted successfully!");
       router.push("/dashboard/hocfdc/requests");
     } catch (e: any) {
-      toast.error(e?.message || "Failed to submit request");
+      toast.error(e?.response?.data?.message || e?.message || "Failed to submit request");
     } finally {
       setSubmitting(false);
     }
@@ -165,6 +251,8 @@ export default function TaskDetailPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
         <div className="max-w-7xl mx-auto">
+          {/* Rejection banner removed as per user request, moved to button near title */}
+
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-wider hover:text-primary transition mb-3 group"
@@ -175,27 +263,32 @@ export default function TaskDetailPage() {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-black text-on-surface tracking-tight">{task.taskName}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-black text-on-surface tracking-tight">{task.taskName}</h1>
+                {rejectionRequest && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowRejectionModal(true)}
+                    className="px-3 py-1.5 bg-error/10 text-error border border-error/20 rounded-xl flex items-center gap-2 hover:bg-error/20 transition-all group"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">View Feedback</span>
+                  </motion.button>
+                )}
+              </div>
               <p className="text-sm text-on-surface-variant mt-0.5 max-w-2xl line-clamp-1">{task.description}</p>
             </div>
             <div className="flex items-center gap-3">
               {task.major && (
-                <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-wider">
-                  {task.major.majorCode}
-                </span>
-              )}
-              <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
-                task.status === "IN_PROGRESS" ? "bg-secondary/10 text-secondary" : "bg-surface-container text-on-surface-variant"
-              }`}>
-                {task.status?.replace(/_/g, " ")}
-              </span>
-              {task.deadline && (
-                <span className="flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(task.deadline).toLocaleDateString("vi-VN")}
-                </span>
-              )}
-            </div>
+                <button
+                  onClick={() => router.push(`/dashboard/hocfdc/${task.majorId || task.major?.majorId}`)}
+                  className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all flex items-center gap-2 group/major shadow-sm"
+                >
+                  <Eye className="h-3.5 w-3.5 group-hover/major:scale-110 transition-transform" />
+                  <span>View Major: {task.major.majorCode}</span>
+                </button>
+              )}            </div>
           </div>
 
           {/* Tabs */}
@@ -208,11 +301,10 @@ export default function TaskDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${activeTab === tab.id
                       ? "bg-primary text-on-primary shadow-md shadow-primary/20"
                       : "text-on-surface-variant hover:bg-surface-container"
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -238,7 +330,11 @@ export default function TaskDetailPage() {
           >
             {/* MAJOR DETAIL TAB */}
             {activeTab === "major" && (
-              <MajorDetailTab major={major} loading={loadingMajor} majorId={task.majorId} />
+              <MajorDetailTab
+                major={major}
+                loading={loadingMajor}
+                majorId={task?.majorId || task?.major?.majorId || initialMajorId}
+              />
             )}
 
             {/* PO TAB */}
@@ -312,6 +408,7 @@ export default function TaskDetailPage() {
                 major={major}
                 task={task}
                 submitting={submitting}
+                rejectionRequest={rejectionRequest}
                 onSubmit={handleSubmit}
                 onGoCreate={() => setActiveTab("curriculum")}
               />
@@ -319,6 +416,67 @@ export default function TaskDetailPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Rejection Feedback Modal - Reverted to Previous Version */}
+      <AnimatePresence>
+        {showRejectionModal && rejectionRequest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRejectionModal(false)}
+              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-error blur-3xl opacity-10 rounded-full -mr-16 -mt-16" />
+
+              <div className="relative">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center">
+                      <AlertCircle className="h-7 w-7 text-error" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-[#2d3335] tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Review Feedback</h3>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowRejectionModal(false)}
+                    className="w-10 h-10 rounded-full hover:bg-surface-container transition-colors flex items-center justify-center"
+                  >
+                    <X className="h-5 w-5 text-on-surface-variant" />
+                  </button>
+                </div>
+
+                <div className="bg-[#f1f4f5] rounded-3xl p-8 mb-8 border border-outline/5 shadow-inner">
+                  <div className="flex items-center gap-2 mb-4 text-[#5a6062]">
+                    <span className="material-symbols-outlined text-[20px]">history_edu</span>
+                    <span className="text-xs font-bold uppercase tracking-widest">VP Feedback Comment</span>
+                  </div>
+                  <p className="text-[#2d3335] text-lg font-medium leading-relaxed italic">
+                    "{rejectionRequest.comment || "No specific feedback provided. Please review the curriculum structure carefully according to academic standards."}"
+                  </p>
+                </div>
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => setShowRejectionModal(false)}
+                    className="w-full bg-[#2d3335] text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#1d1f20] transition-all active:scale-95 shadow-xl shadow-zinc-950/20"
+                  >
+                    I Understand
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -347,9 +505,8 @@ function MajorDetailTab({ major, loading, majorId }: { major: Major | null; load
               <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black uppercase tracking-wider">
                 {major.majorCode}
               </span>
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
-                major.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-              }`}>
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${major.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
+                }`}>
                 {major.status}
               </span>
             </div>
@@ -392,9 +549,8 @@ function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
-                <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                  po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-                }`}>{po.status}</span>
+                <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
+                  }`}>{po.status}</span>
               </div>
             </div>
           ))}
@@ -421,22 +577,39 @@ function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void
 }
 
 function SubmitTab({
-  curriculum, major, task, submitting, onSubmit, onGoCreate,
+  curriculum, major, task, submitting, rejectionRequest, onSubmit, onGoCreate,
 }: {
   curriculum: CurriculumFramework | null;
   major: Major | null;
   task: TaskItem;
   submitting: boolean;
+  rejectionRequest: RequestItem | null;
   onSubmit: (title: string, content: string) => void;
   onGoCreate: () => void;
 }) {
-  const [title, setTitle] = useState(`Curriculum submission for ${major?.majorName || "major"}`);
-  const [content, setContent] = useState(`Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`);
+  const [title, setTitle] = useState(
+    rejectionRequest
+      ? `Resubmit Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
+      : `Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
+  );
+  const [content, setContent] = useState(
+    rejectionRequest
+      ? `Updated curriculum ${curriculum?.curriculumCode || ""} based on feedback and resubmitting for review.`
+      : `Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`
+  );
 
   useEffect(() => {
-    setTitle(`Curriculum submission for ${major?.majorName || "major"}`);
-    setContent(`Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`);
-  }, [major, curriculum]);
+    setTitle(
+      rejectionRequest
+        ? `Resubmit Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
+        : `Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
+    );
+    setContent(
+      rejectionRequest
+        ? `Updated curriculum ${curriculum?.curriculumCode || ""} based on feedback and resubmitting for review.`
+        : `Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`
+    );
+  }, [major, curriculum, rejectionRequest]);
 
   if (!curriculum) {
     return <NoCurriculumPlaceholder onGoCreate={onGoCreate} label="submission" />;
@@ -460,10 +633,6 @@ function SubmitTab({
           <div className="flex justify-between text-sm">
             <span className="text-on-surface-variant font-medium">Major</span>
             <span className="font-bold text-on-surface">{major?.majorName || task.majorId}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-on-surface-variant font-medium">Status</span>
-            <span className="font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs uppercase">PENDING</span>
           </div>
         </div>
 

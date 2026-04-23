@@ -43,14 +43,14 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
 
   const { data: posRes, isLoading: isLoadingPos } = useQuery({
     queryKey: ["pos-major", majorId],
-    queryFn: () => PoService.getPOsByMajorId(majorId as string),
+    queryFn: () => PoService.getPOsByMajorId(majorId as string, { size: 100 }),
     enabled: !!majorId,
   });
   const pos = ((posRes?.data as any)?.content as PO[]) || [];
 
   const { data: plosRes, isLoading: isLoadingPlos } = useQuery({
     queryKey: ["plos-curriculum", curriculumId],
-    queryFn: () => CurriculumService.getPloByCurriculumId(curriculumId!),
+    queryFn: () => CurriculumService.getPloByCurriculumId(curriculumId!, "ACTIVE", 100),
     enabled: !!curriculumId,
   });
   const plos = ((plosRes?.data as any)?.content as PLO[]) || [];

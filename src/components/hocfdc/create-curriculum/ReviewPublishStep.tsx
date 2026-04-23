@@ -25,6 +25,10 @@ import { PoService, PO } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import StepNavigation from "./StepNavigation";
 import { SubjectService } from "@/services/subject.service";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { MajorService } from "@/services/major.service";
+import { RequestService } from "@/services/request.service";
 
 interface StepProps {
   onNext?: () => void;
@@ -50,6 +54,7 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
   const curriculumId = searchParams.get("id");
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useSelector((state: RootState) => state.auth);
 
   // 1. Fetch Data
   const { data: curriculumRes, isLoading: isLoadingCurriculum } = useQuery({
@@ -60,6 +65,14 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
 
   const curriculum = curriculumRes?.data;
   const majorId = curriculum?.major?.majorId || curriculum?.majorId;
+
+  const { data: majorRes } = useQuery({
+    queryKey: ["major", majorId],
+    queryFn: () => MajorService.getMajorById(majorId as string),
+    enabled: !!majorId && !curriculum?.major?.majorName,
+  });
+
+  const major = majorRes?.data || curriculum?.major;
 
   const { data: mappedData, isLoading: isLoadingMapped } = useQuery({
     queryKey: ["curriculum-mapped-subjects", curriculumId],
@@ -82,13 +95,13 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
 
   const { data: posRes, isLoading: isLoadingPos } = useQuery({
     queryKey: ["pos-major", majorId],
-    queryFn: () => PoService.getPOsByMajorId(majorId as string),
+    queryFn: () => PoService.getPOsByMajorId(majorId as string, { size: 100 }),
     enabled: !!majorId,
   });
 
   const { data: plosRes, isLoading: isLoadingPlos } = useQuery({
     queryKey: ["plos-curriculum", curriculumId],
-    queryFn: () => CurriculumService.getPloByCurriculumId(curriculumId!),
+    queryFn: () => CurriculumService.getPloByCurriculumId(curriculumId!, "ACTIVE", 100),
     enabled: !!curriculumId,
   });
 
@@ -196,18 +209,37 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
 
   // 3. Finalize Mutation
   const finalizeMutation = useMutation({
-    mutationFn: () =>
-      CurriculumService.updateCurriculumStatus(
-        curriculumId!,
-        CURRICULUM_STATUS.STRUCTURE_REVIEW,
-      ),
+    mutationFn: async () => {
+      const toastId = toast.loading("Submitting curriculum for review...");
+      try {
+        // 1. Update curriculum status
+        await CurriculumService.updateCurriculumStatus(
+          curriculumId!,
+          CURRICULUM_STATUS.STRUCTURE_REVIEW,
+        );
+
+        // 2. Create review task (request)
+        const curriculumName = curriculum?.curriculumNameEn || curriculum?.curriculumName || "Untitled Curriculum";
+        const majorName = major?.majorName || "Unknown Major";
+        
+        await RequestService.createRequest({
+          title: `Review: ${curriculum?.curriculumCode || curriculumName}`.substring(0, 50),
+          content: `Review curriculum ${curriculumName} of major ${majorName}`,
+          status: "PENDING",
+          createdById: user?.accountId || "",
+          curriculumId: curriculumId!,
+          majorId: majorId as string,
+        });
+        
+        toast.success("Curriculum submitted successfully!", { id: toastId });
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || "Submission failed", { id: toastId });
+        throw error;
+      }
+    },
     onSuccess: () => {
-      toast.success("Curriculum submitted for structure review");
       queryClient.invalidateQueries({ queryKey: ["curriculum", curriculumId] });
       router.push("/dashboard/hocfdc/curriculums?submitted=true&status=STRUCTURE_REVIEW");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Submission failed");
     },
   });
 
@@ -380,7 +412,7 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
                 </label>
                 <div className="text-sm font-bold text-zinc-900 mt-1 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {curriculum?.major?.majorName ||
+                  {major?.majorName ||
                     curriculum?.majorCode ||
                     "Standard Major"}
                 </div>

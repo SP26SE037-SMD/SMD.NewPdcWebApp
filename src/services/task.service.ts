@@ -148,6 +148,7 @@ export interface TaskQueryParams {
   status?: TaskStatus | string | string[];
   sprintId?: string;
   accountId?: string;
+  majorId?: string;
   departmentId?: string;
   syllabusId?: string;
   page?: number;
@@ -237,6 +238,7 @@ export const TaskService = {
     if (params?.status && typeof params.status === 'string') queryParams.append("status", params.status);
     if (params?.sprintId) queryParams.append("sprintId", params.sprintId);
     if (params?.accountId) queryParams.append("accountId", params.accountId);
+    if (params?.majorId) queryParams.append("majorId", params.majorId);
     if (params?.departmentId)
       queryParams.append("departmentId", params.departmentId);
     if (params?.syllabusId) queryParams.append("syllabusId", params.syllabusId);
@@ -263,8 +265,14 @@ export const TaskService = {
       syllabusId: task.syllabus?.syllabusId || task.syllabusId || "",
       syllabusName: task.syllabus?.syllabusName || task.syllabusName || "Unnamed Syllabus",
     },
-    curriculumId: task.curriculumId ?? null,
-    taskName: task.taskName,
+    curriculumId: task.curriculumId ?? task.curriculum_id ?? null,
+    majorId: task.majorId ?? task.major?.majorId ?? task.major_id ?? task.major?.major_id ?? null,
+    major: task.major ? {
+        majorId: task.major.majorId ?? task.major.major_id,
+        majorCode: task.major.majorCode ?? task.major.major_code,
+        majorName: task.major.majorName ?? task.major.major_name,
+    } : null,
+    taskName: task.taskName ?? task.task_name,
     description: task.description,
     status: task.status,
     priority: task.priority,

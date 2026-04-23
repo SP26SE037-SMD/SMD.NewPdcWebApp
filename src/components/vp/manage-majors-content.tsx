@@ -67,8 +67,10 @@ export default function ManageMajorsContent() {
   const [createError, setCreateError] = useState("");
 
   const [taskForm, setTaskForm] = useState({
+    taskName: "",
+    description: "",
     deadline: "",
-    type: "REVIEW",
+    type: "CREATE_CURRICULUM",
     priority: "HIGH",
   });
 
@@ -282,10 +284,9 @@ export default function ManageMajorsContent() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                accountId: "a7e97b05-4fce-4f65-9b01-bd8cafaf3a9a",
                 majorId: finalMajorId,
-                taskName: `Review Major: ${newMajor.majorName}`,
-                description: `Please review the new major ${newMajor.majorCode} - ${newMajor.majorName}.`,
+                taskName: taskForm.taskName,
+                description: taskForm.description,
                 priority: taskForm.priority,
                 deadline: actualDeadline,
                 type: taskForm.type
@@ -345,9 +346,9 @@ export default function ManageMajorsContent() {
     setWizardStep(3);
   };
 
-  const handleOpenDetail = (code: string) => {
+  const handleOpenDetail = (id: string) => {
     router.push(
-      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(code)}`,
+      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(id)}`,
     );
   };
 
@@ -542,14 +543,6 @@ export default function ManageMajorsContent() {
                   </button>
                   <div className="flex gap-4">
                     <button
-                      type="button"
-                      onClick={() => setIsCreateModalOpen(false)}
-                      className="px-6 py-3 border border-[#adb3b5] rounded-xl font-semibold text-[#5a6062] hover:bg-[#f1f4f5] transition-colors flex items-center gap-2"
-                    >
-                      <Save size={18} />
-                      {currentMajorId ? "Update as Draft" : "Save as Draft"}
-                    </button>
-                    <button
                       type="submit"
                       disabled={
                         createMutation.isPending || updateMajorMutation.isPending
@@ -644,21 +637,7 @@ export default function ManageMajorsContent() {
                   </div>
                 </div>
 
-                <div className="bg-[#1b5e20] rounded-2xl p-8 text-white relative overflow-hidden group">
-                  <div className="relative z-10">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a5d6a7]">
-                      Pro Tip
-                    </span>
-                    <p className="mt-2 text-sm font-medium leading-relaxed">
-                      Program outcomes should be measurable, achievable, and
-                      aligned with institutional goals.
-                    </p>
-                  </div>
-                  <Target
-                    size={120}
-                    className="absolute -bottom-4 -right-4 text-white/5 opacity-50"
-                  />
-                </div>
+
               </div>
 
               {/* Right Column: List */}
@@ -881,7 +860,14 @@ export default function ManageMajorsContent() {
                         Back to Outcomes
                       </button>
                       <button
-                        onClick={() => setIsConfirmModalOpen(true)}
+                        onClick={() => {
+                          setTaskForm({
+                            ...taskForm,
+                            taskName: `Create Curriculum for Major: ${newMajor.majorName}`,
+                            description: `Please develop the full curriculum for the new ${newMajor.majorName} program based on the established POs.`,
+                          });
+                          setIsConfirmModalOpen(true);
+                        }}
                         className="flex-1 sm:flex-none px-10 py-3 bg-[#4caf50] text-white font-black uppercase tracking-widest text-[13px] rounded-xl shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                       >
                         <Send size={18} />
@@ -928,6 +914,32 @@ export default function ManageMajorsContent() {
                       <div className="px-8 flex flex-col gap-4 mb-8">
                         <div>
                            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                             Task Name
+                           </label>
+                           <input
+                             type="text"
+                             required
+                             value={taskForm.taskName}
+                             onChange={(e) => setTaskForm({...taskForm, taskName: e.target.value})}
+                             placeholder="e.g. Design Core Modules"
+                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
+                           />
+                        </div>
+                        <div>
+                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                             Task Description
+                           </label>
+                           <textarea
+                             rows={3}
+                             required
+                             value={taskForm.description}
+                             onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
+                             placeholder="Describe the objectives of this task..."
+                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all resize-none"
+                           />
+                        </div>
+                        <div>
+                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
                              Task Deadline
                            </label>
                            <input
@@ -938,35 +950,19 @@ export default function ManageMajorsContent() {
                              className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
                            />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div>
-                             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                               Priority
-                             </label>
-                             <select
-                               value={taskForm.priority}
-                               onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
-                               className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
-                             >
-                               <option value="HIGH">High</option>
-                               <option value="MEDIUM">Medium</option>
-                               <option value="LOW">Low</option>
-                             </select>
-                           </div>
-                           <div>
-                             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                               Type
-                             </label>
-                             <select
-                               value={taskForm.type}
-                               onChange={(e) => setTaskForm({...taskForm, type: e.target.value})}
-                               className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
-                             >
-                               <option value="REVIEW">Review</option>
-                               <option value="ENACTMENT">Enactment</option>
-                               <option value="EXPERTISE">Expertise</option>
-                             </select>
-                           </div>
+                        <div>
+                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                             Priority
+                           </label>
+                           <select
+                             value={taskForm.priority}
+                             onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
+                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
+                           >
+                             <option value="HIGH">High</option>
+                             <option value="MEDIUM">Medium</option>
+                             <option value="LOW">Low</option>
+                           </select>
                         </div>
                       </div>
 
