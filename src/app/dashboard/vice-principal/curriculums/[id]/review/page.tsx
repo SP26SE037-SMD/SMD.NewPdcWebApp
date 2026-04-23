@@ -14,6 +14,8 @@ import { PoPloService } from "@/services/poplo.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { RequestService } from "@/services/request.service";
 import { Loader2, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/components/ui/Toast";
 
 export default function VicePrincipalReviewPage() {
   const { id } = useParams() as { id: string };
@@ -191,64 +193,66 @@ export default function VicePrincipalReviewPage() {
     );
   }
 
-  const handleApprove = async () => {
-    if (
-      confirm(
-        "Approve this curriculum structure? This will allow HoCFDC to proceed with syllabus development.",
-      )
-    ) {
-      setIsSubmittingReview(true);
-      try {
-        if (requestId) {
-          await RequestService.updateRequest(requestId, {
-            status: "APPROVED",
-            comment: reviewComment,
-          });
-        }
-        mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
-      } catch (e) {
-        console.error(e);
-        alert("Failed to approve request.");
-      } finally {
-        setIsSubmittingReview(false);
+  const handleApprove = () => {
+    setConfirmAction("approve");
+    setShowConfirmModal(true);
+  };
+
+  const handleReject = () => {
+    if (!reviewComment.trim()) {
+      alert("Please provide a comment for requesting revision (rejection).");
+      return;
+    }
+    setConfirmAction("reject");
+    setShowConfirmModal(true);
+  };
+
+  const executeApprove = async () => {
+    setIsSubmittingReview(true);
+    try {
+      if (requestId) {
+        await RequestService.updateRequestStatus(
+          requestId,
+          "APPROVED",
+          reviewComment,
+        );
       }
+      mutation.mutate(CURRICULUM_STATUS.STRUCTURE_APPROVED);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to approve request.");
+    } finally {
+      setIsSubmittingReview(false);
+      setShowConfirmModal(false);
     }
   };
 
-  const handleReject = async () => {
+  const executeReject = async () => {
     if (!requestId || !effectiveId) {
       showToast("Missing Request ID or Curriculum ID", "error");
       return;
     }
 
-    if (!reviewComment.trim()) {
-      alert("Please provide a comment for requesting revision (rejection).");
-      return;
-    }
-    if (
-      confirm(
-        "Are you sure you want to request a revision for this curriculum? It will be marked as REJECTED.",
-      )
-    ) {
-      setIsSubmittingReview(true);
-      try {
-        if (requestId) {
-          await RequestService.updateRequest(requestId, {
-            status: "REJECTED",
-            comment: reviewComment,
-          });
-        } else {
-          alert("No active request ID found. Cannot reject.");
-          return;
-        }
-        alert("Request rejected successfully!");
-        router.push(`/dashboard/vice-principal/digital-enactment`);
-      } catch (e) {
-        console.error(e);
-        alert("Failed to reject request.");
-      } finally {
-        setIsSubmittingReview(false);
+    setIsSubmittingReview(true);
+    try {
+      if (requestId) {
+        await RequestService.updateRequestStatus(
+          requestId,
+          "REJECTED",
+          reviewComment,
+        );
+      } else {
+        alert("No active request ID found. Cannot reject.");
+        return;
       }
+      alert("Request rejected successfully!");
+      router.push(`/dashboard/vice-principal/digital-enactment`);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to reject request.");
+    } finally {
+      setIsSubmittingReview(false);
+      setShowConfirmModal(false);
     }
   };
 

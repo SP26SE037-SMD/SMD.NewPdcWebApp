@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -577,305 +577,278 @@ export default function RequestsPage() {
         </div>
       </div>
 
-    {showCreateModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="w-full max-w-2xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-on-surface">Create New Request</h2>
-            <button
-              onClick={closeCreateModal}
-              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
-            >
-              <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-                <div>
-                  <h2 className="text-xl font-bold text-zinc-900">
-                    Create New Request
-                  </h2>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
-                    System Change Governance
-                  </p>
-                </div>
-                <button
-                  onClick={closeCreateModal}
-                  className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+    <AnimatePresence>
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeCreateModal}
+            className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
+          >
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">Create New Request</h2>
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">System Change Governance</p>
               </div>
-
-              <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                      Target Major
-                    </label>
-                    <select
-                      value={createForm.majorId}
-                      onChange={(e) => handleMajorChange(e.target.value)}
-                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
-                    >
-                      <option value="">
-                        {loadingMajors ? "Loading majors..." : "Select major"}
-                      </option>
-                      {majors.map((major) => (
-                        <option key={major.majorId} value={major.majorId}>
-                          {major.majorCode} - {major.majorName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                      Curriculum Framework
-                    </label>
-                    <select
-                      value={createForm.curriculumId}
-                      onChange={(e) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          curriculumId: e.target.value,
-                        }))
-                      }
-                      disabled={!createForm.majorId || loadingCurriculums}
-                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none disabled:opacity-50"
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
-                    >
-                      <option value="">
-                        {loadingCurriculums
-                          ? "Loading curriculums..."
-                          : "Select curriculum"}
-                      </option>
-                      {curriculums.map((curriculum) => (
-                        <option
-                          key={curriculum.curriculumId}
-                          value={curriculum.curriculumId}
-                        >
-                          {curriculum.curriculumCode} -{" "}
-                          {curriculum.curriculumName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Request Title
-                  </label>
-                  <input
-                    value={createForm.title}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter a descriptive title for this request"
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Detailed Content
-                  </label>
-                  <textarea
-                    value={createForm.content}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
-                    }
-                    placeholder="Provide a detailed description of the proposed changes..."
-                    rows={4}
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Additional Justification (Optional)
-                  </label>
-                  <textarea
-                    value={createForm.comment}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        comment: e.target.value,
-                      }))
-                    }
-                    placeholder="Any additional notes or justification for this request..."
-                    rows={3}
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-3">
-                <button
-                  onClick={closeCreateModal}
-                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateRequest}
-                  disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
-                >
-                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Submit Request
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-    {showDetailModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="w-full max-w-3xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-on-surface">Request Detail</h2>
-            <button
-              onClick={() => setShowDetailModal(false)}
-              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
-            >
-              <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-                <div>
-                  <h2 className="text-xl font-bold text-zinc-900">
-                    Request Specification
-                  </h2>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
-                    Detailed Governance Review
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-          {detailLoading ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-on-surface-variant">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm font-medium">Loading request detail...</p>
+              <button
+                onClick={closeCreateModal}
+                className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          ) : (
-            <>
-              {selectedRequest ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</p>
-                      <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.status}</p>
+
+            {/* Content */}
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Target Major</label>
+                  <select
+                    value={createForm.majorId}
+                    onChange={(e) => handleMajorChange(e.target.value)}
+                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                  >
+                    <option value="">{loadingMajors ? "Loading majors..." : "Select major"}</option>
+                    {majors.map((major) => (
+                      <option key={major.majorId} value={major.majorId}>
+                        {major.majorCode} - {major.majorName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Curriculum Framework</label>
+                  <select
+                    value={createForm.curriculumId}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, curriculumId: e.target.value }))}
+                    disabled={!createForm.majorId || loadingCurriculums}
+                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none disabled:opacity-50"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                  >
+                    <option value="">{loadingCurriculums ? "Loading curriculums..." : "Select curriculum"}</option>
+                    {curriculums.map((curriculum) => (
+                      <option key={curriculum.curriculumId} value={curriculum.curriculumId}>
+                        {curriculum.curriculumCode} - {curriculum.curriculumName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Request Title</label>
+                <input
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter a descriptive title for this request"
+                  className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Detailed Content</label>
+                <textarea
+                  value={createForm.content}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Provide a detailed description of the proposed changes..."
+                  rows={4}
+                  className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Additional Justification (Optional)</label>
+                <textarea
+                  value={createForm.comment}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Any additional notes or justification for this request..."
+                  rows={3}
+                  className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-3">
+              <button
+                onClick={closeCreateModal}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateRequest}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Submit Request
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+
+    <AnimatePresence>
+      {showDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDetailModal(false)}
+            className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
+          >
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">Request Specification</h2>
+                <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">Detailed Governance Review</p>
+              </div>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              {detailLoading ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-zinc-400">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="text-sm font-bold uppercase tracking-widest">Synchronizing Data...</p>
+                </div>
+              ) : selectedRequest ? (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Current Status</label>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-wider ${getStatusClass(selectedRequest.status)}`}>
+                        {selectedRequest.status === "PENDING" && <Clock size={12} />}
+                        {selectedRequest.status === "APPROVED" && <CheckCircle2 size={12} />}
+                        {selectedRequest.status === "REJECTED" && <XCircle size={12} />}
+                        {selectedRequest.status}
+                      </span>
                     </div>
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created At</p>
-                      <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.createdAt)}</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Title</p>
-                    <p className="mt-1 text-sm font-semibold text-on-surface">{selectedRequest.title}</p>
-                  </div>
-
-                  <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Content</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.content}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Created By</p>
-                      <p className="mt-1 text-sm text-on-surface">
-                        {selectedRequest.createdBy?.fullName
-                          || selectedRequest.createdBy?.email
-                          || (selectedRequest.createdBy?.accountId
-                              ? `User (${selectedRequest.createdBy.accountId.slice(0, 8)}...)`
-                              : "-")}
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Submission Timeline</label>
+                      <p className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                        <CalendarDays size={16} className="text-primary" />
+                        {formatDate(selectedRequest.createdAt)}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Curriculum</p>
-                      <p className="mt-1 text-sm text-on-surface">
+                  </div>
+
+                  <div className="bg-zinc-50 rounded-3xl p-6 border border-zinc-100">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-3">Request Overview</label>
+                    <h4 className="text-lg font-bold text-zinc-900 mb-3">{selectedRequest.title}</h4>
+                    <p className="text-zinc-600 leading-relaxed text-sm font-medium">
+                      {selectedRequest.content}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Originating Authority</label>
+                      <p className="text-sm font-bold text-zinc-900">
+                        {selectedRequest.createdBy?.fullName || selectedRequest.createdBy?.email || "-"}
+                      </p>
+                    </div>
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Target Framework</label>
+                      <p className="text-sm font-bold text-zinc-900">
                         {selectedRequest.curriculum?.curriculumCode || "-"}
-                        {selectedRequest.curriculum?.curriculumName
-                          ? ` - ${selectedRequest.curriculum.curriculumName}`
-                          : ""}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Major</p>
-                      <p className="mt-1 text-sm text-on-surface">{selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}</p>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Academic Major</label>
+                      <p className="text-sm font-bold text-zinc-900">
+                        {selectedRequest.major?.majorName || selectedRequest.curriculum?.major?.majorName || "-"}
+                      </p>
                     </div>
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Updated At</p>
-                      <p className="mt-1 text-sm text-on-surface">{formatDate(selectedRequest.updatedAt)}</p>
+                    <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Last Modified</label>
+                      <p className="text-sm font-bold text-zinc-900">
+                        {formatDate(selectedRequest.updatedAt)}
+                      </p>
                     </div>
                   </div>
 
                   {selectedRequest.comment && (
-                    <div className="rounded-2xl border border-outline/20 bg-zinc-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Comment</p>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface">{selectedRequest.comment}</p>
+                    <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10 italic">
+                      <label className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-3">Decision Comment</label>
+                      <p className="text-zinc-700 text-sm font-medium leading-relaxed">
+                        "{selectedRequest.comment}"
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedRequest && !detailLoading && (
+                    <div className="mt-8 flex justify-end gap-3 border-t border-zinc-100 pt-6">
+                      {selectedRequest.status === "APPROVED" && (
+                        <button
+                          onClick={() => handleContinueToSprint(selectedRequest)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+                        >
+                          <FastForward className="h-4 w-4" />
+                          Continue to Sprint Planning
+                        </button>
+                      )}
+                      {selectedRequest.status === "REJECTED" && (
+                        <button
+                          onClick={() => handleFixCurriculum(selectedRequest)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-amber-500/20"
+                        >
+                          <Wrench className="h-4 w-4" />
+                          Update Curriculum
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="py-14 text-center text-sm text-on-surface-variant">
-                  No detail data.
+                <div className="py-14 text-center text-zinc-400 italic">
+                  No detailed metadata available for this entity.
                 </div>
               )}
+            </div>
 
-              {selectedRequest && !detailLoading && (
-                <div className="mt-8 flex justify-end gap-3 border-t border-outline/10 pt-6">
-                  {selectedRequest.status === "APPROVED" && (
-                    <button
-                      onClick={() => handleContinueToSprint(selectedRequest)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-on-primary transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
-                    >
-                      <FastForward className="h-4 w-4" />
-                      Continue to Sprint Planning
-                    </button>
-                  )}
-                  {selectedRequest.status === "REJECTED" && (
-                    <button
-                      onClick={() => handleFixCurriculum(selectedRequest)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-error px-6 py-2.5 text-sm font-bold text-on-primary transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-error/20"
-                    >
-                      <Wrench className="h-4 w-4" />
-                      Update Curriculum
-                    </button>
-                  )}
-                </div>
-              )}
-            </>
-          )}
+            {/* Footer */}
+            <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-8 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-bold shadow-lg shadow-zinc-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Acknowledge
+              </button>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    )}
+      )}
+    </AnimatePresence>
     </>
   );
 }

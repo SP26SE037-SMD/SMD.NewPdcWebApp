@@ -53,9 +53,9 @@ export default function MajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major", majorCode],
-    queryFn: () => MajorService.getMajorByCode(majorCode),
-    enabled: !!majorCode,
+    queryKey: ["major", majorId],
+    queryFn: () => MajorService.getMajorById(majorId),
+    enabled: !!majorId,
     staleTime: 0,
     refetchOnMount: "always",
   });

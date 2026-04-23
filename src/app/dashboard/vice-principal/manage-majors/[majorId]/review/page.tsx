@@ -17,16 +17,16 @@ import Link from "next/link";
 
 export default function MajorReviewPage() {
     const params = useParams();
-    const majorCode = params.majorCode as string;
+    const majorId = params.majorId as string;
     const router = useRouter();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
 
     // Queries
     const { data: majorResponse, isLoading: isLoadingMajor } = useQuery({
-        queryKey: ['major', majorCode],
-        queryFn: () => MajorService.getMajorByCode(majorCode),
-        enabled: !!majorCode,
+        queryKey: ['major', majorId],
+        queryFn: () => MajorService.getMajorById(majorId),
+        enabled: !!majorId,
     });
 
     const major = majorResponse?.data;
@@ -105,10 +105,10 @@ export default function MajorReviewPage() {
                         </Link>
                         <ChevronRight size={10} />
                         <Link
-                            href={`/dashboard/vice-principal/manage-majors/${encodeURIComponent(majorCode)}`}
+                            href={`/dashboard/vice-principal/manage-majors/${encodeURIComponent(majorId)}`}
                             className="hover:text-[#2d6a4f] transition-colors"
                         >
-                            {majorCode}
+                            {major?.majorCode || "..."}
                         </Link>
                         <ChevronRight size={10} />
                         <span className="text-[#2d6a4f]">Review</span>
@@ -156,7 +156,7 @@ export default function MajorReviewPage() {
                             Strategic Description
                         </h3>
                         <div className="px-3 py-1 bg-[#f1f4f5] rounded-full text-[10px] font-bold text-[#5a6062] uppercase tracking-widest">
-                            {majorCode}
+                            {major?.majorCode}
                         </div>
                     </div>
                     <p className="text-[#5a6062] text-lg leading-relaxed font-medium italic">
