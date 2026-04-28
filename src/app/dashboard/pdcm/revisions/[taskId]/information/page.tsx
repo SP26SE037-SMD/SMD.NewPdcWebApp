@@ -199,9 +199,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
                         <h3 className="text-xl font-extrabold mt-0.5" style={{ color: C.onPrimaryContainer, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                             {bloomLabel}
                         </h3>
-                        <p className="mt-2 leading-relaxed italic text-[11px]" style={{ color: C.onSurfaceVariant }}>
-                            Students will synthesize complex theories and justify decisions based on academic criteria and established standards.
-                        </p>
+
                     </div>
                     <div className="mt-5 flex gap-2">
                         {[1, 2, 3, 4, 5, 6].map(lvl => (

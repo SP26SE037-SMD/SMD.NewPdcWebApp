@@ -244,9 +244,7 @@ export function SyllabusInfoModal({ isOpen, onClose, syllabusInfo: overrideInfo,
                                         <h3 className="text-xl font-extrabold mt-0.5" style={{ color: C.onPrimaryContainer, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                             {bloomLabel || 'Loading...'}
                                         </h3>
-                                        <p className="mt-2 leading-relaxed italic text-[11px]" style={{ color: C.onSurfaceVariant }}>
-                                            Students will synthesize complex theories and justify decisions based on academic criteria and established standards.
-                                        </p>
+
                                     </div>
                                     <div className="mt-5 flex gap-2">
                                         {[1, 2, 3, 4, 5, 6].map(lvl => (
@@ -395,7 +393,7 @@ export function SyllabusInfoModal({ isOpen, onClose, syllabusInfo: overrideInfo,
                         onClick={onClose}
                         className="px-8 py-3 bg-[#2d342b] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95"
                     >
-                        Done Reviewing
+                        Close
                     </button>
                 </div>
             </div>

@@ -266,13 +266,7 @@ export default function PDCMReviewInformationPage({
             >
               {bloomLabel || "Loading..."}
             </h3>
-            <p
-              className="mt-2 leading-relaxed italic text-[11px]"
-              style={{ color: C.onSurfaceVariant }}
-            >
-              Students will synthesize complex theories and justify decisions
-              based on academic criteria and established standards.
-            </p>
+
           </div>
           <div className="mt-5 flex gap-2">
             {[1, 2, 3, 4, 5, 6].map((lvl) => (

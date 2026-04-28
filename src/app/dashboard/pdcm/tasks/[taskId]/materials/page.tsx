@@ -7,6 +7,7 @@ import { TaskService } from '@/services/task.service';
 import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2 } from 'lucide-react';
+import ImportModal from '@/components/dashboard/ImportModal';
 
 const C = {
     primary: "#41683f",
@@ -74,6 +75,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
     const [tempTitle, setTempTitle] = useState("");
     const [tempType, setTempType] = useState("");
     const [tempOrder, setTempOrder] = useState<string | number>(0);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const openModal = (material: Material, type: 'RENAME' | 'TYPE' | 'ORDER') => {
         setEditingMaterial(material);
@@ -125,14 +127,22 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                         Materials
                     </h1>
                 </div>
-                <div className="flex gap-4">
+                                                                                <div className="flex gap-4">
+                    <button
+                        onClick={() => typeof setIsImportModalOpen !== 'undefined' ? setIsImportModalOpen(true) : alert('Tính năng import đang phát triển')}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
+                        style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
+                    >
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Import Material
+                    </button>
 
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] shadow-lg text-sm"
-                        style={{ background: '#4caf50', color: 'white' }}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white hover:bg-[#345332]"
+                        style={{ background: '#41683f' }}
                     >
-                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        <span className="material-symbols-outlined text-[18px]">add</span>
                         New Material
                     </button>
                 </div>
@@ -353,6 +363,17 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                     </div>
                 )}
             </AnimatePresence>
+            
+            <ImportModal 
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                type="material"
+                onImport={async (file) => {
+                    console.log("Importing material file:", file);
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // TODO: call API to import file
+                }}
+            />
         </div>
     );
 }

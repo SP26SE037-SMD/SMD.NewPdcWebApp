@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Login | SMD",
-    description: "Secure login to the Syllabus Management & Digitalization Portal.",
+    description: "Login to the Syllabus Management & Digitalization Portal.",
 };
 
 export default function LoginPage() {

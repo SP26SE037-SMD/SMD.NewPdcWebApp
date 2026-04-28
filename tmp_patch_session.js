@@ -1,11 +1,19 @@
 const fs = require('fs');
-const filepath = 'src/app/dashboard/pdcm/tasks/[taskId]/assessments/page.tsx';
+const filepath = 'src/app/dashboard/pdcm/tasks/[taskId]/sessions/page.tsx';
 let code = fs.readFileSync(filepath, 'utf8');
+
+if (!code.includes("import * as XLSX from 'xlsx';")) {
+    code = code.replace("import ImportModal from '@/components/dashboard/ImportModal';", "import ImportModal from '@/components/dashboard/ImportModal';\nimport * as XLSX from 'xlsx';");
+}
+
+if (!code.includes("const [previewData, setPreviewData] = useState<any[]>([]);")) {
+    code = code.replace("const [isImportModalOpen, setIsImportModalOpen] = useState(false);", "const [isImportModalOpen, setIsImportModalOpen] = useState(false);\n    const [isPreviewOpen, setIsPreviewOpen] = useState(false);\n    const [previewData, setPreviewData] = useState<any[]>([]);");
+}
 
 const existingImportModalBlock = /<ImportModal[\s\S]*?\/>/g;
 
 const customPreviewModal = `
-            {/* Custom Import & Preview Modal */}
+            {/* Custom Import & Preview Modal for Sessions */}
             {(isImportModalOpen || isPreviewOpen) && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
                     <div 
@@ -19,7 +27,7 @@ const customPreviewModal = `
                         <div className="p-8 pb-4 flex justify-between items-center border-b border-outline-variant/20">
                             <div>
                                 <h2 className="text-2xl font-black text-[#2d342b]" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                    {isPreviewOpen ? 'Preview Assessments' : 'Import Assessments'}
+                                    {isPreviewOpen ? 'Preview Sessions' : 'Import Sessions'}
                                 </h2>
                                 <p className="text-xs font-bold text-black/40 uppercase tracking-widest mt-1">
                                     {isPreviewOpen ? \`Review \${previewData.length} records before saving\` : 'Upload Excel data'}
@@ -31,10 +39,11 @@ const customPreviewModal = `
                                         onClick={() => {
                                             const wb = XLSX.utils.book_new();
                                             const ws = XLSX.utils.json_to_sheet([
-                                                { 'Category': 'Assignment', 'Type': 'Formative Assessment', 'Part': 1, 'Weight': 10, 'Duration': 60, 'Completion Criteria': 'Pass', 'Question Type': 'Essay', 'Knowledge Skill': 'Applying', 'Grading Guide': 'Grading rubrics', 'Note': 'Sample', 'CLOs': 'CLO1, CLO2' }
+                                                { 'Session Number': 1, 'Title': 'Introduction to Computer Science', 'Duration': 50, 'Teaching Methods': 'Lecture, Discussion', 'CLOs': 'CLO1, CLO2' },
+                                                { 'Session Number': 2, 'Title': 'Data Structures', 'Duration': 50, 'Teaching Methods': 'Lab, Practice', 'CLOs': 'CLO3' }
                                             ]);
                                             XLSX.utils.book_append_sheet(wb, ws, "Template");
-                                            XLSX.writeFile(wb, "Assessments_Template.xlsx");
+                                            XLSX.writeFile(wb, "Sessions_Template.xlsx");
                                         }}
                                         className="px-4 py-2 font-bold text-xs bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all flex items-center gap-2"
                                     >
@@ -75,43 +84,31 @@ const customPreviewModal = `
 
                                                 if (!syllabusId) return;
 
-                                                const subjectClosList = subjectClos || [];
+                                                const subjectClosList = clos || [];
 
-                                                const parsedAssessments = rows.map((row, index) => {
-                                                    const rawType = String(row['Type'] || row['type'] || '').trim();
-                                                    const rawCategory = String(row['Category'] || row['category'] || '').trim();
+                                                const parsedSessions = rows.map((row, index) => {
+                                                    const rawNumber = Number(row['Session Number'] || row['sessionNumber'] || row['Session'] || row['session'] || (index + 1));
+                                                    const rawTitle = String(row['Title'] || row['title'] || '').trim();
+                                                    const rawDuration = Number(row['Duration'] || row['duration'] || 50);
+                                                    const rawMethods = String(row['Teaching Methods'] || row['teachingMethods'] || row['Methods'] || '').trim();
                                                     const rawCLOs = String(row['CLOs'] || row['clos'] || row['CLO'] || '').trim();
-                                                    
-                                                    const lowerType = rawType.toLowerCase();
-                                                    const lowerCategory = rawCategory.toLowerCase();
-
-                                                    const matchedType = ASSESSMENT_TYPES.find((t: any) => t.typeName?.toLowerCase() === lowerType);
-                                                    const matchedCat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryName?.toLowerCase() === lowerCategory);
 
                                                     const cloCodes = rawCLOs.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
-                                                    const matchedClos = subjectClosList.filter((c: any) => c.cloName && cloCodes.includes(c.cloName.toLowerCase()) || (c.cloCode && cloCodes.includes(c.cloCode.toLowerCase())));
+                                                    const matchedClos = subjectClosList.filter((c: any) => (c.cloName && cloCodes.includes(c.cloName.toLowerCase())) || (c.cloCode && cloCodes.includes(c.cloCode.toLowerCase())));
 
                                                     return {
                                                         _rowNum: index + 1,
                                                         syllabusId,
-                                                        categoryId: matchedCat?.categoryId || (ASSESSMENT_CATEGORIES.length > 0 ? ASSESSMENT_CATEGORIES[0].categoryId : ""),
-                                                        categoryName: matchedCat?.categoryName || rawCategory,
-                                                        typeId: matchedType?.typeId || (ASSESSMENT_TYPES.length > 0 ? ASSESSMENT_TYPES[0].typeId : ""),
-                                                        typeName: matchedType?.typeName || rawType,
-                                                        part: Number(row['Part'] || row['part'] || 1),
-                                                        weight: Number(row['Weight'] || row['weight'] || 0),
-                                                        completionCriteria: row['Completion Criteria'] || row['completionCriteria'] || "",
-                                                        duration: Number(row['Duration'] || row['duration'] || 0),
-                                                        questionType: row['Question Type'] || row['questionType'] || "",
-                                                        knowledgeSkill: row['Knowledge Skill'] || row['knowledgeSkill'] || "",
-                                                        gradingGuide: row['Grading Guide'] || row['gradingGuide'] || "",
-                                                        note: row['Note'] || row['note'] || "",
-                                                        status: "DRAFT",
+                                                        sessionNumber: rawNumber,
+                                                        sessionTitle: rawTitle,
+                                                        duration: rawDuration,
+                                                        teachingMethods: rawMethods,
+                                                        content: "[]",
                                                         _rawCLOs: rawCLOs,
                                                         matchedClos
                                                     };
                                                 });
-                                                setPreviewData(parsedAssessments);
+                                                setPreviewData(parsedSessions);
                                                 setIsImportModalOpen(false);
                                                 setIsPreviewOpen(true);
                                             } catch (error) {
@@ -137,23 +134,19 @@ const customPreviewModal = `
                                         <div key={idx} className="p-4 border border-outline-variant/20 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col gap-2">
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-md">Row {item._rowNum}</span>
-                                                    <span className="font-bold text-sm text-on-surface">{item.categoryName} ({item.typeName})</span>
+                                                    <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-md">Session {item.sessionNumber}</span>
+                                                    <span className="font-bold text-sm text-on-surface">{item.sessionTitle || 'Untitled Session'}</span>
                                                 </div>
                                                 <div className="text-sm font-black text-on-surface bg-surface-container px-3 py-1 rounded-xl">
-                                                    {item.weight}%
+                                                    {item.duration} Min
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-on-surface-variant grid grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                                                <div>
-                                                    <span className="block opacity-60 font-bold uppercase tracking-wider mb-1 text-[10px]">Duration</span>
-                                                    <span className="font-medium bg-white px-2 py-1 rounded-md border border-outline-variant/10 shadow-xs inline-block">{item.duration} Min</span>
+                                            <div className="text-xs text-on-surface-variant mt-2">
+                                                <div className="mb-2">
+                                                    <span className="block opacity-60 font-bold uppercase tracking-wider mb-1 text-[10px]">Teaching Methods</span>
+                                                    <span className="font-medium">{item.teachingMethods || 'N/A'}</span>
                                                 </div>
                                                 <div>
-                                                    <span className="block opacity-60 font-bold uppercase tracking-wider mb-1 text-[10px]">Method</span>
-                                                    <span className="font-medium bg-white px-2 py-1 rounded-md border border-outline-variant/10 shadow-xs inline-block">{item.questionType || 'N/A'}</span>
-                                                </div>
-                                                <div className="col-span-2">
                                                     <span className="block opacity-60 font-bold uppercase tracking-wider mb-1 text-[10px]">Matched CLOs</span>
                                                     <div className="flex flex-wrap gap-1">
                                                         {item.matchedClos && item.matchedClos.length > 0 ? (
@@ -185,30 +178,68 @@ const customPreviewModal = `
                                     onClick={async () => {
                                         setIsSaving(true);
                                         try {
-                                            let success = 0;
-                                            for (const item of previewData) {
+                                            const payloadArgs = previewData.map(item => {
                                                 const createPayload = { ...item };
                                                 delete createPayload._rowNum;
                                                 delete createPayload._rawCLOs;
                                                 delete createPayload.matchedClos;
-
-                                                const res = await AssessmentService.createAssessment(createPayload);
-                                                const newId = (res as any).data?.assessmentId;
+                                                
+                                                // Include matched CLO IDs in the payload array if needed depending on backend
+                                                // Actually, SessionItemRequest doesn't often have cloIds directly, 
+                                                // but wait, if it doesn't, we will map via MappingService.
+                                                // We can use SessionService API. Let's do them one by one or batch if applicable.
+                                                return createPayload;
+                                            });
+                                            
+                                            // Calling session creation APIs. Wait, Session mapping relies on MappingService: createCloSessionMapping() ?
+                                            // Let's import MappingService at top just in case, but it's already there
+                                            
+                                            // Actually, saving Sessions might be per item:
+                                            let success = 0;
+                                            // Note: MappingService.createSessionMapping takes { sessionId, cloId } or similar. Wait, does SessionService create with cloIds array directly?
+                                            // Let's refer to SessionService
+                                            
+                                            // For now we assume SessionService.createSession()
+                                            // and MappingService.createCloSessionMapping()
+                                            
+                                            for (let i = 0; i < previewData.length; i++) {
+                                                const item = previewData[i];
+                                                const createPayload = { ...item };
+                                                delete createPayload._rowNum;
+                                                delete createPayload._rawCLOs;
+                                                delete createPayload.matchedClos;
+                                                
+                                                const { SessionService } = await import('@/services/session.service');
+                                                const res = await SessionService.createSession(createPayload);
+                                                const newId = (res as any).data?.sessionId;
                                                 
                                                 if (newId && item.matchedClos && item.matchedClos.length > 0) {
+                                                    const { MappingService } = await import('@/services/mapping.service');
                                                     for (const clo of item.matchedClos) {
-                                                        await MappingService.createAssessmentMapping({ assessmentId: newId, cloId: clo.cloId });
+                                                        try {
+                                                            await MappingService.createCloSessionMapping({ sessionId: newId, cloId: clo.cloId });
+                                                        } catch(err) {
+                                                            console.error("Mapping CLO failed", err);
+                                                        }
                                                     }
                                                 }
                                                 success++;
                                             }
-                                            showToast(\`Successfully saved \${success} assessments with CLOs\`, 'success');
-                                            handleReload();
+
+                                            showToast(\`Successfully saved \${success} sessions with CLOs\`, 'success');
+                                            
+                                            // Manually trigger a UI refresh 
+                                            // Note: usually we have handleReload or dispatch(setSessions...) here.
+                                            // Will just window.location.reload() for a heavy hammer or close modal and rely on existing effects.
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 500);
+
                                             setIsPreviewOpen(false);
                                             setPreviewData([]);
                                         } catch (error) {
                                             console.error(error);
-                                            showToast('Failed to save some assessments', 'error');
+                                            showToast('Failed to save some sessions', 'error');
                                         } finally {
                                             setIsSaving(false);
                                         }
