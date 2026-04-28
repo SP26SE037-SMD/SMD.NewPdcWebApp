@@ -288,6 +288,20 @@ function NewMaterialPageInner() {
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Auto import trigger if routed from dashboard with parameter
+    useEffect(() => {
+        if (mounted && searchParams.get('autoImport')) {
+            const timer = setTimeout(() => {
+                fileInputRef.current?.click();
+                // Strip URL query to prevent re-triggering randomly
+                const url = new URL(window.location.href);
+                url.searchParams.delete('autoImport');
+                window.history.replaceState({}, '', url.toString());
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [mounted, searchParams]);
+
     // ── Unsaved Changes Warning ──
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -351,13 +365,21 @@ function NewMaterialPageInner() {
 
             const mammothOptions = {
                 styleMap: [
+                    "p[style-name='Title'] => h1:fresh",
+                    "p[style-name='Heading 1'] => h1:fresh",
+                    "p[style-name='Tiêu đề 1'] => h1:fresh",
+                    "p[style-name='Subtitle'] => h2:fresh",
+                    "p[style-name='Heading 2'] => h2:fresh",
+                    "p[style-name='Tiêu đề 2'] => h2:fresh",
+                    "p[style-name='Heading 3'] => h2:fresh",
+                    "p[style-name='Tiêu đề 3'] => h2:fresh",
+                    "p[style-name='Heading 4'] => h2:fresh",
+                    "p[style-name='Tiêu đề 4'] => h2:fresh",
+                    "p[style-name='Heading 5'] => h2:fresh",
+                    "p[style-name='Heading 6'] => h2:fresh",
                     "p[style-name='Center'] => p.center",
                     "p[style-name='Centered'] => p.center",
-                    "p[style-name='Right'] => p.right",
-                    "p[style-name='Heading 1'] => h1",
-                    "p[style-name='Heading 2'] => h2",
-                    "p[style-name='Heading 3'] => h2",
-                    "p[style-name='Heading 4'] => h2"
+                    "p[style-name='Right'] => p.right"
                 ]
             };
             const result = await mammoth.convertToHtml({ arrayBuffer }, mammothOptions);
@@ -414,17 +436,61 @@ function NewMaterialPageInner() {
             if (tag === 'h1') type = 'H1';
             else if (tag === 'h2') type = 'H2';
             else if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') type = 'H2';
-            else if (tag === 'p') type = 'PARAGRAPH';
+            else if (tag === 'p') {
+                const text = typeof el.innerText === 'string' ? el.innerText.trim() : (el.textContent || '').trim();
+                if (text.length > 0) {
+                    const innerHtml = el.innerHTML.trim();
+                    const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace('<strong>', '').replace('</strong>', '').trim() === text) ||
+                        (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace('<b>', '').replace('</b>', '').trim() === text);
+                    
+                    const isChapter = /^Chapter\s+\d+/i.test(text) || /^Chương\s+\d+/i.test(text);
+                    
+                    // Nhận diện đánh số thủ công kiểu "1.", "a.", "I." 
+                    const listMatch = text.match(/^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+(.*)/);
+                    const bulletMatch = text.match(/^([\-\*•])\s+(.*)/);
+
+                    if (isChapter) {
+                        type = 'H1';
+                    } else if (isFullyBold && text.length < 150) {
+                        type = 'H2';
+                    } else if (listMatch) {
+                        type = 'ORDERED_LIST';
+                        // Nếu muốn giữ nguyên text chứa "1. " thì thôi, 
+                        // nhưng editor có thể tự render số nên ta có thể trả về nguyên gốc để editor xử lý
+                        // contentHTML vẫn giữ nguyên
+                    } else if (bulletMatch) {
+                        type = 'BULLET_LIST';
+                    } else {
+                    type = 'PARAGRAPH';
+                }
+            } else {
+                    type = 'PARAGRAPH';
+                }
+            }
             else if (tag === 'ul' || tag === 'ol') {
                 const listType: BlockType = tag === 'ul' ? 'BULLET_LIST' : 'ORDERED_LIST';
                 const items = el.querySelectorAll('li');
                 items.forEach(li => {
-                    resultBlocks.push({
-                        id: crypto.randomUUID(),
-                        type: listType,
-                        content: sanitizeBlockContent(li.innerHTML),
-                        align: align
-                    });
+                    const text = typeof li.innerText === 'string' ? li.innerText.trim() : (li.textContent || '').trim();
+                    const innerHtml = li.innerHTML.trim();
+                    const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace(/<strong>/g, '').replace(/<\/strong>/g, '').trim() === text) ||
+                        (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace(/<b>/g, '').replace(/<\/b>/g, '').trim() === text);
+
+                    let liType: BlockType = listType;
+                    if (resultBlocks.length === 0 && text.length > 0) {
+                        liType = 'H1';
+                    } else if (isFullyBold && text.length < 150) {
+                        liType = 'H2';
+                    }
+
+                    if (text.length > 0 || innerHtml.length > 0) {
+                        resultBlocks.push({
+                            id: crypto.randomUUID(),
+                            type: liType,
+                            content: sanitizeBlockContent(li.innerHTML),
+                            align: align
+                        });
+                    }
                 });
                 return;
             } else if (tag === 'blockquote') type = 'QUOTE';
@@ -458,6 +524,10 @@ function NewMaterialPageInner() {
                 } else {
                     return;
                 }
+            }
+
+            if (resultBlocks.length === 0) {
+                type = 'H1';
             }
 
             resultBlocks.push({

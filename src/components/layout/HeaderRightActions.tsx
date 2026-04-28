@@ -203,6 +203,11 @@ export function HeaderRightActions() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isNotiOpen, setIsNotiOpen] = useState(false);
     const [isAllNotiModalOpen, setIsAllNotiModalOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
     
     // Modal state
     const [notiPage, setNotiPage] = useState(0);
@@ -685,10 +690,10 @@ export function HeaderRightActions() {
                 >
                     <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black transition-transform group-hover:scale-105 border-2 border-white shadow-sm"
                         style={{ background: '#c1eeba', color: '#345a32' }}>
-                        {user ? user.fullName?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'AA'}
+                        {isMounted && user ? user.fullName?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'AA'}
                     </div>
                     <div className="hidden lg:block mr-1">
-                        <p className="text-[11px] font-bold text-[#2d342b] leading-tight truncate max-w-[100px]">{user?.fullName || "Professor Archer"}</p>
+                        <p className="text-[11px] font-bold text-[#2d342b] leading-tight truncate max-w-[100px]">{isMounted && user?.fullName ? user.fullName : "Professor Archer"}</p>
                         <p className="text-[9px] text-[#5a6157] font-bold uppercase tracking-wider opacity-60">PDCM</p>
                     </div>
                     <ChevronDown size={14} className={`transition-transform duration-300 text-[#5a6157] ${isMenuOpen ? 'rotate-180' : ''}`} />
