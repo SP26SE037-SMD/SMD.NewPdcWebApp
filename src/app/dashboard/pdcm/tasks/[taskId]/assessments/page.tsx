@@ -75,6 +75,18 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const ASSESSMENT_CATEGORIES = categoriesRes?.data?.content || [];
     const ASSESSMENT_TYPES = typesRes?.data?.content || [];
 
+    const subjectId = syllabusData?.data?.subjectId;
+    const { data: closRes } = useQuery({
+        queryKey: ['clos', subjectId],
+        queryFn: () => subjectId ? CloPloService.getSubjectClos(subjectId, 0, 100) : null,
+        enabled: !!subjectId,
+    });
+    const subjectClos = closRes?.data?.content || [];
+
+    const [previewData, setPreviewData] = useState<any[]>([]);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+
     const reduxAssessments = useSelector((state: RootState) => syllabusId ? state.syllabus.assessmentsDB[syllabusId] : undefined);
 
     // 3. Sync to Redux
@@ -218,22 +230,24 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 </div>
 
                 <div className="flex gap-4 self-start md:self-end">
+                    
                     <button
-                        onClick={handleReload}
-                        disabled={isSaving || !syllabusId}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] shadow-sm text-sm border-2 disabled:opacity-50"
-                        style={{ borderColor: '#41683f', color: '#41683f', background: 'transparent' }}
+                        onClick={() => typeof setIsImportModalOpen !== 'undefined' ? setIsImportModalOpen(true) : alert('Tính năng import đang phát triển')}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
+                        style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
                     >
-                        <span className="material-symbols-outlined text-[20px]">refresh</span>
-                        Refresh List
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Import Assessment
                     </button>
+
                     <button
                         onClick={handleAddComponent}
                         disabled={isSaving || !syllabusId}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] shadow-lg text-sm bg-primary text-white disabled:opacity-50"
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white hover:bg-[#345332] disabled:opacity-70"
+                        style={{ background: '#41683f' }}
                     >
-                        <span className="material-symbols-outlined text-[20px]">add</span>
-                        New Component
+                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        New Assessment
                     </button>
                 </div>
             </div>

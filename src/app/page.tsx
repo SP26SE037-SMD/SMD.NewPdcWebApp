@@ -56,31 +56,11 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-8 text-sm font-semibold uppercase tracking-wider text-zinc-600">
-              <a
-                href="#workflow"
-                className="hover:text-primary transition-colors"
-              >
-                Workflow
-              </a>
-              <a
-                href="#compliance"
-                className="hover:text-primary transition-colors"
-              >
-                Compliance
-              </a>
-              <a
-                href="#roadmap"
-                className="hover:text-primary transition-colors"
-              >
-                Roadmap
-              </a>
-            </div>
             <Link
               href="/login"
               className="bg-primary text-white px-6 py-2.5 rounded-sm font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-all shadow-md active:scale-95"
             >
-              Secure Login
+              Login
             </Link>
           </div>
         </div>

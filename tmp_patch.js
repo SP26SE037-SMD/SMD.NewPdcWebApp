@@ -1,143 +1,90 @@
 const fs = require('fs');
+const filepath = 'src/app/dashboard/pdcm/tasks/[taskId]/assessments/page.tsx';
+let code = fs.readFileSync(filepath, 'utf8');
 
-const path = '/Users/mycomputer/Documents/DoAn/smd/UI/SMD.NewPdcWebApp/src/app/dashboard/vice-principal/curriculums/[id]/review/page.tsx';
-let data = fs.readFileSync(path, 'utf8');
+// 1. Add CLOs query right after categoriesRes & typesRes inside AssessmentsPage
+const queryToInsert = `
+    const subjectId = syllabusData?.data?.subjectId;
+    const { data: closRes } = useQuery({
+        queryKey: ['clos', subjectId],
+        queryFn: () => subjectId ? CloPloService.getSubjectClos(subjectId, 0, 100) : null,
+        enabled: !!subjectId,
+    });
+    const subjectClos = closRes?.data?.content || [];
 
-// 1. Add Tab button
-const btnOld = `                                        {activeTab === "structure" && (
-                                                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
-                                        )}
-                                </button>
-                        </div>`;
+    const [previewData, setPreviewData] = useState<any[]>([]);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+`;
 
-const btnNew = `                                        {activeTab === "structure" && (
-                                                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
-                                        )}
-                                </button>
-                                <button
-                                        onClick={() => setActiveTab("review")}
-                                        className={\`pb-4 font-semibold transition-colors relative \${activeTab === "review" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}\`}
-                                >
-                                        Final Review
-                                        {activeTab === "review" && (
-                                                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
-                                        )}
-                                </button>
-                        </div>`;
+code = code.replace(
+    `    const ASSESSMENT_TYPES = typesRes?.data?.content || [];`,
+    `    const ASSESSMENT_TYPES = typesRes?.data?.content || [];\n${queryToInsert}`
+);
 
-data = data.replace(btnOld, btnNew);
+// 2. Replace the entire <ImportModal ... /> logic with the new Preview Modal + ImportModal logic
+const importModalReplacement = `            <ImportModal 
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                type="assessment"
+                onImport={async (file) => {
+                    try {
+                        const data = await file.arrayBuffer();
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const rows = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-// 2. Add Tab Content
-const tabContentOld = `                                </div>
-                        )}
-                </main>
-        );
-}`;
+                        if (!syllabusId) return;
 
-const tabContentNew = `                                </div>
-                        )}
+                        const parsedAssessments = rows.map((row, index) => {
+                            const rawType = String(row['Type'] || row['type'] || '').trim();
+                            const rawCategory = String(row['Category'] || row['category'] || '').trim();
+                            const rawCLOs = String(row['CLOs'] || row['clos'] || row['CLO'] || '').trim();
+                            
+                            const lowerType = rawType.toLowerCase();
+                            const lowerCategory = rawCategory.toLowerCase();
 
-                        {activeTab === "review" && (
-                                <ReviewTabContent 
-                                        curriculumId={id} 
-                                        majorId={curriculum?.majorId} 
-                                />
-                        )}
-                </main>
-        );
-}
+                            // Get API types & categories previously fetched directly via React Query
+                            const matchedType = ASSESSMENT_TYPES.find((t: any) => t.typeName?.toLowerCase() === lowerType);
+                            const matchedCat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryName?.toLowerCase() === lowerCategory);
 
-function ReviewTabContent({ curriculumId, majorId }: { curriculumId: string, majorId: string }) {
-        const queryClient = useQueryClient();
-        const [comment, setComment] = React.useState("");
-        const [requestId, setRequestId] = React.useState(""); // Mock request id, in reality it needs to be fetched
-        const [isSubmitting, setIsSubmitting] = React.useState(false);
+                            // Match CLOs
+                            const cloCodes = rawCLOs.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
+                            const matchedClos = subjectClos.filter((c: any) => c.cloCode && cloCodes.includes(c.cloCode.toLowerCase()));
 
-        const applyAction = async (status: "APPROVED" | "REJECTED") => {
-                if (status === "REJECTED" && !comment.trim()) {
-                        alert("Please provide a comment for rejecting");
-                        return;
-                }
-                
-                if (!requestId) {
-                        const testRequestId = prompt("Enter Mock Request ID to action upon (e.g. 1234):");
-                        if (!testRequestId) return;
-                        setRequestId(testRequestId);
-                        try {
-                                setIsSubmitting(true);
-                                await RequestService.updateRequest(testRequestId, {
-                                        status,
-                                        comment,
-                                        curriculumId,
-                                        majorId
-                                });
-                                alert(\`Request successfully \${status}\`);
-                                setComment("");
-                        } catch (e) {
-                                console.error(e);
-                                alert("Failed to update request");
-                        } finally {
-                                setIsSubmitting(false);
-                        }
-                } else {
-                        try {
-                                setIsSubmitting(true);
-                                await RequestService.updateRequest(requestId, {
-                                        status,
-                                        comment,
-                                        curriculumId,
-                                        majorId
-                                });
-                                alert(\`Request successfully \${status}\`);
-                                setComment("");
-                        } catch (e) {
-                                console.error(e);
-                                alert("Failed to update request");
-                        } finally {
-                                setIsSubmitting(false);
-                        }
-                }
-        };
+                            return {
+                                _rowNum: index + 1,
+                                syllabusId,
+                                categoryId: matchedCat?.categoryId || (ASSESSMENT_CATEGORIES.length > 0 ? ASSESSMENT_CATEGORIES[0].categoryId : ""),
+                                categoryName: matchedCat?.categoryName || rawCategory,
+                                typeId: matchedType?.typeId || (ASSESSMENT_TYPES.length > 0 ? ASSESSMENT_TYPES[0].typeId : ""),
+                                typeName: matchedType?.typeName || rawType,
+                                part: Number(row['Part'] || row['part'] || 1),
+                                weight: Number(row['Weight'] || row['weight'] || 0),
+                                completionCriteria: row['Completion Criteria'] || row['completionCriteria'] || "",
+                                duration: Number(row['Duration'] || row['duration'] || 0),
+                                questionType: row['Question Type'] || row['questionType'] || "",
+                                knowledgeSkill: row['Knowledge Skill'] || row['knowledgeSkill'] || "",
+                                gradingGuide: row['Grading Guide'] || row['gradingGuide'] || "",
+                                note: row['Note'] || row['note'] || "",
+                                status: "DRAFT",
+                                _rawCLOs: rawCLOs,
+                                matchedClos
+                            };
+                        });
 
-        return (
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#dee3e6] max-w-4xl mx-auto mt-8">
-                        <h2 className="text-2xl font-black text-[#2d3335] mb-6">Final Curriculum Decision</h2>
-                        
-                        <p className="text-[#5a6062] mb-6 inline-block">
-                                Review the entire curriculum before proceeding. If you choose to reject, a comment must be provided detailing what needs to be changed.
-                        </p>
+                        setPreviewData(parsedAssessments);
+                        setIsPreviewOpen(true);
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        showToast('Failed to parse Excel file.', 'error');
+                    }
+                    setIsImportModalOpen(false);
+                }}
+            />
 
-                        <div className="mb-6">
-                                <label className="block text-sm font-bold text-[#2d3335] mb-2 uppercase tracking-wide">
-                                        Review Comment / Feedback
-                                </label>
-                                <textarea
-                                        value={comment}
-                                        onChange={(e) => setComment(e.target.value)}
-                                        placeholder="Add comments or specific reasons for rejection here..."
-                                        className="w-full h-32 p-4 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] text-[#2d3335] resize-none"
-                                />
-                        </div>
+            {/* Template Download Button handled inside our modal replacement, actually we can just put a download button somewhere or recreate a new Upload Modal entirely. But user asked to make the popup beautiful and have a template download button. Let's make a custom Import+Preview Modal instead of the default ImportModal */}
+`;
 
-                        <div className="flex items-center gap-4">
-                                <button
-                                        onClick={() => applyAction("APPROVED")}
-                                        disabled={isSubmitting}
-                                        className="flex items-center gap-2 bg-[#2d6a4f] hover:bg-[#1f4a37] text-white px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50"
-                                >
-                                        {isSubmitting ? "Processing..." : "Approve Curriculum"}
-                                </button>
-                                <button
-                                        onClick={() => applyAction("REJECTED")}
-                                        disabled={isSubmitting}
-                                        className="flex items-center gap-2 border border-red-500 text-red-600 hover:bg-red-50 px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50"
-                                >
-                                        {isSubmitting ? "Processing..." : "Reject & Require Changes"}
-                                </button>
-                        </div>
-                </div>
-        );
-}`;
-
-data = data.replace(tabContentOld, tabContentNew);
-fs.writeFileSync(path, data);
+// It's better to render a giant custom modal conditionally or replace `ImportModal` entirely. Let's just create a custom `<AssessmentImportPreviewModal>` at the bottom and use it instead of `<ImportModal>`
+fs.writeFileSync(filepath, code, 'utf8');
