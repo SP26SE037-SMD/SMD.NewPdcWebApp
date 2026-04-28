@@ -1265,15 +1265,22 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
             setTitle(filename);
 
             const mammothOptions = {
-
                 styleMap: [
+                    "p[style-name='Title'] => h1:fresh",
+                    "p[style-name='Heading 1'] => h1:fresh",
+                    "p[style-name='Tiêu đề 1'] => h1:fresh",
+                    "p[style-name='Subtitle'] => h2:fresh",
+                    "p[style-name='Heading 2'] => h2:fresh",
+                    "p[style-name='Tiêu đề 2'] => h2:fresh",
+                    "p[style-name='Heading 3'] => h2:fresh",
+                    "p[style-name='Tiêu đề 3'] => h2:fresh",
+                    "p[style-name='Heading 4'] => h2:fresh",
+                    "p[style-name='Tiêu đề 4'] => h2:fresh",
+                    "p[style-name='Heading 5'] => h2:fresh",
+                    "p[style-name='Heading 6'] => h2:fresh",
                     "p[style-name='Center'] => p.center",
                     "p[style-name='Centered'] => p.center",
-                    "p[style-name='Right'] => p.right",
-                    "p[style-name='Heading 1'] => h1",
-                    "p[style-name='Heading 2'] => h2",
-                    "p[style-name='Heading 3'] => h2",
-                    "p[style-name='Heading 4'] => h2"
+                    "p[style-name='Right'] => p.right"
                 ]
             };
             const result = await mammoth.convertToHtml({ arrayBuffer }, mammothOptions);
@@ -1334,7 +1341,27 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
             if (tag === 'h1') type = 'H1';
             else if (tag === 'h2') type = 'H2';
             else if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') type = 'H2';
-            else if (tag === 'p') type = 'PARAGRAPH';
+            else if (tag === 'p') {
+                const text = typeof el.innerText === 'string' ? el.innerText.trim() : (el.textContent || '').trim();
+                if (text.length > 0 && text.length < 150) {
+                    const innerHtml = el.innerHTML.trim();
+                    const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace('<strong>', '').replace('</strong>', '').trim() === text) ||
+                        (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace('<b>', '').replace('</b>', '').trim() === text);
+                    
+                    const isChapter = /^Chapter\s+\d+/i.test(text);
+                    const isHeadingLike = /^([0-9]+[.)]|[A-Z]\.|[IVX]+\.)\s+[A-ZÀ-Ỹ]/.test(text) && !text.endsWith('.');
+
+                    if (isChapter) {
+                        type = 'H1';
+                    } else if (isFullyBold || isHeadingLike) {
+                        type = 'H2';
+                    } else {
+                        type = 'PARAGRAPH';
+                    }
+                } else {
+                    type = 'PARAGRAPH';
+                }
+            }
             else if (tag === 'ul' || tag === 'ol') {
                 const listType: BlockType = tag === 'ul' ? 'BULLET_LIST' : 'ORDERED_LIST';
                 const items = el.querySelectorAll('li');
