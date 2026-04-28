@@ -523,21 +523,52 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                     />
                                 </div>
                             ) : (
-                                <div className="space-y-3">
-                                    {previewData.map((item, idx) => (
-                                        <div key={idx} className="p-4 rounded-2xl bg-white border border-outline-variant/30 flex shadow-sm">
-                                            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black mr-4 shrink-0">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <h4 className="font-bold text-on-surface text-sm">{item.categoryName} - {item.typeName}</h4>
-                                                    <p className="text-xs mt-1 text-on-surface-variant font-medium">Part {item.part} • Weight: {item.weight}%</p>
-                                                    <p className="text-xs text-on-surface-variant/80 truncate">CLOs: {item.matchedClos?.map((c:any) => c.cloCode || c.cloName).join(', ') || 'None'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-white shadow-sm custom-scrollbar">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-[#f8faf2] text-on-surface font-bold border-b border-outline-variant/30">
+                                            <tr>
+                                                <th className="px-4 py-3 text-center border-r border-outline-variant/30 w-10">#</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 whitespace-nowrap min-w-[120px]">Category</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 whitespace-nowrap min-w-[120px]">Type</th>
+                                                <th className="px-4 py-3 text-center border-r border-outline-variant/30 w-16">Part</th>
+                                                <th className="px-4 py-3 text-center border-r border-outline-variant/30 w-20">Weight</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 min-w-[100px]">CLOs</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 min-w-[150px]">Criteria</th>
+                                                <th className="px-4 py-3 text-center border-r border-outline-variant/30 w-24">Duration(m)</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 min-w-[150px]">Skill</th>
+                                                <th className="px-4 py-3 border-r border-outline-variant/30 min-w-[200px]">Guide</th>
+                                                <th className="px-4 py-3 min-w-[150px]">Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {previewData.map((item, idx) => (
+                                                <tr key={idx} className="border-b border-outline-variant/20 hover:bg-slate-50 transition-colors last:border-b-0">
+                                                    <td className="px-4 py-3 text-center font-bold border-r border-outline-variant/30 text-primary">{idx + 1}</td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30">{item.categoryName}</td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30">{item.typeName}</td>
+                                                    <td className="px-4 py-3 text-center border-r border-outline-variant/30 font-medium">{item.part}</td>
+                                                    <td className="px-4 py-3 text-center border-r border-outline-variant/30">{item.weight}%</td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30 truncate" title={item._rawCLOs}>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {item.matchedClos?.map((c:any, i:number) => (
+                                                                <span key={i} className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-bold">
+                                                                    {c.cloCode || c.cloName}
+                                                                </span>
+                                                            ))}
+                                                            {(!item.matchedClos || item.matchedClos.length === 0) && (
+                                                                <span className="text-zinc-400 italic">None</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30 truncate max-w-[150px]" title={item.completionCriteria}>{item.completionCriteria}</td>
+                                                    <td className="px-4 py-3 text-center border-r border-outline-variant/30">{item.duration > 0 ? item.duration : '-'}</td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30 text-xs">{item.knowledgeSkill}</td>
+                                                    <td className="px-4 py-3 border-r border-outline-variant/30 truncate max-w-[200px]" title={item.gradingGuide}>{item.gradingGuide}</td>
+                                                    <td className="px-4 py-3 truncate max-w-[150px] text-zinc-500" title={item.note}>{item.note}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
                         </div>
