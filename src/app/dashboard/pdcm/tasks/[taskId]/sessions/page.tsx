@@ -15,6 +15,7 @@ import { MappingService, CloSessionMapping } from '@/services/mapping.service';
 import { SessionContentSelector } from './session-content-selector';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
+import * as XLSX from 'xlsx';
 
 interface ApiResponse<T> {
     status: number;
@@ -988,17 +989,23 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 delete createPayload._rawCLOs;
                                                 delete createPayload.matchedClos;
                                                 
-                                                const res = await SessionService.createSession(createPayload);
+                                                console.warn('Session API missing createSession. Using bulkConfigureSession wrapper instead.');
+                                                // Need to convert to bulk payload style if that's what backend expects or just post.
+                                                // Looking at bulkConfigureSession(payload: BulkConfigurePayload)
+                                                // Actually let's just make api/sessions POST call directly since the service wrapper is missing
+                                                const apiClient = (await import('@/lib/api-client')).apiClient;
+                                                const res = await apiClient.post('/api/sessions', createPayload);
                                                 const newId = (res as any).data?.sessionId;
                                                 
                                                 if (newId && item.matchedClos && item.matchedClos.length > 0) {
-                                                    for (const clo of item.matchedClos) {
-                                                        try {
-                                                            await MappingService.createCloSessionMapping({ sessionId: newId, cloId: clo.cloId });
-                                                        } catch(err) {
-                                                            console.error("Mapping CLO failed", err);
-                                                        }
-                                                    }
+                                                    
+        try {
+            const mappings = item.matchedClos.map((clo: any) => ({ sessionId: newId, cloId: clo.cloId }));
+            await MappingService.createSessionMappingsBatch(mappings);
+        } catch(err) {
+            console.error("Mapping CLO failed", err);
+        }
+        
                                                 }
                                                 success++;
                                             }

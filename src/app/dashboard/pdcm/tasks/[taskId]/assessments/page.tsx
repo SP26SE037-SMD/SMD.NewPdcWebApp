@@ -12,6 +12,7 @@ import { CloPloService } from '@/services/cloplo.service';
 import { MappingService, CloAssessmentMapping } from '@/services/mapping.service';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
+import * as XLSX from 'xlsx';
 
 interface ApiResponse<T> {
     status: number;
@@ -85,6 +86,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
     const [previewData, setPreviewData] = useState<any[]>([]);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
 
     const reduxAssessments = useSelector((state: RootState) => syllabusId ? state.syllabus.assessmentsDB[syllabusId] : undefined);
@@ -232,7 +234,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 <div className="flex gap-4 self-start md:self-end">
                     
                     <button
-                        onClick={() => typeof setIsImportModalOpen !== 'undefined' ? setIsImportModalOpen(true) : alert('Tính năng import đang phát triển')}
+                        onClick={() => setIsImportModalOpen(true)}
                         className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
                         style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
                     >
@@ -351,7 +353,13 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             {expandedIndex !== null && (
                 <AssessmentEditModal
                     assessment={assessments[expandedIndex]}
-                    onClose={() => setExpandedIndex(null)}
+                    onClose={(saved?: boolean) => {
+                        const ass = assessments[expandedIndex];
+                        if (!saved && ass && !ass.assessmentId) {
+                            dispatch(removeAssessment({ syllabusId: syllabusId!, index: expandedIndex }));
+                        }
+                        setExpandedIndex(null);
+                    }}
                     onSave={handleReload}
                     onUpdate={(updates: Partial<AssessmentItem>) => dispatch(updateAssessment({ syllabusId: syllabusId!, index: expandedIndex, updates }))}
                     categories={ASSESSMENT_CATEGORIES}
@@ -385,14 +393,230 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                     </div>
                 </div>
             )}
+{/* Custom Import & Preview Modal for Assessments */}
+            {(isImportModalOpen || isPreviewOpen) && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => { if(!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                    />
+                    
+                    <div 
+                        className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+                    >
+                        <div className="p-8 pb-4 flex justify-between items-center border-b border-outline-variant/20">
+                            <div>
+                                <h2 className="text-2xl font-black text-[#2d342b]" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                    {isPreviewOpen ? 'Preview Assessments' : 'Import Assessments'}
+                                </h2>
+                                <p className="text-xs font-bold text-black/40 uppercase tracking-widest mt-1">
+                                    {isPreviewOpen ? `Review ${previewData.length} records before saving` : 'Upload Excel data'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                {!isPreviewOpen && (
+                                    <button 
+                                        onClick={() => {
+                                            const wb = XLSX.utils.book_new();
+                                            const ws = XLSX.utils.json_to_sheet([
+                                                { 'Category': 'Formative', 'Type': 'Quiz', 'Part': 1, 'Weight': 10, 'Completion Criteria': 'Pass 50%', 'Duration': 15, 'Question Type': 'Multiple Choice', 'Knowledge Skill': 'Remembering', 'Grading Guide': '1 point/question', 'Note': 'Optional', 'CLOs': 'CLO1, CLO2' },
+                                                { 'Category': 'Summative', 'Type': 'Final', 'Part': 1, 'Weight': 40, 'Completion Criteria': '', 'Duration': 90, 'Question Type': 'Essay', 'Knowledge Skill': 'Applying', 'Grading Guide': 'Rubric A', 'Note': 'Mandatory', 'CLOs': 'CLO3' }
+                                            ]);
+                                            XLSX.utils.book_append_sheet(wb, ws, "Template");
+                                            XLSX.writeFile(wb, "Assessments_Template.xlsx");
+                                        }}
+                                        className="px-4 py-2 font-bold text-xs bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]">download</span>
+                                        Download Template
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={() => { if(!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                                    className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[#f8faf2] text-zinc-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                                >
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+                            {!isPreviewOpen ? (
+                                <div 
+                                    className="border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center text-center transition-all border-[#adb4a8]/30 bg-[#f8faf2] hover:border-primary hover:bg-primary/5 cursor-pointer"
+                                    onClick={() => document.getElementById('excel-upload-hidden')?.click()}
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+                                        <span className="material-symbols-outlined text-3xl">upload_file</span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-[#2d342b] mb-1">Click to upload Excel file</h3>
+                                    <p className="text-sm text-black/40">Supported formats: .xlsx, .xls, .csv</p>
+                                    
+                                    <input 
+                                        id="excel-upload-hidden"
+                                        type="file"
+                                        accept=".xlsx,.xls,.csv"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if(!file) return;
+                                            
+                                            try {
+                                                const data = await file.arrayBuffer();
+                                                const workbook = XLSX.read(data, { type: 'array' });
+                                                const firstSheetName = workbook.SheetNames[0];
+                                                const worksheet = workbook.Sheets[firstSheetName];
+                                                const rows = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+
+                                                if (!syllabusId) return;
+
+                                                const parsedAssessments = rows.map((row, index) => {
+                                                    const rawCategory = String(row['Category'] || row['category'] || '').trim();
+                                                    const rawType = String(row['Type'] || row['type'] || '').trim();
+                                                    const rawPart = Number(row['Part'] || row['part'] || 1);
+                                                    const rawWeight = Number(row['Weight'] || row['weight'] || 0);
+                                                    const rawCriteria = String(row['Completion Criteria'] || row['completionCriteria'] || '').trim();
+                                                    const rawDuration = Number(row['Duration'] || row['duration'] || 0);
+                                                    const rawQuestionType = String(row['Question Type'] || row['questionType'] || '').trim();
+                                                    const rawKnowledge = String(row['Knowledge Skill'] || row['knowledgeSkill'] || '').trim();
+                                                    const rawGuide = String(row['Grading Guide'] || row['gradingGuide'] || '').trim();
+                                                    const rawNote = String(row['Note'] || row['note'] || '').trim();
+                                                    const rawCLOs = String(row['CLOs'] || row['clos'] || row['CLO'] || '').trim();
+
+                                                    // Match category and type using lowercase comparison
+                                                    const matchedCategory = ASSESSMENT_CATEGORIES.find(c => c.categoryName.toLowerCase() === rawCategory.toLowerCase());
+                                                    const matchedType = ASSESSMENT_TYPES.find(t => t.typeName.toLowerCase() === rawType.toLowerCase());
+
+                                                    const cloCodes = rawCLOs.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
+                                                    const matchedClos = subjectClos.filter((c: any) => (c.cloName && cloCodes.includes(c.cloName.toLowerCase())) || (c.cloCode && cloCodes.includes(c.cloCode.toLowerCase())));
+
+                                                    return {
+                                                        _rowNum: index + 1,
+                                                        syllabusId,
+                                                        categoryId: matchedCategory?.categoryId || ASSESSMENT_CATEGORIES[0]?.categoryId || "",
+                                                        categoryName: matchedCategory?.categoryName || rawCategory || ASSESSMENT_CATEGORIES[0]?.categoryName || "",
+                                                        typeId: matchedType?.typeId || ASSESSMENT_TYPES[0]?.typeId || "",
+                                                        typeName: matchedType?.typeName || rawType || ASSESSMENT_TYPES[0]?.typeName || "",
+                                                        part: rawPart,
+                                                        weight: rawWeight,
+                                                        completionCriteria: rawCriteria,
+                                                        duration: rawDuration,
+                                                        questionType: rawQuestionType,
+                                                        knowledgeSkill: rawKnowledge,
+                                                        gradingGuide: rawGuide,
+                                                        note: rawNote,
+                                                        status: "DRAFT",
+                                                        matchedClos,
+                                                        _rawCLOs: rawCLOs
+                                                    };
+                                                });
+                                                
+                                                setPreviewData(parsedAssessments);
+                                                setIsImportModalOpen(false);
+                                                setIsPreviewOpen(true);
+                                                (e.target as HTMLInputElement).value = '';
+                                            } catch(err) {
+                                                console.error(err);
+                                                showToast('Invalid Excel file format', 'error');
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {previewData.map((item, idx) => (
+                                        <div key={idx} className="p-4 rounded-2xl bg-white border border-outline-variant/30 flex shadow-sm">
+                                            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black mr-4 shrink-0">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <h4 className="font-bold text-on-surface text-sm">{item.categoryName} - {item.typeName}</h4>
+                                                    <p className="text-xs mt-1 text-on-surface-variant font-medium">Part {item.part} • Weight: {item.weight}%</p>
+                                                    <p className="text-xs text-on-surface-variant/80 truncate">CLOs: {item.matchedClos?.map((c:any) => c.cloCode || c.cloName).join(', ') || 'None'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {isPreviewOpen && (
+                            <div className="p-6 bg-surface-container-lowest border-t border-outline-variant/20 flex justify-end gap-3 rounded-b-[32px]">
+                                <button 
+                                    onClick={() => { setIsPreviewOpen(false); setPreviewData([]); setIsImportModalOpen(true); }}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-on-surface-variant bg-white border border-outline-variant/30 hover:bg-outline-variant/10 transition-colors"
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    disabled={isSaving}
+                                    onClick={async () => {
+                                        setIsSaving(true);
+                                        try {
+                                            const { AssessmentService } = await import('@/services/assessment.service');
+                                            const { MappingService } = await import('@/services/mapping.service');
+                                            let success = 0;
+                                            
+                                            for (let i = 0; i < previewData.length; i++) {
+                                                const item = previewData[i];
+                                                const createPayload = { ...item };
+                                                delete createPayload._rowNum;
+                                                delete createPayload._rawCLOs;
+                                                delete createPayload.matchedClos;
+                                                
+                                                let newId = null;
+                                                try {
+                                                    const res = await AssessmentService.createAssessment(createPayload);
+                                                    newId = (res as any).data?.assessmentId;
+                                                } catch(err) {
+                                                    console.error("Create assessment failed", err);
+                                                }
+                                                
+                                                if (newId && item.matchedClos && item.matchedClos.length > 0) {
+                                                    const mappings = item.matchedClos.map((clo: any) => ({ assessmentId: newId, cloId: clo.cloId }));
+                                                    try {
+                                                        await MappingService.createAssessmentMappingsBatch(mappings);
+                                                    } catch(err) {
+                                                        console.error("Mapping CLO failed", err);
+                                                    }
+                                                }
+                                                if (newId) success++;
+                                            }
+
+                                            showToast(`Successfully saved ${success} assessments with CLOs`, 'success');
+                                            
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 1000);
+                                        } catch (error) {
+                                            showToast('Failed during batch import', 'error');
+                                            setIsSaving(false);
+                                        }
+                                    }}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-white bg-primary hover:bg-primary/90 transition-colors flex items-center gap-2"
+                                >
+                                    {isSaving ? <Loader2 size={16} className="animate-spin"/> : <span className="material-symbols-outlined text-[20px]">save</span>}
+                                    {isSaving ? 'Saving...' : 'Save All Assessments'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
+
+            
+
+
 // ── Assessment Edit Modal Component ──
 function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories, types, otherAssessmentsWeight, subjectId }: {
     assessment: AssessmentItem;
-    onClose: () => void;
+    onClose: (saved?: boolean) => void;
     onSave: () => Promise<void>;
     onUpdate: (updates: Partial<AssessmentItem>) => void;
     categories: AssessmentCategory[];
@@ -504,7 +728,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
             showToast(`Assessment ${assessment.assessmentId ? 'updated' : 'created'} successfully with CLO mappings`, "success");
             await onSave();
-            onClose();
+            onClose(true);
         } catch (error) {
             console.error("Failed to save assessment:", error);
             showToast("Failed to save assessment. Please try again.", "error");
@@ -529,7 +753,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         </div>
                         <p className="text-sm text-slate-500 font-medium">Syllabus Component Configuration</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
+                    <button onClick={() => onClose(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
                         <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
                     </button>
                 </header>
@@ -799,7 +1023,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                            <button onClick={onClose} disabled={isSaving}
+                            <button onClick={() => onClose(false)} disabled={isSaving}
                                 className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
                                 Cancel
                             </button>
@@ -819,6 +1043,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                     </div>
                 </footer>
             </div>
-        </div>
+        
+
+</div>
     );
 }
