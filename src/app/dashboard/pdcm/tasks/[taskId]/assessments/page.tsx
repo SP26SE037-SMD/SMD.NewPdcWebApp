@@ -466,7 +466,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 const workbook = XLSX.read(data, { type: 'array' });
                                                 const firstSheetName = workbook.SheetNames[0];
                                                 const worksheet = workbook.Sheets[firstSheetName];
-                                                const rows = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+                                                const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
+                                                const rows = rawRows.filter((r: any) => Object.keys(r).some((k: any) => r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== ''));
 
                                                 if (!syllabusId) return;
 
