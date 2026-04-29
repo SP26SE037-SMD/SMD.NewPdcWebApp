@@ -294,7 +294,6 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     return (
         <PDCMBaseLayout
             activeSidebarId={navTab === 'develop' ? 'tasks' : 'reviews'}
-            headerTitle={navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
             headerTabs={globalHeaderTabs}
             sidebarItems={sidebarItems}
         >
