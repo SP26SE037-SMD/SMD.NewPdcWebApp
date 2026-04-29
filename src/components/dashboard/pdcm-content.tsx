@@ -71,8 +71,8 @@ const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcc
         <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group px-6 py-5 rounded-2xl transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-6 border border-transparent hover:border-zinc-200"
-            style={{ background: '#ffffff', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}
+            className="group px-6 py-5 transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-6 hover:bg-zinc-50/50"
+            
         >
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: C.surfaceContainer, color: C.onSurfaceVariant }}>
                 <span className="material-symbols-outlined text-2xl">menu_book</span>
@@ -143,8 +143,8 @@ const ReviewCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcce
         <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group px-6 py-5 rounded-2xl transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-6 border border-transparent hover:border-zinc-200"
-            style={{ background: '#ffffff', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}
+            className="group px-6 py-5 transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-6 hover:bg-zinc-50/50"
+            
         >
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: C.secondaryContainer, color: C.secondary }}>
                 <span className="material-symbols-outlined text-2xl">rate_review</span>
@@ -371,7 +371,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                         <p className="text-sm font-bold uppercase tracking-widest">Loading tasks...</p>
                     </div>
                 ) : tasks.length > 0 ? (
-                    <div className="flex flex-col gap-4 mb-12">
+                    <div className="flex flex-col mb-12 bg-white rounded-2xl border border-zinc-200 overflow-hidden divide-y divide-zinc-200">
                         <AnimatePresence mode="popLayout">
                             {tasks.map((task: any) => (
                                 navTab === 'develop' 
