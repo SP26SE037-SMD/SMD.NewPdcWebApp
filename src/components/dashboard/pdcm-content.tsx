@@ -307,12 +307,32 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
         >
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <header className="mb-10">
-                    <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
-                        {navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
-                    </h2>
-                    <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
-                        {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : 'Evaluate and provide feedback on your peers\' work.'}
-                    </p>
+                    <div className="flex items-end justify-between mb-2">
+                        <div>
+                            <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
+                                {navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
+                            </h2>
+                            <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
+                                {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : 'Evaluate and provide feedback on your peers\' work.'}
+                            </p>
+                        </div>
+                        <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surfaceContainerHigh }}>
+                            <button 
+                                onClick={() => router.push('/dashboard/pdcm/develop')}
+                                className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === 'develop' ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-100'}`}
+                                style={navTab === 'develop' ? { color: C.primary } : {}}
+                            >
+                                Develop
+                            </button>
+                            <button 
+                                onClick={() => router.push('/dashboard/pdcm/peer-review')}
+                                className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === 'peer-review' ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-100'}`}
+                                style={navTab === 'peer-review' ? { color: C.primary } : {}}
+                            >
+                                Review
+                            </button>
+                        </div>
+                    </div>
                 </header>
 
                 {/* Filters */}
