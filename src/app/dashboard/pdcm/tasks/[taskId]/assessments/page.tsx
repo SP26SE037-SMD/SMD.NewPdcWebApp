@@ -330,12 +330,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 </div>
             </div>
 
-            {/* ── Bottom Actions ── */}
-            <div className="mt-16 border-t border-outline-variant/20 pt-10">
-                <p className="text-[10px] text-on-surface-variant/40 italic text-center">
-                    Assessments are automatically synchronized when saved within the editing modal.
-                </p>
-            </div>
+           
 
             {/* ── Edit Assessment Modal ── */}
             {expandedIndex !== null && (

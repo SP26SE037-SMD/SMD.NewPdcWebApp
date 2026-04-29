@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PDCMBaseLayout } from '@/components/layout/PDCMBaseLayout';
 import { Loader2 } from 'lucide-react';
 import { TaskService, TASK_STATUS } from '@/services/task.service';
 import { SyllabusService } from '@/services/syllabus.service';
@@ -284,177 +285,119 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     const tasks = tasksData?.data?.content || [];
     const totalPages = tasksData?.data?.totalPages || 0;
 
+        const globalHeaderTabs = [
+        { id: 'develop', label: 'My Task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
+    ];
+
+    const sidebarItems = [
+        { id: 'overview', label: 'Overview', icon: 'dashboard', isActive: false, onClick: () => {} },
+        { id: 'tasks', label: 'My Tasks', icon: 'task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'reviews', label: 'Peer Review', icon: 'rate_review', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        { id: 'library', label: 'Library', icon: 'folder', isActive: false, onClick: () => {} },
+        { id: 'settings', label: 'Settings', icon: 'settings', isActive: false, onClick: () => {} },
+    ];
+
     return (
-        <div className="flex h-screen overflow-hidden" style={{ background: C.surface }}>
-            {/* Sidebar */}
-            <aside className="w-72 flex flex-col border-r shrink-0" style={{ background: C.surfaceContainerLow, borderColor: C.outline + '20' }}>
-                <div className="p-8 pb-4">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg" style={{ background: C.primary }}>
-                            P
-                        </div>
-                        <div>
-                            <h1 className="font-black tracking-tight text-lg leading-none" style={{ color: C.onSurface }}>PDCM</h1>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Workspace v2.0</p>
-                        </div>
-                    </div>
-
-                    <nav className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-40 px-4">Menu</p>
-                        <NavItem icon="dashboard" label="Overview" active />
-                        <NavItem icon="task" label="My Tasks" />
-                        <NavItem icon="folder" label="Library" />
-                        <NavItem icon="settings" label="Settings" />
-                    </nav>
-                </div>
-
-                <div className="mt-auto p-6">
-                    <div className="p-4 rounded-2xl space-y-3" style={{ background: C.surfaceContainerLowest, border: `1px solid ${C.outline}15` }}>
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-xs">
-                                {user?.fullName?.charAt(0) || 'U'}
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="text-xs font-bold truncate" style={{ color: C.onSurface }}>{user?.fullName || 'User Name'}</p>
-                                <p className="text-[10px] opacity-60 truncate" style={{ color: C.onSurfaceVariant }}>{user?.email || 'email@edu.vn'}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-20 px-8 flex items-center justify-between border-b shrink-0 bg-white" style={{ borderColor: C.outline + '10' }}>
-                    <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined opacity-40" style={{ fontSize: '20px' }}>search</span>
-                        <input 
-                            type="text" 
-                            placeholder="Search tasks, syllabi, or collaborators..." 
-                            className="bg-transparent border-none outline-none text-sm w-80 font-medium"
-                        />
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                        <button className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-zinc-100">
-                            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>notifications</span>
-                        </button>
-                        <div className="h-6 w-px bg-zinc-100" />
-                        <button className="btn-pdcm-primary px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
-                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
-                            New Resource
-                        </button>
-                    </div>
+        <PDCMBaseLayout
+            activeSidebarId={navTab === 'develop' ? 'tasks' : 'reviews'}
+            headerTitle={navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
+            headerTabs={globalHeaderTabs}
+            sidebarItems={sidebarItems}
+        >
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <header className="mb-10">
+                    <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
+                        {navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
+                    </h2>
+                    <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
+                        {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : 'Evaluate and provide feedback on your peers\' work.'}
+                    </p>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-                    <div className="max-w-6xl mx-auto">
-                        <header className="mb-10">
-                            <div className="flex items-end justify-between mb-2">
-                                <div>
-                                    <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
-                                        {navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
-                                    </h2>
-                                    <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
-                                        {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : 'Evaluate and provide feedback on your peers\' work.'}
-                                    </p>
-                                </div>
-                                <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surfaceContainerHigh }}>
-                                    <button 
-                                        onClick={() => router.push('/dashboard/pdcm')}
-                                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === 'develop' ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-100'}`}
-                                        style={navTab === 'develop' ? { color: C.primary } : {}}
-                                    >
-                                        Develop
-                                    </button>
-                                    <button 
-                                        onClick={() => router.push('/dashboard/pdcm/peer-review')}
-                                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === 'peer-review' ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-100'}`}
-                                        style={navTab === 'peer-review' ? { color: C.primary } : {}}
-                                    >
-                                        Review
-                                    </button>
-                                </div>
-                            </div>
-                        </header>
+                {/* Filters */}
+                <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar pb-2">
+                    {[
+                        { id: 'all', label: 'All Tasks', icon: 'apps' },
+                        { id: 'todo', label: 'To Do', icon: 'list_alt' },
+                        { id: 'inprogress', label: 'In Progress', icon: 'pending' },
+                        { id: 'completed', label: 'Completed', icon: 'task_alt' },
+                        ...(navTab === 'develop' ? [{ id: 'revision_requested', label: 'Revisions', icon: 'history_edu' }] : [])
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setStatusTab(tab.id as any)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap"
+                            style={statusTab === tab.id
+                                ? { background: C.primary, color: 'white', boxShadow: '0 4px 12px rgba(45,52,43,0.2)' }
+                                : { background: C.surfaceContainerHigh, color: C.onSurfaceVariant }
+                            }
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{tab.icon}</span>
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                        {/* Filters */}
-                        <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar pb-2">
-                            {[
-                                { id: 'all', label: 'All Tasks', icon: 'apps' },
-                                { id: 'todo', label: 'To Do', icon: 'list_alt' },
-                                { id: 'inprogress', label: 'In Progress', icon: 'pending' },
-                                { id: 'completed', label: 'Completed', icon: 'task_alt' },
-                                ...(navTab === 'develop' ? [{ id: 'revision_requested', label: 'Revisions', icon: 'history_edu' }] : [])
-                            ].map(tab => (
+                {/* Grid */}
+                {isLoadingTasks ? (
+                    <div className="py-20 flex flex-col items-center justify-center text-zinc-400">
+                        <Loader2 className="animate-spin mb-4" size={40} />
+                        <p className="text-sm font-bold uppercase tracking-widest">Loading tasks...</p>
+                    </div>
+                ) : tasks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                        <AnimatePresence mode="popLayout">
+                            {tasks.map((task: any) => (
+                                navTab === 'develop' 
+                                    ? <DevelopCard key={task.taskId} task={task} isAccepting={isAccepting} onAccept={handleAcceptTask} router={router} />
+                                    : <ReviewCard key={task.reviewId || task.taskId} task={task} isAccepting={isAccepting} onAccept={handleAcceptTask} router={router} />
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                ) : (
+                    <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl" style={{ borderColor: C.outline + '20', background: C.surfaceContainerLowest }}>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: C.surfaceContainer }}>
+                            <span className="material-symbols-outlined text-3xl" style={{ color: C.onSurfaceVariant }}>task</span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-1" style={{ color: C.onSurface }}>No tasks available</h3>
+                        <p className="text-sm" style={{ color: C.onSurfaceVariant }}>You're all caught up! Check back later.</p>
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-8 mb-12">
+                        <button 
+                            disabled={page === 0}
+                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-white shadow-sm border border-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 hover:shadow"
+                        >
+                            <span className="material-symbols-outlined text-zinc-600">chevron_left</span>
+                        </button>
+                        
+                        <div className="flex gap-1">
+                            {Array.from({ length: totalPages }).map((_, i) => (
                                 <button
-                                    key={tab.id}
-                                    onClick={() => setStatusTab(tab.id as any)}
-                                    className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap"
-                                    style={statusTab === tab.id
-                                        ? { background: C.primary, color: 'white', boxShadow: '0 4px 12px rgba(45,52,43,0.2)' }
-                                        : { background: C.surfaceContainerHigh, color: C.onSurfaceVariant }
-                                    }
+                                    key={i}
+                                    onClick={() => setPage(i)}
+                                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shadow-sm ${page === i ? 'bg-primary text-white shadow-md' : 'bg-white border text-zinc-600 border-zinc-100 hover:bg-zinc-50'}`}
                                 >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{tab.icon}</span>
-                                    {tab.label}
+                                    {i + 1}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Grid */}
-                        {isLoadingTasks ? (
-                            <div className="py-20 flex flex-col items-center justify-center text-zinc-400">
-                                <Loader2 className="animate-spin mb-4" size={40} />
-                                <p className="text-sm font-bold uppercase tracking-widest">Loading tasks...</p>
-                            </div>
-                        ) : tasks.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                                <AnimatePresence mode="popLayout">
-                                    {tasks.map((task: any) => (
-                                        navTab === 'develop' 
-                                            ? <DevelopCard key={task.taskId} task={task} isAccepting={isAccepting} onAccept={handleAcceptTask} router={router} />
-                                            : <ReviewCard key={task.taskId} task={task} isAccepting={isAccepting} onAccept={handleAcceptTask} router={router} />
-                                    ))}
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            <div className="py-24 text-center border-2 border-dashed rounded-[2.5rem]" style={{ borderColor: C.outline + '15' }}>
-                                <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4" style={{ background: C.surfaceContainerHigh }}>
-                                    <span className="material-symbols-outlined opacity-20" style={{ fontSize: '32px' }}>inventory_2</span>
-                                </div>
-                                <h3 className="text-xl font-bold mb-1" style={{ color: C.onSurface }}>No tasks found</h3>
-                                <p className="text-sm" style={{ color: C.onSurfaceVariant }}>Your queue is currently empty for this category.</p>
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-4 mt-8 pb-20">
-                                <button
-                                    onClick={() => setPage(p => Math.max(0, p - 1))}
-                                    disabled={page === 0}
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all disabled:opacity-30"
-                                    style={{ borderColor: C.outline + '20' }}
-                                >
-                                    <span className="material-symbols-outlined">chevron_left</span>
-                                </button>
-                                <span className="text-sm font-bold" style={{ color: C.onSurface }}>
-                                    Page {page + 1} of {totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                                    disabled={page >= totalPages - 1}
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all disabled:opacity-30"
-                                    style={{ borderColor: C.outline + '20' }}
-                                >
-                                    <span className="material-symbols-outlined">chevron_right</span>
-                                </button>
-                            </div>
-                        )}
+                        <button 
+                            disabled={page >= totalPages - 1}
+                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-white shadow-sm border border-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 hover:shadow"
+                        >
+                            <span className="material-symbols-outlined text-zinc-600">chevron_right</span>
+                        </button>
                     </div>
-                </div>
-            </main>
-        </div>
+                )}
+            </div>
+        </PDCMBaseLayout>
     );
 }
