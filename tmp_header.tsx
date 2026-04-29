@@ -68,8 +68,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 
 interface HeaderProps {
     title?: string;
-    hideLeft?: boolean;
-    className?: string;
     showSearch?: boolean;
     tabs?: {
         id: string;
@@ -135,7 +133,7 @@ function formatDate(dateStr: string): string {
     }
 }
 
-export function Header({ title, showSearch = true, hideLeft = false, className, tabs = [], onBack, actionButton }: HeaderProps) {
+export function Header({ title, showSearch = true, tabs = [], onBack, actionButton }: HeaderProps) {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
     const { user } = useSelector((state: RootState) => state.auth);
@@ -287,11 +285,10 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
     }, [confirmState, user?.accountId, router]);
 
     return (
-        <header className={className || "w-full fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#f0f2ef] h-16 flex items-center"}>
-            <div className="grid items-center px-6 w-full h-full" style={!hideLeft ? { gridTemplateColumns: '1fr auto 1fr' } : { gridTemplateColumns: '1fr' }}>
+        <header className="w-full fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#f0f2ef] h-16 flex items-center">
+            <div className="grid items-center px-6 w-full h-full" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
 
                 {/* Left: Logo / Back */}
-                {!hideLeft && (
                 <div className="flex items-center gap-4">
                     {onBack && (
                         <button
@@ -311,11 +308,8 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
                         </>
                     )}
                 </div>
-                )}
-
 
                 {/* Center: Tabs */}
-                {!hideLeft && (
                 <nav className="flex gap-8 justify-center">
                     {tabs.map((tab) => (
                         <button
@@ -333,8 +327,6 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
                         </button>
                     ))}
                 </nav>
-                )}
-
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-4 justify-end">
