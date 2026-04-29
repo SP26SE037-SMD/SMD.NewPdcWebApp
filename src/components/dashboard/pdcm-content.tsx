@@ -291,11 +291,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     ];
 
     const sidebarItems = [
-        { id: 'overview', label: 'Overview', icon: 'dashboard', isActive: false, onClick: () => {} },
-        { id: 'tasks', label: 'My Tasks', icon: 'task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'reviews', label: 'Peer Review', icon: 'rate_review', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
-        { id: 'library', label: 'Library', icon: 'folder', isActive: false, onClick: () => {} },
-        { id: 'settings', label: 'Settings', icon: 'settings', isActive: false, onClick: () => {} },
+        { id: 'tasks', label: 'My Tasks', icon: 'task', isActive: true, onClick: () => router.push('/dashboard/pdcm/develop') },
     ];
 
     return (
