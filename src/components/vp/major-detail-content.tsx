@@ -31,7 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function MajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorId = params.majorId as string;
+  const majorCode = params.majorId as string;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -53,9 +53,9 @@ export default function MajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major", majorId],
-    queryFn: () => MajorService.getMajorById(majorId),
-    enabled: !!majorId,
+    queryKey: ["major", majorCode],
+    queryFn: () => MajorService.getMajorByCode(majorCode),
+    enabled: !!majorCode,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -112,7 +112,7 @@ export default function MajorDetailContent() {
     mutationFn: (status: string) =>
       MajorService.updateMajorStatus(majorDetail?.data?.majorId || "", status),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["major", majorId] });
+      queryClient.invalidateQueries({ queryKey: ["major", majorCode] });
       showToast(
         `Major status updated to ${response.data.status.replace("_", " ")}.`,
         "success",
@@ -214,7 +214,7 @@ export default function MajorDetailContent() {
                 <button
                   onClick={() =>
                     router.push(
-                      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(major.majorId)}/review`,
+                      `/dashboard/vice-principal/manage-majors/${encodeURIComponent(major.majorCode)}/review`,
                     )
                   }
                   className="px-8 py-3 bg-amber-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/10 active:scale-95 transition-all flex items-center gap-2"

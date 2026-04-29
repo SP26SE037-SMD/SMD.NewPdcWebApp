@@ -92,7 +92,7 @@ export const MajorService = {
     },
 
     async getMajorByCode(code: string): Promise<ApiResponse<Major>> {
-        const response = await fetch(`/api/majors/${encodeURIComponent(code)}`);
+        const response = await fetch(`/api/majors/code/${encodeURIComponent(code)}`);
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.error || error.message || 'Failed to fetch major details');
