@@ -13,7 +13,7 @@ import { RootState } from '@/store';
 
 /* ─── Modern Design Tokens ─── */
 const C = {
-    primary: '#2d342b',
+    primary: '#409b43',
     secondary: '#4d5149',
     surface: '#f9fbf8',
     surfaceVariant: '#e1e4dc',
@@ -341,7 +341,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                             onClick={() => setStatusTab(tab.id as any)}
                             className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap"
                             style={statusTab === tab.id
-                                ? { background: C.primary, color: 'white', boxShadow: '0 4px 12px rgba(45,52,43,0.2)' }
+                                ? { background: C.primary, color: 'white', boxShadow: '0 4px 12px rgba(64,155,67,0.25)' }
                                 : { background: C.surfaceContainerHigh, color: C.onSurfaceVariant }
                             }
                         >
