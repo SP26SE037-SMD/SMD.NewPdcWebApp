@@ -59,7 +59,7 @@ export function Sidebar({
                 </div>
             )}
 
-            <nav className="flex-1 px-3 flex flex-col space-y-2 mt-22">
+            <nav className="flex-1 px-3 flex flex-col space-y-2 mt-4">
                 {items.filter(item => !item.isAction).map((item) => (
                     <button
                         key={item.id}

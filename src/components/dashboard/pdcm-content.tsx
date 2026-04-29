@@ -348,8 +348,8 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
             sidebarItems={sidebarItems}
         >
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <header className="mb-10">
-                    <div className="flex items-end justify-between mb-2">
+                <header className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
                         <div>
                             <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
                                 {navTab === 'develop' ? 'Development Task' : 'Review Task'}
