@@ -23,7 +23,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function HocMajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorIdFromParams = params.majorId as string;
+  const majorCode = params.majorCode as string;
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "CURRICULUMS">("OVERVIEW");
 
   // Major Details Query
@@ -32,9 +32,9 @@ export default function HocMajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major-hoc", majorIdFromParams],
-    queryFn: () => MajorService.getMajorById(majorIdFromParams),
-    enabled: !!majorIdFromParams,
+    queryKey: ["major-hoc", majorCode],
+    queryFn: () => MajorService.getMajorByCode(majorCode),
+    enabled: !!majorCode,
   });
 
   const majorId = majorDetail?.data?.majorId;

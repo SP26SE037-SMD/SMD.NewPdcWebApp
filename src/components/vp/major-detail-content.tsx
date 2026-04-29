@@ -31,7 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function MajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorCode = params.majorId as string;
+  const majorCode = params.majorCode as string;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 

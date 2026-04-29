@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default function MajorReviewPage() {
     const params = useParams();
-    const majorCode = params.majorId as string;
+    const majorCode = params.majorCode as string;
     const router = useRouter();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
