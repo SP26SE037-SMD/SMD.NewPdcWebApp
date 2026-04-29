@@ -285,10 +285,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
     const tasks = tasksData?.data?.content || [];
     const totalPages = tasksData?.data?.totalPages || 0;
 
-        const globalHeaderTabs = [
-        { id: 'develop', label: 'My Task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
-    ];
+    const globalHeaderTabs: any[] = [];
 
     const sidebarItems = [
         { id: 'tasks', label: 'My Tasks', icon: 'task', isActive: true, onClick: () => router.push('/dashboard/pdcm/develop') },
