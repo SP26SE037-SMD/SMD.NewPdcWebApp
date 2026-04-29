@@ -327,18 +327,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                             </div>
                         </div>
                     ))}
-
-                    {/* Empty State / Add Action */}
-                    <button onClick={handleAddComponent}
-                        className="w-full py-8 border-2 border-dashed border-outline-variant/30 rounded-xl hover:bg-surface-container-low/50 hover:border-primary/40 transition-all group">
-                        <div className="flex flex-col items-center">
-                            <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-white transition-colors mb-3">
-                                <span className="material-symbols-outlined text-xl">add</span>
-                            </div>
-                            <span className="text-base font-bold text-on-surface-variant group-hover:text-primary transition-colors">Add Component</span>
-                            <p className="text-[10px] text-on-surface-variant/60 mt-0.5 uppercase tracking-widest">Create a new assessment task</p>
-                        </div>
-                    </button>
                 </div>
             </div>
 
