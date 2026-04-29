@@ -305,7 +305,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                                 {navTab === 'develop' ? 'Development Pipeline' : 'Peer Review Queue'}
                             </h2>
                             <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
-                                {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : 'Evaluate and provide feedback on your peers\' work.'}
+                                {navTab === 'develop' ? 'Manage your syllabus development tasks and deadlines.' : ''}
                             </p>
                         </div>
                         <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surfaceContainerHigh }}>
