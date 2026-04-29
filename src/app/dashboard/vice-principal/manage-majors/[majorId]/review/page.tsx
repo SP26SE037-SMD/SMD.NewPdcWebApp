@@ -17,16 +17,16 @@ import Link from "next/link";
 
 export default function MajorReviewPage() {
     const params = useParams();
-    const majorId = params.majorId as string;
+    const majorCode = params.majorId as string;
     const router = useRouter();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
 
     // Queries
     const { data: majorResponse, isLoading: isLoadingMajor } = useQuery({
-        queryKey: ['major', majorId],
-        queryFn: () => MajorService.getMajorById(majorId),
-        enabled: !!majorId,
+        queryKey: ['major', majorCode],
+        queryFn: () => MajorService.getMajorByCode(majorCode),
+        enabled: !!majorCode,
     });
 
     const major = majorResponse?.data;
@@ -105,7 +105,7 @@ export default function MajorReviewPage() {
                         </Link>
                         <ChevronRight size={10} />
                         <Link
-                            href={`/dashboard/vice-principal/manage-majors/${encodeURIComponent(majorId)}`}
+                            href={`/dashboard/vice-principal/manage-majors/${encodeURIComponent(majorCode)}`}
                             className="hover:text-[#2d6a4f] transition-colors"
                         >
                             {major?.majorCode || "..."}
