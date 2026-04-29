@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
 import { useSearchParams } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import StepNavigation from "./StepNavigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +85,7 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
     "WAREHOUSE",
   );
   const [search, setSearch] = useState("");
+  const [searchBy, setSearchBy] = useState<"code" | "name">("code");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const searchParams = useSearchParams();
   const curriculumId = curriculumIdProp || searchParams.get("id");
@@ -168,14 +169,29 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
     });
   }, [draftSubjects, initialSubjectIds, mappedData]);
 
-  const { data: subjectData, isLoading: isLoadingSub } = useQuery({
-    queryKey: ["warehouse-subjects", search, selectedDepartmentId],
-    queryFn: () =>
+  const {
+    data: subjectData,
+    isLoading: isLoadingSub,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["warehouse-subjects", search, searchBy, selectedDepartmentId],
+    queryFn: ({ pageParam = 0 }) =>
       SubjectService.getSubjects({
         search,
+        searchBy,
         departmentId: selectedDepartmentId || undefined,
         size: 50,
+        page: pageParam as number,
       }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any) => {
+      const pageData = lastPage.data;
+      return pageData.page < pageData.totalPages - 1
+        ? pageData.page + 1
+        : undefined;
+    },
   });
 
   const { data: deptData } = useQuery({
@@ -208,7 +224,9 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
     }));
   }, [groupData]);
 
-  const warehouseSubjects = subjectData?.data?.content || [];
+  const warehouseSubjects = useMemo(() => {
+    return subjectData?.pages.flatMap((page: any) => page.data.content) || [];
+  }, [subjectData]);
 
   // Actions
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
@@ -932,19 +950,30 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
             {rightTab === "WAREHOUSE" && (
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="space-y-3 mb-4">
-                  <div className="relative">
-                    <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                      size={14}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Filter by code or name..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="w-full bg-white border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
-                    />
-                  </div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                          size={14}
+                        />
+                        <input
+                          type="text"
+                          placeholder={searchBy === "code" ? "Search by code..." : "Tìm kiếm theo tên..."}
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className="w-full bg-white border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                        />
+                      </div>
+                      <select
+                        value={searchBy}
+                        onChange={(e) => setSearchBy(e.target.value as "code" | "name")}
+                        className="bg-white border-none rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-[var(--primary)] cursor-pointer transition-all appearance-none"
+                        style={{ width: "80px", textAlign: "center" }}
+                      >
+                        <option value="code">Code</option>
+                        <option value="name">Name</option>
+                      </select>
+                    </div>
                   <div className="relative group/dept">
                     <Building
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within/dept:text-[var(--primary)] transition-colors"
@@ -1061,6 +1090,28 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
                         </div>
                       );
                     })
+                  )}
+
+                  {hasNextPage && (
+                    <div className="pt-2 pb-6">
+                      <button
+                        onClick={() => fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                        className="w-full py-3 rounded-xl border border-dashed border-zinc-200 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--primary)]/[0.02] transition-all flex items-center justify-center gap-2"
+                      >
+                        {isFetchingNextPage ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin" />
+                            <span>Loading More...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown size={12} />
+                            <span>Load More Subjects</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
