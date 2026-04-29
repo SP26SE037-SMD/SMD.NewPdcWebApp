@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PDCMBaseLayout } from '@/components/layout/PDCMBaseLayout';
 import { Loader2 } from 'lucide-react';
 import { TaskService, TASK_STATUS } from '@/services/task.service';
+import { ReviewTaskService } from '@/services/review-task.service';
 import { SyllabusService } from '@/services/syllabus.service';
 import { RootState } from '@/store';
 
@@ -302,13 +303,23 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                 status: navTab === 'develop' ? developStatusMapping[statusTab] : reviewStatusMapping[statusTab],
                 type: navTab === 'develop' ? 'SYLLABUS_DEVELOP' : 'PEER_REVIEW'
             };
-            return await TaskService.getTasks(params as any);
+            if (navTab === 'develop') {
+                return await TaskService.getTasks(params as any);
+            } else {
+                return await ReviewTaskService.getReviewTasks(params.accountId, params.status as string | string[], params.page, params.size);
+            }
         },
         enabled: !!user?.accountId,
     });
 
     const acceptTaskMutation = useMutation({
-        mutationFn: (taskId: string) => TaskService.updateTaskStatus(taskId, TASK_STATUS.IN_PROGRESS),
+        mutationFn: (task: any) => {
+            if (navTab === 'develop') {
+                return TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+            } else {
+                return ReviewTaskService.updateReviewTaskAcceptance(task.reviewId || task.taskId, true);
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['pdcm-tasks'] });
             setIsAccepting(null);
@@ -318,7 +329,7 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
 
     const handleAcceptTask = (task: any) => {
         setIsAccepting(task.taskId);
-        acceptTaskMutation.mutate(task.taskId);
+        acceptTaskMutation.mutate(task);
     };
 
     const tasks = tasksData?.data?.content || [];
@@ -337,8 +348,8 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
             sidebarItems={sidebarItems}
         >
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <header className="mb-10">
-                    <div className="flex items-end justify-between mb-2">
+                <header className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
                         <div>
                             <h2 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface }}>
                                 {navTab === 'develop' ? 'Development Task' : 'Review Task'}
