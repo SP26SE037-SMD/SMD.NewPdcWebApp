@@ -51,7 +51,7 @@ export function Sidebar({
     const { user } = useSelector((state: RootState) => state.auth);
 
     return (
-        <aside className="h-[calc(100vh-64px)] w-64 fixed left-0 top-16 flex flex-col py-6 z-40 bg-[#f8faf9] border-r border-[#f0f2ef] shadow-sm">
+        <aside className="h-[calc(100vh-64px)] w-64 fixed left-0 top-16 flex flex-col py-6 z-40 bg-white border-r border-[#f0f2ef] shadow-sm">
             
             {subContent && (
                 <div className="px-6 mb-8">
@@ -59,7 +59,7 @@ export function Sidebar({
                 </div>
             )}
 
-            <nav className="flex-1 px-3 space-y-2 mt-4">
+            <nav className="flex-1 px-3 flex flex-col space-y-2 mt-22">
                 {items.filter(item => !item.isAction).map((item) => (
                     <button
                         key={item.id}

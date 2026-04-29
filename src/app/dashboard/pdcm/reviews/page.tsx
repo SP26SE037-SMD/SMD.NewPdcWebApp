@@ -66,11 +66,7 @@ export default function PeerReviewPage() {
         { id: 'archive', label: 'Archive', icon: 'inventory_2', onClick: () => { } },
     ];
 
-    const headerTabs = [
-        { id: 'available', label: 'Available Tasks', isActive: false, onClick: () => { } },
-        { id: 'my-tasks', label: 'My Tasks', isActive: false, onClick: () => { } },
-        { id: 'peer-review', label: 'Peer Review', isActive: true, onClick: () => { } },
-    ];
+    const headerTabs: any[] = [];
 
     return (
         <PDCMBaseLayout
