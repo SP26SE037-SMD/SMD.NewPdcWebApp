@@ -65,26 +65,28 @@ const SidebarItem = ({
 
   const content = (
     <div
-      className={`relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${active || (hasSubItems && isAnySubActive)
+      className={`relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
+        active || (hasSubItems && isAnySubActive)
           ? isHoPDC || true // We want the clean white/green look for VP too
             ? "bg-white shadow-[0_4px_20px_rgba(45,52,43,0.06)] border border-black/5 text-[#1d5c42]"
             : "bg-primary text-white shadow-lg shadow-primary/20"
           : disabled
             ? "text-zinc-300 cursor-not-allowed"
             : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 shadow-none hover:translate-x-1"
-        }`}
+      }`}
       onClick={() => hasSubItems && setIsOpen(!isOpen)}
     >
       <div className="flex items-center gap-3">
         {/* Icon Rendering */}
         {typeof icon === "string" ? (
           <span
-            className={`material-symbols-outlined transition-all duration-300 ${active || isAnySubActive
+            className={`material-symbols-outlined transition-all duration-300 ${
+              active || isAnySubActive
                 ? "text-[#2d6a4f]"
                 : !disabled
                   ? "group-hover:scale-110 text-zinc-400 group-hover:text-[#2d6a4f]"
                   : "text-zinc-300"
-              }`}
+            }`}
             style={{
               fontSize: "22px",
               fontVariationSettings:
@@ -103,10 +105,11 @@ const SidebarItem = ({
         {/* Label */}
         {!collapsed && (
           <span
-            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden transition-colors ${active || isAnySubActive
+            className={`text-sm tracking-wide whitespace-nowrap overflow-hidden transition-colors ${
+              active || isAnySubActive
                 ? "font-bold text-[#1d5c42]"
                 : "font-semibold text-zinc-500"
-              }`}
+            }`}
           >
             {label}
           </span>
@@ -122,12 +125,15 @@ const SidebarItem = ({
       )}
 
       {/* Active Indicator (Hidden for the new clean VP design as it uses shadow instead) */}
-      {(active || (hasSubItems && isAnySubActive)) && !collapsed && !isHoPDC && false && (
-        <motion.div
-          layoutId="active-indicator"
-          className="right-0 w-1 h-6 bg-white rounded-l-full"
-        />
-      )}
+      {(active || (hasSubItems && isAnySubActive)) &&
+        !collapsed &&
+        !isHoPDC &&
+        false && (
+          <motion.div
+            layoutId="active-indicator"
+            className="right-0 w-1 h-6 bg-white rounded-l-full"
+          />
+        )}
     </div>
   );
 
@@ -156,10 +162,11 @@ const SidebarItem = ({
               <Link
                 key={sub.href}
                 href={sub.href}
-                className={`flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${sub.active
+                className={`flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
+                  sub.active
                     ? "text-primary bg-primary/5"
                     : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
-                  }`}
+                }`}
               >
                 <div
                   className={`w-1 h-1 rounded-full ${sub.active ? "bg-primary" : "bg-zinc-200"}`}
@@ -250,7 +257,6 @@ export default function DashboardLayout({
         {
           group: "Core Management",
           items: [
-
             {
               href: "/dashboard/vice-principal/manage-majors",
               icon: "school",
@@ -336,7 +342,7 @@ export default function DashboardLayout({
       <motion.aside
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 88 }}
-        className={`relative ${user?.role === 'VP' ? 'bg-[#f8f9fa]' : 'bg-white'} border-r border-border flex flex-col z-30 shadow-sm`}
+        className={`relative ${user?.role === "VP" ? "bg-[#f8f9fa]" : "bg-white"} border-r border-border flex flex-col z-30 shadow-sm`}
       >
         {/* Toggle Button */}
         <button
@@ -350,9 +356,15 @@ export default function DashboardLayout({
         <div className="p-6 mb-4">
           {user?.role === "VP" && isSidebarOpen ? (
             <div className="flex items-center gap-3 px-2">
-              <div className="w-10 h-10 rounded-xl bg-[#2d6a4f] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#2d6a4f]/20">
-                <span className="material-symbols-outlined">school</span>
-              </div>
+              <img
+                src="/icon.png"
+                alt="SMD System"
+                className={
+                  isSidebarOpen
+                    ? "h-10 w-auto object-contain"
+                    : "h-10 w-10 object-contain"
+                }
+              />
               <div className="overflow-hidden">
                 <h2 className="font-bold text-[#1d5c42] leading-tight whitespace-nowrap">
                   Office of the VP
@@ -404,7 +416,6 @@ export default function DashboardLayout({
 
         {/* User Footer */}
         <div className="p-4 border-t border-border/50 space-y-2">
-
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group"
