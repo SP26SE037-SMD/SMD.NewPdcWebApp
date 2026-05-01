@@ -26,6 +26,7 @@ import {
   Network,
   ClipboardList,
   CheckSquare,
+  FileText,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
@@ -266,6 +267,11 @@ export default function DashboardLayout({
               href: "/dashboard/vice-principal/digital-enactment",
               icon: "draw",
               label: "Digital Enactment",
+            },
+            {
+              href: "/dashboard/vice-principal/academic-documents",
+              icon: FileText,
+              label: "Academic Documents",
             },
           ],
         },
