@@ -13,17 +13,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X, Eye,
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
 import PloDefinitionStep from "@/components/hocfdc/create-curriculum/PloDefinitionStep";
 import MappingStep from "@/components/hocfdc/create-curriculum/MappingStep";
 import CourseBuilderStep from "@/components/hocfdc/create-curriculum/CourseBuilderStep";
+import PdfExtractionStep from "@/components/hocfdc/create-curriculum/PdfExtractionStep";
 
-type Tab = "major" | "po" | "curriculum" | "plo" | "mapping" | "semester" | "submit";
+type Tab = "process" | "major" | "po" | "curriculum" | "plo" | "mapping" | "semester" | "submit";
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+const ALL_TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "process", label: "Process Document", icon: <FileText className="h-4 w-4" /> },
   { id: "major", label: "Major Detail", icon: <Building2 className="h-4 w-4" /> },
   { id: "po", label: "PO", icon: <Target className="h-4 w-4" /> },
   { id: "curriculum", label: "Create Curriculum", icon: <BookOpen className="h-4 w-4" /> },
@@ -40,8 +42,8 @@ export default function TaskDetailPage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const initialMajorId = searchParams.get("majorId");
-
   const [activeTab, setActiveTab] = useState<Tab>("major");
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [task, setTask] = useState<TaskItem | null>(null);
   const [major, setMajor] = useState<Major | null>(null);
   const [pos, setPos] = useState<PO[]>([]);
@@ -98,6 +100,17 @@ export default function TaskDetailPage() {
           }
 
           console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          
+          // Parse documentId from description
+          const docMatch = mappedTask.description?.match(/document ID:\s*([a-zA-Z0-9-]+)/i);
+          const parsedDocId = docMatch ? docMatch[1] : null;
+          if (parsedDocId) {
+            setDocumentId(parsedDocId);
+            if (!mappedTask.majorId) {
+              setActiveTab("process");
+            }
+          }
+
           setTask(mappedTask);
         }
       } catch (err) {
@@ -293,7 +306,13 @@ export default function TaskDetailPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-none pb-1">
-            {TABS.map((tab, idx) => {
+            {ALL_TABS.filter(tab => {
+              // Hide Process Document if there is a majorId
+              if (tab.id === "process") return !!documentId && !task.majorId;
+              // If there's no majorId but there is a documentId, hide everything else except Process
+              if (!task.majorId && !!documentId) return false;
+              return true;
+            }).map((tab, idx) => {
               const isCompleted =
                 (tab.id === "curriculum" && !!curriculum) ||
                 (tab.id === "major" && !!major);
@@ -308,7 +327,7 @@ export default function TaskDetailPage() {
                 >
                   {tab.icon}
                   {tab.label}
-                  {isCompleted && tab.id !== "major" && (
+                  {isCompleted && tab.id !== "major" && tab.id !== "process" && (
                     <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                   )}
                 </button>
@@ -328,6 +347,18 @@ export default function TaskDetailPage() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
+            {/* PROCESS DOCUMENT TAB */}
+            {activeTab === "process" && documentId && (
+              <PdfExtractionStep 
+                documentId={documentId} 
+                onComplete={(newMajorId) => {
+                  setTask(prev => prev ? { ...prev, majorId: newMajorId } : null);
+                  router.replace(`/dashboard/hocfdc/tasks/${taskId}?majorId=${newMajorId}`);
+                  setActiveTab("major");
+                }} 
+              />
+            )}
+
             {/* MAJOR DETAIL TAB */}
             {activeTab === "major" && (
               <MajorDetailTab

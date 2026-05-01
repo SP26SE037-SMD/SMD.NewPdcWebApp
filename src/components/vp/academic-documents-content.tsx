@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FileText, Upload, CheckCircle2, Loader2, Copy, ExternalLink,
-  ShieldCheck, X, FileDown, Clock, Folder, ChevronDown, Plus
+  ShieldCheck, X, FileDown, Clock, Folder, ChevronDown, Plus, Send, Calendar, AlertCircle
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
@@ -64,6 +64,15 @@ export default function AcademicDocumentsContent() {
 
   // Upload State
   const [file, setFile] = useState<File | null>(null);
+
+  // Assign Task State
+  const [assignModalDoc, setAssignModalDoc] = useState<any>(null);
+  const [taskForm, setTaskForm] = useState({
+    taskName: "Extract Major from Document",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    priority: "HIGH"
+  });
+  const [assigningTask, setAssigningTask] = useState(false);
 
   React.useEffect(() => {
     if (activeTab === "pending") {
@@ -202,6 +211,41 @@ export default function AcademicDocumentsContent() {
     setUploadedUrl(null);
   };
 
+  const handleAssignTask = async () => {
+    if (!assignModalDoc) return;
+    setAssigningTask(true);
+    try {
+      const payload = {
+        majorId: null, // Will send null since it's unassigned
+        taskName: taskForm.taskName,
+        description: `Please extract major from document ID: ${assignModalDoc.id}`,
+        priority: taskForm.priority,
+        deadline: taskForm.deadline,
+        type: "CREATE_CURRICULUM" // Default task type for now
+      };
+
+      const res = await fetch("/api/tasks/byVP", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to assign task");
+      }
+
+      showToast("Task assigned to HoCFDC successfully!", "success");
+      setAssignModalDoc(null);
+      fetchPendingDocs(); // Refresh just in case
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.message || "Failed to assign task", "error");
+    } finally {
+      setAssigningTask(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     showToast("URL copied to clipboard", "success");
@@ -270,10 +314,11 @@ export default function AcademicDocumentsContent() {
                 <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
                   <thead>
                     <tr className="bg-zinc-50/50 border-b border-black/5 text-xs uppercase tracking-wider text-zinc-500 font-bold">
-                      <th className="p-4 w-[40%]">Document Title</th>
-                      <th className="p-4 w-[30%]">File Name</th>
-                      <th className="p-4 w-[15%]">Uploaded</th>
+                      <th className="p-4 w-[35%]">Document Title</th>
+                      <th className="p-4 w-[25%]">File Name</th>
+                      <th className="p-4 w-[12%]">Uploaded</th>
                       <th className="p-4 w-[15%]">Status</th>
+                      <th className="p-4 w-[13%]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-black/5">
@@ -306,6 +351,15 @@ export default function AcademicDocumentsContent() {
                               <Clock size={12} />
                               {doc.status}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            <button 
+                              onClick={() => setAssignModalDoc(doc)}
+                              className="px-3 py-1.5 bg-[#e8f5e9] text-[#1d5c42] rounded-lg text-xs font-bold hover:bg-[#1d5c42] hover:text-white transition-all shadow-sm border border-[#1d5c42]/20 flex items-center gap-1.5 whitespace-nowrap group/btn"
+                            >
+                              <Send size={14} className="group-hover/btn:translate-x-0.5 transition-transform" /> 
+                              Assign Task
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -492,6 +546,103 @@ export default function AcademicDocumentsContent() {
                   </button>
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+
+        {/* Assign Task Modal */}
+        {assignModalDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setAssignModalDoc(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-white/20 overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-zinc-100 bg-gradient-to-r from-[#e8f5e9] to-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-bold flex items-center gap-2 text-[#1d5c42]">
+                    <Send size={20} />
+                    Assign to HoCFDC
+                  </h2>
+                  <button onClick={() => setAssignModalDoc(null)} className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-white/60 transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+                <p className="text-sm font-medium text-zinc-600">
+                  Document: <span className="text-[#1d5c42] font-bold">{assignModalDoc.title}</span>
+                </p>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-800">
+                  <AlertCircle size={20} className="shrink-0 mt-0.5 text-amber-600" />
+                  <p className="text-sm">
+                    This will create a task for the Head of Curriculum Framework (HoCFDC) to process the PDF and create the Major.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-zinc-700">Task Name</label>
+                  <input 
+                    type="text"
+                    value={taskForm.taskName}
+                    onChange={(e) => setTaskForm({...taskForm, taskName: e.target.value})}
+                    className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-zinc-700">Priority</label>
+                    <select 
+                      value={taskForm.priority}
+                      onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
+                      className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium appearance-none"
+                    >
+                      <option value="HIGH">High</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="LOW">Low</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-zinc-700 flex items-center gap-1.5">
+                      Deadline
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="date"
+                        value={taskForm.deadline}
+                        onChange={(e) => setTaskForm({...taskForm, deadline: e.target.value})}
+                        className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-zinc-100 bg-zinc-50/50 flex justify-end gap-3">
+                <button
+                  onClick={() => setAssignModalDoc(null)}
+                  className="px-5 py-2.5 font-bold text-sm text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={assigningTask || !taskForm.taskName || !taskForm.deadline}
+                  onClick={handleAssignTask}
+                  className="px-6 py-2.5 bg-[#1d5c42] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#1d5c42]/20 hover:bg-[#144330] transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2"
+                >
+                  {assigningTask ? (
+                    <><Loader2 size={16} className="animate-spin" /> Assigning...</>
+                  ) : (
+                    <><Send size={16} /> Send Task</>
+                  )}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
