@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 import { StoreProvider } from "@/store/StoreProvider";
 import ReactQueryProvider from "@/context/CreateQueryProvider";
-// import { WebSocketProvider } from "@/context/WebSocketProvider";
+import { WebSocketProvider } from "@/context/WebSocketProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export default function RootLayout({
@@ -45,11 +45,11 @@ export default function RootLayout({
       </head>
       <body className={`${plusJakartaSans.className} antialiased`}>
         <StoreProvider>
-          {/* <WebSocketProvider> */}
-          <ReactQueryProvider>
-            <ToastProvider>{children}</ToastProvider>
-          </ReactQueryProvider>
-          {/* </WebSocketProvider> */}
+          <WebSocketProvider>
+            <ReactQueryProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </ReactQueryProvider>
+          </WebSocketProvider>
         </StoreProvider>
       </body>
     </html>

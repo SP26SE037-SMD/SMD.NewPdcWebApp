@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
+import CurriculumImportStep from "@/components/hocfdc/create-curriculum/CurriculumImportStep";
 import PloDefinitionStep from "@/components/hocfdc/create-curriculum/PloDefinitionStep";
 import MappingStep from "@/components/hocfdc/create-curriculum/MappingStep";
 import CourseBuilderStep from "@/components/hocfdc/create-curriculum/CourseBuilderStep";
@@ -351,10 +352,39 @@ export default function TaskDetailPage() {
             {activeTab === "process" && documentId && (
               <PdfExtractionStep 
                 documentId={documentId} 
-                onComplete={(newMajorId) => {
-                  setTask(prev => prev ? { ...prev, majorId: newMajorId } : null);
-                  router.replace(`/dashboard/hocfdc/tasks/${taskId}?majorId=${newMajorId}`);
-                  setActiveTab("major");
+                onComplete={async (newMajorId) => {
+                  try {
+                    // 1. Update Document with new majorId
+                    await fetch(`/api/document/${documentId}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ majorId: newMajorId })
+                    });
+
+                    // 2. Update Task with new majorId (Requires full existing task data)
+                    if (task) {
+                      await fetch(`/api/tasks/${taskId}/byVP`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          majorId: newMajorId,
+                          taskName: task.taskName,
+                          description: task.description,
+                          priority: task.priority || "MEDIUM",
+                          deadline: task.deadline,
+                          type: task.type || "CREATE_CURRICULUM"
+                        })
+                      });
+                    }
+
+                    // 3. Navigate back to tasks list and refresh
+                    toast.success("Document and Task linked to new Major successfully!");
+                    router.push('/dashboard/hocfdc/tasks');
+                    router.refresh();
+                  } catch (error) {
+                    console.error("Failed to link Major to Task and Document:", error);
+                    toast.error("Failed to update Task and Document linking.");
+                  }
                 }} 
               />
             )}
@@ -376,19 +406,38 @@ export default function TaskDetailPage() {
             {/* CREATE CURRICULUM TAB */}
             {activeTab === "curriculum" && (
               <div className="bg-surface rounded-2xl border border-outline/20 overflow-hidden">
-                <CurriculumInfoStep
-                  initialData={curriculum ? {
-                    curriculumId: curriculum.curriculumId,
-                    curriculumCode: curriculum.curriculumCode,
-                    curriculumName: curriculum.curriculumName,
-                    startYear: curriculum.startYear,
-                    majorId: curriculum.majorId || task.majorId,
-                    description: curriculum.description,
-                  } : { majorId: task.majorId }}
-                  onSave={handleSaveCurriculum}
-                  isSaving={savingCurriculum}
-                  onNext={() => setActiveTab("plo")}
-                />
+                {!curriculum ? (
+                  <CurriculumImportStep
+                    majorId={task?.majorId || ""}
+                    onImportSuccess={(newCurriculumId) => {
+                      // Fetch the new curriculum and set it
+                      CurriculumService.getCurriculumById(newCurriculumId).then(res => {
+                        const newCurr = (res as any)?.data;
+                        if (newCurr) {
+                          setCurriculum(newCurr);
+                          setActiveTab("plo"); // Auto move to next tab after import
+                        }
+                      }).catch(() => {
+                        // Fallback
+                        setActiveTab("plo");
+                      });
+                    }}
+                  />
+                ) : (
+                  <CurriculumInfoStep
+                    initialData={{
+                      curriculumId: curriculum.curriculumId,
+                      curriculumCode: curriculum.curriculumCode,
+                      curriculumName: curriculum.curriculumName,
+                      startYear: curriculum.startYear,
+                      majorId: curriculum.majorId || task?.majorId,
+                      description: curriculum.description,
+                    }}
+                    onSave={handleSaveCurriculum}
+                    isSaving={savingCurriculum}
+                    onNext={() => setActiveTab("plo")}
+                  />
+                )}
               </div>
             )}
 
