@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Correct backend URL: /api/sessions/syllabus/{syllabusId}/validate
         const backendUrl = `${API_BASE_URL}/api/sessions/syllabus/${syllabusId}/validate`;
-        console.log("[Validate Proxy] Calling:", backendUrl);
+        console.log("[Validate Proxy] Calling Backend:", backendUrl);
 
         const response = await fetch(backendUrl, {
             method: 'POST',
@@ -32,24 +31,20 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify(body),
         });
 
+        console.log("[Validate Proxy] Backend Status:", response.status);
+
         const text = await response.text();
-        
-        try {
-            const fs = require('fs');
-            fs.writeFileSync('last_backend_error.log', `URL: ${backendUrl}\nStatus: ${response.status}\nBody: ${text}\nPayload sent: ${JSON.stringify(body)}`);
-        } catch(err) {
-            console.error("Failed to write log", err);
-        }
-        
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            data = { message: `Raw server response: ${text}` };
+            console.error("[Validate Proxy] Failed to parse JSON response:", text.substring(0, 200));
+            data = { status: response.status, message: `Raw server response: ${text}` };
         }
 
         return NextResponse.json(data, { status: response.status });
     } catch (error: any) {
+        console.error("[Validate Proxy] CRITICAL ERROR:", error);
         return NextResponse.json(
             { status: 500, message: `Proxy Error: ${error.message}` },
             { status: 500 }

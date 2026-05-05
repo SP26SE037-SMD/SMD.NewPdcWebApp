@@ -48,3 +48,25 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const cookieStore = request.cookies;
+        const token = cookieStore.get("smd-token")?.value;
+
+        const response = await fetch(`${API_BASE_URL}/api/sessions?${searchParams.toString()}`, {
+            method: 'GET',
+            headers: {
+                ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            },
+        });
+
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
+    } catch (error: any) {
+        return NextResponse.json(
+            { status: 500, message: `Proxy Error: ${error.message}` },
+            { status: 500 }
+        );
+    }
+}

@@ -130,8 +130,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                                                                                 <div className="flex gap-4">
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}&autoImport=true`)}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
-                        style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                     >
                         <span className="material-symbols-outlined text-[18px]">upload_file</span>
                         Import Material
@@ -139,8 +138,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
 
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white hover:bg-[#345332]"
-                        style={{ background: '#41683f' }}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white bg-[#00966d] hover:bg-[#00845f]"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         New Material
