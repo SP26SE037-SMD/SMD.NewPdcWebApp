@@ -409,18 +409,23 @@ export default function TaskDetailPage() {
                 {!curriculum ? (
                   <CurriculumImportStep
                     majorId={task?.majorId || ""}
-                    onImportSuccess={(newCurriculumId) => {
-                      // Fetch the new curriculum and set it
-                      CurriculumService.getCurriculumById(newCurriculumId).then(res => {
-                        const newCurr = (res as any)?.data;
-                        if (newCurr) {
-                          setCurriculum(newCurr);
+                    majorCode={major?.majorCode}
+                    onImportSuccess={() => {
+                      // Fetch the newly imported curriculum via majorId
+                      const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
+                      if (effectiveMajorId) {
+                        CurriculumService.getCurriculumsByMajorId(effectiveMajorId).then(res => {
+                          const currList = (res as any)?.data || [];
+                          if (currList.length > 0) {
+                            setCurriculum(currList[0]);
+                          }
                           setActiveTab("plo"); // Auto move to next tab after import
-                        }
-                      }).catch(() => {
-                        // Fallback
+                        }).catch(() => {
+                          setActiveTab("plo");
+                        });
+                      } else {
                         setActiveTab("plo");
-                      });
+                      }
                     }}
                   />
                 ) : (

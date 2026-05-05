@@ -217,4 +217,20 @@ export const CurriculumService = {
   deletePLO: async (ploId: string) => {
     return apiClient.delete<APIResponse<void>>(`/api/plos/${ploId}`);
   },
+  importFullCurriculum: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    // Use raw fetch because our apiClient might not handle FormData seamlessly 
+    // depending on how it's implemented. But usually fetch handles it automatically.
+    return fetch("/api/curriculums/import-full", {
+      method: "POST",
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw data; // Throws the API response as an error so we can catch it and display validation errors
+      }
+      return data;
+    });
+  },
 };
