@@ -33,9 +33,22 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewData, setPreviewData] = useState<any[]>([]);
+    const [searchParams, setSearchParams] = useState<any>({});
+    
+    // DEBUG: dump swagger
+    useEffect(() => {
+        fetch('/api/dump-swagger').catch(console.error);
+    }, []);
     const [previewPage, setPreviewPage] = useState(1);
     const [initialSessionJson, setInitialSessionJson] = useState<string | null>(null);
     const [existingMappings, setExistingMappings] = useState<CloSessionMapping[]>([]);
+    const [isValidated, setIsValidated] = useState(false);
+    const [isValidating, setIsValidating] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<any[]>([]);
+    const [remainingQuotas, setRemainingQuotas] = useState<any[]>([]);
+    const [isSingleValidated, setIsSingleValidated] = useState(false);
+    const [isSingleValidating, setIsSingleValidating] = useState(false);
+    const [singleValidationErrors, setSingleValidationErrors] = useState<any[]>([]);
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -164,6 +177,12 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         return () => { isMounted = false; };
     }, [draftSession?.sessionId, editingIndex]);
 
+    // Reset single session validation when form fields change
+    useEffect(() => {
+        setIsSingleValidated(false);
+        setSingleValidationErrors([]);
+    }, [draftSession?.sessionNumber, draftSession?.sessionTitle, draftSession?.duration, draftSession?.teachingMethods, draftSession?.sessionTopic, draftSession?.sessionType]);
+
     const sessions = reduxSessions || [];
     const isLoading = isTaskLoading || isSessionLoading || isRegLoading || isSyllabusLoading;
     const sessionDuration = sessions[0]?.duration ?? 50;
@@ -185,6 +204,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setDraftSession({ ...session });
         setInitialSessionJson(JSON.stringify(session));
         setEditingIndex(index);
+        setIsSingleValidated(false);
+        setSingleValidationErrors([]);
     };
 
     const handleCreateNew = () => {
@@ -197,6 +218,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             sessionNumber: nextSessionNumber,
             sessionTitle: `Session ${nextSessionNumber}`,
             teachingMethods: 'Lecture',
+            sessionTopic: '',
+            sessionType: 'THEORY',
             duration: rl1,
             content: '',
             cloIds: []
@@ -205,6 +228,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setDraftSession(newSession);
         setInitialSessionJson(null);
         setEditingIndex(-1); // -1 means creating NEW
+        setIsSingleValidated(false);
+        setSingleValidationErrors([]);
     };
 
     const handleDeleteSession = (index: number) => {
@@ -242,6 +267,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setEditingIndex(null);
         setDraftSession(null);
         setInitialSessionJson(null);
+        setIsSingleValidated(false);
+        setSingleValidationErrors([]);
     };
 
     const hasChanges = initialSessionJson !== JSON.stringify(draftSession);
@@ -444,11 +471,26 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                            <section className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                <div className="md:col-span-3 flex flex-col gap-2">
+                            {isSingleValidated && singleValidationErrors.length > 0 && (
+                                <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
+                                    <div>
+                                        <h4 className="font-bold text-sm">Validation Suggestions</h4>
+                                        <p className="text-xs mb-2">These are suggestions. You can still save the session.</p>
+                                        <ul className="text-xs list-disc list-inside space-y-1">
+                                            {singleValidationErrors[0]?.errors?.map((err: any, idx: number) => (
+                                                <li key={idx}>{err.errorMessage}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+
+                            <section className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                <div className="md:col-span-2 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session No.</label>
                                     <input
-                                        className="bg-surface-container-highest border-none rounded-lg px-4 py-3 focus:ring-0 focus:bg-surface-container-lowest transition-colors border-b-2 border-transparent focus:border-primary placeholder-on-surface-variant/50 font-black text-center"
+                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 font-black text-center outline-none"
                                         type="text"
                                         inputMode="numeric"
                                         pattern="[0-9]*"
@@ -460,10 +502,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         }}
                                     />
                                 </div>
-                                <div className="md:col-span-6 flex flex-col gap-2">
+                                <div className="md:col-span-7 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Title</label>
                                     <input
-                                        className="bg-surface-container-highest border-none rounded-lg px-4 py-3 focus:ring-0 focus:bg-surface-container-lowest transition-colors border-b-2 border-transparent focus:border-primary placeholder-on-surface-variant/50"
+                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="text"
                                         value={draftSession.sessionTitle || ''}
                                         onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTitle: e.target.value } : null)}
@@ -472,17 +514,17 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 <div className="md:col-span-3 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Duration (Mins)</label>
                                     <input
-                                        className="bg-surface-container-highest border-none rounded-lg px-4 py-3 focus:ring-0 focus:bg-surface-container-lowest transition-colors border-b-2 border-transparent focus:border-primary placeholder-on-surface-variant/50"
+                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="number"
                                         value={draftSession.duration}
                                         onChange={e => setDraftSession(prev => prev ? { ...prev, duration: Number(e.target.value) } : null)}
                                     />
                                 </div>
-                                <div className="md:col-span-12 flex flex-col gap-2">
+                                <div className="md:col-span-6 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Teaching Method</label>
                                     <div className="relative">
                                         <select
-                                            className="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 focus:ring-0 focus:bg-surface-container-lowest transition-colors border-b-2 border-transparent focus:border-primary appearance-none cursor-pointer"
+                                            className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
                                             value={draftSession.teachingMethods}
                                             onChange={e => setDraftSession(prev => prev ? { ...prev, teachingMethods: e.target.value } : null)}
                                         >
@@ -494,235 +536,153 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             <option value="Project-based">Project-based</option>
                                             <option value="Self-study">Self-study</option>
                                         </select>
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-lg pointer-events-none">school</span>
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg pointer-events-none">school</span>
                                     </div>
+                                </div>
+                                <div className="md:col-span-6 flex flex-col gap-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Type</label>
+                                    <div className="relative">
+                                        <select
+                                            className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
+                                            value={draftSession.sessionType || 'THEORY'}
+                                            onChange={e => setDraftSession(prev => prev ? { ...prev, sessionType: e.target.value } : null)}
+                                        >
+                                            <option value="THEORY">Theory</option>
+                                            <option value="PRACTICE">Practice</option>
+                                            <option value="SELF_STUDY">Self Study</option>
+                                        </select>
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg pointer-events-none">category</span>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-12 flex flex-col gap-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Topic</label>
+                                    <textarea
+                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none resize-none h-24"
+                                        placeholder="Enter the detailed topic for this session..."
+                                        value={draftSession.sessionTopic || ''}
+                                        onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTopic: e.target.value } : null)}
+                                    />
                                 </div>
                             </section>
 
-                            {/* Content Blocks Section */}
-                            <section>
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary">view_quilt</span>
-                                        Content
-                                    </h3>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="p-6 bg-surface-container-low rounded-xl flex flex-col gap-6 group transition-all hover:bg-surface-container">
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-bold uppercase text-on-surface-variant/70 font-label tracking-widest">Select Pedagogy Layers</label>
-                                            <SessionContentSelector
-                                                materials={materials}
-                                                value={draftSession.content}
-                                                onChange={(newValue) => setDraftSession(prev => prev ? { ...prev, content: newValue } : null)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <p className="text-xs text-on-surface-variant/60 italic px-2">
-                                        * Use the selector above to pick specific materials and their H2 blocks to include in this session.
-                                    </p>
-                                </div>
-                            </section>
-
-                            {/* CLO Mapping Section */}
-                            <section className="pt-6 border-t border-outline-variant/10">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary">target</span>
-                                        Outcome Mapping (CLO)
-                                    </h3>
-                                    <span className="text-xs text-on-surface-variant font-medium italic">Assign learning outcomes covered in this session</span>
-                                </div>
-                                
-                                {isClosLoading ? (
-                                    <div className="flex items-center gap-2 text-sm text-on-surface-variant p-4">
-                                        <Loader2 size={16} className="animate-spin" />
-                                        Loading CLOs...
-                                    </div>
-                                ) : clos.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {clos.map(clo => {
-                                            const isSelected = draftSession.cloIds?.includes(clo.cloId);
-                                            return (
-                                                <button
-                                                    key={clo.cloId}
-                                                    onClick={() => {
-                                                        const currentIds = draftSession.cloIds || [];
-                                                        const newIds = isSelected 
-                                                            ? currentIds.filter(id => id !== clo.cloId)
-                                                            : [...currentIds, clo.cloId];
-                                                        setDraftSession(prev => prev ? { ...prev, cloIds: newIds } : null);
-                                                    }}
-                                                    className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${
-                                                        isSelected 
-                                                            ? 'bg-primary/5 border-primary ring-1 ring-primary/20' 
-                                                            : 'bg-surface-container-lowest border-outline-variant/10 hover:border-primary/30 hover:bg-surface-container-low'
-                                                    }`}
-                                                >
-                                                    <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                                                        isSelected ? 'bg-primary border-primary text-white' : 'border-outline-variant/50 bg-white'
-                                                    }`}>
-                                                        {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center justify-between">
-                                                            <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-primary' : 'text-on-surface-variant'}`}>
-                                                                {clo.cloCode}
-                                                            </p>
-                                                            {clo.bloomLevel && (
-                                                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                                                                    isSelected 
-                                                                        ? 'bg-primary/10 text-primary border-primary/20' 
-                                                                        : 'bg-surface-variant text-on-surface-variant border-transparent'
-                                                                }`}>
-                                                                    Bloom {clo.bloomLevel}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <p className={`text-sm line-clamp-2 leading-relaxed ${isSelected ? 'text-on-surface' : 'text-on-surface-variant/80'}`}>
-                                                            {clo.description}
-                                                        </p>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="p-10 border-2 border-dashed border-outline-variant/20 rounded-2xl text-center">
-                                        <span className="material-symbols-outlined text-outline-variant/50 text-4xl mb-3">assignment_late</span>
-                                        <p className="text-on-surface-variant font-medium">No learning outcomes found.</p>
-                                        <p className="text-[10px] text-on-surface-variant/40 uppercase tracking-widest mt-2 font-bold">Check syllabus setup</p>
-                                    </div>
-                                )}
-                            </section>
+                            {/* Content & CLO Mappings sections removed per new design */}
                         </div>
 
                         {/* Modal Footer Actions */}
                         <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end items-center gap-4 bg-surface-bright">
                             <button onClick={handleCloseModal}
                                 className="px-6 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Discard Changes</button>
-                            <button 
-                                onClick={async () => {
-                                    if (!draftSession || !syllabusId) return;
-                                    setIsSaving(true);
-                                    try {
-                                        // Parse content JSON into material/block ID arrays
-                                        let selectedMaterialIds: string[] = [];
-                                        let selectedBlockIds: string[] = [];
-                                        
-                                        if (draftSession.content) {
-                                            try {
-                                                const parsed = JSON.parse(draftSession.content);
-                                                if (Array.isArray(parsed)) {
-                                                    parsed.forEach((item: any) => {
-                                                        selectedMaterialIds.push(item.materialId);
-                                                        if (Array.isArray(item.blockIds)) {
-                                                            selectedBlockIds.push(...item.blockIds);
-                                                        }
-                                                    });
-                                                }
-                                            } catch (e) {
-                                                console.error("Failed to parse content JSON", e);
-                                            }
-                                        }
-
-                                        const basePayload = {
-                                            sessionNumber: Number(draftSession.sessionNumber),
-                                            sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
-                                            teachingMethods: draftSession.teachingMethods || "Lecture",
-                                            duration: Number(draftSession.duration || 50),
-                                            // Ensure IDs are unique to prevent DB constraint violations
-                                            material: Array.from(new Set(selectedMaterialIds)),
-                                            block: Array.from(new Set(selectedBlockIds)),
-                                            cloIds: draftSession.cloIds || []
-                                        };
-
-                                        console.log('Sending payload to API:', basePayload);
-
-                                        let res: any = null;
-                                        if (draftSession.sessionId) {
-                                            // UPDATE (PUT)
-                                            await SessionService.updateSessionBlocks({
-                                                ...basePayload,
-                                                sessionId: draftSession.sessionId
-                                            });
-                                            // SUCCESS: Update Redux
-                                            dispatch(updateSession({ 
-                                                syllabusId, 
-                                                index: editingIndex, 
-                                                updates: draftSession 
-                                            }));
-                                        } else {
-                                            // CREATE (POST)
-                                            res = await SessionService.bulkConfigureSession({
-                                                ...basePayload,
-                                                syllabusId
-                                            }) as any;
+                            
+                            {!isSingleValidated ? (
+                                <button
+                                    onClick={async () => {
+                                        if (!draftSession || !syllabusId) return;
+                                        setIsSingleValidating(true);
+                                        try {
+                                            const { SessionService } = await import('@/services/session.service');
+                                            const basePayload = {
+                                                syllabusId,
+                                                sessionNumber: Number(draftSession.sessionNumber),
+                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
+                                                teachingMethods: draftSession.teachingMethods || "Lecture",
+                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionType: draftSession.sessionType || "THEORY",
+                                                duration: Number(draftSession.duration || 50),
+                                            };
+                                            console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
+                                            const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
                                             
-                                            if (res?.data?.sessionId) {
-                                                const createdSession = { ...draftSession, sessionId: res.data.sessionId };
-                                                dispatch(addSession({ syllabusId, session: createdSession }));
-                                            }
-                                        }
-
-                                        // Force list sorting after save by reading current state and dispatching sorted version
-                                        setTimeout(() => {
-                                            const currentState = store.getState() as RootState;
-                                            const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
-                                            const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
-                                            dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
-                                        }, 100);
-                                        
-                                        // ── CLO Mapping Persistence ──
-                                        const finalSessId = draftSession.sessionId || (res as any)?.data?.sessionId;
-                                        if (finalSessId) {
-                                            const currentCloIds = draftSession.cloIds || [];
+                                            setSingleValidationErrors(validateRes?.data?.errors || []);
+                                            setIsSingleValidated(true);
                                             
-                                            // Diff mappings
-                                            const toDelete = existingMappings.filter(em => !currentCloIds.includes(em.cloId));
-                                            const toAdd = currentCloIds.filter(id => !existingMappings.some(em => em.cloId === id));
-
-                                            console.log(`[FE] Syncing CLO Mappings for Session ${finalSessId}:`, { toDelete: toDelete.length, toAdd: toAdd.length });
-
-                                            // Delete removed mappings
-                                            for (const mapping of toDelete) {
-                                                if (mapping.id) {
-                                                    try {
-                                                        await MappingService.deleteSessionMapping(mapping.id);
-                                                    } catch (err) {
-                                                        console.error("Failed to delete session mapping:", mapping.id, err);
-                                                    }
-                                                }
+                                            if (!validateRes?.data?.errors || validateRes.data.errors.length === 0) {
+                                                showToast('Session data is valid!', 'success');
+                                            } else {
+                                                showToast('Validation completed with suggestions', 'warning');
                                             }
-
-                                            // Batch create new mappings
-                                            if (toAdd.length > 0) {
-                                                try {
-                                                    await MappingService.createSessionMappingsBatch(
-                                                        toAdd.map(cloId => ({ cloId, sessionId: finalSessId }))
-                                                    );
-                                                } catch (err) {
-                                                    console.error("Failed to batch create session mappings:", err);
-                                                }
-                                            }
+                                        } catch (e: any) {
+                                            console.error("Validation error:", e);
+                                            setSingleValidationErrors(e?.response?.data?.data?.errors || []);
+                                            setIsSingleValidated(true);
+                                            showToast('Validation completed with suggestions', 'warning');
+                                        } finally {
+                                            setIsSingleValidating(false);
                                         }
+                                    }}
+                                    disabled={isSingleValidating}
+                                    className="bg-blue-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSingleValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">fact_check</span>}
+                                    Validate Session
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={async () => {
+                                        if (!draftSession || !syllabusId) return;
+                                        setIsSaving(true);
+                                        try {
+                                            const { SessionService } = await import('@/services/session.service');
+                                            
+                                            const basePayload = {
+                                                syllabusId,
+                                                sessionNumber: Number(draftSession.sessionNumber),
+                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
+                                                teachingMethods: draftSession.teachingMethods || "Lecture",
+                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionType: draftSession.sessionType || "THEORY",
+                                                duration: Number(draftSession.duration || 50),
+                                            };
 
-                                        showToast("Session saved successfully!", "success");
-                                        handleCloseModal();
-                                    } catch (e: any) {
-                                        console.error("Save error:", e);
-                                        showToast(e.message || "Failed to save session", "error");
-                                    } finally {
-                                        setIsSaving(false);
-                                    }
-                                }}
-                                disabled={isSaving || !hasChanges}
-                                className="bg-primary-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                            >
-                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
-                                {draftSession.sessionId ? 'Update Session' : 'Create Session'}
-                            </button>
+                                            let res: any = null;
+                                            if (draftSession.sessionId) {
+                                                // UPDATE (PUT)
+                                                await SessionService.updateSession(draftSession.sessionId, basePayload);
+                                                // SUCCESS: Update Redux
+                                                dispatch(updateSession({ 
+                                                    syllabusId, 
+                                                    index: editingIndex, 
+                                                    updates: draftSession 
+                                                }));
+                                            } else {
+                                                // CREATE (POST)
+                                                res = await SessionService.createSession(basePayload) as any;
+                                                
+                                                if (res?.data?.sessionId) {
+                                                    const createdSession = { ...draftSession, sessionId: res.data.sessionId };
+                                                    dispatch(addSession({ syllabusId, session: createdSession }));
+                                                }
+                                            }
+
+                                            // Force list sorting after save by reading current state and dispatching sorted version
+                                            setTimeout(() => {
+                                                const currentState = store.getState() as RootState;
+                                                const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
+                                                const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
+                                                dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
+                                            }, 100);
+
+                                            showToast("Session saved successfully!", "success");
+                                            handleCloseModal();
+                                        } catch (e: any) {
+                                            console.error("Save error:", e);
+                                            // Try to parse validation errors from backend
+                                            if (e?.response?.data?.data?.errors?.length > 0) {
+                                                const msg = e.response.data.data.errors[0].errors[0]?.errorMessage || "Validation error";
+                                                showToast(msg, "error");
+                                            } else {
+                                                showToast(e.message || "Failed to save session", "error");
+                                            }
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
+                                    }}
+                                    disabled={isSaving}
+                                    className="bg-primary-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
+                                    {draftSession.sessionId ? 'Update Session' : 'Create Session'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -780,8 +740,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         onClick={() => {
                                             const wb = XLSX.utils.book_new();
                                             const ws = XLSX.utils.json_to_sheet([
-                                                { 'Session Number': 1, 'Title': 'Introduction to Computer Science', 'Duration': 50, 'Teaching Methods': 'Lecture, Discussion', 'CLOs': 'CLO1, CLO2' },
-                                                { 'Session Number': 2, 'Title': 'Data Structures', 'Duration': 50, 'Teaching Methods': 'Lab, Practice', 'CLOs': 'CLO3' }
+                                                { 'Session Number': 1, 'Title': 'Introduction to Computer Science', 'Duration': 50, 'Teaching Methods': 'Lecture', 'Topic': 'Intro', 'Type': 'THEORY' },
+                                                { 'Session Number': 2, 'Title': 'Data Structures', 'Duration': 50, 'Teaching Methods': 'Lab', 'Topic': 'Arrays', 'Type': 'PRACTICE' },
+                                                { 'Session Number': 3, 'Title': 'Assignment Review', 'Duration': 50, 'Teaching Methods': 'Self-study', 'Topic': 'Review', 'Type': 'SELF_STUDY' }
                                             ]);
                                             XLSX.utils.book_append_sheet(wb, ws, "Template");
                                             XLSX.writeFile(wb, "Sessions_Template.xlsx");
@@ -836,10 +797,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                     const rawTitle = String(row['Title'] || row['title'] || '').trim();
                                                     const rawDuration = Number(row['Duration'] || row['duration'] || 50);
                                                     const rawMethods = String(row['Teaching Methods'] || row['teachingMethods'] || row['Methods'] || '').trim();
-                                                    const rawCLOs = String(row['CLOs'] || row['clos'] || row['CLO'] || '').trim();
-
-                                                    const cloCodes = rawCLOs.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
-                                                    const matchedClos = subjectClosList.filter((c: any) => (c.cloName && cloCodes.includes(c.cloName.toLowerCase())) || (c.cloCode && cloCodes.includes(c.cloCode.toLowerCase())));
+                                                    const rawTopic = String(row['Topic'] || row['topic'] || '').trim();
+                                                    const rawType = String(row['Type'] || row['type'] || '').trim();
 
                                                     return {
                                                         _rowNum: index + 1,
@@ -848,13 +807,16 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                         sessionTitle: rawTitle,
                                                         duration: rawDuration,
                                                         teachingMethods: rawMethods,
+                                                        sessionTopic: rawTopic,
+                                                        sessionType: rawType,
                                                         content: "[]",
-                                                        _rawCLOs: rawCLOs,
-                                                        matchedClos
                                                     };
                                                 });
                                                 setPreviewData(parsedSessions);
                                                 setPreviewPage(1);
+                                                setIsValidated(false);
+                                                setValidationErrors([]);
+                                                setRemainingQuotas([]);
                                                 setIsImportModalOpen(false);
                                                 setIsPreviewOpen(true);
                                             } catch (error) {
@@ -878,21 +840,71 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 <div className="flex flex-col h-full animate-in fade-in duration-200">
                                     <div className="flex justify-between items-center mb-4 mt-2">
                                         <h3 className="text-lg font-bold text-on-surface">Data Preview</h3>
-                                        <button
-                                            onClick={() => {
-                                                setPreviewData([]);
-                                                setIsPreviewOpen(false);
-                                                setIsImportModalOpen(true);
-                                                if(document.getElementById('excel-upload-hidden')) {
-                                                    (document.getElementById('excel-upload-hidden') as any).value = '';
-                                                }
-                                            }}
-                                            className="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                                        >
-                                            <span className="material-symbols-outlined text-[14px]">delete</span> Delete & Upload New
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setPreviewData([]);
+                                                    setIsPreviewOpen(false);
+                                                    setIsImportModalOpen(true);
+                                                    if(document.getElementById('excel-upload-hidden')) {
+                                                        (document.getElementById('excel-upload-hidden') as any).value = '';
+                                                    }
+                                                }}
+                                                className="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                            >
+                                                <span className="material-symbols-outlined text-[14px]">delete</span> Delete & Upload New
+                                            </button>
+                                            {!isValidated && (
+                                                <button
+                                                    disabled={isValidating}
+                                                    onClick={async () => {
+                                                        setIsValidating(true);
+                                                        try {
+                                                            const { SessionService } = await import('@/services/session.service');
+                                                            const payload = previewData.map(item => {
+                                                                const p = { ...item };
+                                                                delete p._rowNum;
+                                                                delete p.content; // Exclude internal state
+                                                                return p;
+                                                            });
+                                                            console.log("VALIDATE PAYLOAD:", payload);
+                                                            const res = await SessionService.validateSessions(syllabusId!, payload) as any;
+                                                            setValidationErrors(res?.data?.errors || []);
+                                                            setRemainingQuotas(res?.data?.remainingQuotas || []);
+                                                            setIsValidated(true);
+                                                            if (!res?.data?.errors || res.data.errors.length === 0) {
+                                                                showToast('All sessions are valid!', 'success');
+                                                            } else {
+                                                                showToast('Validation completed with issues', 'error');
+                                                            }
+                                                        } catch (error: any) {
+                                                            console.error(error);
+                                                            setValidationErrors(error?.response?.data?.data?.errors || []);
+                                                            setRemainingQuotas(error?.response?.data?.data?.remainingQuotas || []);
+                                                            setIsValidated(true);
+                                                            showToast('Validation completed with errors', 'error');
+                                                        } finally {
+                                                            setIsValidating(false);
+                                                        }
+                                                    }}
+                                                    className="text-xs font-bold text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 ml-2 shadow-sm"
+                                                >
+                                                    {isValidating ? <Loader2 size={14} className="animate-spin" /> : <span className="material-symbols-outlined text-[14px]">fact_check</span>}
+                                                    Validate Sessions
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     
+                                    {isValidated && validationErrors.length > 0 && (
+                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3">
+                                            <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                                            <div>
+                                                <h4 className="font-bold text-sm">Validation Issues Found</h4>
+                                                <p className="text-xs mt-1">There are {validationErrors.length} rows with errors. Please review and edit the highlighted fields below before saving.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex-1 overflow-auto border border-outline-variant/20 rounded-xl bg-white shadow-sm max-h-[50vh]">
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-surface-container-lowest sticky top-0 z-10 shadow-sm">
@@ -901,29 +913,95 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                     <th className="px-4 py-3 font-bold text-slate-500">Title</th>
                                                     <th className="px-4 py-3 font-bold text-slate-500 whitespace-nowrap w-24">Duration</th>
                                                     <th className="px-4 py-3 font-bold text-slate-500">Methods</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500 w-56">Matched CLOs</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500">Topic</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500">Type</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 w-48">Errors</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-outline-variant/10">
-                                                {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => (
-                                                    <tr key={idx} className="hover:bg-primary/5 transition-colors">
+                                                {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
+                                                    const realIdx = (previewPage - 1) * 10 + idx;
+                                                    const rowErrorsObj = validationErrors.find(e => e.rowNumber === item.sessionNumber);
+                                                    const rowErrors = rowErrorsObj?.errors || [];
+                                                    const hasError = rowErrors.length > 0;
+                                                    
+                                                    return (
+                                                    <tr key={idx} className={`transition-colors ${hasError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-primary/5'}`}>
                                                         <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
-                                                        <td className="px-4 py-3 font-bold text-slate-800">{item.sessionTitle || 'Untitled'}</td>
-                                                        <td className="px-4 py-3 text-slate-500">{item.duration} Min</td>
-                                                        <td className="px-4 py-3 text-slate-600 text-xs">{item.teachingMethods || 'N/A'}</td>
+                                                        <td className="px-4 py-3 font-bold text-slate-800">
+                                                            <input 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                value={item.sessionTitle} 
+                                                                onChange={(e) => {
+                                                                    const newData = [...previewData];
+                                                                    newData[realIdx].sessionTitle = e.target.value;
+                                                                    setPreviewData(newData);
+                                                                    setIsValidated(false);
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-500">
+                                                            <input 
+                                                                type="number"
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'duration') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                value={item.duration} 
+                                                                onChange={(e) => {
+                                                                    const newData = [...previewData];
+                                                                    newData[realIdx].duration = Number(e.target.value);
+                                                                    setPreviewData(newData);
+                                                                    setIsValidated(false);
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-600 text-xs">
+                                                            <input 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'teachingMethods') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                value={item.teachingMethods || ''} 
+                                                                onChange={(e) => {
+                                                                    const newData = [...previewData];
+                                                                    newData[realIdx].teachingMethods = e.target.value;
+                                                                    setPreviewData(newData);
+                                                                    setIsValidated(false);
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-600 text-xs">
+                                                            <input 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                value={item.sessionTopic || ''} 
+                                                                onChange={(e) => {
+                                                                    const newData = [...previewData];
+                                                                    newData[realIdx].sessionTopic = e.target.value;
+                                                                    setPreviewData(newData);
+                                                                    setIsValidated(false);
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-600 text-xs">
+                                                            <input 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionType') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                value={item.sessionType || ''} 
+                                                                onChange={(e) => {
+                                                                    const newData = [...previewData];
+                                                                    newData[realIdx].sessionType = e.target.value;
+                                                                    setPreviewData(newData);
+                                                                    setIsValidated(false);
+                                                                }}
+                                                            />
+                                                        </td>
                                                         <td className="px-4 py-3">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {item.matchedClos && item.matchedClos.length > 0 ? (
-                                                                    item.matchedClos.map((c: any) => (
-                                                                        <span key={c.cloId} className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded-lg whitespace-nowrap">{(c.cloCode || c.cloName).toUpperCase()} ✓</span>
-                                                                    ))
-                                                                ) : (
-                                                                    <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">None ({item._rawCLOs || 'Empty'})</span>
-                                                                )}
-                                                            </div>
+                                                            {hasError && (
+                                                                <div className="flex flex-col gap-1">
+                                                                    {rowErrors.map((err: any, i: number) => (
+                                                                        <span key={i} className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded leading-tight">
+                                                                            • {err.errorMessage}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                )})}
                                             </tbody>
                                         </table>
                                     </div>
@@ -975,43 +1053,23 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     Back
                                 </button>
                                 <button 
-                                    disabled={isSaving}
+                                    disabled={isSaving || !isValidated}
                                     onClick={async () => {
                                         setIsSaving(true);
                                         try {
                                             const { SessionService } = await import('@/services/session.service');
-                                            const { MappingService } = await import('@/services/mapping.service');
-                                            let success = 0;
                                             
-                                            for (let i = 0; i < previewData.length; i++) {
-                                                const item = previewData[i];
-                                                const createPayload = { ...item };
-                                                delete createPayload._rowNum;
-                                                delete createPayload._rawCLOs;
-                                                delete createPayload.matchedClos;
-                                                
-                                                console.warn('Session API missing createSession. Using bulkConfigureSession wrapper instead.');
-                                                // Need to convert to bulk payload style if that's what backend expects or just post.
-                                                // Looking at bulkConfigureSession(payload: BulkConfigurePayload)
-                                                // Actually let's just make api/sessions POST call directly since the service wrapper is missing
-                                                const apiClient = (await import('@/lib/api-client')).apiClient;
-                                                const res = await apiClient.post('/api/sessions', createPayload);
-                                                const newId = (res as any).data?.sessionId;
-                                                
-                                                if (newId && item.matchedClos && item.matchedClos.length > 0) {
-                                                    
-        try {
-            const mappings = item.matchedClos.map((clo: any) => ({ sessionId: newId, cloId: clo.cloId }));
-            await MappingService.createSessionMappingsBatch(mappings);
-        } catch(err) {
-            console.error("Mapping CLO failed", err);
-        }
-        
-                                                }
-                                                success++;
-                                            }
+                                            const payload = previewData.map(item => {
+                                                const p = { ...item };
+                                                delete p._rowNum;
+                                                delete p.content; // Exclude internal state
+                                                return p;
+                                            });
 
-                                            showToast(`Successfully saved ${success} sessions with CLOs`, 'success');
+                                            console.log("BULK CREATE PAYLOAD:", payload);
+                                            await SessionService.bulkCreateSessions(payload);
+
+                                            showToast(`Successfully saved ${previewData.length} sessions`, 'success');
                                             
                                             setTimeout(() => {
                                                 window.location.reload();
@@ -1021,7 +1079,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             setPreviewData([]);
                                         } catch (error) {
                                             console.error(error);
-                                            showToast('Failed to save some sessions', 'error');
+                                            showToast('Failed to save sessions. Please try validating again.', 'error');
                                         } finally {
                                             setIsSaving(false);
                                         }

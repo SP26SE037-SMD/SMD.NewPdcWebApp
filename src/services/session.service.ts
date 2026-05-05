@@ -45,6 +45,8 @@ export interface SessionItem {
     teachingMethods: string;
     duration: number;
     cloIds?: string[];
+    sessionTopic?: string;
+    sessionType?: string;
 }
 
 export class SessionService {
@@ -84,5 +86,21 @@ export class SessionService {
 
     static async updateSessionStatus(sessionId: string, newStatus: string) {
         return apiClient.patch(`/api/sessions/${sessionId}/status?newStatus=${newStatus}`, {});
+    }
+
+    static async validateSessions(syllabusId: string, payload: any[]) {
+        return apiClient.post(`/api/sessions/validate?syllabusId=${syllabusId}`, payload);
+    }
+
+    static async bulkCreateSessions(payload: any[]) {
+        return apiClient.post('/api/sessions/bulk', payload);
+    }
+
+    static async createSession(payload: any) {
+        return apiClient.post('/api/sessions', payload);
+    }
+
+    static async updateSession(sessionId: string, payload: any) {
+        return apiClient.put(`/api/sessions/${sessionId}`, payload);
     }
 }
