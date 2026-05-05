@@ -79,7 +79,11 @@ export const apiClient = {
             let errorData = null;
             try {
                 errorData = await response.json();
-                errorInfo = errorData.errors ? JSON.stringify(errorData.errors) : (errorData.message || JSON.stringify(errorData));
+                if (errorData.message === "Uncategorized error") {
+                    errorInfo = `Uncategorized error: ${JSON.stringify(errorData)}`;
+                } else {
+                    errorInfo = errorData.errors ? JSON.stringify(errorData.errors) : (errorData.message || JSON.stringify(errorData));
+                }
             } catch (e) {
                 // If not JSON, get raw text (could be HTML error page)
                 const text = await response.text().catch(() => '');

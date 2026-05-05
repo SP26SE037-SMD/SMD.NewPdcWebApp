@@ -88,4 +88,12 @@ export class AssessmentService {
     static async updateSyllabusAssessmentsStatus(syllabusId: string, newStatus: string) {
         return apiClient.patch(`/api/assessments/syllabus/${syllabusId}/status?newStatus=${newStatus}`, {});
     }
+
+    static async validateAssessments(syllabusId: string, payload: any[]) {
+        return apiClient.post(`/api/assessments/validate?syllabusId=${syllabusId}`, payload);
+    }
+
+    static async bulkCreateAssessments(payload: any[]) {
+        return apiClient.post('/api/assessments/bluk', payload);
+    }
 }
