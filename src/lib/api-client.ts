@@ -90,7 +90,7 @@ export const apiClient = {
                 errorInfo = `Status ${response.status}: ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}`;
             }
             
-            const error = new Error(`API Error | ${errorInfo}`) as any;
+            const error = new Error(errorInfo) as any;
             error.status = response.status;
             error.data = errorData;
 

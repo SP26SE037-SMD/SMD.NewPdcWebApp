@@ -13,7 +13,7 @@ import { CloPloService } from '@/services/cloplo.service';
 import { MaterialService, MaterialItem } from '@/services/material.service';
 import { MappingService, CloSessionMapping } from '@/services/mapping.service';
 import { SessionContentSelector } from './session-content-selector';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import * as XLSX from 'xlsx';
 
@@ -27,7 +27,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const { taskId } = use(params);
     const dispatch = useDispatch<AppDispatch>();
     const { showToast } = useToast();
+    const queryClient = useQueryClient();
     const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [draftSession, setDraftSession] = useState<SessionItem | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -50,6 +52,13 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const [isSingleValidating, setIsSingleValidating] = useState(false);
     const [singleValidationErrors, setSingleValidationErrors] = useState<any[]>([]);
 
+    const [activeTab, setActiveTab] = useState<'list' | 'mapping'>('list');
+    const [mappingStates, setMappingStates] = useState<Record<string, string[]>>({});
+    const [isMappingValidating, setIsMappingValidating] = useState(false);
+    const [mappingValidationResult, setMappingValidationResult] = useState<any>(null);
+    const [isMappingSaving, setIsMappingSaving] = useState(false);
+    const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
+
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
         queryFn: () => TaskService.getTaskById(taskId),
@@ -61,7 +70,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, error: sessionError, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId],
-        queryFn: () => syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
+        queryFn: () => syllabusId ? SessionService.getSessions(syllabusId, 'DRAFT', 0, 100) : Promise.reject('No syllabusId'),
         enabled: !!syllabusId
     });
 
@@ -145,6 +154,22 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const rl2 = regs.find((r: any) => r.code === 'RL2')?.value || 15;
     const recommendedMax = Math.ceil((credit * rl2 * 60) / rl1);
 
+    const sessions = reduxSessions || [];
+    const isLoading = isTaskLoading || isSessionLoading || isRegLoading || isSyllabusLoading;
+    const sessionDuration = sessions[0]?.duration ?? 50;
+    const totalHours = Math.round((sessions.length * (typeof sessionDuration === 'number' ? sessionDuration : 50)) / 60);
+    const unsavedCount = sessions.filter(s => !s.sessionId).length;
+    
+    const subjectId = syllabusData?.data?.subjectId;
+
+    const { data: closRes, isLoading: isClosLoading } = useQuery({
+        queryKey: ['clos', subjectId],
+        queryFn: () => subjectId ? CloPloService.getSubjectClos(subjectId, 0, 100) : null,
+        enabled: !!subjectId,
+    });
+
+    const clos = closRes?.data?.content || [];
+
     // Fetch session-specific mappings when editing
     useEffect(() => {
         let isMounted = true;
@@ -183,21 +208,114 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setSingleValidationErrors([]);
     }, [draftSession?.sessionNumber, draftSession?.sessionTitle, draftSession?.duration, draftSession?.teachingMethods, draftSession?.sessionTopic, draftSession?.sessionType]);
 
-    const sessions = reduxSessions || [];
-    const isLoading = isTaskLoading || isSessionLoading || isRegLoading || isSyllabusLoading;
-    const sessionDuration = sessions[0]?.duration ?? 50;
-    const totalHours = Math.round((sessions.length * (typeof sessionDuration === 'number' ? sessionDuration : 50)) / 60);
-    const unsavedCount = sessions.filter(s => !s.sessionId).length;
-    
-    const subjectId = syllabusData?.data?.subjectId;
-
-    const { data: closRes, isLoading: isClosLoading } = useQuery({
-        queryKey: ['clos', subjectId],
-        queryFn: () => subjectId ? CloPloService.getSubjectClos(subjectId, 0, 100) : null,
-        enabled: !!subjectId,
+    const { data: mappingsRes } = useQuery({
+        queryKey: ['session-mappings', syllabusId],
+        queryFn: () => syllabusId ? MappingService.getSyllabusSessionMappings(syllabusId) : null,
+        enabled: !!syllabusId,
     });
 
-    const clos = closRes?.data?.content || [];
+    // Initialize mapping states from API or sessions
+    useEffect(() => {
+        if (activeTab === 'mapping' && sessions.length > 0) {
+            const newStates = { ...mappingStates };
+            
+            if (mappingsRes?.data) {
+                const apiMappings = mappingsRes.data;
+                const grouped: Record<string, string[]> = {};
+                apiMappings.forEach((m: CloSessionMapping) => {
+                    if (!grouped[m.sessionId]) grouped[m.sessionId] = [];
+                    grouped[m.sessionId].push(m.cloId);
+                });
+                
+                sessions.forEach(sess => {
+                    if (sess.sessionId) {
+                        newStates[sess.sessionId] = grouped[sess.sessionId] || [];
+                    }
+                });
+            } else {
+                sessions.forEach(sess => {
+                    const sId = sess.sessionId;
+                    if (sId && !newStates[sId]) {
+                        newStates[sId] = sess.cloIds || [];
+                    }
+                });
+            }
+            setMappingStates(newStates);
+        }
+    }, [activeTab, sessions, mappingsRes?.data]);
+
+    const handleValidateMappings = async () => {
+        if (!syllabusId) return;
+        setIsMappingValidating(true);
+        try {
+            const payload = Object.entries(mappingStates).flatMap(([sessionId, cloIds]) => 
+                cloIds.map(cloId => ({ sessionId, cloId }))
+            );
+            const res = await MappingService.validateSessionMappings(syllabusId, payload);
+            if (res.data) {
+                console.log("✅ Session mapping validation result received:", res.data);
+                setMappingValidationResult(res.data);
+                setIsMappingResultModalOpen(true);
+                showToast("Mapping validation complete", "success");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Failed to validate mappings", "error");
+        } finally {
+            setIsMappingValidating(false);
+        }
+    };
+
+    const handleSaveAllMappings = async () => {
+        if (!syllabusId || !mappingsRes?.data) return;
+        setIsMappingSaving(true);
+        try {
+            const existingMappings = mappingsRes.data;
+            
+            // 1. Identify mappings to DELETE
+            const deletions = existingMappings.filter(m => {
+                const selectedCloIds = mappingStates[m.sessionId] || [];
+                return !selectedCloIds.includes(m.cloId);
+            });
+
+            // 2. Identify mappings to ADD
+            const additions: { sessionId: string; cloId: string }[] = [];
+            Object.entries(mappingStates).forEach(([sessionId, selectedCloIds]) => {
+                selectedCloIds.forEach(cloId => {
+                    const exists = existingMappings.some(m => m.sessionId === sessionId && m.cloId === cloId);
+                    if (!exists) {
+                        additions.push({ sessionId, cloId });
+                    }
+                });
+            });
+
+            // 3. Execute Deletions
+            if (deletions.length > 0) {
+                console.log(`🗑️ Deleting ${deletions.length} session mappings...`);
+                await Promise.all(deletions.map(m => MappingService.deleteSessionMapping(m.id)));
+            }
+
+            // 4. Execute Additions
+            if (additions.length > 0) {
+                console.log(`➕ Adding ${additions.length} session mappings...`);
+                await MappingService.createSessionMappingsBatch(additions);
+            }
+            
+            if (deletions.length > 0 || additions.length > 0) {
+                showToast(`Saved successfully (${additions.length} added, ${deletions.length} removed)`, "success");
+                queryClient.invalidateQueries({ queryKey: ['session-mappings', syllabusId] });
+                refetchSessions();
+            } else {
+                showToast("No changes to save", "info");
+            }
+        } catch (error) {
+            console.error("❌ Failed to save session mappings:", error);
+            showToast("Failed to save mapping changes", "error");
+        } finally {
+            setIsMappingSaving(false);
+        }
+    };
+
 
     const handleStartEdit = (index: number) => {
         const session = sessions[index];
@@ -220,7 +338,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             teachingMethods: 'Lecture',
             sessionTopic: '',
             sessionType: 'THEORY',
-            duration: rl1,
+            duration: 50,
             content: '',
             cloIds: []
         };
@@ -301,148 +419,230 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                         <span>{credit} credits</span>
                     </p>
                 </div>
-                                                                                <div className="flex gap-4">
-                    <button
-                        onClick={() => typeof setIsImportModalOpen !== 'undefined' ? setIsImportModalOpen(true) : console.log('Import clicked')}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
-                        style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
-                    >
-                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                        Import Session
-                    </button>
-                    
-                    <button
-                        onClick={handleCreateNew}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white hover:bg-[#345332]"
-                        style={{ background: '#41683f' }}
-                    >
-                        <span className="material-symbols-outlined text-[18px]">add</span>
-                        New Session
-                    </button>
+                <div className="flex gap-4 self-start md:self-end">
+                    {activeTab === 'list' && (
+                        <>
+                            <button
+                                onClick={() => setIsImportModalOpen(true)}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                                Import Session
+                            </button>
+                            
+                            <button
+                                onClick={handleCreateNew}
+                                className="bg-[#00966d] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm"
+                            >
+                                <Plus size={18} />
+                                New Session
+                            </button>
+                        </>
+                    )}
+                    {activeTab === 'mapping' && (
+                        <>
+                            {mappingValidationResult && (
+                                <button
+                                    onClick={() => {
+                                        console.log("🖱️ View Result clicked");
+                                        setIsMappingResultModalOpen(true);
+                                    }}
+                                    className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d]/30 text-[#00966d] bg-[#00966d]/5 hover:bg-[#00966d]/10 relative z-50"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                    View Validate Suggestion
+                                </button>
+                            )}
+                            <button
+                                onClick={handleValidateMappings}
+                                disabled={isMappingValidating}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
+                            >
+                                {isMappingValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">fact_check</span>}
+                                Validate Mapping
+                            </button>
+                            <button
+                                onClick={handleSaveAllMappings}
+                                disabled={isMappingSaving}
+                                className="bg-[#00966d] text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm disabled:opacity-50"
+                            >
+                                {isMappingSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">save</span>}
+                                Save Changes
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* ── Empty State ── */}
-            {sessions.length === 0 && !isLoading && (
-                <div className="text-center py-24 rounded-2xl" style={{ background: '#ffffff', border: '2px dashed #adb4a8' }}>
-                    <div className="p-4 rounded-full bg-slate-50 w-fit mx-auto mb-4 border border-slate-100 text-slate-300">
-                        <CalendarDays size={48} />
-                    </div>
-                    <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Sessions Found</h3>
-                    <p className="text-sm mb-6" style={{ color: '#adb4a8' }}>
-                        Create your first session manually.<br />
-                        <span className="font-bold text-primary-600">Total Credits: {credit}</span>
-                    </p>
-                    <button
-                        onClick={handleCreateNew}
-                        className="px-10 py-3 rounded-2xl font-black text-white uppercase tracking-widest text-[10px] shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
-                        style={{ background: 'linear-gradient(135deg, #41683f 0%, #2d452c 100%)' }}
-                    >
-                        Create First Session
-                    </button>
-                </div>
-            )}
+            {/* ── Tabs Navigation ── */}
+            <div className="flex border-b border-outline-variant/30 mb-8 mt-4">
+                <button 
+                    onClick={() => setActiveTab('list')}
+                    className={`px-8 py-3 font-bold text-sm transition-all relative ${activeTab === 'list' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Session List
+                    {activeTab === 'list' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>}
+                </button>
+                <button 
+                    onClick={() => {
+                        if (sessions.length === 0) {
+                            showToast("Please create sessions first before mapping CLOs", "info");
+                            return;
+                        }
+                        setActiveTab('mapping');
+                    }}
+                    className={`px-8 py-3 font-bold text-sm transition-all relative ${sessions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''} ${activeTab === 'mapping' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    CLO Mapping
+                    {activeTab === 'mapping' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>}
+                </button>
+            </div>
 
-            {/* ── Editorial Table ── */}
-            {sessions.length > 0 && (
-                <div className="space-y-6">
-                    {/* Table Header */}
-                    <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
-                        <div className="col-span-1">No.</div>
-                        <div className="col-span-3">Session Title</div>
-                        <div className="col-span-6">Content Summary</div>
-                        <div className="col-span-2 text-right">Actions</div>
-                    </div>
+            <div className={activeTab === 'list' ? 'block' : 'hidden'}>
+                <>
+                    {/* ── Empty State ── */}
+                    {sessions.length === 0 && !isLoading && (
+                        <div className="text-center py-24 rounded-2xl" style={{ background: '#ffffff', border: '2px dashed #adb4a8' }}>
+                            <div className="p-4 rounded-full bg-slate-50 w-fit mx-auto mb-4 border border-slate-100 text-slate-300">
+                                <CalendarDays size={48} />
+                            </div>
+                            <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Sessions Found</h3>
+                            <p className="text-sm mb-6" style={{ color: '#adb4a8' }}>
+                                Create your first session manually.<br />
+                                <span className="font-bold text-primary-600">Total Credits: {credit}</span>
+                            </p>
+                            <button
+                                onClick={handleCreateNew}
+                                className="px-10 py-3 rounded-2xl font-black text-white uppercase tracking-widest text-[10px] shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
+                                style={{ background: 'linear-gradient(135deg, #41683f 0%, #2d452c 100%)' }}
+                            >
+                                Create First Session
+                            </button>
+                        </div>
+                    )}
 
-                    {/* Scrollable Sessions List Container */}
-                    <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-2 custom-scrollbar space-y-2">
-                        {sessions.map((session, index) => {
-                            let contentParts: Array<{ heading: string; detail: string }> = [];
-                            if (session.content) {
-                                try {
-                                    const parsed = JSON.parse(session.content);
-                                    if (Array.isArray(parsed)) {
-                                        contentParts = parsed.slice(0, 3).map((item: any) => {
-                                            const mTitle = item.materialTitle || 
-                                                          materials.find((m: MaterialItem) => m.materialId === item.materialId)?.title || 
-                                                          'Section';
-                                            return {
-                                                heading: mTitle,
-                                                detail: (item.blockNames && item.blockNames.length > 0)
-                                                    ? item.blockNames.join(', ')
-                                                    : (item.blockName || 'Selected')
-                                            };
-                                        });
+                    {/* ── Editorial Table ── */}
+                    {sessions.length > 0 && (
+                        <div className="space-y-6">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
+                                <div className="col-span-1">No.</div>
+                                <div className="col-span-3">Session Title</div>
+                                <div className="col-span-6">Content Summary</div>
+                                <div className="col-span-2 text-right">Actions</div>
+                            </div>
+
+                            {/* Scrollable Sessions List Container */}
+                            <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                {sessions.map((session, index) => {
+                                    let contentParts: Array<{ heading: string; detail: string }> = [];
+                                    if (session.content) {
+                                        try {
+                                            const parsed = JSON.parse(session.content);
+                                            if (Array.isArray(parsed)) {
+                                                contentParts = parsed.slice(0, 3).map((item: any) => {
+                                                    const mTitle = item.materialTitle || 
+                                                                  materials.find((m: MaterialItem) => m.materialId === item.materialId)?.title || 
+                                                                  'Section';
+                                                    return {
+                                                        heading: mTitle,
+                                                        detail: (item.blockNames && item.blockNames.length > 0)
+                                                            ? item.blockNames.join(', ')
+                                                            : (item.blockName || 'Selected')
+                                                    };
+                                                });
+                                            }
+                                        } catch {
+                                            if (session.content.trim()) {
+                                                contentParts = [{ heading: 'Content', detail: session.content.substring(0, 120) }];
+                                            }
+                                        }
                                     }
-                                } catch {
-                                    if (session.content.trim()) {
-                                        contentParts = [{ heading: 'Content', detail: session.content.substring(0, 120) }];
-                                    }
-                                }
-                            }
 
-                            return (
-                                <div key={session.sessionId || `local-${index}`}
-                                    className="grid grid-cols-12 items-center px-6 py-3 bg-surface-container-lowest rounded-xl hover:shadow-lg hover:shadow-on-surface/5 transition-all group border border-transparent hover:border-primary/10"
-                                >
-                                    <div className="col-span-1 font-black text-sm" style={{ color: '#adb4a8' }}>
-                                        {session.sessionNumber}
-                                    </div>
-                                    <div className="col-span-3">
-                                        <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                            {session.sessionTitle || `Session ${session.sessionNumber}`}
-                                        </h4>
-                                        <div className="flex items-center gap-2 mt-1" style={{ color: '#5a6157' }}>
-                                            <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded text-[9px] font-black uppercase tracking-widest">{session.teachingMethods || 'Lecture'}</span>
-                                            <span className="text-[9px] font-bold text-slate-400">• {session.duration || 50} MIN</span>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-6 pr-8">
-                                        {contentParts.length > 0 ? (
-                                            <div className="space-y-2">
-                                                {contentParts.map((part, pi) => (
-                                                    <div key={pi}>
-                                                        <h5 className="text-[10px] font-black uppercase tracking-tighter mb-0.5" style={{ color: '#41683f' }}>
-                                                            {part.heading}
-                                                        </h5>
-                                                        <p className="text-sm line-clamp-2" style={{ color: 'rgba(90,97,87,0.8)' }}>
-                                                            {part.detail}
-                                                        </p>
-                                                    </div>
-                                                ))}
+                                    return (
+                                        <div key={session.sessionId || `local-${index}`}
+                                            className="grid grid-cols-12 items-center px-6 py-3 bg-surface-container-lowest rounded-xl hover:shadow-lg hover:shadow-on-surface/5 transition-all group border border-transparent hover:border-primary/10"
+                                        >
+                                            <div className="col-span-1 font-black text-sm" style={{ color: '#adb4a8' }}>
+                                                {session.sessionNumber}
                                             </div>
-                                        ) : (
-                                            <p className="text-sm italic" style={{ color: '#adb4a8' }}>No content assigned yet.</p>
-                                        )}
-                                    </div>
-                                    <div className="col-span-2 flex items-center justify-end gap-1.5">
-                                        <button onClick={() => handleStartEdit(index)}
-                                            className="h-8 px-2 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-all duration-200"
-                                            title="View Session"
-                                        >
-                                            <Eye size={13} strokeWidth={2.5} className="mr-1" />
-                                            <span className="text-[10px] font-bold">View</span>
-                                        </button>
-                                        <button onClick={() => handleStartEdit(index)}
-                                            className="h-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200"
-                                            title="Edit Session"
-                                        >
-                                            <Pencil size={13} strokeWidth={2.5} className="mr-1" />
-                                            <span className="text-[10px] font-bold">Edit</span>
-                                        </button>
-                                        <button onClick={() => handleDeleteSession(index)}
-                                            className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
-                                            title="Delete Session"
-                                        >
-                                            <Trash2 size={13} strokeWidth={2.5} />
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                            <div className="col-span-3">
+                                                <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                                    {session.sessionTitle || `Session ${session.sessionNumber}`}
+                                                </h4>
+                                                <div className="flex items-center gap-2 mt-1" style={{ color: '#5a6157' }}>
+                                                    <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded text-[9px] font-black uppercase tracking-widest">{session.teachingMethods || 'Lecture'}</span>
+                                                    <span className="text-[9px] font-bold text-slate-400">• {session.duration || 50} MIN</span>
+                                                </div>
+                                            </div>
+                                            <div className="col-span-6 pr-8">
+                                                {contentParts.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        {contentParts.map((part, pi) => (
+                                                            <div key={pi}>
+                                                                <h5 className="text-[10px] font-black uppercase tracking-tighter mb-0.5" style={{ color: '#41683f' }}>
+                                                                    {part.heading}
+                                                                </h5>
+                                                                <p className="text-sm line-clamp-2" style={{ color: 'rgba(90,97,87,0.8)' }}>
+                                                                    {part.detail}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm italic" style={{ color: '#adb4a8' }}>No content assigned yet.</p>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 flex items-center justify-end gap-1.5">
+                                                <button onClick={() => handleStartEdit(index)}
+                                                    className="h-8 px-2 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-all duration-200"
+                                                    title="View Session"
+                                                >
+                                                    <Eye size={13} strokeWidth={2.5} className="mr-1" />
+                                                    <span className="text-[10px] font-bold">View</span>
+                                                </button>
+                                                <button onClick={() => handleStartEdit(index)}
+                                                    className="h-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200"
+                                                    title="Edit Session"
+                                                >
+                                                    <Pencil size={13} strokeWidth={2.5} className="mr-1" />
+                                                    <span className="text-[10px] font-bold">Edit</span>
+                                                </button>
+                                                <button onClick={() => handleDeleteSession(index)}
+                                                    className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
+                                                    title="Delete Session"
+                                                >
+                                                    <Trash2 size={13} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </>
+            </div>
 
+            <div className={activeTab === 'mapping' ? 'block' : 'hidden'}>
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <SessionMappingTab 
+                        sessions={sessions} 
+                        subjectClos={clos}
+                        mappingStates={mappingStates}
+                        onMappingChange={(sessionId, cloIds) => setMappingStates(prev => ({ ...prev, [sessionId]: cloIds }))}
+                    />
                 </div>
+            </div>
+
+            {/* ── Mapping Validation Modal ── */}
+            {isMappingResultModalOpen && mappingValidationResult && (
+                <SessionMappingValidationModal 
+                    result={mappingValidationResult}
+                    sessions={sessions}
+                    clos={clos}
+                    onClose={() => setIsMappingResultModalOpen(false)}
+                />
             )}
 
 
@@ -670,7 +870,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const msg = e.response.data.data.errors[0].errors[0]?.errorMessage || "Validation error";
                                                 showToast(msg, "error");
                                             } else {
-                                                showToast(e.message || "Failed to save session", "error");
+                                                const msg = e.message || "Failed to save session";
+                                                showToast(msg, "error");
                                             }
                                         } finally {
                                             setIsSaving(false);
@@ -798,7 +999,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                     const rawDuration = Number(row['Duration'] || row['duration'] || 50);
                                                     const rawMethods = String(row['Teaching Methods'] || row['teachingMethods'] || row['Methods'] || '').trim();
                                                     const rawTopic = String(row['Topic'] || row['topic'] || '').trim();
-                                                    const rawType = String(row['Type'] || row['type'] || '').trim();
+                                                    const rawType = String(row['Type'] || row['type'] || '').trim().toUpperCase();
 
                                                     return {
                                                         _rowNum: index + 1,
@@ -869,6 +1070,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                             });
                                                             console.log("VALIDATE PAYLOAD:", payload);
                                                             const res = await SessionService.validateSessions(syllabusId!, payload) as any;
+                                                            console.log("🔍 Session Validation Response:", res);
                                                             setValidationErrors(res?.data?.errors || []);
                                                             setRemainingQuotas(res?.data?.remainingQuotas || []);
                                                             setIsValidated(true);
@@ -878,11 +1080,13 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                 showToast('Validation completed with issues', 'error');
                                                             }
                                                         } catch (error: any) {
-                                                            console.error(error);
-                                                            setValidationErrors(error?.response?.data?.data?.errors || []);
-                                                            setRemainingQuotas(error?.response?.data?.data?.remainingQuotas || []);
+                                                            console.error("Validation Error:", error);
+                                                            // Our apiClient throws error with .data property containing the JSON response
+                                                            const errorData = error.data?.data || {};
+                                                            setValidationErrors(errorData.errors || []);
+                                                            setRemainingQuotas(errorData.remainingQuotas || []);
                                                             setIsValidated(true);
-                                                            showToast('Validation completed with errors', 'error');
+                                                            showToast(error.message || 'Validation completed with errors', 'error');
                                                         } finally {
                                                             setIsValidating(false);
                                                         }
@@ -899,9 +1103,22 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     {isValidated && validationErrors.length > 0 && (
                                         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3">
                                             <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
-                                            <div>
+                                            <div className="flex-1">
                                                 <h4 className="font-bold text-sm">Validation Issues Found</h4>
-                                                <p className="text-xs mt-1">There are {validationErrors.length} rows with errors. Please review and edit the highlighted fields below before saving.</p>
+                                                <ul className="text-xs mt-1 list-disc list-inside space-y-1">
+                                                    {validationErrors.map((err: any, i: number) => (
+                                                        <li key={i}>{err.message}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {saveError && (
+                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
+                                            <span className="material-symbols-outlined text-red-500 mt-0.5">warning</span>
+                                            <div className="flex-1">
+                                                <p className="text-xs font-medium">{saveError}</p>
                                             </div>
                                         </div>
                                     )}
@@ -994,7 +1211,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                 <div className="flex flex-col gap-1">
                                                                     {rowErrors.map((err: any, i: number) => (
                                                                         <span key={i} className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded leading-tight">
-                                                                            • {err.errorMessage}
+                                                                            • {err.message}
                                                                         </span>
                                                                     ))}
                                                                 </div>
@@ -1047,7 +1264,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                         {isPreviewOpen && (
                             <div className="p-6 bg-surface-container flex justify-end gap-4 border-t border-outline-variant/20">
                                 <button 
-                                    onClick={() => { setIsPreviewOpen(false); setPreviewData([]); setIsImportModalOpen(true); }}
+                                    onClick={() => { setIsPreviewOpen(false); setPreviewData([]); setSaveError(null); setIsImportModalOpen(true); }}
                                     className="px-6 py-2.5 rounded-xl font-bold text-on-surface-variant bg-white border border-outline-variant/30 hover:bg-outline-variant/10 transition-colors"
                                 >
                                     Back
@@ -1077,15 +1294,21 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
                                             setIsPreviewOpen(false);
                                             setPreviewData([]);
-                                        } catch (error) {
+                                            setIsSaving(false);
+                                            setSaveError(null);
+                                            setIsSaving(false);
+                                            setSaveError(null);
+                                        } catch (error: any) {
                                             console.error(error);
-                                            showToast('Failed to save sessions. Please try validating again.', 'error');
+                                            const errMsg = error.message || 'Failed to save sessions';
+                                            setSaveError(errMsg);
+                                            showToast(errMsg, 'error');
                                         } finally {
                                             setIsSaving(false);
                                         }
                                     }}
-                                    className="px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] shadow-lg text-white"
-                                    style={{ background: '#41683f' }}
+                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-70'}`}
+                                    style={{ background: isValidated ? '#41683f' : '#adb4a8' }}
                                 >
                                     {isSaving ? <span className="material-symbols-outlined animate-spin">refresh</span> : <span className="material-symbols-outlined text-[20px]">save</span>}
                                     Confirm & Save
@@ -1099,3 +1322,297 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         </div>
     );
 }
+
+// ── Session Mapping Tab Component ──
+function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChange }: { 
+    sessions: SessionItem[], 
+    subjectClos: any[],
+    mappingStates: Record<string, string[]>,
+    onMappingChange: (sessionId: string, cloIds: string[]) => void
+}) {
+    return (
+        <div className="bg-white border border-zinc-100 rounded-[32px] overflow-hidden shadow-sm">
+            <div className="grid grid-cols-12 px-8 py-5 bg-slate-50/50 border-b border-zinc-100 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                <div className="col-span-1">No.</div>
+                <div className="col-span-4">Session Detail</div>
+                <div className="col-span-6">Mapped CLOs</div>
+                <div className="col-span-1 text-right">Status</div>
+            </div>
+            <div className="divide-y divide-zinc-50">
+                {sessions.map((session, idx) => (
+                    <SessionMappingRow 
+                        key={session.sessionId || idx}
+                        session={session}
+                        subjectClos={subjectClos}
+                        selectedCloIds={mappingStates[session.sessionId || ''] || []}
+                        onChange={(cloIds) => onMappingChange(session.sessionId || '', cloIds)}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ── Session Mapping Row Component ──
+function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: { 
+    session: SessionItem, 
+    subjectClos: any[],
+    selectedCloIds: string[],
+    onChange: (cloIds: string[]) => void
+}) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className={`transition-all ${isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10' : 'hover:bg-slate-50/50'}`}>
+            <div 
+                className="grid grid-cols-12 px-8 py-5 items-center cursor-pointer"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="col-span-1 font-black text-slate-400">
+                    {session.sessionNumber}
+                </div>
+                <div className="col-span-4">
+                    <h4 className="text-sm font-bold text-slate-800 mb-0.5">{session.sessionTitle}</h4>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{session.teachingMethods} • {session.duration} MIN</p>
+                </div>
+                <div className="col-span-6 flex flex-wrap gap-1.5">
+                    {selectedCloIds.length > 0 ? (
+                        selectedCloIds.map(id => {
+                            const clo = subjectClos.find(c => c.cloId === id);
+                            return (
+                                <span key={id} className="px-2 py-1 bg-white border border-zinc-200 rounded-lg text-[10px] font-bold text-slate-600 shadow-sm">
+                                    {clo?.cloCode || 'CLO'}
+                                </span>
+                            );
+                        })
+                    ) : (
+                        <span className="text-[10px] font-bold text-amber-500/60 uppercase tracking-widest flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            No CLOs mapped
+                        </span>
+                    )}
+                </div>
+                <div className="col-span-1 flex justify-end">
+                    <span className={`material-symbols-outlined transition-transform duration-300 ${isExpanded ? 'rotate-180 text-primary' : 'text-slate-300'}`}>
+                        expand_more
+                    </span>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="px-8 pb-8 pt-2 animate-in slide-in-from-top-2 duration-300">
+                    <div className="bg-white/80 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 shadow-inner">
+                        <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">checklist</span>
+                            Select Course Learning Outcomes
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {subjectClos.map(clo => (
+                                <label 
+                                    key={clo.cloId}
+                                    className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer group
+                                        ${selectedCloIds.includes(clo.cloId) 
+                                            ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
+                                            : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    <input 
+                                        type="checkbox"
+                                        className="mt-1 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary transition-all"
+                                        checked={selectedCloIds.includes(clo.cloId)}
+                                        onChange={(e) => {
+                                            const newIds = e.target.checked 
+                                                ? [...selectedCloIds, clo.cloId]
+                                                : selectedCloIds.filter(id => id !== clo.cloId);
+                                            onChange(newIds);
+                                        }}
+                                    />
+                                    <div>
+                                        <p className={`text-xs font-black mb-1 transition-colors ${selectedCloIds.includes(clo.cloId) ? 'text-primary' : 'text-slate-500'}`}>
+                                            {clo.cloCode}
+                                        </p>
+                                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
+                                            {clo.cloName}
+                                        </p>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Session Mapping Validation Modal Component ──
+function SessionMappingValidationModal({ result, sessions, clos, onClose }: { 
+    result: any, 
+    sessions: SessionItem[],
+    clos: any[],
+    onClose: () => void 
+}) {
+    console.log("📦 Rendering SessionMappingValidationModal with result:", result);
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div 
+                className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+                style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+            >
+                <div className={`p-8 ${result.is_valid ? 'bg-emerald-50' : 'bg-amber-50'} border-b border-zinc-100`}>
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${result.is_valid ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'}`}>
+                                <span className="material-symbols-outlined text-2xl">
+                                    {result.is_valid ? 'verified' : 'report_problem'}
+                                </span>
+                            </div>
+                            <div>
+                                <h3 className={`text-xl font-black ${result.is_valid ? 'text-emerald-900' : 'text-amber-900'}`}>
+                                    {result.is_valid ? 'Mapping Alignment Validated' : 'Alignment Suggestions'}
+                                </h3>
+                                <p className={`text-sm font-medium opacity-70 ${result.is_valid ? 'text-emerald-800' : 'text-amber-800'}`}>
+                                    {result.is_valid 
+                                        ? 'Your configuration is perfectly balanced.' 
+                                        : 'We found some gaps in your mapping configuration.'}
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={onClose}
+                            className="w-10 h-10 rounded-full hover:bg-white/50 flex items-center justify-center transition-colors text-slate-400 hover:text-slate-600"
+                        >
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {!result.is_valid ? (
+                        <div className="space-y-8">
+                            {/* Detailed Suggestions from 'data' array if available */}
+                            {result.data?.length > 0 && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg">auto_awesome</span>
+                                        Recommended Mappings
+                                    </h4>
+                                    <div className="grid gap-3">
+                                        {result.data.map((item: any, idx: number) => {
+                                            const sess = sessions.find(s => s.sessionId === item.session_id);
+                                            return (
+                                                <div key={idx} className="bg-emerald-50/30 rounded-2xl p-4 border border-emerald-100 flex items-start gap-4 transition-all hover:bg-emerald-50/50">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                                        <span className="material-symbols-outlined text-xl">link</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-900 mb-1">
+                                                            Session {sess?.sessionNumber}: {sess?.sessionTitle || 'Session'}
+                                                        </p>
+                                                        <p className="text-sm text-emerald-900 font-medium leading-relaxed">
+                                                            Suggested mapping to <span className="font-bold">{clos.find(c => c.cloId === item.clo_id)?.cloCode || 'CLO'}</span>. Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span>
+                                                        </p>
+                                                        {item.reasoning && (
+                                                            <p className="text-[11px] text-slate-500 mt-2 italic bg-white/50 p-2 rounded-lg border border-slate-100">
+                                                                "{item.reasoning}"
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {result.unmapped_clos?.length > 0 && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg">assignment_late</span>
+                                        Unmapped CLOs ({result.unmapped_clos.length})
+                                    </h4>
+                                    <div className="grid gap-3">
+                                        {result.unmapped_clos.map((item: any) => (
+                                            <div key={item.clo_id} className="bg-amber-50/50 rounded-2xl p-4 border border-amber-100 flex items-start gap-4">
+                                                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 font-bold text-xs">
+                                                    {item.clo_code}
+                                                </div>
+                                                <p className="text-sm text-amber-900 font-medium leading-relaxed pt-1">
+                                                    {item.suggestion}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {result.unmapped_sessions?.length > 0 && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg">calendar_today</span>
+                                        Unmapped Sessions ({result.unmapped_sessions.length})
+                                    </h4>
+                                    <div className="grid gap-3">
+                                        {result.unmapped_sessions.map((item: any) => {
+                                            const sess = sessions.find(s => s.sessionId === item.session_id);
+                                            return (
+                                                <div key={item.session_id} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-start gap-4">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center shrink-0 font-bold text-xs">
+                                                        {sess?.sessionNumber || '?'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-900 mb-1">
+                                                            {item.chapter_title || sess?.sessionTitle || 'Session'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                                                            {item.suggestion}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(!result.unmapped_clos?.length && !result.unmapped_sessions?.length && !result.data?.length) && (
+                                <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <div className="w-16 h-16 rounded-full bg-white text-slate-400 flex items-center justify-center mb-2 shadow-sm">
+                                        <span className="material-symbols-outlined text-3xl">info</span>
+                                    </div>
+                                    <div className="max-w-xs px-6">
+                                        <p className="text-sm font-bold text-slate-900">Validation Info</p>
+                                        <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
+                                            The validation completed with suggestions, but no specific gaps were detailed in the response.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                            <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">
+                                <span className="material-symbols-outlined text-5xl">verified</span>
+                            </div>
+                            <div className="max-w-xs">
+                                <p className="text-lg font-bold text-slate-900">All Clear!</p>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                                    Your session mapping is complete and aligns with all learning outcomes. No gaps detected.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button 
+                        onClick={onClose}
+                        className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-slate-900/20 text-sm"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+

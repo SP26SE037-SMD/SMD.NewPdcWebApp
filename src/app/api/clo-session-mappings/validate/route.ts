@@ -8,35 +8,36 @@ export async function POST(request: NextRequest) {
         const cookieStore = request.cookies;
         const token = cookieStore.get("smd-token")?.value;
 
-        const backendUrl = `${API_BASE_URL}/api/sessions/bluk`;
-        console.log(`[Bulk Create Proxy] Calling Backend: ${backendUrl}`);
-        console.log(`[Bulk Create Proxy] Token present: ${!!token}`);
+        const { searchParams } = new URL(request.url);
+        const syllabusId = searchParams.get("syllabusId");
+
+        if (!syllabusId) {
+            return NextResponse.json(
+                { status: 400, message: "syllabusId is required" },
+                { status: 400 }
+            );
+        }
+
+        // Following the pattern from assessments/validate
+        const backendUrl = `${API_BASE_URL}/api/clo-session-mappings/syllabus/${syllabusId}/validate`;
+        console.log("[CLO Session Mapping Validate Proxy] Calling:", backendUrl);
 
         const response = await fetch(backendUrl, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
-                "Accept": "application/json, text/plain, */*",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {}),
             },
             body: JSON.stringify(body),
         });
 
         const text = await response.text();
-        console.log(`[Bulk Create Proxy] Backend Status: ${response.status}`);
 
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
             data = { message: `Raw server response: ${text}` };
-        }
-
-        if (!response.ok && data) {
-            data._debug_raw = text;
-            if (!data.message) {
-                data.message = `Backend Error ${response.status}: ${text.slice(0, 100)}`;
-            }
         }
 
         return NextResponse.json(data, { status: response.status });

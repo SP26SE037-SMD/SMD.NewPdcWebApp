@@ -10,7 +10,7 @@ import { AssessmentService, AssessmentItem, AssessmentCategory, AssessmentType }
 import { SyllabusService } from '@/services/syllabus.service';
 import { CloPloService } from '@/services/cloplo.service';
 import { MappingService, CloAssessmentMapping } from '@/services/mapping.service';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import * as XLSX from 'xlsx';
 
@@ -34,6 +34,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const { taskId } = use(params);
     const dispatch = useDispatch<AppDispatch>();
     const { showToast } = useToast();
+    const queryClient = useQueryClient();
     const [isSaving, setIsSaving] = useState(false);
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -155,18 +156,40 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isMappingSaving, setIsMappingSaving] = useState(false);
     const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
 
-    // Initialize mapping states from assessments
+    const { data: mappingsRes } = useQuery({
+        queryKey: ['assessment-mappings', syllabusId],
+        queryFn: () => syllabusId ? MappingService.getSyllabusAssessmentMappings(syllabusId) : null,
+        enabled: !!syllabusId,
+    });
+
+    // Initialize mapping states from API or assessments
     useEffect(() => {
         if (activeTab === 'mapping' && assessments.length > 0) {
             const newStates = { ...mappingStates };
-            assessments.forEach(ass => {
-                if (ass.assessmentId && !newStates[ass.assessmentId]) {
-                    newStates[ass.assessmentId] = ass.cloIds || [];
-                }
-            });
+            
+            if (mappingsRes?.data) {
+                const apiMappings = mappingsRes.data;
+                const grouped: Record<string, string[]> = {};
+                apiMappings.forEach((m: CloAssessmentMapping) => {
+                    if (!grouped[m.assessmentId]) grouped[m.assessmentId] = [];
+                    grouped[m.assessmentId].push(m.cloId);
+                });
+                
+                assessments.forEach(ass => {
+                    if (ass.assessmentId) {
+                        newStates[ass.assessmentId] = grouped[ass.assessmentId] || [];
+                    }
+                });
+            } else {
+                assessments.forEach(ass => {
+                    if (ass.assessmentId && !newStates[ass.assessmentId]) {
+                        newStates[ass.assessmentId] = ass.cloIds || [];
+                    }
+                });
+            }
             setMappingStates(newStates);
         }
-    }, [activeTab, assessments]);
+    }, [activeTab, assessments, mappingsRes?.data]);
 
     const handleValidateMappings = async () => {
         if (!syllabusId) return;
@@ -177,6 +200,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             );
             const res = await MappingService.validateAssessmentMappings(syllabusId, payload);
             if (res.data) {
+                console.log("✅ Mapping validation result received:", res.data);
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
                 showToast("Mapping validation complete", "success");
@@ -190,43 +214,49 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     };
 
     const handleSaveAllMappings = async () => {
-        if (!syllabusId) return;
+        if (!syllabusId || !mappingsRes?.data) return;
         setIsMappingSaving(true);
         try {
-            // This is a bit complex because we need to sync per assessment
-            // The API supports batch for ONE assessment, but we have multiple.
-            // However, we can use the batch API for each assessment that changed.
+            const existingMappings = mappingsRes.data;
             
-            for (const ass of assessments) {
-                if (!ass.assessmentId) continue;
-                const currentCloIds = mappingStates[ass.assessmentId] || [];
-                const originalCloIds = ass.cloIds || [];
-                
-                // Only sync if changed
-                if (JSON.stringify(currentCloIds.sort()) !== JSON.stringify(originalCloIds.sort())) {
-                    // 1. Get current mappings to find IDs for deletion
-                    const existingRes = await MappingService.getAssessmentMappings(ass.assessmentId);
-                    const existing = existingRes.data || [];
-                    
-                    // 2. Delete removed
-                    const toDelete = existing.filter(m => !currentCloIds.includes(m.cloId));
-                    for (const m of toDelete) if (m.id) await MappingService.deleteAssessmentMapping(m.id);
-                    
-                    // 3. Add new
-                    const existingIds = existing.map(m => m.cloId);
-                    const toAdd = currentCloIds.filter(id => !existingIds.includes(id));
-                    if (toAdd.length > 0) {
-                        await MappingService.createAssessmentMappingsBatch(
-                            toAdd.map(cloId => ({ cloId, assessmentId: ass.assessmentId! }))
-                        );
+            // 1. Identify mappings to DELETE
+            const deletions = existingMappings.filter(m => {
+                const selectedCloIds = mappingStates[m.assessmentId] || [];
+                return !selectedCloIds.includes(m.cloId);
+            });
+
+            // 2. Identify mappings to ADD
+            const additions: { assessmentId: string; cloId: string }[] = [];
+            Object.entries(mappingStates).forEach(([assessmentId, selectedCloIds]) => {
+                selectedCloIds.forEach(cloId => {
+                    const exists = existingMappings.some(m => m.assessmentId === assessmentId && m.cloId === cloId);
+                    if (!exists) {
+                        additions.push({ assessmentId, cloId });
                     }
-                }
+                });
+            });
+
+            // 3. Execute Deletions
+            if (deletions.length > 0) {
+                console.log(`🗑️ Deleting ${deletions.length} mappings...`);
+                await Promise.all(deletions.map(m => MappingService.deleteAssessmentMapping(m.id)));
+            }
+
+            // 4. Execute Additions
+            if (additions.length > 0) {
+                console.log(`➕ Adding ${additions.length} mappings...`);
+                await MappingService.createAssessmentMappingsBatch(additions);
             }
             
-            showToast("All mappings saved successfully", "success");
-            refetchAssessments();
+            if (deletions.length > 0 || additions.length > 0) {
+                showToast(`Saved successfully (${additions.length} added, ${deletions.length} removed)`, "success");
+                queryClient.invalidateQueries({ queryKey: ['assessment-mappings', syllabusId] });
+                refetchAssessments();
+            } else {
+                showToast("No changes to save", "info");
+            }
         } catch (error) {
-            console.error(error);
+            console.error("❌ Failed to save mappings:", error);
             showToast("Failed to save some mappings", "error");
         } finally {
             setIsMappingSaving(false);
@@ -331,8 +361,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                         <>
                             <button
                                 onClick={() => setIsImportModalOpen(true)}
-                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 hover:bg-[#f0f4f0] active:bg-[#e8ede8]"
-                                style={{ borderColor: '#2d342b', color: '#2d342b', background: 'transparent' }}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                             >
                                 <span className="material-symbols-outlined text-[18px]">upload_file</span>
                                 Import Assessment
@@ -346,12 +375,20 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             part: (assessments.length > 0 ? Math.max(...assessments.map(a => a.part || 0)) : 0) + 1,
                                             weight: 0,
                                             status: 'DRAFT',
-                                            syllabusId: syllabusId!
+                                            syllabusId: syllabusId!,
+                                            categoryId: '',
+                                            typeId: '',
+                                            completionCriteria: '',
+                                            duration: 0,
+                                            questionType: '',
+                                            knowledgeSkill: '',
+                                            gradingGuide: '',
+                                            note: ''
                                         }
                                     }));
                                     setExpandedIndex(newIdx);
                                 }}
-                                className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 text-sm"
+                                className="bg-[#00966d] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm"
                             >
                                 <Plus size={18} />
                                 New Assessment
@@ -362,17 +399,20 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                         <>
                             {mappingValidationResult && (
                                 <button
-                                    onClick={() => setIsMappingResultModalOpen(true)}
-                                    className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                    onClick={() => {
+                                        console.log("🖱️ View Result clicked");
+                                        setIsMappingResultModalOpen(true);
+                                    }}
+                                    className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d]/30 text-[#00966d] bg-[#00966d]/5 hover:bg-[#00966d]/10 relative z-50"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">visibility</span>
-                                    View Result
+                                    View Validate Suggestion
                                 </button>
                             )}
                             <button
                                 onClick={handleValidateMappings}
                                 disabled={isMappingValidating}
-                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 active:bg-emerald-100 disabled:opacity-50"
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
                             >
                                 {isMappingValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">fact_check</span>}
                                 Validate Mapping
@@ -380,7 +420,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                             <button
                                 onClick={handleSaveAllMappings}
                                 disabled={isMappingSaving}
-                                className="bg-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-600/20 text-sm disabled:opacity-50"
+                                className="bg-[#00966d] text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm disabled:opacity-50"
                             >
                                 {isMappingSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">save</span>}
                                 Save Changes
@@ -408,7 +448,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 </button>
             </div>
 
-            {activeTab === 'list' ? (
+            <div className={activeTab === 'list' ? 'block' : 'hidden'}>
                 <>
             {/* ── Scrollable Bento Grid List of Assessments ── */}
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-3 custom-scrollbar">
@@ -497,16 +537,26 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
            
 
                 </>
-            ) : (
+            </div>
+
+            <div className={activeTab === 'mapping' ? 'block' : 'hidden'}>
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <CloMappingTab 
                         assessments={assessments} 
                         subjectClos={subjectClos}
                         mappingStates={mappingStates}
                         onMappingChange={(assessmentId, cloIds) => setMappingStates(prev => ({ ...prev, [assessmentId]: cloIds }))}
-                        validationResult={mappingValidationResult}
                     />
                 </div>
+            </div>
+
+            {/* ── Mapping Validation Modal ── */}
+            {isMappingResultModalOpen && mappingValidationResult && (
+                <MappingValidationModal 
+                    result={mappingValidationResult}
+                    assessments={assessments}
+                    onClose={() => setIsMappingResultModalOpen(false)}
+                />
             )}
 
             {/* ── Edit Assessment Modal ── */}
@@ -534,22 +584,28 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
             {/* ── Delete Confirmation Modal ── */}
             {deleteConfirm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl text-center space-y-6">
-                        <div className="mx-auto w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-2">
-                            <span className="material-symbols-outlined text-3xl">warning</span>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mx-auto w-20 h-20 bg-red-50 text-red-500 rounded-[24px] flex items-center justify-center mb-6">
+                            <span className="material-symbols-outlined text-4xl">warning</span>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Assessment?</h3>
-                            <p className="text-sm text-slate-500">
+                        <div className="text-center space-y-2 mb-8">
+                            <h3 className="text-2xl font-black text-slate-900">Delete Assessment?</h3>
+                            <p className="text-sm text-slate-500 font-medium leading-relaxed">
                                 Are you sure you want to delete this assessment component? This action cannot be undone.
                             </p>
                         </div>
-                        <div className="flex gap-3 justify-center pt-2">
-                            <button onClick={() => setDeleteConfirm(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2">
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setDeleteConfirm(null)} 
+                                className="flex-1 px-6 py-4 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95"
+                            >
                                 Cancel
                             </button>
-                            <button onClick={executeDelete} className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2">
+                            <button 
+                                onClick={executeDelete} 
+                                className="flex-1 px-6 py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                            >
                                 Delete
                             </button>
                         </div>
@@ -1519,8 +1575,9 @@ function MappingValidationModal({ result, assessments, onClose }: {
     assessments: AssessmentItem[],
     onClose: () => void 
 }) {
+    console.log("📦 Rendering MappingValidationModal with result:", result);
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div 
                 className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
                 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
@@ -1553,9 +1610,46 @@ function MappingValidationModal({ result, assessments, onClose }: {
                     </div>
                 </div>
 
-                <div className="p-8 max-h-[60vh] overflow-y-auto">
+                <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {!result.is_valid ? (
-                        <div className="space-y-6">
+                        <div className="space-y-8">
+                            {/* Detailed Suggestions from 'data' array if available */}
+                            {result.data?.length > 0 && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg">auto_awesome</span>
+                                        Recommended Mappings
+                                    </h4>
+                                    <div className="grid gap-3">
+                                        {result.data.map((item: any, idx: number) => {
+                                            const ass = assessments.find(a => a.assessmentId === item.assessment_id);
+                                            const cloId = item.clo_id;
+                                            return (
+                                                <div key={idx} className="bg-emerald-50/30 rounded-2xl p-4 border border-emerald-100 flex items-start gap-4 transition-all hover:bg-emerald-50/50">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                                        <span className="material-symbols-outlined text-xl">link</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-900 mb-1">
+                                                            {ass?.categoryName || 'Assessment'} - Part {ass?.part}
+                                                        </p>
+                                                        <p className="text-sm text-emerald-900 font-medium leading-relaxed">
+                                                            Suggested mapping to CLO. Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span>
+                                                        </p>
+                                                        {item.reasoning && (
+                                                            <p className="text-[11px] text-slate-500 mt-2 italic bg-white/50 p-2 rounded-lg border border-slate-100">
+                                                                "{item.reasoning}"
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Unmapped CLOs */}
                             {result.unmapped_clos?.length > 0 && (
                                 <div className="space-y-4">
                                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -1603,6 +1697,19 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                     </div>
                                 </div>
                             )}
+                            {(!result.unmapped_clos?.length && !result.unmapped_assessments?.length && !result.data?.length) && (
+                                <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <div className="w-16 h-16 rounded-full bg-white text-slate-400 flex items-center justify-center mb-2 shadow-sm">
+                                        <span className="material-symbols-outlined text-3xl">info</span>
+                                    </div>
+                                    <div className="max-w-xs px-6">
+                                        <p className="text-sm font-bold text-slate-900">Validation Info</p>
+                                        <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
+                                            The validation completed with suggestions, but no specific gaps were detailed in the response. Please check the raw data below.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
@@ -1624,7 +1731,7 @@ function MappingValidationModal({ result, assessments, onClose }: {
                         onClick={onClose}
                         className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-slate-900/20 text-sm"
                     >
-                        Got it, thanks
+                        Close
                     </button>
                 </div>
             </div>
