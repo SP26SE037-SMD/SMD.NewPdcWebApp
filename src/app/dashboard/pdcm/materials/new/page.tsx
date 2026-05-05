@@ -536,7 +536,7 @@ function NewMaterialPageInner() {
                 }
             }
 
-            if (resultBlocks.length === 0 && type !== 'TABLE') {
+            if (resultBlocks.length === 0) {
                 type = 'H1';
             }
 
