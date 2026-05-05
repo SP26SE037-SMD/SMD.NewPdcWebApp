@@ -1,0 +1,3 @@
+Status: 500
+Body: {"status":9999,"message":"Uncategorized error"}
+Payload sent: [{"syllabusId":"a70b3313-3812-40da-a282-f43f7cb0d1af","sessionNumber":1,"sessionTitle":"Introduction to Computer Science","duration":50,"teachingMethods":"Lecture","sessionTopic":"Intro","sessionType":"THEORY"},{"syllabusId":"a70b3313-3812-40da-a282-f43f7cb0d1af","sessionNumber":2,"sessionTitle":"Data Structures","duration":50,"teachingMethods":"Lab","sessionTopic":"Arrays","sessionType":"PRACTICE"},{"syllabusId":"a70b3313-3812-40da-a282-f43f7cb0d1af","sessionNumber":3,"sessionTitle":"Assignment Review","duration":50,"teachingMethods":"Self-study","sessionTopic":"Review","sessionType":"SELF_STUDY"}]

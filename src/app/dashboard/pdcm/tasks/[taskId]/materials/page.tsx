@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskService } from '@/services/task.service';
 import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2 } from 'lucide-react';
+import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2, Plus } from 'lucide-react';
 import ImportModal from '@/components/dashboard/ImportModal';
 
 const C = {
@@ -121,13 +121,18 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
         <div className="space-y-0 relative">
 
             {/* ── Header ── */}
-            <div className="px-0 py-0 flex justify-between items-end mb-2">
-                <div className="max-w-2xl">
+            <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
+                <div>
                     <h1 className="text-3xl font-extrabold text-[#2d342b] tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                         Materials
                     </h1>
+                    <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
+                        <span>{materials.length} items total</span>
+                        <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
+                        <span>DRAFT status</span>
+                    </p>
                 </div>
-                                                                                <div className="flex gap-4">
+                <div className="flex gap-4">
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}&autoImport=true`)}
                         className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
@@ -140,44 +145,35 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}`)}
                         className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white bg-[#00966d] hover:bg-[#00845f]"
                     >
-                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        <Plus size={18} />
                         New Material
                     </button>
                 </div>
             </div>
 
+            {/* ── Tabs Navigation ── */}
+            <div className="flex border-b border-outline-variant/30 mb-8 mt-4">
+                <button 
+                    className="px-8 py-3 font-bold text-sm transition-all relative text-primary"
+                >
+                    Material List
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>
+                </button>
+            </div>
+
             {/* ── Content Area ── */}
-            <div className="max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar px-6 py-4 rounded-t-[24px]" style={{ background: C.surfaceContainerLow }}>
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
                 <div className="max-w-6xl mx-auto">
 
-                    {/* Section Title */}
-                    <div className="flex items-center gap-3 mb-4">
-                        <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                            Course Materials
-                        </h2>
-                        <div className="h-px flex-1" style={{ background: `${C.outlineVariant}26` }}></div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: C.secondaryContainer, color: C.onSecondaryContainer }}>
-                            {materials.length} ITEMS
-                        </span>
-                    </div>
-
                     {materials.length === 0 ? (
-                        <div className="grid grid-cols-12 gap-8">
-                            {/* Empty State Card */}
-                            <div className="col-span-12 rounded-3xl p-12 flex flex-col items-center justify-center text-center transition-all"
-                                style={{ background: C.surfaceContainerLowest, border: `1px solid ${C.outlineVariant}1a` }}>
-                                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: C.surfaceContainer }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '40px', color: `${C.primary}80` }}>auto_stories</span>
-                                </div>
-                                <h3 className="text-xl font-bold mb-2" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                    No Materials Found
-                                </h3>
-                                <p className="text-sm opacity-60 max-w-xs" style={{ color: C.onSurfaceVariant }}>
-                                    Current syllabus does not have any materials in the current state.
-                                </p>
+                        <div className="text-center py-24 rounded-2xl" style={{ background: '#ffffff', border: '2px dashed #adb4a8' }}>
+                            <div className="p-4 rounded-full bg-slate-50 w-fit mx-auto mb-4 border border-slate-100 text-slate-300">
+                                <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>auto_stories</span>
                             </div>
-
-
+                            <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
+                            <p className="text-sm mb-6" style={{ color: '#adb4a8' }}>
+                                Current syllabus does not have any materials in the current state.
+                            </p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -406,7 +406,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         <div className="space-y-0">
 
             {/* ── Page Header ── */}
-            <div className="flex justify-between items-end mb-4">
+            <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div>
                     <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                         Sessions
