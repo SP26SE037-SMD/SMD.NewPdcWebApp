@@ -414,6 +414,7 @@ function NewMaterialPageInner() {
         const doc = parser.parseFromString(html, 'text/html');
         const body = doc.body;
         const resultBlocks: Block[] = [];
+        let h2Count = 0;
 
         const processNode = (node: Node) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -422,7 +423,7 @@ function NewMaterialPageInner() {
 
             let type: BlockType = 'PARAGRAPH';
             let align: Block['align'] = 'left';
-            const content = el.innerHTML;
+            let content = el.innerHTML;
 
             // Extract alignment from style or classes (mapped via mammoth)
             if (el.style.textAlign) {
@@ -455,15 +456,12 @@ function NewMaterialPageInner() {
                         type = 'H2';
                     } else if (listMatch) {
                         type = 'ORDERED_LIST';
-                        // Nếu muốn giữ nguyên text chứa "1. " thì thôi, 
-                        // nhưng editor có thể tự render số nên ta có thể trả về nguyên gốc để editor xử lý
-                        // contentHTML vẫn giữ nguyên
                     } else if (bulletMatch) {
                         type = 'BULLET_LIST';
                     } else {
-                    type = 'PARAGRAPH';
-                }
-            } else {
+                        type = 'PARAGRAPH';
+                    }
+                } else {
                     type = 'PARAGRAPH';
                 }
             }
@@ -484,10 +482,22 @@ function NewMaterialPageInner() {
                     }
 
                     if (text.length > 0 || innerHtml.length > 0) {
+                        let finalContent = sanitizeBlockContent(li.innerHTML);
+                        
+                        // Handle H2 numbering
+                        if (liType === 'H2') {
+                            h2Count++;
+                            const plainText = stripHtml(finalContent).trim();
+                            // Only prepend if it doesn't already start with a number like "1. "
+                            if (!/^\d+\.\s/.test(plainText)) {
+                                finalContent = `${h2Count}. ${finalContent}`;
+                            }
+                        }
+
                         resultBlocks.push({
                             id: crypto.randomUUID(),
                             type: liType,
-                            content: sanitizeBlockContent(li.innerHTML),
+                            content: finalContent,
                             align: align
                         });
                     }
@@ -526,14 +536,26 @@ function NewMaterialPageInner() {
                 }
             }
 
-            if (resultBlocks.length === 0) {
+            if (resultBlocks.length === 0 && type !== 'TABLE') {
                 type = 'H1';
+            }
+
+            let finalContent = sanitizeBlockContent(content);
+            
+            // Handle H2 numbering
+            if (type === 'H2') {
+                h2Count++;
+                const plainText = stripHtml(finalContent).trim();
+                // Only prepend if it doesn't already start with a number like "1. "
+                if (!/^\d+\.\s/.test(plainText)) {
+                    finalContent = `${h2Count}. ${finalContent}`;
+                }
             }
 
             resultBlocks.push({
                 id: crypto.randomUUID(),
                 type,
-                content: sanitizeBlockContent(content),
+                content: finalContent,
                 align: align
             });
         };

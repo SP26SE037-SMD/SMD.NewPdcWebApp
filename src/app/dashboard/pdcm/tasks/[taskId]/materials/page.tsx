@@ -129,7 +129,6 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                     <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
                         <span>{materials.length} items total</span>
                         <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
-                        <span>DRAFT status</span>
                     </p>
                 </div>
                 <div className="flex gap-4">
