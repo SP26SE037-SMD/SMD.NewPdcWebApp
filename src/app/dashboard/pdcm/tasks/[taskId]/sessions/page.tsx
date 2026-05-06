@@ -140,7 +140,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                     teachingMethods: apiSess.teachingMethods,
                     duration: apiSess.duration,
                     content: JSON.stringify(selectionStates),
-                    cloIds: apiSess.cloIds || []
+                    cloIds: apiSess.cloIds || [],
+                    sessionTopic: apiSess.sessionTopic || ""
                 };
             }).sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
@@ -528,7 +529,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
                                 <div className="col-span-1">No.</div>
                                 <div className="col-span-3">Session Title</div>
-                                <div className="col-span-6">Content Summary</div>
+                                <div className="col-span-6">Session Topic</div>
                                 <div className="col-span-2 text-right">Actions</div>
                             </div>
 
@@ -576,21 +577,12 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 </div>
                                             </div>
                                             <div className="col-span-6 pr-8">
-                                                {contentParts.length > 0 ? (
-                                                    <div className="space-y-2">
-                                                        {contentParts.map((part, pi) => (
-                                                            <div key={pi}>
-                                                                <h5 className="text-[10px] font-black uppercase tracking-tighter mb-0.5" style={{ color: '#41683f' }}>
-                                                                    {part.heading}
-                                                                </h5>
-                                                                <p className="text-sm line-clamp-2" style={{ color: 'rgba(90,97,87,0.8)' }}>
-                                                                    {part.detail}
-                                                                </p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                {session.sessionTopic ? (
+                                                    <p className="text-sm line-clamp-3" style={{ color: 'rgba(90,97,87,0.8)' }}>
+                                                        {session.sessionTopic}
+                                                    </p>
                                                 ) : (
-                                                    <p className="text-sm italic" style={{ color: '#adb4a8' }}>No content assigned yet.</p>
+                                                    <p className="text-sm italic" style={{ color: '#adb4a8' }}>No topic assigned yet.</p>
                                                 )}
                                             </div>
                                             <div className="col-span-2 flex items-center justify-end gap-1.5">
