@@ -150,15 +150,6 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                 </div>
             </div>
 
-            {/* ── Tabs Navigation ── */}
-            <div className="flex border-b border-outline-variant/30 mb-8 mt-4">
-                <button 
-                    className="px-8 py-3 font-bold text-sm transition-all relative text-primary"
-                >
-                    Material List
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>
-                </button>
-            </div>
 
             {/* ── Content Area ── */}
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
