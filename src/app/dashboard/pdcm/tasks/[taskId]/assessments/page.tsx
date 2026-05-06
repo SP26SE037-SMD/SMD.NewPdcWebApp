@@ -1641,7 +1641,7 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                                             {ass?.categoryName || 'Assessment'} - Part {ass?.part}
                                                         </p>
                                                         <p className="text-sm text-emerald-900 font-medium leading-relaxed">
-                                                            Suggested mapping to CLO. Confidence Score: <span className="font-bold" style={{ color: (item.confidence_score * 100) <= 20 ? '#ef4444' : (item.confidence_score * 100) <= 80 ? '#f59e0b' : '#10b981' }}>{(item.confidence_score * 100).toFixed(0)}%</span>
+                                                            Suggested mapping to CLO. <span style={{ color: (item.confidence_score * 100) < 20 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
                                                         </p>
                                                         {item.reasoning && (
                                                             <p className="text-[11px] text-slate-500 mt-2 italic bg-white/50 p-2 rounded-lg border border-slate-100">
