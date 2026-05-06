@@ -26,4 +26,7 @@ export const RegulationService = {
     const queryParams = new URLSearchParams({ page: page.toString(), size: size.toString() });
     return apiClient.get<RegulationsPaginatedResponse>(`/api/regulations?${queryParams.toString()}`);
   },
+  updateRegulation: async (id: string, payload: any) => {
+    return apiClient.put<any>(`/api/regulations/${id}`, payload);
+  },
 };

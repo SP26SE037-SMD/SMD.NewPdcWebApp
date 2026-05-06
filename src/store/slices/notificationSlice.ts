@@ -17,6 +17,10 @@ interface NotificationState {
   error: string | null;
   /** The latest notification that arrived via WebSocket (for toast popup). */
   latestRealtimeNotification: NotificationData | null;
+  /** Realtime status message from AI Processing */
+  aiProcessingMessage: string | null;
+  /** Realtime status code from AI Processing */
+  aiProcessingStatus: string | null;
 }
 
 const initialState: NotificationState = {
@@ -29,6 +33,8 @@ const initialState: NotificationState = {
   isLoading: false,
   error: null,
   latestRealtimeNotification: null,
+  aiProcessingMessage: null,
+  aiProcessingStatus: null,
 };
 
 /* ------------------------------------------------------------------ */
@@ -103,9 +109,23 @@ const notificationSlice = createSlice({
      * This is called from the WebSocket provider when a new message arrives.
      */
     handleRealtimeMessage(state, action: PayloadAction<RealtimePayload>) {
-      const { code, data } = action.payload;
+      const { code, data, message } = action.payload;
+      
+      // DEBUG: Xem backend gửi chính xác cục JSON gì
+      console.log("===> INCOMING WS MESSAGE:", action.payload);
 
       switch (code) {
+        case 'STATUS_UPDATE': {
+          // Lấy status thật sự từ chuỗi "Status updated: PROCESSING"
+          if (message && message.startsWith("Status updated: ")) {
+            state.aiProcessingStatus = message.replace("Status updated: ", "").trim();
+          }
+          
+          // Store the realtime AI processing status
+          state.aiProcessingMessage = data || (data as any) || "Processing...";
+          console.log(`[STATUS_UPDATE] Status: ${state.aiProcessingStatus} | Msg: ${state.aiProcessingMessage}`);
+          break;
+        }
         case 'NOTIFICATION':
         case 'BROADCAST_DEPARTMENT':
         case 'BROADCAST_SYSTEM': {
@@ -164,6 +184,12 @@ const notificationSlice = createSlice({
     clearNotifications(state) {
       Object.assign(state, initialState);
     },
+
+    /** Clear the AI processing message */
+    clearAiProcessingMessage(state) {
+      state.aiProcessingMessage = null;
+      state.aiProcessingStatus = null;
+    },
   },
 
   extraReducers: (builder) => {
@@ -211,5 +237,5 @@ const notificationSlice = createSlice({
   },
 });
 
-export const { handleRealtimeMessage, dismissLatestNotification, clearNotifications } = notificationSlice.actions;
+export const { handleRealtimeMessage, dismissLatestNotification, clearNotifications, clearAiProcessingMessage } = notificationSlice.actions;
 export default notificationSlice.reducer;

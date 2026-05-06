@@ -13,17 +13,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X, Eye,
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
+import CurriculumImportStep from "@/components/hocfdc/create-curriculum/CurriculumImportStep";
 import PloDefinitionStep from "@/components/hocfdc/create-curriculum/PloDefinitionStep";
 import MappingStep from "@/components/hocfdc/create-curriculum/MappingStep";
 import CourseBuilderStep from "@/components/hocfdc/create-curriculum/CourseBuilderStep";
+import PdfExtractionStep from "@/components/hocfdc/create-curriculum/PdfExtractionStep";
 
-type Tab = "major" | "po" | "curriculum" | "plo" | "mapping" | "semester" | "submit";
+type Tab = "process" | "major" | "po" | "curriculum" | "plo" | "mapping" | "semester" | "submit";
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+const ALL_TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "process", label: "Process Document", icon: <FileText className="h-4 w-4" /> },
   { id: "major", label: "Major Detail", icon: <Building2 className="h-4 w-4" /> },
   { id: "po", label: "PO", icon: <Target className="h-4 w-4" /> },
   { id: "curriculum", label: "Create Curriculum", icon: <BookOpen className="h-4 w-4" /> },
@@ -40,8 +43,8 @@ export default function TaskDetailPage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const initialMajorId = searchParams.get("majorId");
-
   const [activeTab, setActiveTab] = useState<Tab>("major");
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [task, setTask] = useState<TaskItem | null>(null);
   const [major, setMajor] = useState<Major | null>(null);
   const [pos, setPos] = useState<PO[]>([]);
@@ -98,6 +101,17 @@ export default function TaskDetailPage() {
           }
 
           console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          
+          // Parse documentId from description
+          const docMatch = mappedTask.description?.match(/document ID:\s*([a-zA-Z0-9-]+)/i);
+          const parsedDocId = docMatch ? docMatch[1] : null;
+          if (parsedDocId) {
+            setDocumentId(parsedDocId);
+            if (!mappedTask.majorId) {
+              setActiveTab("process");
+            }
+          }
+
           setTask(mappedTask);
         }
       } catch (err) {
@@ -293,7 +307,13 @@ export default function TaskDetailPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-none pb-1">
-            {TABS.map((tab, idx) => {
+            {ALL_TABS.filter(tab => {
+              // Hide Process Document if there is a majorId
+              if (tab.id === "process") return !!documentId && !task.majorId;
+              // If there's no majorId but there is a documentId, hide everything else except Process
+              if (!task.majorId && !!documentId) return false;
+              return true;
+            }).map((tab, idx) => {
               const isCompleted =
                 (tab.id === "curriculum" && !!curriculum) ||
                 (tab.id === "major" && !!major);
@@ -308,7 +328,7 @@ export default function TaskDetailPage() {
                 >
                   {tab.icon}
                   {tab.label}
-                  {isCompleted && tab.id !== "major" && (
+                  {isCompleted && tab.id !== "major" && tab.id !== "process" && (
                     <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                   )}
                 </button>
@@ -328,6 +348,47 @@ export default function TaskDetailPage() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
+            {/* PROCESS DOCUMENT TAB */}
+            {activeTab === "process" && documentId && (
+              <PdfExtractionStep 
+                documentId={documentId} 
+                onComplete={async (newMajorId) => {
+                  try {
+                    // 1. Update Document with new majorId
+                    await fetch(`/api/document/${documentId}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ majorId: newMajorId })
+                    });
+
+                    // 2. Update Task with new majorId (Requires full existing task data)
+                    if (task) {
+                      await fetch(`/api/tasks/${taskId}/byVP`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          majorId: newMajorId,
+                          taskName: task.taskName,
+                          description: task.description,
+                          priority: task.priority || "MEDIUM",
+                          deadline: task.deadline,
+                          type: task.type || "CREATE_CURRICULUM"
+                        })
+                      });
+                    }
+
+                    // 3. Navigate back to tasks list and refresh
+                    toast.success("Document and Task linked to new Major successfully!");
+                    router.push('/dashboard/hocfdc/tasks');
+                    router.refresh();
+                  } catch (error) {
+                    console.error("Failed to link Major to Task and Document:", error);
+                    toast.error("Failed to update Task and Document linking.");
+                  }
+                }} 
+              />
+            )}
+
             {/* MAJOR DETAIL TAB */}
             {activeTab === "major" && (
               <MajorDetailTab
@@ -345,19 +406,43 @@ export default function TaskDetailPage() {
             {/* CREATE CURRICULUM TAB */}
             {activeTab === "curriculum" && (
               <div className="bg-surface rounded-2xl border border-outline/20 overflow-hidden">
-                <CurriculumInfoStep
-                  initialData={curriculum ? {
-                    curriculumId: curriculum.curriculumId,
-                    curriculumCode: curriculum.curriculumCode,
-                    curriculumName: curriculum.curriculumName,
-                    startYear: curriculum.startYear,
-                    majorId: curriculum.majorId || task.majorId,
-                    description: curriculum.description,
-                  } : { majorId: task.majorId }}
-                  onSave={handleSaveCurriculum}
-                  isSaving={savingCurriculum}
-                  onNext={() => setActiveTab("plo")}
-                />
+                {!curriculum ? (
+                  <CurriculumImportStep
+                    majorId={task?.majorId || ""}
+                    majorCode={major?.majorCode}
+                    onImportSuccess={() => {
+                      // Fetch the newly imported curriculum via majorId
+                      const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
+                      if (effectiveMajorId) {
+                        CurriculumService.getCurriculumsByMajorId(effectiveMajorId).then(res => {
+                          const currList = (res as any)?.data || [];
+                          if (currList.length > 0) {
+                            setCurriculum(currList[0]);
+                          }
+                          setActiveTab("plo"); // Auto move to next tab after import
+                        }).catch(() => {
+                          setActiveTab("plo");
+                        });
+                      } else {
+                        setActiveTab("plo");
+                      }
+                    }}
+                  />
+                ) : (
+                  <CurriculumInfoStep
+                    initialData={{
+                      curriculumId: curriculum.curriculumId,
+                      curriculumCode: curriculum.curriculumCode,
+                      curriculumName: curriculum.curriculumName,
+                      startYear: curriculum.startYear,
+                      majorId: curriculum.majorId || task?.majorId,
+                      description: curriculum.description,
+                    }}
+                    onSave={handleSaveCurriculum}
+                    isSaving={savingCurriculum}
+                    onNext={() => setActiveTab("plo")}
+                  />
+                )}
               </div>
             )}
 
