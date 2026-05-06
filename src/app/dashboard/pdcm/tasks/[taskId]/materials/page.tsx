@@ -161,9 +161,6 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                                 <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>auto_stories</span>
                             </div>
                             <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
-                            <p className="text-sm mb-6" style={{ color: '#adb4a8' }}>
-                                Current syllabus does not have any materials in the current state.
-                            </p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -347,7 +344,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                     </div>
                 )}
             </AnimatePresence>
-            
+
         </div>
     );
 }
