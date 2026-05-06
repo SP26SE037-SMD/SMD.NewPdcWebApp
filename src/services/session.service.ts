@@ -45,6 +45,8 @@ export interface SessionItem {
     teachingMethods: string;
     duration: number;
     cloIds?: string[];
+    sessionTopic?: string;
+    sessionType?: string;
 }
 
 export class SessionService {
@@ -74,15 +76,35 @@ export class SessionService {
     }
 
     // Legacy / Other Helpers
-    static async deleteSession(sessionId: string) {
-        return apiClient.delete(`/api/sessions/${sessionId}`);
-    }
-
     static async updateSyllabusSessionsStatus(syllabusId: string, newStatus: string) {
         return apiClient.patch(`/api/sessions/syllabus/${syllabusId}/status?newStatus=${newStatus}`, {});
     }
 
     static async updateSessionStatus(sessionId: string, newStatus: string) {
         return apiClient.patch(`/api/sessions/${sessionId}/status?newStatus=${newStatus}`, {});
+    }
+
+    static async validateSessions(syllabusId: string, payload: any[]) {
+        return apiClient.post(`/api/sessions/validate?syllabusId=${syllabusId}`, payload);
+    }
+
+    static async bulkCreateSessions(payload: any[]) {
+        return apiClient.post('/api/sessions/bulk', payload);
+    }
+
+    static async getSessions(syllabusId: string, status = 'DRAFT', page = 0, size = 100) {
+        return apiClient.get<any>(`/api/sessions?syllabusId=${syllabusId}&status=${status}&page=${page}&size=${size}&sort=sessionNumber,asc`);
+    }
+
+    static async createSession(payload: any) {
+        return apiClient.post('/api/sessions', payload);
+    }
+
+    static async updateSession(sessionId: string, payload: any) {
+        return apiClient.put(`/api/sessions/${sessionId}`, payload);
+    }
+
+    static async deleteSession(sessionId: string) {
+        return apiClient.delete(`/api/sessions/${sessionId}`);
     }
 }

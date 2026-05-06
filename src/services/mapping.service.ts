@@ -53,4 +53,20 @@ export class MappingService {
     static async deleteSessionMapping(id: string): Promise<ApiResponse<void>> {
         return apiClient.delete<ApiResponse<void>>(`/api/clo-session-mappings/${id}`);
     }
+
+    static async validateAssessmentMappings(syllabusId: string, mappings: { cloId: string; assessmentId: string }[]): Promise<ApiResponse<any>> {
+        return apiClient.post<ApiResponse<any>>(`/api/clo-assessment-mappings/validate?syllabusId=${syllabusId}`, mappings);
+    }
+
+    static async validateSessionMappings(syllabusId: string, mappings: { cloId: string; sessionId: string }[]): Promise<ApiResponse<any>> {
+        return apiClient.post<ApiResponse<any>>(`/api/clo-session-mappings/validate?syllabusId=${syllabusId}`, mappings);
+    }
+
+    static async getSyllabusAssessmentMappings(syllabusId: string): Promise<ApiResponse<CloAssessmentMapping[]>> {
+        return apiClient.get<ApiResponse<CloAssessmentMapping[]>>(`/api/clo-assessment-mappings/syllabus/${syllabusId}`);
+    }
+
+    static async getSyllabusSessionMappings(syllabusId: string): Promise<ApiResponse<CloSessionMapping[]>> {
+        return apiClient.get<ApiResponse<CloSessionMapping[]>>(`/api/clo-session-mappings/syllabus/${syllabusId}`);
+    }
 }
