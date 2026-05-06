@@ -825,6 +825,7 @@ export default function PdfExtractionStep({
             data.regulations.map((r: any, idx: number) => ({
               id: r.id || `reg-${Date.now()}-${idx}`,
               type: r.type || "Regulation",
+              code: r.code || r.type || "Regulation",
               content: r.content || r.description || JSON.stringify(r),
             })),
           );
@@ -903,7 +904,7 @@ export default function PdfExtractionStep({
   const addRegulation = () => {
     setRegulations([
       ...regulations,
-      { id: Date.now().toString(), type: "Custom Rule", content: "" },
+      { id: Date.now().toString(), type: "Custom Rule", code: "CUSTOM_RULE", content: "" },
     ]);
   };
 
