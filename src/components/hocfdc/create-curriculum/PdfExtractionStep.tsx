@@ -19,8 +19,10 @@ import {
   X,
   Plus,
   Download,
+  Edit2,
 } from "lucide-react";
 import { MajorService } from "@/services/major.service";
+import { RegulationService } from "@/services/regulation.service";
 import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
@@ -127,8 +129,283 @@ const SimulatedExtractionProgress = () => {
   );
 };
 
-const RegulationCard = ({ reg, idx, onUpdate, onRemove }: any) => {
-  const [expanded, setExpanded] = useState(false);
+const CourseMappingItem = ({ item, onSave }: { item: string; onSave: (val: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const cleanItem = item.replace(/^[-•]\s*/, "").trim();
+  const match = cleanItem.match(/(.+)\s*\(([^)]+)\)/);
+  
+  const initialName = match ? match[1].trim() : cleanItem;
+  const rawParts = match ? match[2].split('|') : [];
+  const parts = [...rawParts];
+  while (parts.length < 6) parts.push("?");
+
+  const [formData, setFormData] = useState({
+    name: initialName,
+    code: parts[0],
+    sem: parts[1],
+    tc: parts[2],
+    lt: parts[3],
+    th: parts[4],
+    self: parts[5]
+  });
+
+  const handleLocalSave = () => {
+    const newString = `${formData.name} (${formData.code}|${formData.sem}|${formData.tc}|${formData.lt}|${formData.th}|${formData.self})`;
+    onSave(newString);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl shadow-inner animate-in zoom-in-95 duration-200">
+        <div className="grid grid-cols-4 gap-2">
+          <div className="col-span-3">
+            <label className="text-[9px] font-bold text-primary/60 uppercase">Subject Name</label>
+            <input 
+              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-primary outline-none"
+              value={formData.name}
+              onChange={e => setFormData({...formData, name: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] font-bold text-primary/60 uppercase">Code</label>
+            <input 
+              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-primary outline-none"
+              value={formData.code}
+              onChange={e => setFormData({...formData, code: e.target.value})}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {["sem", "tc", "lt", "th", "self"].map((field) => (
+            <div key={field}>
+              <label className="text-[9px] font-bold text-primary/60 uppercase">{field === "self" ? "Self" : field}</label>
+              <input 
+                className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-primary outline-none"
+                value={(formData as any)[field]}
+                onChange={e => setFormData({...formData, [field]: e.target.value})}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 mt-1">
+          <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition">Cancel</button>
+          <button onClick={handleLocalSave} className="px-4 py-1 text-xs font-bold bg-primary text-white rounded-lg shadow-md hover:bg-primary-dark transition flex items-center gap-1">
+            <Save className="w-3 h-3" /> Save
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-primary/30 transition-all group/item relative">
+      <button 
+        onClick={() => setIsEditing(true)}
+        className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 hover:bg-primary/10 text-primary transition-all"
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </button>
+      
+      <div className="flex items-start justify-between gap-2 pr-8">
+        <span className="font-bold text-sm text-on-surface leading-tight flex-1">{formData.name}</span>
+        <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
+          {formData.code}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">Semester</span>
+          <span className="text-xs font-bold text-primary">{formData.sem}</span>
+        </div>
+        <div className="flex items-center gap-1.5 border-l border-outline/10 pl-4">
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">Credits</span>
+          <span className="text-xs font-bold text-primary">{formData.tc}</span>
+        </div>
+        <div className="flex items-center gap-1.5 border-l border-outline/10 pl-4">
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">T/P/S</span>
+          <div className="flex items-center gap-1 text-xs font-medium text-on-surface-variant">
+             <span className="font-bold text-primary">{formData.lt}</span>
+             <span className="opacity-30">/</span>
+             <span className="font-bold text-primary">{formData.th}</span>
+             <span className="opacity-30">/</span>
+             <span className="font-bold text-primary">{formData.self}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SourceDocumentItem = ({ item, onSave }: { item: string; onSave: (val: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const cleanItem = item.replace(/^[-•]\s*/, "").trim();
+  const parts = cleanItem.split('/');
+  
+  const [formData, setFormData] = useState(() => {
+    if (parts.length <= 6) {
+      return {
+        src: parts[0] || "?",
+        sub: parts[1] || "?",
+        title: parts[2] || "",
+        author: parts[3] || "x",
+        publisher: parts[4] || "x",
+        year: parts[5] || "x"
+      };
+    } else {
+      // Handle cases where title might contain slashes
+      return {
+        src: parts[0] || "?",
+        sub: parts[1] || "?",
+        year: parts[parts.length - 1] || "x",
+        publisher: parts[parts.length - 2] || "x",
+        author: parts[parts.length - 3] || "x",
+        title: parts.slice(2, parts.length - 3).join("/") || ""
+      };
+    }
+  });
+
+  const handleLocalSave = () => {
+    const newString = `${formData.src}/${formData.sub}/${formData.title}/${formData.author}/${formData.publisher}/${formData.year}`;
+    onSave(newString);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl shadow-inner animate-in zoom-in-95 duration-200">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Source Code</label>
+            <input 
+              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              value={formData.src}
+              onChange={e => setFormData({...formData, src: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Subject Code</label>
+            <input 
+              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              value={formData.sub}
+              onChange={e => setFormData({...formData, sub: e.target.value})}
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Document Title</label>
+          <textarea 
+            className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-emerald-600 outline-none min-h-[60px]"
+            value={formData.title}
+            onChange={e => setFormData({...formData, title: e.target.value})}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Author</label>
+            <input 
+              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              value={formData.author}
+              onChange={e => setFormData({...formData, author: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Publisher / Year</label>
+            <div className="flex gap-2">
+              <input 
+                className="flex-1 bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+                value={formData.publisher}
+                onChange={e => setFormData({...formData, publisher: e.target.value})}
+              />
+              <input 
+                className="w-16 bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-emerald-600 outline-none"
+                value={formData.year}
+                onChange={e => setFormData({...formData, year: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 mt-1">
+          <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition">Cancel</button>
+          <button onClick={handleLocalSave} className="px-4 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg shadow-md hover:bg-emerald-700 transition flex items-center gap-1">
+            <Save className="w-3 h-3" /> Save
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-emerald-600/30 transition-all group/item relative">
+      <button 
+        onClick={() => setIsEditing(true)}
+        className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 hover:bg-emerald-600/10 text-emerald-600 transition-all"
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </button>
+
+      <div className="flex items-start justify-between gap-2 pr-8">
+        <span className="font-bold text-sm text-on-surface leading-tight flex-1 whitespace-normal break-words" title={formData.title}>{formData.title}</span>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className="text-[9px] font-black bg-emerald-600/10 text-emerald-700 px-2 py-0.5 rounded uppercase tracking-wider">
+            SRC: {formData.src}
+          </span>
+          <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded uppercase tracking-wider">
+            SUB: {formData.sub}
+          </span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-1">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Author</span>
+          <span className="text-[11px] font-medium text-on-surface whitespace-normal break-words" title={formData.author}>{formData.author === 'x' ? 'Unknown' : formData.author}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Publisher / Year</span>
+          <span className="text-[11px] font-medium text-on-surface">
+            {formData.publisher === 'x' ? 'Unknown' : formData.publisher} {formData.year !== 'x' && <span className="opacity-40">({formData.year})</span>}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RegulationCard = ({
+  reg,
+  idx,
+  onUpdate,
+  onRemove,
+}: {
+  reg: Regulation;
+  idx: number;
+  onUpdate: (id: string, field: "type" | "content", val: string) => void;
+  onRemove: (id: string) => void;
+}) => {
+  const [expanded, setExpanded] = useState(idx === 0);
+  const [isRawMode, setIsRawMode] = useState(false);
+  const [localType, setLocalType] = useState(reg.type);
+  const [localContent, setLocalContent] = useState(reg.content);
+
+  // Keep local state in sync with external updates (like AI processing)
+  useEffect(() => {
+    setLocalType(reg.type);
+  }, [reg.type]);
+
+  useEffect(() => {
+    setLocalContent(reg.content);
+  }, [reg.content]);
+
+  const isCourseMapping = reg.code === "COURSE_MAPPING";
+  const isSourceDocs = reg.code === "SOURCE_DOCUMENTS";
+  const isStructured = isCourseMapping || isSourceDocs;
+
+  const handleSaveRaw = () => {
+    onUpdate(reg.id, "type", localType);
+    onUpdate(reg.id, "content", localContent);
+    if (isStructured) setIsRawMode(false);
+  };
 
   return (
     <div className="group flex flex-col p-3 bg-surface-container/30 border border-outline/20 rounded-xl hover:border-primary/30 transition overflow-hidden">
@@ -139,9 +416,12 @@ const RegulationCard = ({ reg, idx, onUpdate, onRemove }: any) => {
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center justify-between">
             <input
-              value={reg.type}
-              onChange={(e) => onUpdate(reg.id, "type", e.target.value)}
-              className="bg-transparent text-xs font-bold text-on-surface-variant uppercase tracking-wider outline-none w-full"
+              value={localType}
+              onChange={(e) => setLocalType(e.target.value)}
+              onBlur={() => {
+                if (localType !== reg.type) onUpdate(reg.id, "type", localType);
+              }}
+              className="bg-transparent text-xs font-bold text-on-surface-variant uppercase tracking-wider outline-none w-full focus:text-primary transition"
               placeholder="Rule Type..."
             />
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -167,25 +447,105 @@ const RegulationCard = ({ reg, idx, onUpdate, onRemove }: any) => {
                 className="p-1 text-on-surface-variant hover:bg-surface-variant/20 rounded"
                 title="Toggle expand"
               >
-                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {expanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
-          
+
           {!expanded ? (
-            <p 
+            <p
               className="text-sm text-on-surface-variant truncate cursor-pointer pr-8"
               onClick={() => setExpanded(true)}
             >
               {reg.content || "Empty content..."}
             </p>
           ) : (
-            <textarea
-              value={reg.content}
-              onChange={(e) => onUpdate(reg.id, "content", e.target.value)}
-              className="w-full mt-2 bg-white border border-outline/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary min-h-[100px] max-h-64 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar"
-              placeholder="Rule description..."
-            />
+            <div className="mt-2 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              {isStructured && !isRawMode ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    {isCourseMapping ? (
+                      <div className="text-[10px] font-bold text-on-surface-variant/60 flex items-center gap-3">
+                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> T: Theory</span>
+                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> P: Practical</span>
+                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> S: Self-study</span>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] font-bold text-on-surface-variant/60 flex items-center gap-3">
+                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-600/20"></div> SRC: Source Code</span>
+                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> SUB: Subject Code</span>
+                      </div>
+                    )}
+                    <button 
+                      onClick={() => setIsRawMode(true)}
+                      className="text-[10px] font-black text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Wand2 className="w-3 h-3" /> EDIT RAW
+                    </button>
+                  </div>
+                  <div className="grid gap-2 max-h-[450px] overflow-y-auto pr-1 custom-scrollbar">
+                    {reg.content.split('\n').filter((l: string) => l.trim()).map((line: string, i: number) => {
+                      const handleItemSave = (newVal: string) => {
+                        const lines = reg.content.split('\n');
+                        lines[i] = `- ${newVal}`;
+                        onUpdate(reg.id, "content", lines.join('\n'));
+                      };
+                      
+                      return isCourseMapping 
+                        ? <CourseMappingItem key={i} item={line} onSave={handleItemSave} />
+                        : <SourceDocumentItem key={i} item={line} onSave={handleItemSave} />
+                    })}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const template = isCourseMapping 
+                        ? "- New Subject (CODE|1|3|30|15|90)"
+                        : "- SRC/SUB/Title/Author/Publisher/2024";
+                      onUpdate(reg.id, "content", reg.content + "\n" + template);
+                    }}
+                    className="w-full py-2 border border-dashed border-outline/30 rounded-xl text-xs font-bold text-on-surface-variant/50 hover:border-primary/50 hover:text-primary transition flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-3 h-3" /> {isCourseMapping ? "ADD SUBJECT" : "ADD SOURCE DOCUMENT"}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <textarea
+                    value={localContent}
+                    onChange={(e) => setLocalContent(e.target.value)}
+                    className="w-full bg-white border border-outline/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary min-h-[150px] max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar shadow-inner"
+                    placeholder="Rule description..."
+                    autoFocus={isRawMode || !isStructured}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] text-on-surface-variant/50 italic">
+                      {isRawMode ? "You are editing in Raw Mode" : "Generic regulation"}
+                    </div>
+                    <div className="flex gap-2">
+                      {isStructured && (
+                        <button 
+                          onClick={() => setIsRawMode(false)}
+                          className="px-3 py-1.5 text-xs font-bold text-on-surface-variant hover:bg-surface-variant/20 rounded-lg transition"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button 
+                        onClick={handleSaveRaw}
+                        disabled={localContent === reg.content && localType === reg.type}
+                        className="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg shadow-md hover:bg-primary-dark transition flex items-center gap-1.5 disabled:opacity-50 disabled:shadow-none"
+                      >
+                        <Save className="h-3.5 w-3.5" /> Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -201,6 +561,7 @@ interface PdfExtractionStepProps {
 interface Regulation {
   id: string;
   type: string;
+  code: string;
   content: string;
 }
 
@@ -231,90 +592,135 @@ export default function PdfExtractionStep({
   const dispatch = useDispatch();
 
   // Extract fetch logic so it can be reused on reload
-  const fetchFinalData = useCallback(async (majorId: string) => {
-    try {
-      // Fetch Major Info
-      const majorRes = await fetch(`/api/majors/${majorId}`);
-      if (majorRes.ok) {
-        const rawMajor = await majorRes.json();
-        const majorData = rawMajor.data || rawMajor;
-        
-        setMajorForm({
-          majorCode: majorData.code || majorData.majorCode || "",
-          majorName: majorData.name || majorData.majorName || "",
-          description: majorData.description || "",
-        });
-      }
+  const fetchFinalData = useCallback(
+    async (majorId: string) => {
+      try {
+        // Fetch Major Info
+        const majorRes = await fetch(`/api/majors/${majorId}`);
+        if (majorRes.ok) {
+          const rawMajor = await majorRes.json();
+          const majorData = rawMajor.data || rawMajor;
 
-      // Fetch Regulations
-      const regRes = await fetch(`/api/regulations/major/${majorId}?size=100`);
-      if (regRes.ok) {
-        const rawReg = await regRes.json();
-        // Extract items from data.content based on Swagger response
-        const items = rawReg?.data?.content || [];
-
-        if (Array.isArray(items) && items.length > 0) {
-          const SORT_ORDER = [
-            "TRAINING_LEVEL",
-            "PO_PLO_RULE",
-            "TOTAL_CREDITS",
-            "EXCLUDED_CREDITS",
-            "GENERAL_EDU_CREDITS",
-            "PROFESSIONAL_EDU_CREDITS",
-            "THEORY_LIMIT",
-            "DISCUSSION_LIMIT",
-            "MAX_WEEKLY_PERIODS",
-            "SELF_STUDY_FORMULA",
-            "ASSESSMENT_RATIO",
-            "COURSE_CATALOG",
-            "COURSE_MAPPING",
-            "SOURCE_DOCUMENTS",
-          ];
-
-          const mappedItems = items.map((r: any, idx: number) => {
-            const type = r.name || r.code || "Regulation";
-            const code = r.code || r.name || "Regulation";
-            let content: string = String(r.value || "");
-
-            // Format specific long comma-separated strings into multiline with bullet points
-            if (code === "COURSE_MAPPING" || code === "SOURCE_DOCUMENTS") {
-              // Split by comma followed by optional spaces, add bullet points, and join with newline
-              content = content.split(/,\s*/).map((item: string) => `- ${item}`).join("\n");
-            }
-
-            return {
-              id: r.regulationId || `reg-${Date.now()}-${idx}`,
-              type,
-              code,
-              content,
-            };
+          setMajorForm({
+            majorCode: majorData.code || majorData.majorCode || "",
+            majorName: majorData.name || majorData.majorName || "",
+            description: majorData.description || "",
           });
-
-          mappedItems.sort((a, b) => {
-            let indexA = SORT_ORDER.indexOf(a.code);
-            let indexB = SORT_ORDER.indexOf(b.code);
-            if (indexA === -1) indexA = 999;
-            if (indexB === -1) indexB = 999;
-            return indexA - indexB;
-          });
-
-          setRegulations(mappedItems);
-        } else {
-           setRegulations([]);
         }
+
+        // Fetch Regulations
+        const regRes = await fetch(
+          `/api/regulations/major/${majorId}?size=100`,
+        );
+        if (regRes.ok) {
+          const rawReg = await regRes.json();
+          // Extract items from data.content based on Swagger response
+          const items = rawReg?.data?.content || [];
+
+          if (Array.isArray(items) && items.length > 0) {
+            const SORT_ORDER = [
+              "TRAINING_LEVEL",
+              "PO_PLO_RULE",
+              "TOTAL_CREDITS",
+              "EXCLUDED_CREDITS",
+              "GENERAL_EDU_CREDITS",
+              "PROFESSIONAL_EDU_CREDITS",
+              "THEORY_LIMIT",
+              "DISCUSSION_LIMIT",
+              "MAX_WEEKLY_PERIODS",
+              "SELF_STUDY_FORMULA",
+              "ASSESSMENT_RATIO",
+              "COURSE_CATALOG",
+              "COURSE_MAPPING",
+              "SOURCE_DOCUMENTS",
+            ];
+
+            const mappedItems = items.map((r: any, idx: number) => {
+              const type = r.name || r.code || "Regulation";
+              const code = r.code || r.name || "Regulation";
+              let content: string = String(r.value || "");
+
+              // Format specific long comma-separated strings into multiline with bullet points
+              if (code === "SOURCE_DOCUMENTS") {
+                // Logic: Each item has exactly 6 fields separated by 5 slashes.
+                // The 6th field (Year) is followed by a comma and the start of the next item.
+                const allParts = content.split('/');
+                const items: string[] = [];
+                let currentItemParts: string[] = [];
+                
+                for (let i = 0; i < allParts.length; i++) {
+                  const part = allParts[i].trim();
+                  if (currentItemParts.length < 5) {
+                    currentItemParts.push(part);
+                  } else {
+                    // This is the 6th part (Year + potentially next item's first part)
+                    const splitByComma = part.split(/,\s*/);
+                    const year = splitByComma[0];
+                    currentItemParts.push(year);
+                    
+                    // Save the completed item
+                    items.push("- " + currentItemParts.join('/'));
+                    
+                    // Start next item with the remaining parts (if any)
+                    currentItemParts = splitByComma.slice(1);
+                  }
+                }
+                // Handle last item if exists
+                if (currentItemParts.length > 0 && currentItemParts.some(p => p.trim())) {
+                  items.push("- " + currentItemParts.join('/'));
+                }
+                content = items.join("\n");
+              } else if (code === "COURSE_MAPPING") {
+                // COURSE_MAPPING items end with a closing parenthesis followed by a comma
+                content = content
+                  .split(/\),\s*/)
+                  .map((item: string, idx: number, arr: any[]) => {
+                    const clean = item.trim();
+                    if (!clean) return "";
+                    // Re-add the closing parenthesis except for the last item which might already have it
+                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(')') ? ')' : ''}`;
+                  })
+                  .filter(l => l.trim() && l !== "- )")
+                  .join("\n");
+              }
+
+              return {
+                id: r.regulationId || `reg-${Date.now()}-${idx}`,
+                type,
+                code,
+                content,
+              };
+            });
+
+            mappedItems.sort((a, b) => {
+              let indexA = SORT_ORDER.indexOf(a.code);
+              let indexB = SORT_ORDER.indexOf(b.code);
+              if (indexA === -1) indexA = 999;
+              if (indexB === -1) indexB = 999;
+              return indexA - indexB;
+            });
+
+            setRegulations(mappedItems);
+          } else {
+            setRegulations([]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch major data", err);
+      } finally {
+        setExtractionState("review");
+        toast.success("Extraction data loaded successfully!");
+        dispatch(clearAiProcessingMessage());
       }
-    } catch (err) {
-      console.error("Failed to fetch major data", err);
-    } finally {
-      setExtractionState("review");
-      toast.success("Extraction data loaded successfully!");
-      dispatch(clearAiProcessingMessage());
-    }
-  }, [dispatch]);
+    },
+    [dispatch],
+  );
 
   // Restore state on reload
   useEffect(() => {
-    const savedMajorId = sessionStorage.getItem(`extracted_major_${documentId}`);
+    const savedMajorId = sessionStorage.getItem(
+      `extracted_major_${documentId}`,
+    );
     if (savedMajorId && extractionState === "idle") {
       setExtractionState("extracting"); // Prevent double fetching
       fetchFinalData(savedMajorId);
@@ -435,10 +841,61 @@ export default function PdfExtractionStep({
   };
 
   // 3. Edit Regulations
-  const updateRegulationField = (id: string, field: "type" | "content", value: string) => {
+  const updateRegulationField = async (
+    id: string,
+    field: "type" | "content",
+    value: string,
+  ) => {
+    // Update local state first for immediate UI response
     setRegulations((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
+
+    // Persist to backend if it's a real record (UUID)
+    if (id && !id.startsWith("reg-")) {
+      try {
+        let majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
+        
+        // Fallback: If session missing, try to fetch via majorCode
+        if (!majorId && majorForm.majorCode) {
+          const majorRes = await MajorService.getMajorByCode(majorForm.majorCode);
+          majorId = majorRes.data?.majorId;
+          if (majorId) sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
+        }
+
+        if (!majorId) {
+          console.warn("MajorId not found, skipping sync");
+          return;
+        }
+
+        const reg = regulations.find((r) => r.id === id);
+        if (reg) {
+          // Prepare formatted value for backend (revert multiline/bullets to comma-separated)
+          let backendValue = field === "content" ? value : reg.content;
+          if (reg.code === "COURSE_MAPPING" || reg.code === "SOURCE_DOCUMENTS") {
+            backendValue = backendValue
+              .split("\n")
+              .map((line) => line.replace(/^[-•]\s*/, "").trim())
+              .filter((line) => line.length > 0)
+              .join(", ");
+          }
+
+          // Prepare payload exactly as per Swagger documentation
+          const payload = {
+            code: reg.code,
+            name: field === "type" ? value : reg.type,
+            value: backendValue,
+            majorId: majorId,
+          };
+
+          await RegulationService.updateRegulation(id, payload);
+          toast.success("Changes synced to database");
+        }
+      } catch (err: any) {
+        console.error("Failed to sync regulation:", err);
+        toast.error("Sync failed: Check console for details");
+      }
+    }
   };
   const removeRegulation = (id: string) => {
     setRegulations((prev) => prev.filter((r) => r.id !== id));
@@ -454,18 +911,29 @@ export default function PdfExtractionStep({
   const handleConfirm = async () => {
     setSaving(true);
     try {
-      // Retrieve the majorId that was extracted by the AI
-      const savedMajorId = sessionStorage.getItem(`extracted_major_${documentId}`);
-      if (!savedMajorId) {
+      const majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
+      if (!majorId) {
         toast.error("No extracted Major ID found in session. Please try extracting again.");
         return;
       }
 
-      // Trigger onComplete which will call the Document and Task update APIs
-      onComplete(savedMajorId);
+      // 1. Update the Major with the reviewed values to ensure everything is saved
+      // According to user request: ensure all fields are sent to avoid nulls in DB
+      await MajorService.updateMajor(majorId, {
+        majorCode: majorForm.majorCode,
+        majorName: majorForm.majorName,
+        description: majorForm.description,
+      });
+
+      // 2. Note: Regulations are currently kept in local state 'regulations'. 
+      // If there's a bulk save API, it should be called here.
+      // For now, we proceed to link the Major to the Task and Document.
+
+      toast.success("Major identity saved successfully!");
+      onComplete(majorId);
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Failed to confirm major");
+      toast.error(err.message || "Failed to confirm major and regulations");
     } finally {
       setSaving(false);
     }
@@ -650,14 +1118,15 @@ export default function PdfExtractionStep({
                     <label className="text-sm font-medium text-on-surface mb-1.5 block">
                       Description
                     </label>
-                    <div 
-                      className={`w-full rounded-xl border border-outline bg-surface focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition overflow-hidden group ${!isDescExpanded ? 'cursor-pointer hover:border-primary/50 p-3' : 'p-3'}`}
+                    <div
+                      className={`w-full rounded-xl border border-outline bg-surface focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition overflow-hidden group ${!isDescExpanded ? "cursor-pointer hover:border-primary/50 p-3" : "p-3"}`}
                       onClick={() => !isDescExpanded && setIsDescExpanded(true)}
                     >
                       {!isDescExpanded ? (
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-on-surface-variant line-clamp-2">
-                            {majorForm.description || "No description provided."}
+                            {majorForm.description ||
+                              "No description provided."}
                           </p>
                           <ChevronDown className="w-4 h-4 text-outline group-hover:text-primary transition shrink-0 ml-2" />
                         </div>
@@ -665,7 +1134,10 @@ export default function PdfExtractionStep({
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-end">
                             <button
-                              onClick={(e) => { e.stopPropagation(); setIsDescExpanded(false); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsDescExpanded(false);
+                              }}
                               className="p-1 rounded hover:bg-surface-container transition text-on-surface-variant flex items-center gap-1 text-xs font-medium"
                             >
                               <ChevronUp className="w-4 h-4" />
@@ -675,7 +1147,10 @@ export default function PdfExtractionStep({
                           <textarea
                             value={majorForm.description}
                             onChange={(e) =>
-                              setMajorForm({ ...majorForm, description: e.target.value })
+                              setMajorForm({
+                                ...majorForm,
+                                description: e.target.value,
+                              })
                             }
                             rows={5}
                             autoFocus
@@ -695,12 +1170,6 @@ export default function PdfExtractionStep({
                     <h4 className="text-sm font-black uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
                       <ListChecks className="h-4 w-4" /> Extracted Regulations
                     </h4>
-                    <button
-                      onClick={addRegulation}
-                      className="text-xs font-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition flex items-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" /> Add Rule
-                    </button>
                   </div>
 
                   <div className="space-y-3">
