@@ -447,8 +447,14 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                     {activeTab === 'list' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>}
                 </button>
                 <button 
-                    onClick={() => setActiveTab('mapping')}
-                    className={`px-8 py-3 font-bold text-sm transition-all relative ${activeTab === 'mapping' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                    onClick={() => {
+                        if (assessments.length === 0) {
+                            showToast("Please create assessments first before mapping CLOs", "info");
+                            return;
+                        }
+                        setActiveTab('mapping');
+                    }}
+                    className={`px-8 py-3 font-bold text-sm transition-all relative ${assessments.length === 0 ? 'opacity-50 cursor-not-allowed' : ''} ${activeTab === 'mapping' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     CLO Mapping
                     {activeTab === 'mapping' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>}
