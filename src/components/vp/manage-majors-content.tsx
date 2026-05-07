@@ -278,18 +278,20 @@ export default function ManageMajorsContent() {
         if (!actualDeadline) {
           actualDeadline = new Date().toISOString().split("T")[0]; // fallback to today
         }
-        await fetch("/api/tasks/byVP", {
+        await fetch("/api/v1/tasks-v2/byVP", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                majorId: finalMajorId,
                 taskName: taskForm.taskName,
                 description: taskForm.description,
+                action: "CREATE",
                 priority: taskForm.priority,
-                deadline: actualDeadline,
-                type: taskForm.type
+                type: "CURRICULUM",
+                targetId: finalMajorId,
+                rootTaskId: null,
+                dueDate: actualDeadline
             })
         });
       }

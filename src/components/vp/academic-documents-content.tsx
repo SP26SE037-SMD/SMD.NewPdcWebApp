@@ -69,6 +69,7 @@ export default function AcademicDocumentsContent() {
   const [assignModalDoc, setAssignModalDoc] = useState<any>(null);
   const [taskForm, setTaskForm] = useState({
     taskName: "Extract Major from Document",
+    description: "",
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     priority: "HIGH"
   });
@@ -216,15 +217,17 @@ export default function AcademicDocumentsContent() {
     setAssigningTask(true);
     try {
       const payload = {
-        majorId: null, // Will send null since it's unassigned
         taskName: taskForm.taskName,
-        description: `Please extract major from document ID: ${assignModalDoc.id}`,
+        description: taskForm.description,
+        action: "CREATE",
         priority: taskForm.priority,
-        deadline: taskForm.deadline,
-        type: "CREATE_CURRICULUM" // Default task type for now
+        type: "MAJOR",
+        targetId: assignModalDoc.id,
+        rootTaskId: null,
+        dueDate: taskForm.deadline
       };
 
-      const res = await fetch("/api/tasks/byVP", {
+      const res = await fetch("/api/v1/tasks-v2/byVP", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -354,7 +357,14 @@ export default function AcademicDocumentsContent() {
                           </td>
                           <td className="p-4">
                             <button 
-                              onClick={() => setAssignModalDoc(doc)}
+                              onClick={() => {
+                                setAssignModalDoc(doc);
+                                setTaskForm({
+                                  ...taskForm,
+                                  taskName: `Extract Major: ${doc.title}`,
+                                  description: `Please review the uploaded PDF "${doc.fileName}" and extract the major identity, program outcomes, and curriculum structure.`
+                                });
+                              }}
                               className="px-3 py-1.5 bg-[#e8f5e9] text-[#1d5c42] rounded-lg text-xs font-bold hover:bg-[#1d5c42] hover:text-white transition-all shadow-sm border border-[#1d5c42]/20 flex items-center gap-1.5 whitespace-nowrap group/btn"
                             >
                               <Send size={14} className="group-hover/btn:translate-x-0.5 transition-transform" /> 
@@ -592,6 +602,17 @@ export default function AcademicDocumentsContent() {
                     value={taskForm.taskName}
                     onChange={(e) => setTaskForm({...taskForm, taskName: e.target.value})}
                     className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-zinc-700">Description</label>
+                  <textarea 
+                    rows={3}
+                    placeholder="Enter task details or special instructions..."
+                    value={taskForm.description}
+                    onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
+                    className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium resize-none"
                   />
                 </div>
 
