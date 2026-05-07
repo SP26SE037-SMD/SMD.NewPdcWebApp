@@ -280,9 +280,9 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
         all: undefined,
         todo: 'TO_DO',
         inprogress: 'IN_PROGRESS',
-        completed: ['COMPLETED', 'PENDING_REVIEW', 'IN_PROGRESS'],
+        completed: 'DONE',
         overdue: undefined,
-        revision_requested: 'REVISION_REQUESTED'
+        revision_requested: undefined
     };
 
     const reviewStatusMapping: Record<string, string | string[] | undefined> = {
@@ -304,9 +304,16 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                 type: navTab === 'develop' ? 'SYLLABUS_DEVELOP' : 'PEER_REVIEW'
             };
             if (navTab === 'develop') {
-                return await TaskService.getTasks(params as any);
+                return await TaskService.getTasksV2({
+                    assignTo: user?.accountId,
+                    action: statusTab === 'all' ? ['CREATE', 'UPDATE'] : statusTab === 'revision_requested' ? 'UPDATE' : 'CREATE',
+                    type: 'SYLLABUS',
+                    status: developStatusMapping[statusTab],
+                    page: page,
+                    size: 10
+                });
             } else {
-                return await ReviewTaskService.getReviewTasks(params.accountId, params.status as string | string[], params.page, params.size);
+                return await ReviewTaskService.getReviewTasks(user?.accountId || "", params.status as string | string[], params.page, params.size);
             }
         },
         enabled: !!user?.accountId,
