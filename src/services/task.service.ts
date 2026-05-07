@@ -157,6 +157,21 @@ export interface TaskQueryParams {
   direction?: "asc" | "desc";
 }
 
+export interface TaskQueryParamsV2 {
+  search?: string;
+  status?: TaskStatus | string | string[];
+  sprintId?: string;
+  type?: string;
+  action?: string | string[];
+  assignTo?: string;
+  createdBy?: string;
+  targetId?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: "asc" | "desc";
+}
+
 export interface CreateTaskPayload {
   sprintId: string;
   subjectId?: string;
@@ -245,6 +260,83 @@ export const TaskService = {
 
     const response = await apiClient.get<TasksPaginatedResponse>(
           `/api/tasks?${queryParams.toString()}`,
+          { credentials: "include" },
+      );
+
+    return response;
+  },
+
+  getTasksV2: async (params?: TaskQueryParamsV2): Promise<TasksPaginatedResponse> => {
+    // If multiple actions are provided, we map them into parallel requests.
+    if (Array.isArray(params?.action)) {
+        const results = await Promise.all(params.action.map(async (a) => {
+            const singleParams = { ...params, action: a };
+            return await TaskService.getTasksV2(singleParams);
+        }));
+
+        const combinedContent = results.flatMap(r => r?.data?.content || []);
+        const firstResult = results[0];
+
+        if (!firstResult) return { status: 200, message: "No data", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 } };
+        
+        return {
+            ...firstResult,
+            data: {
+                ...firstResult.data,
+                content: combinedContent,
+                totalElements: results.reduce((acc, r) => acc + (r?.data?.totalElements || 0), 0),
+                totalPages: Math.max(1, ...results.map(r => r?.data?.totalPages || 1))
+            }
+        };
+    }
+
+    // If multiple statuses are provided, we map them into parallel requests.
+    if (Array.isArray(params?.status)) {
+        const results = await Promise.all(params.status.map(async (s) => {
+            const singleParams = { ...params, status: s };
+            return await TaskService.getTasksV2(singleParams);
+        }));
+
+        const combinedContent = results.flatMap(r => r?.data?.content || []);
+        const firstResult = results[0];
+
+        if (!firstResult) return { status: 200, message: "No data", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 } };
+        
+        return {
+            ...firstResult,
+            data: {
+                ...firstResult.data,
+                content: combinedContent,
+                totalElements: results.reduce((acc, r) => acc + (r?.data?.totalElements || 0), 0),
+                totalPages: Math.max(1, ...results.map(r => r?.data?.totalPages || 1))
+            }
+        };
+    }
+
+    const queryParams = new URLSearchParams();
+
+    // Default values from Swagger
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 10;
+    const sortBy = params?.sortBy ?? "deadline";
+    const direction = params?.direction ?? "asc";
+
+    queryParams.append("page", page.toString());
+    queryParams.append("size", size.toString());
+    queryParams.append("sortBy", sortBy);
+    queryParams.append("direction", direction);
+
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.status && typeof params.status === 'string') queryParams.append("status", params.status);
+    if (params?.sprintId) queryParams.append("sprintId", params.sprintId);
+    if (params?.type) queryParams.append("type", params.type);
+    if (params?.action && !Array.isArray(params.action)) queryParams.append("action", params.action);
+    if (params?.assignTo) queryParams.append("assignTo", params.assignTo);
+    if (params?.createdBy) queryParams.append("createdBy", params.createdBy);
+    if (params?.targetId) queryParams.append("targetId", params.targetId);
+
+    const response = await apiClient.get<TasksPaginatedResponse>(
+          `/api/tasks-v2?${queryParams.toString()}`,
           { credentials: "include" },
       );
 
