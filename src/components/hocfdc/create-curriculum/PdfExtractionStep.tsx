@@ -597,16 +597,21 @@ export default function PdfExtractionStep({
       try {
         // Fetch Major Info
         const majorRes = await fetch(`/api/majors/${majorId}`);
-        if (majorRes.ok) {
-          const rawMajor = await majorRes.json();
-          const majorData = rawMajor.data || rawMajor;
-
-          setMajorForm({
-            majorCode: majorData.code || majorData.majorCode || "",
-            majorName: majorData.name || majorData.majorName || "",
-            description: majorData.description || "",
-          });
+        if (!majorRes.ok) {
+          console.warn("Major ID not found in system, resetting state to idle.");
+          setExtractionState("idle");
+          sessionStorage.removeItem(`extracted_major_${documentId}`);
+          return;
         }
+
+        const rawMajor = await majorRes.json();
+        const majorData = rawMajor.data || rawMajor;
+
+        setMajorForm({
+          majorCode: majorData.code || majorData.majorCode || "",
+          majorName: majorData.name || majorData.majorName || "",
+          description: majorData.description || "",
+        });
 
         // Fetch Regulations
         const regRes = await fetch(
@@ -705,15 +710,18 @@ export default function PdfExtractionStep({
             setRegulations([]);
           }
         }
-      } catch (err) {
-        console.error("Failed to fetch major data", err);
-      } finally {
+
+        // Successfully loaded everything
         setExtractionState("review");
         toast.success("Extraction data loaded successfully!");
         dispatch(clearAiProcessingMessage());
+      } catch (err) {
+        console.error("Failed to fetch major data", err);
+        setExtractionState("idle");
+        toast.error("Failed to load extraction data. Please try again.");
       }
     },
-    [dispatch],
+    [dispatch, documentId],
   );
 
   // Restore state on reload
