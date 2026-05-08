@@ -50,7 +50,8 @@ const DaysLeftBadge = ({ daysLeft }: { daysLeft: number | null }) => {
 
 /* ─── Develop Task Card ─── */
 const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAccepting: string | null; onAccept: (t: any) => void; router: any }) => {
-    const deadline = task.deadline ? new Date(task.deadline) : null;
+    const deadlineVal = task.deadline || task.dueDate;
+    const deadline = deadlineVal ? new Date(deadlineVal) : null;
     const [now] = React.useState(() => Date.now());
     const daysLeft = deadline ? Math.ceil((deadline.getTime() - now) / 86400000) : null;
     const status = (task.status || '').toUpperCase().replace(/\s+/g, '_');
@@ -147,7 +148,8 @@ const DevelopCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcc
 
 /* ─── Review Task Card ─── */
 const ReviewCard = ({ task, isAccepting, onAccept, router }: { task: any; isAccepting: string | null; onAccept: (t: any) => void; router: any }) => {
-    const deadline = task.deadline ? new Date(task.deadline) : null;
+    const deadlineVal = task.deadline || task.dueDate;
+    const deadline = deadlineVal ? new Date(deadlineVal) : null;
     const [now] = React.useState(() => Date.now());
     const daysLeft = deadline ? Math.ceil((deadline.getTime() - now) / 86400000) : null;
     const status = (task.status || '').toUpperCase().replace(/\s+/g, '_');
@@ -188,9 +190,9 @@ const ReviewCard = ({ task, isAccepting, onAccept, router }: { task: any; isAcce
                         {(task.taskName || 'R').charAt(0).toUpperCase()}
                     </div>
                     <div className="text-xs flex gap-1 items-center truncate">
-                        <span className="font-semibold" style={{ color: C.onSurface }}>{task.reviewer?.fullName || 'Assigned Reviewer'}</span>
+                        <span className="font-semibold" style={{ color: C.onSurface }}>{task.reviewer?.fullName || task.assignTo?.fullName || 'Assigned Reviewer'}</span>
                         <span className="text-zinc-400">&bull;</span>
-                        <span className="text-zinc-500 truncate">{task.reviewer?.email || 'reviewer@university.edu'}</span>
+                        <span className="text-zinc-500 truncate">{task.reviewer?.email || task.assignTo?.email || 'reviewer@university.edu'}</span>
                     </div>
                 </div>
             </div>
@@ -313,7 +315,14 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                     size: 10
                 });
             } else {
-                return await ReviewTaskService.getReviewTasks(user?.accountId || "", params.status as string | string[], params.page, params.size);
+                return await TaskService.getTasksV2({
+                    assignTo: user?.accountId,
+                    action: 'REVIEW',
+                    type: 'SYLLABUS',
+                    status: reviewStatusMapping[statusTab],
+                    page: page,
+                    size: 10
+                });
             }
         },
         enabled: !!user?.accountId,
