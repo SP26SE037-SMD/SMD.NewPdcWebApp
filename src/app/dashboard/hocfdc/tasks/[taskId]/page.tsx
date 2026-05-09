@@ -14,7 +14,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText,
+  ShieldCheck, FileSearch, Lightbulb, Gauge, Info
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
@@ -597,15 +598,138 @@ function MajorDetailTab({ major, loading, majorId }: { major: Major | null; load
 }
 
 function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId?: string | null }) {
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleValidate = async () => {
+    if (!majorId) return;
+    setValidating(true);
+    try {
+      const res = await PoService.validatePOs(majorId);
+      
+      if (res.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+        return;
+      }
+
+      setValidationError(null);
+      setValidationResult(res.data);
+      toast.success("Validation completed!");
+    } catch (error: any) {
+      if (error?.status === 9001 || error?.response?.data?.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+      } else {
+        toast.error(error.message || "Failed to validate POs");
+      }
+    } finally {
+      setValidating(false);
+    }
+  };
+
   if (loading) return <LoadingCard />;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-black text-on-surface">Program Objectives</h2>
-        <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant">
-          {pos.length} POs
-        </span>
+        <div>
+          <h2 className="text-xl font-black text-on-surface tracking-tight">Program Objectives</h2>
+          <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">Verify POs against Master Regulations and institutional standards</p>
+        </div>
+        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleValidate}
+            disabled={validating || pos.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 active:scale-95"
+          >
+            {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+            <span>{validating ? "Validate POs" : "Validate POs"}</span>
+          </button>
+          {validationError && (
+            <p className="text-[9px] font-bold text-error uppercase tracking-widest px-1 animate-in fade-in slide-in-from-top-1">
+              {validationError}
+            </p>
+          )}
+        </div>
+          <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant border border-outline/10">
+            {pos.length} POs
+          </span>
+        </div>
       </div>
+
+      {validationResult && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-3xl border border-primary/15 shadow-xl shadow-primary/5 overflow-hidden"
+        >
+          <div className="p-6 border-b border-primary/10 bg-primary/[0.02] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-black text-on-surface text-sm uppercase tracking-wider">Validation Analysis</h3>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">AI-Powered Compliance Report</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-0.5">Similarity Score</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-24 bg-surface-container rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary" 
+                      style={{ width: validationResult.overall_similarity_score }} 
+                    />
+                  </div>
+                  <span className="text-sm font-black text-primary">{validationResult.overall_similarity_score}</span>
+                </div>
+              </div>
+              <div className={`px-3 py-1.5 rounded-xl flex items-center gap-2 border ${
+                validationResult.is_compliant 
+                  ? "bg-emerald-50 border-emerald-100 text-emerald-600" 
+                  : "bg-amber-50 border-amber-100 text-amber-600"
+              }`}>
+                {validationResult.is_compliant ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {validationResult.is_compliant ? "Compliant" : "Needs Review"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-on-surface">
+                <FileSearch className="h-4 w-4 text-primary" />
+                <h4 className="text-xs font-black uppercase tracking-widest">Mismatch Details</h4>
+              </div>
+              <div className="bg-surface-container/30 rounded-2xl p-4 border border-outline/5">
+                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
+                  {validationResult.mismatch_details}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-on-surface">
+                <Lightbulb className="h-4 w-4 text-amber-500" />
+                <h4 className="text-xs font-black uppercase tracking-widest">Suggestions</h4>
+              </div>
+              <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/50">
+                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
+                  {validationResult.suggestions}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {pos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-on-surface-variant border-2 border-dashed border-outline/30 rounded-2xl">
           <Target className="h-12 w-12 opacity-30" />
@@ -614,18 +738,55 @@ function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId
         </div>
       ) : (
         <div className="grid gap-3">
-          {pos.map((po, idx) => (
-            <div key={po.poId} className="flex items-start gap-4 p-5 bg-surface rounded-2xl border border-outline/20 hover:border-primary/30 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="text-xs font-black text-primary">{po.poCode || `P${idx + 1}`}</span>
+          {pos.map((po, idx) => {
+            const mappingStatus = validationResult?.mapping_report?.find((m: any) => m.code === (po.poCode || `PO${idx + 1}`))?.status;
+            
+            // Border color logic based on status
+            const borderClass = mappingStatus === 'MATCHED' 
+              ? "border-emerald-500 shadow-sm shadow-emerald-500/10" 
+              : mappingStatus === 'PARTIAL_MATCH'
+              ? "border-amber-500 shadow-sm shadow-amber-500/10"
+              : (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING')
+              ? "border-error shadow-sm shadow-error/10"
+              : "border-outline/20 hover:border-primary/30";
+
+            return (
+              <div 
+                key={po.poId} 
+                className={`flex items-start gap-4 p-5 bg-surface rounded-2xl border transition-all ${borderClass}`}
+              >
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  mappingStatus === 'MATCHED' ? "bg-emerald-500/10 text-emerald-600" : 
+                  mappingStatus === 'PARTIAL_MATCH' ? "bg-amber-500/10 text-amber-600" :
+                  (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING') ? "bg-error/10 text-error" : 
+                  "bg-primary/10 text-primary"
+                }`}>
+                  <span className="text-xs font-black">{po.poCode || `P${idx + 1}`}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
+                    }`}>
+                      {po.status}
+                    </span>
+                    {mappingStatus && (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        mappingStatus === "MATCHED" ? "bg-emerald-500 text-white" : 
+                        mappingStatus === "PARTIAL_MATCH" ? "bg-amber-500 text-white" :
+                        "bg-error text-white"
+                      }`}>
+                        {mappingStatus === "MATCHED" ? "Match Regulation" : 
+                         mappingStatus === "PARTIAL_MATCH" ? "Partial Match" : 
+                         mappingStatus === "DUPLICATED" ? "Duplicated" : "Missing"}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
-                <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-                  }`}>{po.status}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
