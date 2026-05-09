@@ -98,8 +98,7 @@ export const SprintCard = ({
     enabled: true,
   });
 
-  const tasks = ((tasksRes?.data as { content?: TaskItem[] } | undefined)
-    ?.content || []) as TaskItem[];
+  const tasks = (tasksRes?.content || []) as TaskItem[];
   const totalTasks = tasks.length;
   const closedTasks = tasks.filter((t) => t.status === TASK_STATUS.DONE).length;
   const progressPercent = totalTasks > 0 ? (closedTasks / totalTasks) * 100 : 0;

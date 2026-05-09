@@ -270,7 +270,7 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
         setConfirmState(prev => ({ ...prev, loading: true }));
         try {
             if (confirmState.type === 'task') {
-                await TaskService.updateTaskStatus(confirmState.id, 'IN_PROGRESS', user?.accountId || '');
+                await TaskService.updateTaskStatus(confirmState.id, 'IN_PROGRESS');
                 setConfirmState(prev => ({ ...prev, open: false, loading: false }));
                 setIsNotiOpen(false); setIsAllNotiModalOpen(false);
                 router.push(`/dashboard/pdcm/tasks/${confirmState.id}/information`);

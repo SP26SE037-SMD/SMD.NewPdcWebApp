@@ -478,11 +478,11 @@ export default function TaskDetailPage() {
               <SubmitTab
                 curriculum={curriculum}
                 major={major}
-                task={task}
-                submitting={submitting}
+                majorId={majorId}
                 rejectionRequest={rejectionRequest}
-                onSubmit={handleSubmit}
                 onGoCreate={() => setActiveTab("curriculum")}
+                onSubmit={handleSubmit}
+                submitting={submitting}
               />
             )}
           </motion.div>
@@ -649,15 +649,21 @@ function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void
 }
 
 function SubmitTab({
-  curriculum, major, task, submitting, rejectionRequest, onSubmit, onGoCreate,
+  curriculum,
+  major,
+  majorId,
+  rejectionRequest,
+  onGoCreate,
+  onSubmit,
+  submitting
 }: {
   curriculum: CurriculumFramework | null;
   major: Major | null;
-  task: TaskItem;
-  submitting: boolean;
+  majorId: string | null;
   rejectionRequest: RequestItem | null;
-  onSubmit: (title: string, content: string) => void;
   onGoCreate: () => void;
+  onSubmit: (title: string, content: string) => void;
+  submitting: boolean;
 }) {
   const [title, setTitle] = useState(
     rejectionRequest

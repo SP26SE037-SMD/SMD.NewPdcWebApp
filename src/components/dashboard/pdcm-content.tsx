@@ -304,7 +304,8 @@ export default function PDCMDashboardContent({ defaultTab = 'develop' }: { defau
                 type: navTab === 'develop' ? 'SYLLABUS_DEVELOP' : 'PEER_REVIEW'
             };
             if (navTab === 'develop') {
-                return await TaskService.getTasks(params as any);
+                const res = await TaskService.getTasks(params as any);
+                return { data: res };
             } else {
                 return await ReviewTaskService.getReviewTasks(params.accountId, params.status as string | string[], params.page, params.size);
             }

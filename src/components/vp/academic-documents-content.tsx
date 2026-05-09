@@ -933,7 +933,7 @@ export default function AcademicDocumentsContent() {
                         <Timer startTime={validationStartTime} />
                       </div>
 
-                      <ValidationProgress status={aiProcessingStatus} />
+                      <ValidationProgress startTime={validationStartTime || undefined} />
                     </div>
                   ) : validationState === "success" ? (
                     <div className="space-y-6">

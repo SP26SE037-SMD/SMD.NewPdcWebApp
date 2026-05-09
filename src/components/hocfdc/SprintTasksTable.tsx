@@ -44,7 +44,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
     queryFn: () => TaskService.getTasksBySprintId(sprintId),
   });
 
-  const tasksFromApi = ((tasksRes?.data as any)?.content as TaskItem[]) || [];
+  const tasksFromApi = tasksRes?.content || [];
 
   const tasks = tasksFromApi;
 

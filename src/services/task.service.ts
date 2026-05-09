@@ -85,6 +85,7 @@ export interface TaskItem {
   document?: {
     documentId: string;
     documentUrl: string;
+    majorId?: string;
   };
   createdBy?: {
     accountId: string;
@@ -301,7 +302,6 @@ export const TaskService = {
       syllabusName: task.syllabus?.syllabusName || task.syllabusName || "Unnamed Syllabus",
     },
     curriculumId: task.curriculumId ?? task.curriculum_id ?? null,
-    majorId: task.majorId ?? task.major?.majorId ?? task.major_id ?? task.major?.major_id ?? null,
     major: task.major ? {
         majorId: task.major.majorId ?? task.major.major_id,
         majorCode: task.major.majorCode ?? task.major.major_code,

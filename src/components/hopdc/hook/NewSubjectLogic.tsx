@@ -40,7 +40,7 @@ export function useNewSubjectLogic() {
         sprintId,
         user.departmentId,
       );
-      const tasks = res?.data?.content || [];
+      const tasks = res?.content || [];
       return (
         tasks.find((t) => t.subjectId === subjectId) || null
       );

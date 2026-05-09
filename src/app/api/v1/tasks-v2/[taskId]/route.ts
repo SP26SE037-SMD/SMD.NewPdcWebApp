@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
 
 export async function GET(
   request: Request,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const { taskId } = await params;
