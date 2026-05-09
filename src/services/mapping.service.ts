@@ -69,4 +69,8 @@ export class MappingService {
     static async getSyllabusSessionMappings(syllabusId: string): Promise<ApiResponse<CloSessionMapping[]>> {
         return apiClient.get<ApiResponse<CloSessionMapping[]>>(`/api/clo-session-mappings/syllabus/${syllabusId}`);
     }
+
+    static async validatePoPloMappings(curriculumId: string, mappings: { poId: string; ploId: string }[]): Promise<ApiResponse<any>> {
+        return apiClient.post<ApiResponse<any>>(`/api/po-plo-mappings/curriculum/${curriculumId}/validate`, mappings);
+    }
 }

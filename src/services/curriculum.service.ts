@@ -233,4 +233,8 @@ export const CurriculumService = {
       return data;
     });
   },
+
+  validatePLOs: async (curriculumId: string) => {
+    return apiClient.post<APIResponse<any>>(`/api/plos/curriculum/${curriculumId}/validate-plo`, {});
+  },
 };

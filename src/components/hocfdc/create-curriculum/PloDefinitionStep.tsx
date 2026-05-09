@@ -9,7 +9,14 @@ import {
   Trash2,
   AlertTriangle,
   Edit3,
+  ShieldCheck,
+  FileSearch,
+  Lightbulb,
+  AlertCircle,
+  Grid3X3,
+  Gauge
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { CurriculumService, PLO } from "@/services/curriculum.service";
 import StepNavigation from "./StepNavigation";
 
@@ -42,6 +49,15 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
   const [itemToDelete, setItemToDelete] = useState<Outcome | null>(null);
   const [shouldProceedAfterSave, setShouldProceedAfterSave] = useState(false);
   const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const isDuplicate = useMemo(() => {
+    if (!identifier) return false;
+    const upperId = identifier.toUpperCase().trim();
+    return outcomes.some(o => o.id !== editingId && o.identifier.toUpperCase().trim() === upperId);
+  }, [identifier, outcomes, editingId]);
 
   // 1. Fetch Server Data
   const { data: serverPLOs, isLoading: isLoadingPLOs } = useQuery({
@@ -157,7 +173,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !description) return;
+    if (!identifier || !description || isDuplicate) return;
     if (editingId) {
       if (!editingId.startsWith("temp-")) {
         updateMutation.mutate({
@@ -221,6 +237,33 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
     }
   };
 
+  const handleValidate = async () => {
+    if (!curriculumId) return;
+    setIsValidating(true);
+    try {
+      const res = await CurriculumService.validatePLOs(curriculumId);
+      
+      if (res.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+        return;
+      }
+
+      setValidationError(null);
+      setValidationResult(res.data);
+      toast.success("Validation completed!");
+    } catch (error: any) {
+      if (error?.status === 9001 || error?.response?.data?.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+      } else {
+        toast.error(error?.response?.data?.message || error?.message || "Validation failed");
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 md:px-12 pb-12 pt-10 relative">
       <header className="mb-10 max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -242,6 +285,21 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                 ? `● ${pendingOutcomes.length} Pending Sync`
                 : "● PLOs Synced"}
             </span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={handleValidate}
+              disabled={isValidating || outcomes.length === 0}
+              className="flex items-center gap-2 px-6 py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl font-bold hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck size={18} />}
+              Validate PLOs
+            </button>
+            {validationError && (
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest px-2 animate-in fade-in slide-in-from-top-1">
+                {validationError}
+              </p>
+            )}
           </div>
           <button
             onClick={() => handleSaveDraft(false)}
@@ -287,12 +345,20 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                   Outcome Identifier
                 </label>
                 <input
-                  className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-[var(--primary)] rounded-lg py-3 px-4 font-bold text-zinc-900"
+                  className={`w-full border-none focus:ring-2 focus:ring-[var(--primary)] rounded-lg py-3 px-4 font-bold text-zinc-900 transition-all ${
+                    isDuplicate ? "bg-red-50 ring-2 ring-red-200" : "bg-zinc-50"
+                  }`}
                   placeholder="e.g., PLO-01"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                 />
+                {isDuplicate && (
+                  <p className="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    PLO Code already exists in curriculum
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
@@ -310,7 +376,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                 className={`w-full py-4 text-white font-bold rounded-xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] hover:translate-y-[-2px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${editingId ? (editingId.startsWith("temp-") ? "bg-amber-500" : "bg-primary") : "bg-primary"}`}
                 type="submit"
                 disabled={
-                  !identifier || !description || updateMutation.isPending
+                  !identifier || !description || updateMutation.isPending || isDuplicate
                 }
               >
                 {updateMutation.isPending ? (
@@ -322,6 +388,74 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
               </button>
             </form>
           </div>
+
+          <AnimatePresence>
+            {validationResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-6 bg-white p-6 rounded-2xl border border-primary/15 shadow-xl shadow-primary/5 overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-zinc-900 text-sm">PLO Validation Analysis</h4>
+                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Master Regulation Check</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Score</p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 bg-zinc-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary" 
+                            style={{ width: validationResult.overall_similarity_score }} 
+                          />
+                        </div>
+                        <span className="text-xs font-black text-primary">{validationResult.overall_similarity_score}</span>
+                      </div>
+                    </div>
+                    <div className={`px-2 py-1 rounded-lg flex items-center gap-1.5 border ${
+                      validationResult.is_compliant 
+                        ? "bg-emerald-50 border-emerald-100 text-emerald-600" 
+                        : "bg-amber-50 border-amber-100 text-amber-600"
+                    }`}>
+                      {validationResult.is_compliant ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                      <span className="text-[9px] font-bold uppercase tracking-widest">
+                        {validationResult.is_compliant ? "Compliant" : "Review Needed"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileSearch className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Mismatch Details</span>
+                    </div>
+                    <p className="text-xs text-zinc-600 leading-relaxed whitespace-pre-line font-medium italic">
+                      {validationResult.mismatch_details}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Suggestions</span>
+                    </div>
+                    <p className="text-xs text-zinc-600 leading-relaxed whitespace-pre-line font-medium italic">
+                      {validationResult.suggestions}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         <section className="col-span-12 lg:col-span-7 pb-40">
@@ -350,11 +484,23 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                 <h5 className="font-bold text-zinc-400">No PLOs defined yet</h5>
               </div>
             ) : (
-              outcomes.map((outcome) => (
-                <div
-                  key={outcome.id}
-                  className={`group transition-all p-6 rounded-xl flex items-start gap-6 relative border hover:shadow-[0px_4px_20px_rgba(45,51,53,0.04)] ${editingId === outcome.id ? "bg-amber-50/50 border-amber-200" : "bg-zinc-50 hover:bg-white border-transparent hover:border-zinc-200"} ${outcome.id.startsWith("temp-") ? "border-l-4 border-l-amber-400" : ""}`}
-                >
+              outcomes.map((outcome) => {
+                const mapping = validationResult?.mapping_report?.find((m: any) => m.code === outcome.identifier);
+                const mappingStatus = mapping?.status;
+                
+                const borderClass = mappingStatus === 'MATCHED' 
+                  ? "border-emerald-500 bg-emerald-50/5" 
+                  : mappingStatus === 'PARTIAL_MATCH'
+                  ? "border-amber-500 bg-amber-50/5"
+                  : (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING')
+                  ? "border-red-500 bg-red-50/5"
+                  : editingId === outcome.id ? "bg-amber-50/50 border-amber-200" : "bg-zinc-50 hover:bg-white border-transparent hover:border-zinc-200";
+
+                return (
+                  <div
+                    key={outcome.id}
+                    className={`group transition-all p-6 rounded-xl flex items-start gap-6 relative border hover:shadow-[0px_4px_20px_rgba(45,51,53,0.04)] ${borderClass} ${outcome.id.startsWith("temp-") && !mappingStatus ? "border-l-4 border-l-amber-400" : ""}`}
+                  >
                   <div className="w-16 h-16 shrink-0 bg-white rounded-lg flex flex-col items-center justify-center border border-zinc-200 group-hover:scale-110 transition-transform shadow-sm">
                     <span
                       className={`text-sm font-extrabold text-center px-1 truncate w-full ${editingId === outcome.id ? "text-amber-600" : "text-primary"}`}
@@ -370,6 +516,19 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                       {outcome.id.startsWith("temp-") && (
                         <span className="text-[8px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">
                           New
+                        </span>
+                      )}
+                      {validationResult?.mapping_report?.find((m: any) => m.code === outcome.identifier) && (
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                          validationResult.mapping_report.find((m: any) => m.code === outcome.identifier).status === 'MATCHED'
+                            ? "bg-emerald-100 text-emerald-700"
+                            : validationResult.mapping_report.find((m: any) => m.code === outcome.identifier).status === 'PARTIAL_MATCH'
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          {validationResult.mapping_report.find((m: any) => m.code === outcome.identifier).status === 'MATCHED' ? "Match Regulation" : 
+                           validationResult.mapping_report.find((m: any) => m.code === outcome.identifier).status === 'PARTIAL_MATCH' ? "Partial Match" : 
+                           validationResult.mapping_report.find((m: any) => m.code === outcome.identifier).status === 'DUPLICATED' ? "Duplicated" : "Missing"}
                         </span>
                       )}
                     </div>
@@ -392,7 +551,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                     </button>
                   </div>
                 </div>
-              ))
+              );})
             )}
           </div>
         </section>

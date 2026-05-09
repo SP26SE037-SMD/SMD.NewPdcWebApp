@@ -2,7 +2,22 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Save, CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import { 
+  Loader2, 
+  Save, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Info, 
+  ShieldCheck, 
+  FileSearch, 
+  Lightbulb, 
+  AlertCircle, 
+  X,
+  Target,
+  Gauge
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MappingService } from "@/services/mapping.service";
 import { CurriculumService, PLO, CURRICULUM_STATUS } from "@/services/curriculum.service";
 import { PoService, PO } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
@@ -28,6 +43,9 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [shouldProceedAfterSave, setShouldProceedAfterSave] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { data: curriculumRes, isLoading: isLoadingCurriculum } = useQuery({
     queryKey: ["curriculum", curriculumId],
@@ -119,6 +137,37 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
     else onNext?.();
   };
 
+  const handleValidateMappings = async () => {
+    if (!curriculumId) return;
+    setIsValidating(true);
+    try {
+      const currentMappings = [...tempMappings].map(key => {
+        const [poId, ploId] = key.split("||");
+        return { poId, ploId };
+      });
+      const res = await MappingService.validatePoPloMappings(curriculumId, currentMappings);
+      
+      if (res.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+        return;
+      }
+
+      setValidationError(null);
+      setValidationResult(res.data);
+      toast.success("Matrix validation completed!");
+    } catch (error: any) {
+      if (error?.status === 9001 || error?.response?.data?.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+      } else {
+        toast.error(error?.response?.data?.message || error?.message || "Validation failed");
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const getPoStats = (poId: string) => plos.filter(plo => isMapped(poId, plo.ploId)).length;
   const getPloCoverage = (ploId: string) => pos.filter(po => isMapped(po.poId, ploId)).length;
 
@@ -137,6 +186,21 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
             <span className={`text-[9px] font-black uppercase tracking-widest ${hasUnsavedChanges ? "text-amber-500" : "text-emerald-500"}`}>
               {hasUnsavedChanges ? "● Pending Sync" : "● Matrix Synced"}
             </span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <button 
+              onClick={handleValidateMappings}
+              disabled={isValidating || plos.length === 0}
+              className="flex items-center gap-2 px-6 py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl font-bold hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck size={18} />}
+              Validate Mapping
+            </button>
+            {validationError && (
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest px-2 animate-in fade-in slide-in-from-top-1">
+                {validationError}
+              </p>
+            )}
           </div>
           <button 
             onClick={() => handleSaveDraft(false)}
@@ -173,6 +237,72 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
               </div>
             </div>
 
+            <AnimatePresence>
+              {validationResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-primary/5 border border-primary/10 rounded-2xl p-6 overflow-hidden relative"
+                >
+                  <button 
+                    onClick={() => setValidationResult(null)}
+                    className="absolute top-4 right-4 p-1 hover:bg-primary/10 rounded-full transition-colors"
+                  >
+                    <X size={16} className="text-primary" />
+                  </button>
+
+                  <div className="flex flex-col md:flex-row gap-8">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-primary/10">
+                        <Gauge className="text-primary" size={24} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Overall Coverage</p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-black text-primary">{validationResult.overall_coverage_score}</span>
+                          <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                            validationResult.is_compliant 
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
+                              : "bg-amber-50 border-amber-200 text-amber-600"
+                          }`}>
+                            {validationResult.is_compliant ? "Compliant" : "Review Required"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {validationResult.uncovered_pos?.length > 0 && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-red-100">
+                          <Target className="text-red-500" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Uncovered POs</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {validationResult.uncovered_pos.map((poCode: string) => (
+                              <span key={poCode} className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-md text-[10px] font-black">{poCode}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 gap-4">
+                    <div className="p-4 bg-white rounded-xl border border-primary/10 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Lightbulb className="h-4 w-4 text-amber-500" />
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Suggestions</span>
+                      </div>
+                      <p className="text-xs text-zinc-600 leading-relaxed font-medium italic">
+                        {validationResult.suggestions}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="animate-spin text-primary" size={32} />
@@ -193,8 +323,11 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
                           </div>
                         </th>
                       ))}
-                      <th className="p-4 bg-[#f8faf8] border-b border-[#e1ede3] text-center rounded-tr-xl">
+                      <th className="p-4 bg-[#f8faf8] border-b border-[#e1ede3] text-center">
                         <span className="text-[10px] font-black uppercase tracking-widest text-[#1d5c42]">Coverage</span>
+                      </th>
+                      <th className="p-4 bg-[#f8faf8] border-b border-[#e1ede3] text-center rounded-tr-xl">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#1d5c42]">Validate</span>
                       </th>
                     </tr>
                   </thead>
@@ -221,6 +354,30 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
                           <td className="p-4 border-b border-[#e1ede3] bg-[#f8faf8] text-center group-hover:bg-[#f0f5f1] transition-colors">
                             <span className={`text-xs font-black ${isUnmapped ? "text-red-500" : "text-primary"}`}>{coverage}/{pos.length}</span>
                           </td>
+                          <td className="p-4 border-b border-[#e1ede3] bg-[#f8faf8] text-center group-hover:bg-[#f0f5f1] transition-colors relative">
+                            {validationResult?.invalid_mappings?.find((m: any) => m.plo_code === plo.ploCode) ? (
+                              <div className="group/validate relative inline-block">
+                                <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all active:scale-95">
+                                  <AlertCircle size={16} />
+                                </button>
+                                <div className="absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 top-full right-0 mt-2 w-[280px] bg-white border border-red-100 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none">
+                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-red-50">
+                                    <AlertTriangle size={14} className="text-red-500" />
+                                    <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Inconsistent Mapping</p>
+                                  </div>
+                                  <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
+                                    "{validationResult.invalid_mappings.find((m: any) => m.plo_code === plo.ploCode).reason}"
+                                  </p>
+                                </div>
+                              </div>
+                            ) : validationResult ? (
+                              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto animate-in zoom-in duration-300">
+                                <CheckCircle2 size={16} />
+                              </div>
+                            ) : (
+                              <span className="text-zinc-300">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -235,6 +392,9 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
                       ))}
                       <td className="p-4 bg-[#f8faf8] border-t border-[#e1ede3] text-center rounded-br-xl">
                         <span className="text-[10px] font-bold text-zinc-500">Total</span>
+                      </td>
+                      <td className="p-4 bg-[#f8faf8] border-t border-[#e1ede3] text-center rounded-br-xl">
+                        <span className="text-[10px] font-bold text-zinc-500">—</span>
                       </td>
                     </tr>
                   </tfoot>
