@@ -8,10 +8,21 @@ interface Syllabus {
   syllabusName: string;
 }
 
+interface CreateTaskModalForm {
+  taskName?: string;
+  description?: string;
+  priority?: string;
+  status?: string;
+  deadline?: string;
+  type?: string;
+  accountId?: string;
+  syllabusId?: string;
+}
+
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: Partial<CreateTaskPayload>) => void;
+  onCreate: (data: CreateTaskModalForm) => void;
   accounts: DepartmentAccount[];
   syllabi: Syllabus[];
 }
@@ -23,7 +34,7 @@ export const CreateTaskModal = ({
   accounts,
   syllabi,
 }: CreateTaskModalProps) => {
-  const [taskData, setTaskData] = useState<Partial<CreateTaskPayload>>({
+  const [taskData, setTaskData] = useState<CreateTaskModalForm>({
     taskName: "",
     description: "",
     priority: "MEDIUM",
