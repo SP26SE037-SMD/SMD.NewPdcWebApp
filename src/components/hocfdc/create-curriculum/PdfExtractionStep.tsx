@@ -20,6 +20,7 @@ import {
   Plus,
   Download,
   Edit2,
+  Trash2,
 } from "lucide-react";
 import { MajorService } from "@/services/major.service";
 import { RegulationService } from "@/services/regulation.service";
@@ -28,14 +29,20 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { clearAiProcessingMessage } from "@/store/slices/notificationSlice";
 
-const Timer = () => {
-  const [seconds, setSeconds] = useState(0);
+const Timer = ({ startTime }: { startTime?: number }) => {
+  const [elapsed, setElapsed] = useState(0);
+
   useEffect(() => {
+    if (!startTime) return;
+
+    // Initial calculation
+    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+
     const interval = setInterval(() => {
-      setSeconds((prev) => prev + 1);
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [startTime]);
 
   const formatTime = (totalSeconds: number) => {
     const m = Math.floor(totalSeconds / 60);
@@ -48,7 +55,7 @@ const Timer = () => {
 
   return (
     <span className="inline-block ml-1 opacity-80">
-      ({formatTime(seconds)})
+      ({formatTime(elapsed)})
     </span>
   );
 };
@@ -73,16 +80,22 @@ const FAKE_TASKS = [
   "Finalizing Data Extraction",
 ];
 
-const SimulatedExtractionProgress = () => {
+const SimulatedExtractionProgress = ({ startTime }: { startTime?: number }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Approx 2m10s (130 seconds) total for 17 tasks = ~7.6 seconds per task
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => Math.min(prev + 1, FAKE_TASKS.length - 1));
-    }, 7600);
+    if (!startTime) return;
+
+    const updateIndex = () => {
+      const elapsedMs = Date.now() - startTime;
+      const index = Math.floor(elapsedMs / 7600);
+      setCurrentIndex(Math.min(index, FAKE_TASKS.length - 1));
+    };
+
+    updateIndex();
+    const interval = setInterval(updateIndex, 2000); // Check every 2s
     return () => clearInterval(interval);
-  }, []);
+  }, [startTime]);
 
   return (
     <div className="mt-8 text-left w-full max-w-sm mx-auto bg-surface-container-lowest/50 rounded-xl p-5 border border-outline/10 shadow-inner h-[180px] overflow-hidden relative">
@@ -129,7 +142,15 @@ const SimulatedExtractionProgress = () => {
   );
 };
 
-const CourseMappingItem = ({ item, onSave }: { item: string; onSave: (val: string) => void }) => {
+const CourseMappingItem = ({ 
+  item, 
+  onSave,
+  onDelete
+}: { 
+  item: string; 
+  onSave: (val: string) => void;
+  onDelete: () => void;
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const cleanItem = item.replace(/^[-•]\s*/, "").trim();
   const match = cleanItem.match(/(.+)\s*\(([^)]+)\)/);
@@ -148,6 +169,26 @@ const CourseMappingItem = ({ item, onSave }: { item: string; onSave: (val: strin
     th: parts[4],
     self: parts[5]
   });
+
+  // Sync state when item prop changes (crucial for deletion/shifting)
+  useEffect(() => {
+    const clean = item.replace(/^[-•]\s*/, "").trim();
+    const m = clean.match(/(.+)\s*\(([^)]+)\)/);
+    const initName = m ? m[1].trim() : clean;
+    const rParts = m ? m[2].split('|') : [];
+    const pts = [...rParts];
+    while (pts.length < 6) pts.push("?");
+    
+    setFormData({
+      name: initName,
+      code: pts[0],
+      sem: pts[1],
+      tc: pts[2],
+      lt: pts[3],
+      th: pts[4],
+      self: pts[5]
+    });
+  }, [item]);
 
   const handleLocalSave = () => {
     const newString = `${formData.name} (${formData.code}|${formData.sem}|${formData.tc}|${formData.lt}|${formData.th}|${formData.self})`;
@@ -200,12 +241,27 @@ const CourseMappingItem = ({ item, onSave }: { item: string; onSave: (val: strin
 
   return (
     <div className="flex flex-col gap-1.5 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-primary/30 transition-all group/item relative">
-      <button 
-        onClick={() => setIsEditing(true)}
-        className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 hover:bg-primary/10 text-primary transition-all"
-      >
-        <Edit2 className="w-3.5 h-3.5" />
-      </button>
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-colors"
+          title="Edit subject"
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+        </button>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm("Are you sure you want to remove this subject?")) {
+              onDelete();
+            }
+          }}
+          className="p-1.5 rounded-lg hover:bg-error/10 text-error transition-colors"
+          title="Delete subject"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
       
       <div className="flex items-start justify-between gap-2 pr-8">
         <span className="font-bold text-sm text-on-surface leading-tight flex-1">{formData.name}</span>
@@ -237,11 +293,18 @@ const CourseMappingItem = ({ item, onSave }: { item: string; onSave: (val: strin
   );
 };
 
-const SourceDocumentItem = ({ item, onSave }: { item: string; onSave: (val: string) => void }) => {
+const SourceDocumentItem = ({ 
+  item, 
+  onSave,
+  onDelete
+}: { 
+  item: string; 
+  onSave: (val: string) => void;
+  onDelete: () => void;
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const cleanItem = item.replace(/^[-•]\s*/, "").trim();
   const parts = cleanItem.split('/');
-  
   const [formData, setFormData] = useState(() => {
     if (parts.length <= 6) {
       return {
@@ -253,7 +316,6 @@ const SourceDocumentItem = ({ item, onSave }: { item: string; onSave: (val: stri
         year: parts[5] || "x"
       };
     } else {
-      // Handle cases where title might contain slashes
       return {
         src: parts[0] || "?",
         sub: parts[1] || "?",
@@ -264,6 +326,31 @@ const SourceDocumentItem = ({ item, onSave }: { item: string; onSave: (val: stri
       };
     }
   });
+
+  // Sync state when item prop changes (crucial for deletion/shifting)
+  useEffect(() => {
+    const clean = item.replace(/^[-•]\s*/, "").trim();
+    const pts = clean.split('/');
+    if (pts.length <= 6) {
+      setFormData({
+        src: pts[0] || "?",
+        sub: pts[1] || "?",
+        title: pts[2] || "",
+        author: pts[3] || "x",
+        publisher: pts[4] || "x",
+        year: pts[5] || "x"
+      });
+    } else {
+      setFormData({
+        src: pts[0] || "?",
+        sub: pts[1] || "?",
+        year: pts[pts.length - 1] || "x",
+        publisher: pts[pts.length - 2] || "x",
+        author: pts[pts.length - 3] || "x",
+        title: pts.slice(2, pts.length - 3).join("/") || ""
+      });
+    }
+  }, [item]);
 
   const handleLocalSave = () => {
     const newString = `${formData.src}/${formData.sub}/${formData.title}/${formData.author}/${formData.publisher}/${formData.year}`;
@@ -337,12 +424,27 @@ const SourceDocumentItem = ({ item, onSave }: { item: string; onSave: (val: stri
 
   return (
     <div className="flex flex-col gap-2 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-emerald-600/30 transition-all group/item relative">
-      <button 
-        onClick={() => setIsEditing(true)}
-        className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 hover:bg-emerald-600/10 text-emerald-600 transition-all"
-      >
-        <Edit2 className="w-3.5 h-3.5" />
-      </button>
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="p-1.5 rounded-lg hover:bg-emerald-600/10 text-emerald-600 transition-colors"
+          title="Edit document"
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+        </button>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm("Are you sure you want to remove this document?")) {
+              onDelete();
+            }
+          }}
+          className="p-1.5 rounded-lg hover:bg-error/10 text-error transition-colors"
+          title="Delete document"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       <div className="flex items-start justify-between gap-2 pr-8">
         <span className="font-bold text-sm text-on-surface leading-tight flex-1 whitespace-normal break-words" title={formData.title}>{formData.title}</span>
@@ -488,17 +590,26 @@ const RegulationCard = ({
                     </button>
                   </div>
                   <div className="grid gap-2 max-h-[450px] overflow-y-auto pr-1 custom-scrollbar">
-                    {reg.content.split('\n').filter((l: string) => l.trim()).map((line: string, i: number) => {
-                      const handleItemSave = (newVal: string) => {
-                        const lines = reg.content.split('\n');
-                        lines[i] = `- ${newVal}`;
-                        onUpdate(reg.id, "content", lines.join('\n'));
-                      };
-                      
-                      return isCourseMapping 
-                        ? <CourseMappingItem key={i} item={line} onSave={handleItemSave} />
-                        : <SourceDocumentItem key={i} item={line} onSave={handleItemSave} />
-                    })}
+                    {(() => {
+                      const lines = reg.content.split('\n').filter(l => l.trim());
+                      return lines.map((line: string, i: number) => {
+                        const handleItemSave = (newVal: string) => {
+                          const newLines = [...lines];
+                          newLines[i] = `- ${newVal}`;
+                          onUpdate(reg.id, "content", newLines.join('\n'));
+                        };
+
+                        const handleItemDelete = () => {
+                          const newLines = [...lines];
+                          newLines.splice(i, 1);
+                          onUpdate(reg.id, "content", newLines.join('\n'));
+                        };
+                        
+                        return isCourseMapping 
+                          ? <CourseMappingItem key={i} item={line} onSave={handleItemSave} onDelete={handleItemDelete} />
+                          : <SourceDocumentItem key={i} item={line} onSave={handleItemSave} onDelete={handleItemDelete} />
+                      });
+                    })()}
                   </div>
                   <button 
                     onClick={() => {
@@ -584,6 +695,7 @@ export default function PdfExtractionStep({
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [saving, setSaving] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [startTime, setStartTime] = useState<number | undefined>(undefined);
 
   // Get the real-time AI processing message from Redux
   const { aiProcessingMessage, aiProcessingStatus } = useSelector(
@@ -597,16 +709,21 @@ export default function PdfExtractionStep({
       try {
         // Fetch Major Info
         const majorRes = await fetch(`/api/majors/${majorId}`);
-        if (majorRes.ok) {
-          const rawMajor = await majorRes.json();
-          const majorData = rawMajor.data || rawMajor;
-
-          setMajorForm({
-            majorCode: majorData.code || majorData.majorCode || "",
-            majorName: majorData.name || majorData.majorName || "",
-            description: majorData.description || "",
-          });
+        if (!majorRes.ok) {
+          console.warn("Major ID not found in system, resetting state to idle.");
+          setExtractionState("idle");
+          sessionStorage.removeItem(`extracted_major_${documentId}`);
+          return;
         }
+
+        const rawMajor = await majorRes.json();
+        const majorData = rawMajor.data || rawMajor;
+
+        setMajorForm({
+          majorCode: majorData.code || majorData.majorCode || "",
+          majorName: majorData.name || majorData.majorName || "",
+          description: majorData.description || "",
+        });
 
         // Fetch Regulations
         const regRes = await fetch(
@@ -705,15 +822,18 @@ export default function PdfExtractionStep({
             setRegulations([]);
           }
         }
-      } catch (err) {
-        console.error("Failed to fetch major data", err);
-      } finally {
+
+        // Successfully loaded everything
         setExtractionState("review");
         toast.success("Extraction data loaded successfully!");
         dispatch(clearAiProcessingMessage());
+      } catch (err) {
+        console.error("Failed to fetch major data", err);
+        setExtractionState("idle");
+        toast.error("Failed to load extraction data. Please try again.");
       }
     },
-    [dispatch],
+    [dispatch, documentId],
   );
 
   // Restore state on reload
@@ -721,17 +841,27 @@ export default function PdfExtractionStep({
     const savedMajorId = sessionStorage.getItem(
       `extracted_major_${documentId}`,
     );
+    const isProcessing = sessionStorage.getItem(
+      `extraction_status_${documentId}`
+    ) === "extracting";
+
     if (savedMajorId && extractionState === "idle") {
-      setExtractionState("extracting"); // Prevent double fetching
+      setExtractionState("extracting");
       fetchFinalData(savedMajorId);
+    } else if (isProcessing && extractionState === "idle") {
+      setExtractionState("extracting");
+      const savedStartTime = sessionStorage.getItem(`extraction_start_time_${documentId}`);
+      if (savedStartTime) setStartTime(Number(savedStartTime));
     }
-  }, [documentId, extractionState]);
+  }, [documentId, extractionState, fetchFinalData]);
 
   // Watch for WebSocket status to handle FAIL and SUCCESS specifically
   useEffect(() => {
     if (extractionState === "extracting") {
       if (aiProcessingStatus === "IMPORT_SUCCESS") {
         const majorId = aiProcessingMessage;
+        sessionStorage.removeItem(`extraction_status_${documentId}`);
+        sessionStorage.removeItem(`extraction_start_time_${documentId}`);
         // UUID usually looks like a long string. If it's valid, fetch.
         if (majorId && majorId.length > 10) {
           sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
@@ -743,6 +873,8 @@ export default function PdfExtractionStep({
         }
       } else if (aiProcessingStatus === "PDF_PROCESS_FAIL") {
         setExtractionState("idle");
+        sessionStorage.removeItem(`extraction_status_${documentId}`);
+        sessionStorage.removeItem(`extraction_start_time_${documentId}`);
         const errMsg =
           aiProcessingMessage ||
           "AI failed to generate valid content, please try again!";
@@ -751,7 +883,7 @@ export default function PdfExtractionStep({
         dispatch(clearAiProcessingMessage());
       }
     }
-  }, [aiProcessingStatus, extractionState, dispatch, aiProcessingMessage]);
+  }, [aiProcessingStatus, extractionState, dispatch, aiProcessingMessage, documentId, fetchFinalData]);
 
   // 1. Fetch document URL
   useEffect(() => {
@@ -783,6 +915,10 @@ export default function PdfExtractionStep({
     if (!documentUrl) return;
     setExtractionState("extracting");
     setExtractionError(null);
+    const now = Date.now();
+    setStartTime(now);
+    sessionStorage.setItem(`extraction_status_${documentId}`, "extracting");
+    sessionStorage.setItem(`extraction_start_time_${documentId}`, now.toString());
 
     try {
       // 1. Fetch the PDF file as a Blob from the Supabase URL
@@ -1040,19 +1176,23 @@ export default function PdfExtractionStep({
                 Analyzing Proposal...
               </h2>
               <p className="text-on-surface-variant text-sm text-primary font-medium max-w-sm flex items-center justify-center">
-                {aiProcessingMessage ? (
+                {aiProcessingStatus === "IMPORT_SUCCESS" ? (
                   <span>
-                    {aiProcessingMessage} <Timer />
+                    Extract success, importing Major <Timer startTime={startTime} />
+                  </span>
+                ) : aiProcessingMessage ? (
+                  <span>
+                    {aiProcessingMessage} <Timer startTime={startTime} />
                   </span>
                 ) : (
                   <span>
-                    Reading sections and parsing regulations <Timer />
+                    Reading sections and parsing regulations <Timer startTime={startTime} />
                   </span>
                 )}
               </p>
 
               {/* Fake Progress List to simulate heavy background AI task */}
-              <SimulatedExtractionProgress />
+              <SimulatedExtractionProgress startTime={startTime} />
             </motion.div>
           )}
 

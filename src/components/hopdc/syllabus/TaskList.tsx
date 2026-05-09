@@ -724,7 +724,7 @@ export function TaskList({ sprintId }: TaskListProps) {
   const sprint = sprintRes?.data;
 
   const tasks = useMemo<TaskItem[]>(() => {
-    return tasksRes?.data?.content || [];
+    return tasksRes?.content || [];
   }, [tasksRes]);
 
   const [selectionByTaskId, setSelectionByTaskId] = useState<

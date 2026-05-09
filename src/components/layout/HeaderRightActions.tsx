@@ -345,7 +345,7 @@ export function HeaderRightActions() {
     const handleConfirmAcceptTask = useCallback(async () => {
         setConfirmState(prev => ({ ...prev, loading: true }));
         try {
-            await TaskService.updateTaskStatus(confirmState.id, 'IN_PROGRESS', user?.accountId || '');
+            await TaskService.updateTaskStatus(confirmState.id, 'IN_PROGRESS');
             setConfirmState(prev => ({ ...prev, open: false, loading: false }));
             setIsNotiOpen(false);
             setIsAllNotiModalOpen(false);

@@ -23,7 +23,7 @@ import { useParams, useRouter } from "next/navigation";
 export default function HocMajorDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const majorCode = params.majorCode as string;
+  const majorId = params.majorId as string;
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "CURRICULUMS">("OVERVIEW");
 
   // Major Details Query
@@ -32,12 +32,12 @@ export default function HocMajorDetailContent() {
     isLoading: isDetailLoading,
     error,
   } = useQuery({
-    queryKey: ["major-hoc", majorCode],
-    queryFn: () => MajorService.getMajorByCode(majorCode),
-    enabled: !!majorCode,
+    queryKey: ["major-hoc", majorId],
+    queryFn: () => MajorService.getMajorById(majorId),
+    enabled: !!majorId,
   });
 
-  const majorId = majorDetail?.data?.majorId;
+
 
   // POs Query
   const { data: posResponse, isLoading: isPOsLoading } = useQuery({
@@ -85,7 +85,7 @@ export default function HocMajorDetailContent() {
   return (
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
-      <div className="py-6 border-b border-zinc-100 bg-white sticky top-0 z-30">
+      <div className="py-6 border-b border-zinc-100 bg-white sticky top-0 z-20">
         <div className="max-w-6xl mx-auto space-y-4">
           <Link
             href="/dashboard/hocfdc"

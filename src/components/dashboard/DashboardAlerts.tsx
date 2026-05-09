@@ -238,9 +238,9 @@ export default function DashboardAlerts() {
     const isLoading = isLoadingNotifs || isLoadingTodo || isLoadingPendingReviews;
 
     const notifications: NotificationData[] = notifData?.data?.content || [];
-    const todoTasks = todoTasksData?.data?.content || [];
+    const todoTasks = todoTasksData?.content || [];
     const pendingReviews = pendingReviewsData?.data?.content || [];
-    const inProgressTasks = inProgressTasksData?.data?.content || [];
+    const inProgressTasks = inProgressTasksData?.content || [];
     const inProgressReviews = inProgressReviewsData?.data?.content || [];
 
     // Urgent calculations
@@ -315,7 +315,7 @@ export default function DashboardAlerts() {
     const handleAcceptTask = useCallback(async () => {
         setConfirmState(prev => ({ ...prev, loading: true }));
         try {
-            await TaskService.updateTaskStatus(confirmState.id, "IN_PROGRESS", user?.accountId || "");
+            await TaskService.updateTaskStatus(confirmState.id, "IN_PROGRESS");
             // Refetch queries
             queryClient.invalidateQueries({ queryKey: ["dashboard-alerts-todo"] });
             queryClient.invalidateQueries({ queryKey: ["pdcm-tasks"] });

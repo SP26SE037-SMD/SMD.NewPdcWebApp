@@ -285,7 +285,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-zinc-50/50 flex flex-col font-sans">
       {/* Universal Header */}
-      <div className="bg-white border-b border-zinc-200 sticky top-0 z-50">
+      <div className="bg-white border-b border-zinc-200 sticky top-0 z-20">
         <div className="max-w-[1600px] mx-auto px-5 pt-3 pb-0 flex flex-col gap-2">
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-2">
             <div className="flex items-start gap-3">

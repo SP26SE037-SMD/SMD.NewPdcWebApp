@@ -9,11 +9,13 @@ import { MajorService, Major } from "@/services/major.service";
 import { PoService, PO } from "@/services/po.service";
 import { CurriculumService, CurriculumFramework, CURRICULUM_STATUS } from "@/services/curriculum.service";
 import { RequestService, RequestItem } from "@/services/request.service";
+import { DocumentService } from "@/services/document.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
   CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText
+  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText,
+  ShieldCheck, FileSearch, Lightbulb, Gauge, Info
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
@@ -42,9 +44,12 @@ export default function TaskDetailPage() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const initialMajorId = searchParams.get("majorId");
-  const [activeTab, setActiveTab] = useState<Tab>("major");
-  const [documentId, setDocumentId] = useState<string | null>(null);
+  const initialTargetId = searchParams.get("targetId");
+  const taskType = searchParams.get("type");
+
+  const [activeTab, setActiveTab] = useState<Tab>("process");
+  const [majorId, setMajorId] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(initialTargetId);
   const [task, setTask] = useState<TaskItem | null>(null);
   const [major, setMajor] = useState<Major | null>(null);
   const [pos, setPos] = useState<PO[]>([]);
@@ -77,37 +82,30 @@ export default function TaskDetailPage() {
         if (rawTask) {
           let mappedTask = TaskService.mapTaskApiToItem(rawTask);
 
-          // Use majorId from URL if present and detail API returns null
-          if (!mappedTask.majorId && initialMajorId) {
-            console.log("[TaskDetail] Using majorId from URL:", initialMajorId);
-            mappedTask.majorId = initialMajorId;
-          }
-
-          // FALLBACK: If majorId is still missing, try to find it in the list
-          if (!mappedTask.majorId && user?.accountId) {
-            console.log("[TaskDetail] majorId missing in detail, attempting fallback from task list...");
-            try {
-              const listRes = await TaskService.getTasks({ accountId: user.accountId, size: 100 });
-              const listTasks = listRes?.data?.content || [];
-              const taskFromList = listTasks.find(t => t.taskId === taskId);
-
-              if (taskFromList && taskFromList.majorId) {
-                console.log("[TaskDetail] Found majorId in list fallback:", taskFromList.majorId);
-                mappedTask = { ...mappedTask, majorId: taskFromList.majorId, major: taskFromList.major };
-              }
-            } catch (fallbackErr) {
-              console.error("[TaskDetail] Fallback failed:", fallbackErr);
-            }
-          }
-
-          console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          // Identify documentId: targetId is the documentId for MAJOR tasks
+          const effectiveDocId = mappedTask.targetId || initialTargetId || mappedTask.document?.documentId;
           
-          // Parse documentId from description
-          const docMatch = mappedTask.description?.match(/document ID:\s*([a-zA-Z0-9-]+)/i);
-          const parsedDocId = docMatch ? docMatch[1] : null;
-          if (parsedDocId) {
-            setDocumentId(parsedDocId);
-            if (!mappedTask.majorId) {
+          if (effectiveDocId) {
+            setDocumentId(effectiveDocId);
+            
+            // Check Document details to see if majorId is already assigned
+            try {
+              const docDetail = await DocumentService.getDocument(effectiveDocId);
+              console.log("[TaskDetail] Document Detail fetched for redirect check:", docDetail);
+              
+              // Handle cases where docDetail might be the wrapper or the data itself
+              const actualMajorId = docDetail?.majorId || (docDetail as any)?.data?.majorId;
+              
+              if (actualMajorId) {
+                console.log("[TaskDetail] Redirecting to MAJOR tab. Found majorId:", actualMajorId);
+                setMajorId(actualMajorId);
+                setActiveTab("major");
+              } else {
+                console.log("[TaskDetail] No majorId found in document, staying on PROCESS tab.");
+                setActiveTab("process");
+              }
+            } catch (docErr) {
+              console.error("[TaskDetail] Failed to fetch document details:", docErr);
               setActiveTab("process");
             }
           }
@@ -126,22 +124,24 @@ export default function TaskDetailPage() {
 
   // Load major when task is ready
   useEffect(() => {
-    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-    if (!effectiveMajorId) return;
+    if (!majorId) return;
 
     const load = async () => {
       setLoadingMajor(true);
       try {
-        const res = await MajorService.getMajorById(effectiveMajorId);
+        const res = await MajorService.getMajorById(majorId);
         setMajor((res as any)?.data as Major);
-        const posRes = await PoService.getPOsByMajorId(effectiveMajorId, { size: 100 });
+        const posRes = await PoService.getPOsByMajorId(majorId, { size: 100 });
         setPos((posRes as any)?.data?.content || []);
-
+        
         // Load existing curriculum for this major if any
         try {
-          const currRes = await CurriculumService.getCurriculumsByMajorId(effectiveMajorId);
+          const currRes = await CurriculumService.getCurriculumsByMajorId(majorId);
           const currList = (currRes as any)?.data || [];
-          if (currList.length > 0) setCurriculum(currList[0]);
+          if (currList.length > 0) {
+            const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
+            setCurriculum(fullRes?.data || fullRes);
+          }
         } catch { }
       } catch {
         toast.error("Failed to load major info");
@@ -150,17 +150,16 @@ export default function TaskDetailPage() {
       }
     };
     load();
-  }, [task?.majorId, task?.major?.majorId, taskId, initialMajorId]);
+  }, [majorId]);
 
   // Load rejection feedback if any
   useEffect(() => {
-    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-    if (!effectiveMajorId) return;
+    if (!majorId) return;
 
     const checkRejection = async () => {
       try {
         const res = await RequestService.getRequests({
-          majorId: effectiveMajorId,
+          majorId: majorId,
           status: "REJECTED",
           size: 1,
           sortBy: "createdAt",
@@ -175,7 +174,7 @@ export default function TaskDetailPage() {
       }
     };
     checkRejection();
-  }, [task?.majorId, task?.major?.majorId, initialMajorId]);
+  }, [majorId]);
 
   // Save curriculum info
   const handleSaveCurriculum = async (data: any, proceed?: boolean) => {
@@ -186,7 +185,7 @@ export default function TaskDetailPage() {
         const res = await CurriculumService.updateCurriculum(curriculum.curriculumId, data);
         saved = (res as any)?.data as CurriculumFramework;
       } else {
-        const res = await CurriculumService.createCurriculum({ ...data, majorId: task?.majorId });
+        const res = await CurriculumService.createCurriculum({ ...data, majorId: majorId || "" });
         saved = (res as any)?.data as CurriculumFramework;
       }
       setCurriculum(saved);
@@ -205,7 +204,7 @@ export default function TaskDetailPage() {
       toast.error("Please create a curriculum first");
       return;
     }
-    if (!task?.majorId) {
+    if (!majorId) {
       toast.error("No major associated with this task");
       return;
     }
@@ -224,12 +223,12 @@ export default function TaskDetailPage() {
         status: "PENDING",
         createdById: user?.accountId || "",
         curriculumId: curriculum.curriculumId,
-        majorId: task.majorId,
+        majorId: majorId,
       });
 
       // 3. Update task status to DONE (Only for first-time submission)
       if (!rejectionRequest) {
-        await TaskService.updateTaskStatus(taskId as string, TASK_STATUS.DONE);
+        await TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
       }
 
       toast.success("Request submitted successfully!");
@@ -263,7 +262,7 @@ export default function TaskDetailPage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
+      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
         <div className="max-w-7xl mx-auto">
           {/* Rejection banner removed as per user request, moved to button near title */}
 
@@ -294,13 +293,13 @@ export default function TaskDetailPage() {
               <p className="text-sm text-on-surface-variant mt-0.5 max-w-2xl line-clamp-1">{task.description}</p>
             </div>
             <div className="flex items-center gap-3">
-              {task.major && (
+              {majorId && (
                 <button
-                  onClick={() => router.push(`/dashboard/hocfdc/${task.majorId || task.major?.majorId}`)}
+                  onClick={() => router.push(`/dashboard/hocfdc/${majorId}`)}
                   className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all flex items-center gap-2 group/major shadow-sm"
                 >
                   <Eye className="h-3.5 w-3.5 group-hover/major:scale-110 transition-transform" />
-                  <span>View Major: {task.major.majorCode}</span>
+                  <span>View Major: {major?.majorCode || "Detail"}</span>
                 </button>
               )}            </div>
           </div>
@@ -309,9 +308,9 @@ export default function TaskDetailPage() {
           <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-none pb-1">
             {ALL_TABS.filter(tab => {
               // Hide Process Document if there is a majorId
-              if (tab.id === "process") return !!documentId && !task.majorId;
+              if (tab.id === "process") return !!documentId && !majorId;
               // If there's no majorId but there is a documentId, hide everything else except Process
-              if (!task.majorId && !!documentId) return false;
+              if (!majorId && !!documentId) return false;
               return true;
             }).map((tab, idx) => {
               const isCompleted =
@@ -361,24 +360,8 @@ export default function TaskDetailPage() {
                       body: JSON.stringify({ majorId: newMajorId })
                     });
 
-                    // 2. Update Task with new majorId (Requires full existing task data)
-                    if (task) {
-                      await fetch(`/api/tasks/${taskId}/byVP`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          majorId: newMajorId,
-                          taskName: task.taskName,
-                          description: task.description,
-                          priority: task.priority || "MEDIUM",
-                          deadline: task.deadline,
-                          type: task.type || "CREATE_CURRICULUM"
-                        })
-                      });
-                    }
-
-                    // 3. Navigate back to tasks list and refresh
-                    toast.success("Document and Task linked to new Major successfully!");
+                    // 2. Navigate back to tasks list and refresh
+                    toast.success("Extraction completed and linked to Document!");
                     router.push('/dashboard/hocfdc/tasks');
                     router.refresh();
                   } catch (error) {
@@ -394,13 +377,13 @@ export default function TaskDetailPage() {
               <MajorDetailTab
                 major={major}
                 loading={loadingMajor}
-                majorId={task?.majorId || task?.major?.majorId || initialMajorId}
+                majorId={majorId}
               />
             )}
 
             {/* PO TAB */}
             {activeTab === "po" && (
-              <POTab pos={pos} loading={loadingMajor} majorId={task.majorId} />
+              <POTab pos={pos} loading={loadingMajor} majorId={majorId} />
             )}
 
             {/* CREATE CURRICULUM TAB */}
@@ -408,16 +391,21 @@ export default function TaskDetailPage() {
               <div className="bg-surface rounded-2xl border border-outline/20 overflow-hidden">
                 {!curriculum ? (
                   <CurriculumImportStep
-                    majorId={task?.majorId || ""}
+                    majorId={majorId || ""}
                     majorCode={major?.majorCode}
                     onImportSuccess={() => {
                       // Fetch the newly imported curriculum via majorId
-                      const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-                      if (effectiveMajorId) {
-                        CurriculumService.getCurriculumsByMajorId(effectiveMajorId).then(res => {
+                      if (majorId) {
+                        CurriculumService.getCurriculumsByMajorId(majorId).then(async (res) => {
                           const currList = (res as any)?.data || [];
                           if (currList.length > 0) {
-                            setCurriculum(currList[0]);
+                            try {
+                              const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
+                              setCurriculum(fullRes?.data || fullRes);
+                            } catch (err) {
+                              console.error("Failed to fetch full curriculum detail:", err);
+                              setCurriculum(currList[0]);
+                            }
                           }
                           setActiveTab("plo"); // Auto move to next tab after import
                         }).catch(() => {
@@ -435,7 +423,7 @@ export default function TaskDetailPage() {
                       curriculumCode: curriculum.curriculumCode,
                       curriculumName: curriculum.curriculumName,
                       startYear: curriculum.startYear,
-                      majorId: curriculum.majorId || task?.majorId,
+                      majorId: curriculum.majorId || majorId,
                       description: curriculum.description,
                     }}
                     onSave={handleSaveCurriculum}
@@ -491,11 +479,11 @@ export default function TaskDetailPage() {
               <SubmitTab
                 curriculum={curriculum}
                 major={major}
-                task={task}
-                submitting={submitting}
+                majorId={majorId}
                 rejectionRequest={rejectionRequest}
-                onSubmit={handleSubmit}
                 onGoCreate={() => setActiveTab("curriculum")}
+                onSubmit={handleSubmit}
+                submitting={submitting}
               />
             )}
           </motion.div>
@@ -610,15 +598,138 @@ function MajorDetailTab({ major, loading, majorId }: { major: Major | null; load
 }
 
 function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId?: string | null }) {
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleValidate = async () => {
+    if (!majorId) return;
+    setValidating(true);
+    try {
+      const res = await PoService.validatePOs(majorId);
+      
+      if (res.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+        return;
+      }
+
+      setValidationError(null);
+      setValidationResult(res.data);
+      toast.success("Validation completed!");
+    } catch (error: any) {
+      if (error?.status === 9001 || error?.response?.data?.status === 9001) {
+        setValidationError("Failed to validate with AI. Please try again.");
+        setValidationResult(null);
+      } else {
+        toast.error(error.message || "Failed to validate POs");
+      }
+    } finally {
+      setValidating(false);
+    }
+  };
+
   if (loading) return <LoadingCard />;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-black text-on-surface">Program Objectives</h2>
-        <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant">
-          {pos.length} POs
-        </span>
+        <div>
+          <h2 className="text-xl font-black text-on-surface tracking-tight">Program Objectives</h2>
+          <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">Verify POs against Master Regulations and institutional standards</p>
+        </div>
+        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleValidate}
+            disabled={validating || pos.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 active:scale-95"
+          >
+            {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+            <span>{validating ? "Validate POs" : "Validate POs"}</span>
+          </button>
+          {validationError && (
+            <p className="text-[9px] font-bold text-error uppercase tracking-widest px-1 animate-in fade-in slide-in-from-top-1">
+              {validationError}
+            </p>
+          )}
+        </div>
+          <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant border border-outline/10">
+            {pos.length} POs
+          </span>
+        </div>
       </div>
+
+      {validationResult && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-3xl border border-primary/15 shadow-xl shadow-primary/5 overflow-hidden"
+        >
+          <div className="p-6 border-b border-primary/10 bg-primary/[0.02] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-black text-on-surface text-sm uppercase tracking-wider">Validation Analysis</h3>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">AI-Powered Compliance Report</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-0.5">Similarity Score</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-24 bg-surface-container rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary" 
+                      style={{ width: validationResult.overall_similarity_score }} 
+                    />
+                  </div>
+                  <span className="text-sm font-black text-primary">{validationResult.overall_similarity_score}</span>
+                </div>
+              </div>
+              <div className={`px-3 py-1.5 rounded-xl flex items-center gap-2 border ${
+                validationResult.is_compliant 
+                  ? "bg-emerald-50 border-emerald-100 text-emerald-600" 
+                  : "bg-amber-50 border-amber-100 text-amber-600"
+              }`}>
+                {validationResult.is_compliant ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {validationResult.is_compliant ? "Compliant" : "Needs Review"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-on-surface">
+                <FileSearch className="h-4 w-4 text-primary" />
+                <h4 className="text-xs font-black uppercase tracking-widest">Mismatch Details</h4>
+              </div>
+              <div className="bg-surface-container/30 rounded-2xl p-4 border border-outline/5">
+                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
+                  {validationResult.mismatch_details}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-on-surface">
+                <Lightbulb className="h-4 w-4 text-amber-500" />
+                <h4 className="text-xs font-black uppercase tracking-widest">Suggestions</h4>
+              </div>
+              <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/50">
+                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
+                  {validationResult.suggestions}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {pos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-on-surface-variant border-2 border-dashed border-outline/30 rounded-2xl">
           <Target className="h-12 w-12 opacity-30" />
@@ -627,18 +738,55 @@ function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId
         </div>
       ) : (
         <div className="grid gap-3">
-          {pos.map((po, idx) => (
-            <div key={po.poId} className="flex items-start gap-4 p-5 bg-surface rounded-2xl border border-outline/20 hover:border-primary/30 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="text-xs font-black text-primary">{po.poCode || `P${idx + 1}`}</span>
+          {pos.map((po, idx) => {
+            const mappingStatus = validationResult?.mapping_report?.find((m: any) => m.code === (po.poCode || `PO${idx + 1}`))?.status;
+            
+            // Border color logic based on status
+            const borderClass = mappingStatus === 'MATCHED' 
+              ? "border-emerald-500 shadow-sm shadow-emerald-500/10" 
+              : mappingStatus === 'PARTIAL_MATCH'
+              ? "border-amber-500 shadow-sm shadow-amber-500/10"
+              : (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING')
+              ? "border-error shadow-sm shadow-error/10"
+              : "border-outline/20 hover:border-primary/30";
+
+            return (
+              <div 
+                key={po.poId} 
+                className={`flex items-start gap-4 p-5 bg-surface rounded-2xl border transition-all ${borderClass}`}
+              >
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  mappingStatus === 'MATCHED' ? "bg-emerald-500/10 text-emerald-600" : 
+                  mappingStatus === 'PARTIAL_MATCH' ? "bg-amber-500/10 text-amber-600" :
+                  (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING') ? "bg-error/10 text-error" : 
+                  "bg-primary/10 text-primary"
+                }`}>
+                  <span className="text-xs font-black">{po.poCode || `P${idx + 1}`}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
+                    }`}>
+                      {po.status}
+                    </span>
+                    {mappingStatus && (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        mappingStatus === "MATCHED" ? "bg-emerald-500 text-white" : 
+                        mappingStatus === "PARTIAL_MATCH" ? "bg-amber-500 text-white" :
+                        "bg-error text-white"
+                      }`}>
+                        {mappingStatus === "MATCHED" ? "Match Regulation" : 
+                         mappingStatus === "PARTIAL_MATCH" ? "Partial Match" : 
+                         mappingStatus === "DUPLICATED" ? "Duplicated" : "Missing"}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
-                <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-                  }`}>{po.status}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -662,15 +810,21 @@ function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void
 }
 
 function SubmitTab({
-  curriculum, major, task, submitting, rejectionRequest, onSubmit, onGoCreate,
+  curriculum,
+  major,
+  majorId,
+  rejectionRequest,
+  onGoCreate,
+  onSubmit,
+  submitting
 }: {
   curriculum: CurriculumFramework | null;
   major: Major | null;
-  task: TaskItem;
-  submitting: boolean;
+  majorId: string | null;
   rejectionRequest: RequestItem | null;
-  onSubmit: (title: string, content: string) => void;
   onGoCreate: () => void;
+  onSubmit: (title: string, content: string) => void;
+  submitting: boolean;
 }) {
   const [title, setTitle] = useState(
     rejectionRequest
@@ -717,7 +871,7 @@ function SubmitTab({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-on-surface-variant font-medium">Major</span>
-            <span className="font-bold text-on-surface">{major?.majorName || task.majorId}</span>
+            <span className="font-bold text-on-surface">{major?.majorName || majorId}</span>
           </div>
         </div>
 

@@ -52,5 +52,17 @@ export const PoService = {
             throw new Error(error.error || error.message || 'Failed to update POs status');
         }
         return response.json();
+    },
+
+    async validatePOs(majorId: string): Promise<ApiResponse<any>> {
+        const response = await fetch(`/api/pos/major/${majorId}/validate-po`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || error.message || 'Failed to validate POs');
+        }
+        return response.json();
     }
 };

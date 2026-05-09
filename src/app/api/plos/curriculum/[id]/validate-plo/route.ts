@@ -2,29 +2,34 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_TOKEN_COOKIE } from '@/lib/auth';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+const BACKEND_URL = process.env.BACKEND_URL;
 
-export async function POST(request: Request) {
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const formData = await request.formData();
+        const { id } = await params;
         
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        const backendUrl = `${BACKEND_URL}:8080/api/regulations/extract`;
-        console.log(`[BFF] Calling Backend: ${backendUrl}`);
-
-        const backendResponse = await fetch(backendUrl, {
+        // Backend endpoint: /api/plos/curriculum/{id}/validate-plo
+        const backendResponse = await fetch(`${BACKEND_URL}/api/plos/curriculum/${id}/validate-plo`, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
-            body: formData,
+            body: '', // API expects empty body for this POST request
         });
-        
+
+        console.log(`[API /api/plos/curriculum/${id}/validate-plo POST] Backend Status:`, backendResponse.status);
+
         if (!backendResponse.ok) {
             const errorText = await backendResponse.text();
-            console.error(`[BFF] Backend Error (${backendResponse.status}):`, errorText);
+            console.error(`[API /api/plos/curriculum/${id}/validate-plo POST] Backend Error Text:`, errorText);
             try {
                 const errorJson = JSON.parse(errorText);
                 return NextResponse.json(errorJson, { status: backendResponse.status });
@@ -35,8 +40,8 @@ export async function POST(request: Request) {
 
         const data = await backendResponse.json();
         return NextResponse.json(data, { status: backendResponse.status });
-    } catch (error) {
-        console.error('[API /regulations/extract POST] Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('[API /api/plos/curriculum/[id]/validate-plo POST] Frontend Proxy Error:', error);
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }

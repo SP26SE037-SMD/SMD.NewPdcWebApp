@@ -49,7 +49,7 @@ export const CurriculumDetail = ({
     enabled: !!sprintId && !!departmentId,
   });
 
-  const taskItems: TaskItem[] = tasksRes?.data?.content || [];
+  const taskItems: TaskItem[] = tasksRes?.content || [];
 
   const taskRows = useMemo(
     () =>

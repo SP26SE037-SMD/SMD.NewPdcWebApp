@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { TaskItem, TaskService } from "@/services/task.service";
-import { motion } from "framer-motion";
+import { DocumentService } from "@/services/document.service";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   CheckSquare,
@@ -17,8 +18,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Play,
+  FileText,
+  ChevronDown,
+  Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function TasksPage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -33,14 +38,15 @@ export default function TasksPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [startingTaskId, setStartingTaskId] = useState<string | null>(null);
+  const [checkingPhaseId, setCheckingPhaseId] = useState<string | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   const tabs = [
     { id: "ALL", label: "All Tasks" },
     { id: "TO_DO", label: "To Do" },
     { id: "IN_PROGRESS", label: "In Progress" },
     { id: "DONE", label: "Done" },
-    { id: "REVISION_REQUESTED", label: "Revision Requested" },
-    { id: "CANCELLED", label: "Cancelled" },
+    { id: "OVERDUE", label: "Overdue" },
   ];
 
   useEffect(() => {
@@ -65,7 +71,7 @@ export default function TasksPage() {
         direction: "asc",
       });
 
-      const payload = response?.data || {
+      const payload = response || {
         content: [],
         page: 0,
         size: 10,
@@ -107,19 +113,13 @@ export default function TasksPage() {
     return date.toLocaleDateString("vi-VN");
   };
 
-  const getPriorityClass = (priority: string) => {
-    const normalized = priority?.toUpperCase();
-    if (normalized === "HIGH") return "text-error";
-    if (normalized === "MEDIUM") return "text-secondary";
-    return "text-primary";
-  };
-
   const getStatusClass = (status: string) => {
     if (status === "IN_PROGRESS") return "bg-secondary/10 text-secondary";
     if (status === "DONE") return "bg-primary/10 text-primary";
     if (status === "TO_DO")
       return "bg-surface-container-highest text-on-surface-variant";
-    if (status === "REVISION_REQUESTED") return "bg-error/10 text-error";
+    if (status === "REVISION_REQUESTED" || status === "OVERDUE")
+      return "bg-error/10 text-error";
     return "bg-outline/10 text-on-surface-variant";
   };
 
@@ -127,11 +127,7 @@ export default function TasksPage() {
     e.stopPropagation();
     setStartingTaskId(taskId);
     try {
-      await TaskService.updateTaskStatus(
-        taskId,
-        "IN_PROGRESS",
-        user?.accountId || "",
-      );
+      await TaskService.updateTaskStatus(taskId, "IN_PROGRESS");
       await fetchTasks();
     } catch (err: any) {
       console.error("Failed to start task:", err);
@@ -140,12 +136,31 @@ export default function TasksPage() {
     }
   };
 
-  const handleRowClick = (task: TaskItem) => {
-    if (task.status === "IN_PROGRESS" || task.status === "TO_DO") {
-      const majorId = task.majorId || task.major?.majorId;
-      const url = `/dashboard/hocfdc/tasks/${task.taskId}${majorId ? `?majorId=${majorId}` : ""}`;
+  const handleOpenTask = async (e: React.MouseEvent, task: TaskItem) => {
+    e.stopPropagation();
+    
+    if (task.type === "MAJOR" && task.targetId) {
+      setCheckingPhaseId(task.taskId);
+      try {
+        const docDetail = await DocumentService.getDocument(task.targetId);
+        const effectiveMajorId = docDetail.majorId;
+        
+        const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${task.targetId}&type=${task.type}&action=${task.action || ""}${effectiveMajorId ? `&majorId=${effectiveMajorId}` : ""}`;
+        router.push(url);
+      } catch (err) {
+        console.error("Failed to check document phase:", err);
+        toast.error("Could not determine task phase. Please try again.");
+      } finally {
+        setCheckingPhaseId(null);
+      }
+    } else {
+      const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${task.targetId || ""}&type=${task.type}&action=${task.action || ""}`;
       router.push(url);
     }
+  };
+
+  const toggleExpand = (taskId: string) => {
+    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
   return (
@@ -196,25 +211,54 @@ export default function TasksPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-5"
+          className="flex gap-3 overflow-x-auto pb-4 scrollbar-none mb-6"
         >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap
-              ${
-                activeTab === tab.id
-                  ? "bg-primary text-on-primary shadow-md shadow-primary/20"
-                  : "bg-surface hover:bg-surface-container border border-outline/20 text-on-surface-variant"
-              }`}
-            >
-              {tab.label}
-              <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-black/10">
-                {statusCounts[tab.id] ?? 0}
-              </span>
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon =
+              tab.id === "TO_DO"
+                ? Clock
+                : tab.id === "IN_PROGRESS"
+                  ? Play
+                  : tab.id === "DONE"
+                    ? CheckCircle2
+                    : tab.id === "OVERDUE"
+                      ? AlertCircle
+                      : CheckSquare;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setPage(0);
+                }}
+                className={`relative group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-base font-bold transition-all duration-300 whitespace-nowrap
+                ${
+                  isActive
+                    ? "text-white"
+                    : "bg-white/50 hover:bg-white border border-outline/10 text-on-surface-variant hover:border-primary/20"
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <Icon
+                  className={`relative z-10 h-4 w-4 ${isActive ? "text-white" : "text-primary/60 group-hover:text-primary"}`}
+                />
+                <span className="relative z-10">{tab.label}</span>
+                <span
+                  className={`relative z-10 py-0.5 px-2 rounded-lg text-[10px] font-black ${isActive ? "bg-white/20 text-white" : "bg-primary/5 text-primary"}`}
+                >
+                  {statusCounts[tab.id] ?? 0}
+                </span>
+              </button>
+            );
+          })}
         </motion.div>
 
         <motion.div
@@ -230,42 +274,38 @@ export default function TasksPage() {
           )}
 
           <div className="overflow-x-auto rounded-2xl">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-surface-container-lowest/50">
-                <tr className="border-b border-outline/20">
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    No.
+            <table className="w-full text-left text-sm border-separate border-spacing-y-3 px-3">
+              <thead>
+                <tr>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
+                    Information
                   </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    Title
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
+                    Context
                   </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    Major
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
+                    Status / Phase
                   </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    Status
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
+                    Timeline
                   </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    Priority
-                  </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs whitespace-nowrap">
-                    Due Date
-                  </th>
-                  <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                    Action
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs text-right">
+                    Management
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30"
-                    >
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm font-medium">Loading tasks...</p>
+                    <td colSpan={5} className="py-24 text-center">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                          <Loader2 className="relative h-10 w-10 animate-spin text-primary" />
+                        </div>
+                        <p className="text-sm font-bold text-primary/60 uppercase tracking-widest">
+                          Accessing Tasks...
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -273,125 +313,180 @@ export default function TasksPage() {
                   tasks.map((task, idx) => (
                     <motion.tr
                       key={task.taskId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      onClick={() => handleRowClick(task)}
-                      className={`group border-b border-outline/10 transition-all hover:bg-surface-container-lowest/80 ${
-                        task.status === "IN_PROGRESS" || task.status === "TO_DO"
-                          ? "cursor-pointer"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`group bg-white/60 hover:bg-white border border-outline/10 transition-all duration-300 shadow-sm hover:shadow-md ${
+                        expandedTaskId === task.taskId
+                          ? "bg-white shadow-md z-10 relative"
                           : ""
                       }`}
                     >
-                      <td className="p-5 font-bold text-on-surface/80">
-                        {page * 10 + idx + 1}
-                      </td>
-                      <td className="p-5">
-                        <span className="font-semibold text-on-surface text-base group-hover:text-primary transition-colors">
-                          {task.taskName}
-                        </span>
-                        <p className="mt-1 line-clamp-2 text-xs text-on-surface-variant">
-                          {task.description}
-                        </p>
-                      </td>
-                      <td className="p-5">
-                        {task.major ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-black text-primary uppercase tracking-wider">
-                              {task.major.majorCode}
-                            </span>
-                            <span className="text-xs text-on-surface-variant font-medium max-w-[160px] truncate">
-                              {task.major.majorName}
+                      <td className="px-5 py-6 rounded-l-2xl">
+                        <div className="flex flex-col gap-1.5 max-w-md">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpand(task.taskId);
+                              }}
+                              className={`p-1 rounded-lg hover:bg-primary/5 transition-all ${expandedTaskId === task.taskId ? "rotate-180 text-primary" : "text-on-surface-variant/40"}`}
+                            >
+                              <ChevronDown size={18} />
+                            </button>
+                            <span className="font-bold text-[#2d3335] text-lg group-hover:text-primary transition-colors">
+                              {task.taskName}
                             </span>
                           </div>
-                        ) : task.majorId ? (
-                          <span className="text-xs text-on-surface-variant font-mono">
-                            {task.majorId.slice(0, 8)}...
+
+                          <AnimatePresence>
+                            {expandedTaskId === task.taskId ? (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeInOut",
+                                }}
+                                className="overflow-hidden"
+                              >
+                                <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 mt-2 space-y-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
+                                      Task Description
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-on-surface-variant leading-relaxed font-medium">
+                                    {task.description}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            ) : (
+                              <div className="flex items-center gap-3 mt-1 pl-8">
+                                <p className="line-clamp-1 text-sm text-on-surface-variant/60 leading-relaxed font-medium italic flex-1">
+                                  {task.description}
+                                </p>
+                              </div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-6">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-secondary/20 flex items-center justify-center text-xs font-bold text-secondary border border-secondary/10">
+                              {task.createdBy?.fullName?.charAt(0) || "V"}
+                            </div>
+                            <span className="text-xs font-bold text-on-surface-variant/80">
+                              Issued by{" "}
+                              <span className="text-on-surface">
+                                {task.createdBy?.fullName || "Vice Principal"}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-6">
+                        <div className="flex flex-col gap-2.5">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-widest w-max shadow-sm ${getStatusClass(task.status)}`}
+                          >
+                            {task.status === "DONE" && (
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            )}
+                            {task.status === "IN_PROGRESS" && (
+                              <Clock className="h-3.5 w-3.5" />
+                            )}
+                            {task.status.replace(/_/g, " ")}
                           </span>
-                        ) : (
-                          <span className="text-xs text-on-surface-variant">
-                            —
-                          </span>
-                        )}
+                           {task.type === "MAJOR" &&
+                            task.action === "CREATE" && (
+                              <span
+                                className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border shadow-xs bg-primary/5 text-primary/60 border-primary/10 flex items-center gap-1"
+                                title="Phase will be determined when opened"
+                              >
+                                <Info size={10} />
+                                Check Phase on Open
+                              </span>
+                            )}
+                        </div>
                       </td>
-                      <td className="p-5 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getStatusClass(task.status)}`}
-                        >
-                          {task.status === "DONE" && (
-                            <CheckCircle2 className="h-3 w-3" />
-                          )}
-                          {task.status === "IN_PROGRESS" && (
-                            <Clock className="h-3 w-3" />
-                          )}
-                          {task.status.replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 font-medium ${getPriorityClass(task.priority)}`}
-                        >
-                          {task.priority?.toUpperCase() === "HIGH" && (
-                            <AlertCircle className="h-4 w-4" />
-                          )}
-                          {task.priority || "-"}
-                        </span>
-                      </td>
-                      <td className="p-5 text-on-surface-variant">
-                        <div className="flex w-max items-center gap-2 rounded-lg bg-surface-container-lowest px-2.5 py-1 border border-outline/10">
-                          <CalendarDays className="w-4 h-4 text-primary/70" />
-                          <span className="font-medium whitespace-nowrap">
-                            {formatDate(task.deadline)}
+
+                      <td className="px-5 py-6">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 text-on-surface-variant">
+                            <CalendarDays className="w-4 h-4 text-primary/40" />
+                            <span className="text-sm font-bold">
+                              {formatDate(task.deadline)}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-lg w-max ${
+                              task.priority?.toUpperCase() === "HIGH"
+                                ? "bg-error/10 text-error"
+                                : "bg-primary/10 text-primary"
+                            }`}
+                          >
+                            {task.priority || "NORMAL"}
                           </span>
                         </div>
                       </td>
-                      <td className="p-5">
+
+                      <td className="px-5 py-6 rounded-r-2xl text-right">
                         {task.status === "TO_DO" ? (
                           <button
                             onClick={(e) => handleStartTask(e, task.taskId)}
                             disabled={startingTaskId === task.taskId}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-on-primary shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
                           >
                             {startingTaskId === task.taskId ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <Play className="h-3.5 w-3.5 fill-current" />
                             )}
-                            Start Task
+                            START
                           </button>
                         ) : task.status === "IN_PROGRESS" ? (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const majorId =
-                                task.majorId || task.major?.majorId;
-                              const url = `/dashboard/hocfdc/tasks/${task.taskId}${majorId ? `?majorId=${majorId}` : ""}`;
-                              router.push(url);
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-bold text-primary transition hover:bg-primary hover:text-on-primary active:scale-95"
+                            onClick={(e) => handleOpenTask(e, task)}
+                            disabled={checkingPhaseId === task.taskId}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-5 py-2.5 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all active:scale-95 disabled:opacity-50"
                           >
-                            Do Task
+                            {checkingPhaseId === task.taskId ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                "OPEN"
+                            )}
                           </button>
                         ) : (
-                          <span className="text-xs text-on-surface-variant">
-                            —
-                          </span>
+                          <button
+                            disabled
+                            className="px-5 py-2.5 text-xs font-bold text-on-surface-variant/30 bg-surface-container-lowest rounded-xl italic cursor-not-allowed"
+                          >
+                            Locked
+                          </button>
                         )}
                       </td>
                     </motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="p-12 text-center text-on-surface-variant bg-surface-container-lowest/30"
-                    >
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <CheckSquare className="h-10 w-10 text-outline" />
-                        <p className="text-lg font-medium">No tasks found</p>
-                        <p className="text-sm opacity-70">
-                          Try changing filter or search keyword.
-                        </p>
+                    <td colSpan={5} className="py-32 text-center">
+                      <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in zoom-in duration-500">
+                        <div className="w-20 h-20 rounded-3xl bg-surface-container flex items-center justify-center shadow-inner border border-outline/5">
+                          <CheckSquare className="h-10 w-10 text-outline/40" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-on-surface">
+                            Great Work!
+                          </p>
+                          <p className="text-sm text-on-surface-variant/70 font-medium">
+                            No tasks found in this category.
+                          </p>
+                        </div>
                       </div>
                     </td>
                   </tr>
