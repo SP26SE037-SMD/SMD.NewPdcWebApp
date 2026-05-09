@@ -11,6 +11,7 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onClose: () => void;
   isDanger?: boolean;
+  size?: "sm" | "md" | "lg";
 }
 
 export function ConfirmModal({
@@ -22,12 +23,15 @@ export function ConfirmModal({
   onConfirm,
   onClose,
   isDanger = false,
+  size = "sm",
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
+  const maxWidthClass = size === "md" ? "max-w-md" : size === "lg" ? "max-w-lg" : "max-w-sm";
+
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-300">
+      <div className={`bg-white rounded-2xl shadow-2xl w-full animate-in fade-in zoom-in duration-300 ${maxWidthClass}`}>
         <div className="flex items-center justify-between border-b border-zinc-100 p-5">
           <div className="flex items-center gap-3">
             <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isDanger ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>

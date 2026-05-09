@@ -138,14 +138,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
     const payload: CreateTaskPayload = {
       sprintId,
-      subjectId,
+      assignTo: assigneeId || undefined,
       taskName,
       description,
+      action: "CREATE",
       priority: priority === "null" ? null : priority,
-      type,
-      accountId: assigneeId || undefined,
-      deadline: deadline ? new Date(deadline).toISOString() : undefined,
-      createdAt: new Date().toISOString()
+      type: "SYLLABUS",
+      targetId: subjectId,
+      rootTaskId: null,
+      dueDate: deadline ? new Date(deadline).toISOString() : undefined,
     };
 
     singleMutation.mutate(payload);
@@ -170,32 +171,6 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-10">
-          {/* Quick Generate Section (Optional) */}
-          <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-between gap-6 group hover:bg-primary/[0.08] transition-all">
-             <div className="flex items-center gap-4">
-               <div className="p-3 bg-primary text-white rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <Sparkles size={20} />
-               </div>
-               <div className="space-y-1">
-                  <h3 className="text-sm font-black text-zinc-900 uppercase tracking-tight">Bulk Generate Missing Deliverables?</h3>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest opacity-60">Initialize all department subjects in one click</p>
-               </div>
-             </div>
-             <button 
-                type="button"
-                onClick={() => {
-                  if (confirm("Generate all missing deliverables for this department?")) {
-                    bulkMutation.mutate();
-                  }
-                }}
-                disabled={bulkMutation.isPending}
-                className="px-6 py-3 bg-white border border-zinc-200 text-zinc-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-             >
-                {bulkMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                Quick Launch
-             </button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="space-y-8">
               <div className="space-y-3">

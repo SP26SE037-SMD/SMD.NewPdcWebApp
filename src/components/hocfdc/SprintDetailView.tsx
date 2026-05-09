@@ -19,6 +19,7 @@ import {
   Play,
   RotateCcw,
   XCircle,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { SprintService, SPRINT_STATUS } from "@/services/sprint.service";
@@ -27,6 +28,7 @@ import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { SprintTasksTable } from "./SprintTasksTable";
 import { useToast } from "@/components/ui/Toast";
 import { CreateTaskModal } from "./CreateTaskModal";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 interface SprintDetailViewProps {
   sprintId: string;
@@ -41,6 +43,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isQuickLaunchConfirmOpen, setIsQuickLaunchConfirmOpen] = useState(false);
 
   const { data: sprintRes, isLoading: sprintLoading } = useQuery({
     queryKey: ["sprint", sprintId],
@@ -54,14 +57,14 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
 
   const tasks = tasksRes?.content || [];
   const totalTasks = tasks.length;
-  
+
   const allTasksDone = totalTasks > 0 && tasks.every((t) => t.status === "DONE");
-  const pendingSubjectsCount = tasks.filter((t) => 
-    t.status === "DONE" && 
+  const pendingSubjectsCount = tasks.filter((t) =>
+    t.status === "DONE" &&
     t.subjectStatus !== "COMPLETED"
   ).length;
 
-  const readyTasks = tasks.filter((t) => 
+  const readyTasks = tasks.filter((t) =>
     t.status === "DONE" && t.subjectStatus === "COMPLETED"
   ).length;
 
@@ -74,7 +77,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       if (res.status === 1000) {
         showToast(`Sprint updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] });
-        
+
         if (res.data?.status === SPRINT_STATUS.COMPLETED && sprint?.curriculumId) {
           window.location.href = `/dashboard/hocfdc/framework-execution/${sprint.curriculumId}`;
         }
@@ -182,17 +185,16 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
             <div className="space-y-4 max-w-2xl">
               <div className="flex items-center gap-3">
                 <span
-                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border ${
-                    sprint.status === SPRINT_STATUS.IN_PROGRESS
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-500/20"
-                      : sprint.status === SPRINT_STATUS.PLANNING
-                        ? "bg-amber-50 text-amber-600 border-amber-500/20"
-                        : sprint.status === SPRINT_STATUS.COMPLETED
-                          ? "bg-blue-50 text-blue-600 border-blue-500/20"
-                          : sprint.status === SPRINT_STATUS.CANCELLED
-                            ? "bg-rose-50 text-rose-600 border-rose-500/20"
-                            : "bg-zinc-50 text-zinc-600 border-zinc-200"
-                  }`}
+                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border ${sprint.status === SPRINT_STATUS.IN_PROGRESS
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-500/20"
+                    : sprint.status === SPRINT_STATUS.PLANNING
+                      ? "bg-amber-50 text-amber-600 border-amber-500/20"
+                      : sprint.status === SPRINT_STATUS.COMPLETED
+                        ? "bg-blue-50 text-blue-600 border-blue-500/20"
+                        : sprint.status === SPRINT_STATUS.CANCELLED
+                          ? "bg-rose-50 text-rose-600 border-rose-500/20"
+                          : "bg-zinc-50 text-zinc-600 border-zinc-200"
+                    }`}
                 >
                   {sprint.status}
                 </span>
@@ -299,6 +301,22 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                 </button>
               )}
 
+              {sprint.status === SPRINT_STATUS.PLANNING && (
+                <button
+                  onClick={() => setIsQuickLaunchConfirmOpen(true)}
+                  disabled={batchMutation.isPending}
+                  className="flex items-center gap-3 bg-primary/10 text-primary px-8 py-4 font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Auto Create Tasks: Auto generate missing tasks"
+                >
+                  {batchMutation.isPending ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={18} />
+                  )}
+                  Auto Create Tasks
+                </button>
+              )}
+
               <button
                 onClick={() => setIsTaskModalOpen(true)}
                 className="flex items-center gap-3 bg-zinc-100 text-zinc-900 px-8 py-4 font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
@@ -313,7 +331,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
 
       {/* Warning Banner for Pending Subjects */}
       {allTasksDone && pendingSubjectsCount > 0 && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 shadow-sm"
@@ -358,6 +376,20 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         sprintId={sprintId}
         curriculumId={sprint?.curriculumId || ""}
         departmentId={sprint?.departmentId || ""}
+      />
+
+      <ConfirmModal
+        isOpen={isQuickLaunchConfirmOpen}
+        size="md"
+        title="Auto Create Tasks"
+        message="Are you sure you want to generate all missing deliverables for this department? This action will automatically create tasks for all pending subjects."
+        confirmLabel="Generate Tasks"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setIsQuickLaunchConfirmOpen(false);
+          batchMutation.mutate();
+        }}
+        onClose={() => setIsQuickLaunchConfirmOpen(false)}
       />
     </div>
   );

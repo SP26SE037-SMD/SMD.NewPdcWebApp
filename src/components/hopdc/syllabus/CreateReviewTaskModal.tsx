@@ -90,17 +90,17 @@ export function CreateReviewTaskModal({
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="bg-zinc-900 p-6 text-white flex items-center justify-between">
+        <div className="bg-emerald-600 p-6 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center">
-              <ClipboardCheck size={20} className="text-emerald-400" />
+            <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <ClipboardCheck size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-black uppercase tracking-widest leading-none">Create Review</h2>
-              <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-1">Initiating Peer Audit</p>
+              <h2 className="text-lg font-black uppercase tracking-widest leading-none">Assign Reviewer</h2>
+              <p className="text-[10px] font-bold text-emerald-100 uppercase tracking-[0.2em] mt-1">Select a reviewer for this task</p>
             </div>
           </div>
-          <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-xl transition-colors">
+          <button onClick={onClose} className="hover:bg-white/20 text-white/80 hover:text-white p-2 rounded-xl transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -169,15 +169,15 @@ export function CreateReviewTaskModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-[2] px-8 py-4 bg-zinc-900 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200 flex items-center justify-center gap-2"
+              className="flex-[2] px-8 py-4 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200/50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  Creating...
+                  Assigning...
                 </>
               ) : (
-                "Finalize Audit Task"
+                "Assign Reviewer"
               )}
             </button>
           </div>
