@@ -490,7 +490,7 @@ export default function PDCMDashboardContent({
         type: navTab === "develop" ? "SYLLABUS_DEVELOP" : "PEER_REVIEW",
       };
       if (navTab === "develop") {
-        return await TaskService.getTasksV2({
+        const res = await TaskService.getTasksV2({
           assignTo: user?.accountId,
           action:
             statusTab === "all"
@@ -503,6 +503,7 @@ export default function PDCMDashboardContent({
           page: page,
           size: 10,
         });
+        return { data: res };
       } else {
         return await ReviewTaskService.getReviewTasks(
           user?.accountId || "",

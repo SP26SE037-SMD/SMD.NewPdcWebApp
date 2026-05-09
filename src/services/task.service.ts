@@ -310,19 +310,16 @@ export const TaskService = {
             return await TaskService.getTasksV2(singleParams);
         }));
 
-        const combinedContent = results.flatMap(r => r?.data?.content || []);
+        const combinedContent = results.flatMap(r => r?.content || []);
         const firstResult = results[0];
 
-        if (!firstResult) return { status: 200, message: "No data", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 } };
+        if (!firstResult) return { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 };
         
         return {
             ...firstResult,
-            data: {
-                ...firstResult.data,
-                content: combinedContent,
-                totalElements: results.reduce((acc, r) => acc + (r?.data?.totalElements || 0), 0),
-                totalPages: Math.max(1, ...results.map(r => r?.data?.totalPages || 1))
-            }
+            content: combinedContent,
+            totalElements: results.reduce((acc, r) => acc + (r?.totalElements || 0), 0),
+            totalPages: Math.max(1, ...results.map(r => r?.totalPages || 1))
         };
     }
 
@@ -333,19 +330,16 @@ export const TaskService = {
             return await TaskService.getTasksV2(singleParams);
         }));
 
-        const combinedContent = results.flatMap(r => r?.data?.content || []);
+        const combinedContent = results.flatMap(r => r?.content || []);
         const firstResult = results[0];
 
-        if (!firstResult) return { status: 200, message: "No data", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 } };
+        if (!firstResult) return { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 };
         
         return {
             ...firstResult,
-            data: {
-                ...firstResult.data,
-                content: combinedContent,
-                totalElements: results.reduce((acc, r) => acc + (r?.data?.totalElements || 0), 0),
-                totalPages: Math.max(1, ...results.map(r => r?.data?.totalPages || 1))
-            }
+            content: combinedContent,
+            totalElements: results.reduce((acc, r) => acc + (r?.totalElements || 0), 0),
+            totalPages: Math.max(1, ...results.map(r => r?.totalPages || 1))
         };
     }
 
