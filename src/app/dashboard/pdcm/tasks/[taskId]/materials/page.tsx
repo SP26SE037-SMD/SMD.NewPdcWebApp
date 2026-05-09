@@ -8,6 +8,7 @@ import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2, Plus } from 'lucide-react';
 import ImportModal from '@/components/dashboard/ImportModal';
+import localforage from 'localforage';
 
 const C = {
     primary: "#41683f",
@@ -133,11 +134,11 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                 </div>
                 <div className="flex gap-4">
                     <button
-                        onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}&autoImport=true`)}
+                        onClick={() => setIsImportModalOpen(true)}
                         className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                     >
                         <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                        Import Material
+                        Import File
                     </button>
 
                     <button
@@ -345,6 +346,25 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                 )}
             </AnimatePresence>
 
+            <ImportModal 
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                type="material"
+                onImport={async (file) => {
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        await localforage.setItem('pdcm_material_import_draft', {
+                            name: file.name,
+                            type: file.type,
+                            data: arrayBuffer
+                        });
+                        router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}&importDraft=true`);
+                    } catch (error) {
+                        console.error("Failed to store file for import:", error);
+                        alert("Failed to process file. Please try again.");
+                    }
+                }}
+            />
         </div>
     );
 }

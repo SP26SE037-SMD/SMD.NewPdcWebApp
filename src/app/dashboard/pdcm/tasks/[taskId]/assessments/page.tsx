@@ -96,6 +96,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     // Validation state for Import flow
     const [isValidating, setIsValidating] = useState(false);
     const [isValidated, setIsValidated] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [validationSummary, setValidationSummary] = useState<any>(null);
 
@@ -328,16 +329,18 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             return;
         }
 
+        setIsDeleting(true);
         try {
             await AssessmentService.deleteAssessment(id);
             showToast("Assessment deleted successfully", "success");
             dispatch(removeAssessment({ syllabusId, index }));
             handleReload();
-        } catch (e) {
-            console.error(e);
-            showToast("Failed to delete assessment", "error");
-        } finally {
             setDeleteConfirm(null);
+        } catch (e: any) {
+            console.error(e);
+            showToast(e.message || "Failed to delete assessment", "error");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -371,7 +374,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                             >
                                 <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                                Import Assessment
+                                Import File
                             </button>
                             <button
                                 onClick={() => {
@@ -608,18 +611,21 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                 Are you sure you want to delete this assessment component? This action cannot be undone.
                             </p>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-3 justify-center pt-2">
                             <button 
                                 onClick={() => setDeleteConfirm(null)} 
-                                className="flex-1 px-6 py-4 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95"
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button 
                                 onClick={executeDelete} 
-                                className="flex-1 px-6 py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                Delete
+                                {isDeleting ? <Loader2 size={18} className="animate-spin" /> : null}
+                                {isDeleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -751,6 +757,9 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 
                                                 console.log("✅ PARSED ASSESSMENTS (preview):", parsedAssessments);
                                                 setPreviewData(parsedAssessments);
+                                                setIsValidated(false);
+                                                setValidationErrors([]);
+                                                setValidationSummary(null);
                                                 setIsImportModalOpen(false);
                                                 setIsPreviewOpen(true);
                                                 (e.target as HTMLInputElement).value = '';
@@ -979,8 +988,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             setIsSaving(false);
                                         }
                                     }}
-                                    className="px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] shadow-lg text-white"
-                                    style={{ background: '#41683f' }}
+                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-50 cursor-not-allowed'}`}
+                                    style={{ background: isValidated ? '#41683f' : '#adb4a8' }}
                                 >
                                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <span className="material-symbols-outlined text-[20px]">save</span>}
                                     Confirm & Save

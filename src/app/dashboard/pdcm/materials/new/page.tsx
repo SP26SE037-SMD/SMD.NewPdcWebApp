@@ -17,6 +17,7 @@ import { SyllabusService } from "@/services/syllabus.service";
 import mammoth from "mammoth";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
+import localforage from 'localforage';
 
 
 type BlockType = 'H1' | 'H2' | 'PARAGRAPH' | 'ORDERED_LIST' | 'BULLET_LIST' | 'CODE_BLOCK' | 'QUOTE' | 'TABLE' | 'DIVIDER' | 'IMAGE';
@@ -47,26 +48,26 @@ const BLOCK_TYPES: { id: BlockType; label: string; icon: any; shortcut: string }
  * A specialized ContentEditable component that prevents re-setting innerHTML
  * when the content matches the current state, resolving cursor jumping issues.
  */
-const EditableBlock = ({ 
-    html, 
-    onChange, 
-    onKeyDown, 
-    onFocus, 
+const EditableBlock = ({
+    html,
+    onChange,
+    onKeyDown,
+    onFocus,
     onImagePaste,
     onMultiPaste,
-    className, 
-    style, 
+    className,
+    style,
     placeholder,
     id,
     shouldFocus
-}: { 
-    html: string, 
-    onChange: (val: string) => void, 
+}: {
+    html: string,
+    onChange: (val: string) => void,
     onKeyDown?: (e: React.KeyboardEvent) => void,
     onFocus?: () => void,
     onImagePaste?: (file: File) => void,
     onMultiPaste?: (parts: string[]) => void,
-    className?: string, 
+    className?: string,
     style?: React.CSSProperties,
     placeholder?: string,
     id: string,
@@ -94,14 +95,14 @@ const EditableBlock = ({
                 range.collapse(true);
                 sel?.removeAllRanges();
                 sel?.addRange(range);
-            } catch(e) { /* ignore selection errors on empty nodes */ }
+            } catch (e) { /* ignore selection errors on empty nodes */ }
         }
     }, [shouldFocus]);
 
     const handlePaste = (e: React.ClipboardEvent) => {
         const items = Array.from(e.clipboardData.items);
         const imageItem = items.find(item => item.type.startsWith('image/'));
-        
+
         if (imageItem && onImagePaste) {
             e.preventDefault();
             const file = imageItem.getAsFile();
@@ -112,7 +113,7 @@ const EditableBlock = ({
         }
 
         const text = e.clipboardData.getData('text/plain');
-        
+
         // Smart Multi-Paragraph Splitting
         if (onMultiPaste && (text.includes('\n\n') || (text.includes('\n') && text.trim().split('\n').length > 1))) {
             const lines = text.split(/\r?\n\s*\r?\n|\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -138,14 +139,14 @@ const EditableBlock = ({
                 if (style.textAlign) updates.align = style.textAlign;
                 if (style.color) updates.color = style.color;
                 if (style.fontSize) updates.fontSize = style.fontSize;
-                
+
                 if (Object.keys(updates).length > 0) {
                     onChange(html); // Trigger state update, parent will handle style extraction if we passed it up, 
                     // but here we manipulate DOM directly or notify parent.
                     // For now, let's just make sure sanitize handles it.
                 }
             }
-            
+
             // Deep clean tags and strip attributes
             const clean = (parent: HTMLElement) => {
                 const allowedTags = ['B', 'I', 'U', 'STRONG', 'EM', 'A', 'BR', 'P', 'DIV', 'SPAN', 'BLOCKQUOTE', 'PRE', 'CODE'];
@@ -167,10 +168,10 @@ const EditableBlock = ({
                 });
             };
             clean(tmp);
-            
+
             // Detect multi-paragraph HTML
             const topBlocks = Array.from(tmp.children).filter(child => ['P', 'DIV', 'H1', 'H2', 'BLOCKQUOTE', 'LI'].includes(child.tagName));
-            
+
             if (onMultiPaste && topBlocks.length > 1) {
                 const parts = topBlocks.map(b => b.innerHTML.trim()).filter(h => h.length > 0);
                 onMultiPaste(parts);
@@ -197,11 +198,11 @@ const EditableBlock = ({
             onFocus={onFocus}
             onPaste={handlePaste}
             className={`${className} ${!html && placeholder ? 'before:content-[attr(data-placeholder)] before:opacity-30 before:pointer-events-none' : ''}`}
-            style={{ 
+            style={{
                 fontFamily: 'Plus Jakarta Sans, sans-serif',
-                ...style, 
-                overflowWrap: 'break-word', 
-                wordBreak: 'break-word' 
+                ...style,
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word'
             }}
             data-block-id={id}
             data-placeholder={placeholder}
@@ -245,6 +246,8 @@ function NewMaterialPageInner() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
+    const [focusToken, setFocusToken] = useState(0);
+    const [hasImported, setHasImported] = useState(false);
 
     const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         setToast({ message, type });
@@ -300,6 +303,26 @@ function NewMaterialPageInner() {
             }, 300);
             return () => clearTimeout(timer);
         }
+
+        if (mounted && searchParams.get('importDraft')) {
+            const processDraft = async () => {
+                try {
+                    const draft: any = await localforage.getItem('pdcm_material_import_draft');
+                    if (draft && draft.data) {
+                        const file = new File([draft.data], draft.name, { type: draft.type });
+                        await processWordFile(file);
+                        await localforage.removeItem('pdcm_material_import_draft');
+                    }
+                } catch (error) {
+                    console.error("Failed to process import draft:", error);
+                } finally {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('importDraft');
+                    window.history.replaceState({}, '', url.toString());
+                }
+            };
+            processDraft();
+        }
     }, [mounted, searchParams]);
 
     // ── Unsaved Changes Warning ──
@@ -317,12 +340,12 @@ function NewMaterialPageInner() {
     // Detect modifications to track dirty state
     useEffect(() => {
         // Simple heuristic: if blocks > 2 or title != empty or non-default content
-        const isModified = 
-            title.trim() !== '' || 
-            materialType !== 'DOCUMENT' || 
-            blocks.length > 2 || 
+        const isModified =
+            title.trim() !== '' ||
+            materialType !== 'DOCUMENT' ||
+            blocks.length > 2 ||
             (blocks.length > 0 && blocks.some(b => stripHtml(b.content).trim().length > 0));
-        
+
         if (isModified) setHasChanges(true);
     }, [blocks, title, materialType]);
 
@@ -351,19 +374,28 @@ function NewMaterialPageInner() {
         })();
     }, [syllabusId]);
 
-    const handleWordImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const processWordFile = async (file: File) => {
         setIsImporting(true);
         try {
             const arrayBuffer = await file.arrayBuffer();
-            
+
             // Set Material Name from Filename
             const filename = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
             setTitle(filename);
 
             const mammothOptions = {
+                transformDocument: (mammoth as any).transforms.paragraph((paragraph: any) => {
+                    if (paragraph.alignment) {
+                        return {
+                            ...paragraph,
+                            children: [
+                                { type: "text", value: `@@ALIGN_${paragraph.alignment}@@` },
+                                ...(paragraph.children || [])
+                            ]
+                        };
+                    }
+                    return paragraph;
+                }),
                 styleMap: [
                     "p[style-name='Title'] => h1:fresh",
                     "p[style-name='Heading 1'] => h1:fresh",
@@ -379,13 +411,17 @@ function NewMaterialPageInner() {
                     "p[style-name='Heading 6'] => h2:fresh",
                     "p[style-name='Center'] => p.center",
                     "p[style-name='Centered'] => p.center",
-                    "p[style-name='Right'] => p.right"
+                    "p[style-name='Right'] => p.right",
+                    "p[alignment='center'] => p.center",
+                    "p[alignment='right'] => p.right",
+                    "p[alignment='left'] => p.left",
+                    "p[alignment='justify'] => p.justify"
                 ]
             };
             const result = await mammoth.convertToHtml({ arrayBuffer }, mammothOptions);
             const html = result.value;
             const importedBlocks = parseHtmlToBlocks(html);
-            
+
             if (importedBlocks.length > 0) {
                 // If editor is empty (or just placeholder blocks), replace with imported
                 const isEmpty = blocks.length <= 2 && (blocks.every(b => !stripHtml(b.content).trim()));
@@ -394,6 +430,7 @@ function NewMaterialPageInner() {
                 } else {
                     setBlocks([...blocks, ...importedBlocks]);
                 }
+                setHasImported(true);
                 showToast(`Imported ${importedBlocks.length} blocks from Word.`);
             } else {
                 showToast("No readable content found in Word document.", "error");
@@ -405,6 +442,12 @@ function NewMaterialPageInner() {
             setIsImporting(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
+    };
+
+    const handleWordImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        await processWordFile(file);
     };
 
 
@@ -423,7 +466,6 @@ function NewMaterialPageInner() {
 
             let type: BlockType = 'PARAGRAPH';
             let align: Block['align'] = 'left';
-            let content = el.innerHTML;
 
             // Extract alignment from style or classes (mapped via mammoth)
             if (el.style.textAlign) {
@@ -432,6 +474,77 @@ function NewMaterialPageInner() {
                 align = 'center';
             } else if (el.classList.contains('right')) {
                 align = 'right';
+            } else if (el.classList.contains('left')) {
+                align = 'left';
+            } else if (el.classList.contains('justify')) {
+                align = 'justify';
+            }
+
+            // Extract injected alignment marker from Mammoth transform
+            const alignMatch = el.innerHTML.match(/@@ALIGN_(center|left|right|justify|both)@@/);
+            if (alignMatch) {
+                align = (alignMatch[1] === 'both' ? 'justify' : alignMatch[1]) as any;
+                el.innerHTML = el.innerHTML.replace(/@@ALIGN_(center|left|right|justify|both)@@/g, '');
+            }
+
+            let content = el.innerHTML;
+
+            // Check if there are inline images and split them to preserve order
+            const parts = el.innerHTML.split(/(<img[^>]*>)/i);
+            const hasImage = parts.some(p => p.toLowerCase().startsWith('<img'));
+            
+            if (hasImage && tag !== 'table' && tag !== 'ul' && tag !== 'ol') {
+                let htmlBuffer = '';
+                
+                const flushBuffer = () => {
+                    if (htmlBuffer.trim() !== '') {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = htmlBuffer;
+                        
+                        let tempType: BlockType = 'PARAGRAPH';
+                        if (tag === 'h1') tempType = 'H1';
+                        else if (tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') tempType = 'H2';
+                        else if (tempDiv.querySelector('strong, b') && tempDiv.textContent && tempDiv.textContent.length > 0 && tempDiv.textContent.length < 150) {
+                            const text = tempDiv.textContent.trim();
+                            const innerH = tempDiv.innerHTML.trim();
+                            const isFullyBold = (innerH.startsWith('<strong>') && innerH.endsWith('</strong>') && innerH.replace(/<strong>/g, '').replace(/<\/strong>/g, '').trim() === text) ||
+                                (innerH.startsWith('<b>') && innerH.endsWith('</b>') && innerH.replace(/<b>/g, '').replace(/<\/b>/g, '').trim() === text);
+                            if (isFullyBold) tempType = 'H2';
+                        }
+                        
+                        const sanitized = sanitizeBlockContent(htmlBuffer);
+                        if (sanitized) {
+                            resultBlocks.push({
+                                id: crypto.randomUUID(),
+                                type: tempType,
+                                content: sanitized,
+                                align: align
+                            });
+                        }
+                    }
+                    htmlBuffer = '';
+                };
+
+                parts.forEach(part => {
+                    if (part.toLowerCase().startsWith('<img')) {
+                        flushBuffer();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = part;
+                        const img = tempDiv.querySelector('img');
+                        if (img && img.getAttribute('src')) {
+                            resultBlocks.push({
+                                id: crypto.randomUUID(),
+                                type: 'IMAGE',
+                                content: img.getAttribute('src') || '',
+                                align: 'center' // Default alignment for images
+                            });
+                        }
+                    } else if (part.trim() !== '') {
+                        htmlBuffer += part;
+                    }
+                });
+                flushBuffer();
+                return;
             }
 
             if (tag === 'h1') type = 'H1';
@@ -443,9 +556,9 @@ function NewMaterialPageInner() {
                     const innerHtml = el.innerHTML.trim();
                     const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace('<strong>', '').replace('</strong>', '').trim() === text) ||
                         (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace('<b>', '').replace('</b>', '').trim() === text);
-                    
+
                     const isChapter = /^Chapter\s+\d+/i.test(text) || /^Chương\s+\d+/i.test(text);
-                    
+
                     // Nhận diện đánh số thủ công kiểu "1.", "a.", "I." 
                     const listMatch = text.match(/^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+(.*)/);
                     const bulletMatch = text.match(/^([\-\*•])\s+(.*)/);
@@ -483,7 +596,7 @@ function NewMaterialPageInner() {
 
                     if (text.length > 0 || innerHtml.length > 0) {
                         let finalContent = sanitizeBlockContent(li.innerHTML);
-                        
+
                         // Handle H2 numbering
                         if (liType === 'H2') {
                             h2Count++;
@@ -541,7 +654,7 @@ function NewMaterialPageInner() {
             }
 
             let finalContent = sanitizeBlockContent(content);
-            
+
             // Handle H2 numbering
             if (type === 'H2') {
                 h2Count++;
@@ -569,10 +682,10 @@ function NewMaterialPageInner() {
     // Helper to clean content (remove &nbsp; and wrapping tags)
     const sanitizeBlockContent = (html: string) => {
         if (!html) return '';
-        
+
         let cleaned = html
-            .replace(/&nbsp;/g, ' ') 
-            .replace(/\u00A0/g, ' ') 
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\u00A0/g, ' ')
             .trim();
 
         // 1. Strip block-level wrapping tags (p, div) but PRESERVE their inner content 
@@ -596,7 +709,6 @@ function NewMaterialPageInner() {
     };
 
     const pendingFocusIdRef = useRef<string | null>(null);
-    const [focusToken, setFocusToken] = useState(0); // increments to re-trigger focus
 
 
     const COLORS = [
@@ -658,20 +770,20 @@ function NewMaterialPageInner() {
     }, [focusToken]);
 
     const addBlock = (index: number, type: BlockType = 'PARAGRAPH', content: string = '') => {
-        const nb: Block = { 
+        const nb: Block = {
             id: crypto.randomUUID(),
-            type, 
+            type,
             content,
         };
-        
+
         pendingFocusIdRef.current = nb.id;
-        
-        setBlocks(prev => { 
+
+        setBlocks(prev => {
             const arr = [...prev];
-            arr.splice(index + 1, 0, nb); 
-            return arr; 
+            arr.splice(index + 1, 0, nb);
+            return arr;
         });
-        
+
         setShowMenuForBlockId(null);
         setFocusToken(t => t + 1);
         return nb;
@@ -721,10 +833,10 @@ function NewMaterialPageInner() {
                 const newContent = contentOverride !== undefined ? contentOverride : b.content;
                 const sanitized = sanitizeBlockContent(newContent);
                 // For H2 specifically, ensure it's very clean by replacing multiple spaces
-                return { 
-                    ...b, 
-                    type, 
-                    content: type === 'H2' ? sanitized.replace(/\s+/g, ' ').trim() : sanitized 
+                return {
+                    ...b,
+                    type,
+                    content: type === 'H2' ? sanitized.replace(/\s+/g, ' ').trim() : sanitized
                 };
             }
             return b;
@@ -742,21 +854,21 @@ function NewMaterialPageInner() {
             const newBlocks = [...current];
             // Replace current block content with first part
             newBlocks[globalIndex] = { ...newBlocks[globalIndex], content: parts[0] };
-            
+
             // Create and insert subsequent blocks
             const blocksToInsert = parts.slice(1).map(content => ({
                 id: `pasted-${Math.random().toString(36).substr(2, 9)}`,
                 type: 'PARAGRAPH' as BlockType,
                 content
             }));
-            
+
             newBlocks.splice(globalIndex + 1, 0, ...blocksToInsert);
             return newBlocks;
         });
 
         // Set focus to the last pasted block after a tiny delay
         setTimeout(() => {
-            const lastId = `pasted-${parts[parts.length-1]}`; // This is a bit tricky since ID is random above
+            const lastId = `pasted-${parts[parts.length - 1]}`; // This is a bit tricky since ID is random above
             // Better to just rely on re-render and user clicking, or find by index
             const newIndex = globalIndex + parts.length - 1;
             // Focus logic should handle this via state
@@ -766,7 +878,7 @@ function NewMaterialPageInner() {
     const handleKeyDown = (e: React.KeyboardEvent, index: number, block: Block) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            
+
             // Advanced Split Logic
             const selection = window.getSelection();
             if (selection && selection.rangeCount > 0 && (block.type === 'PARAGRAPH' || block.type === 'H1' || block.type === 'H2' || block.type === 'QUOTE' || block.type === 'BULLET_LIST' || block.type === 'ORDERED_LIST')) {
@@ -775,16 +887,16 @@ function NewMaterialPageInner() {
                 const caretOffset = range.startOffset;
 
                 const el = e.currentTarget as HTMLElement;
-                
+
                 // Split logic using range
                 const preRange = document.createRange();
                 preRange.selectNodeContents(el);
                 preRange.setEnd(caretContainer, caretOffset);
-                
+
                 const postRange = document.createRange();
                 postRange.selectNodeContents(el);
                 postRange.setStart(caretContainer, caretOffset);
-                
+
                 const preContent = document.createElement('div');
                 preContent.appendChild(preRange.cloneContents());
                 const postContent = document.createElement('div');
@@ -795,7 +907,7 @@ function NewMaterialPageInner() {
 
                 // Update current block and add new one
                 const nextType: BlockType = (block.type === 'H1' || block.type === 'H2') ? 'PARAGRAPH' : block.type;
-                
+
                 updateBlockContent(block.id, htmlBefore);
                 addBlock(index, nextType, htmlAfter);
             } else {
@@ -804,20 +916,20 @@ function NewMaterialPageInner() {
         } else if (e.key === 'Backspace') {
             const selection = window.getSelection();
             const range = selection?.getRangeAt(0);
-            
+
             // If block is empty, delete it
             if (stripHtml(block.content).trim() === '' && index > 0) {
                 e.preventDefault();
                 const prevBlockId = blocks[index - 1]?.id;
                 removeBlock(block.id);
                 if (prevBlockId) setFocusedBlockId(prevBlockId);
-            } 
+            }
             // If at the start of a block, merge with previous
             else if (range && range.startOffset === 0 && range.collapsed && index > 0) {
                 e.preventDefault();
                 const prevBlock = blocks[index - 1];
                 const currentContent = block.content;
-                
+
                 // Merge content
                 updateBlockContent(prevBlock.id, prevBlock.content + currentContent);
                 removeBlock(block.id);
@@ -894,14 +1006,28 @@ function NewMaterialPageInner() {
         return (await res.json()).url;
     };
 
-    const handleSaveDraft = async () => {
-        if (!title.trim()) { 
-            showToast('Please enter a material title.', 'error');
-            return; 
+    const dataURLtoFile = (dataurl: string, filename: string): File | null => {
+        const arr = dataurl.split(',');
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        if (!mimeMatch) return null;
+        const mime = mimeMatch[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
         }
-        if (!syllabusId || syllabusId === 'undefined') { 
+        return new File([u8arr], filename, { type: mime });
+    };
+
+    const handleSaveDraft = async () => {
+        if (!title.trim()) {
+            showToast('Please enter a material title.', 'error');
+            return;
+        }
+        if (!syllabusId || syllabusId === 'undefined') {
             showToast('Missing syllabusId. Please make sure the URL contains a valid syllabus ID.', 'error');
-            return; 
+            return;
         }
         setIsSaving(true);
         try {
@@ -926,8 +1052,49 @@ function NewMaterialPageInner() {
             });
             const theNewId = materialRes?.data?.materialId || materialRes?.data?.id;
 
+            // Upload base64 images to Cloudinary before saving
+            const updatedBlocks = await Promise.all(blocks.map(async (b) => {
+                let finalContent = b.content;
+
+                // For dedicated IMAGE blocks
+                if (b.type === 'IMAGE' && finalContent?.startsWith('data:image/')) {
+                    try {
+                        const file = dataURLtoFile(finalContent, `image-${b.id}.png`);
+                        if (file) {
+                            finalContent = await uploadToCloudinary(file);
+                        }
+                    } catch (err) {
+                        console.error('Failed to upload base64 image', err);
+                    }
+                } 
+                // For other blocks that might have inline base64 images
+                else if (finalContent && finalContent.includes('data:image/')) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = finalContent;
+                    const imgs = tempDiv.querySelectorAll('img');
+                    for (let i = 0; i < imgs.length; i++) {
+                        const img = imgs[i];
+                        const src = img.getAttribute('src');
+                        if (src && src.startsWith('data:image/')) {
+                            try {
+                                const file = dataURLtoFile(src, `inline-image-${b.id}-${i}.png`);
+                                if (file) {
+                                    const url = await uploadToCloudinary(file);
+                                    img.setAttribute('src', url);
+                                }
+                            } catch (err) {
+                                console.error('Failed to upload inline base64 image', err);
+                            }
+                        }
+                    }
+                    finalContent = tempDiv.innerHTML;
+                }
+                
+                return { ...b, content: finalContent };
+            }));
+
             // Loại bỏ các dòng trống không có ý nghĩa sau khi enter xuống dòng quá nhiều
-            const validBlocks = blocks.filter(b => {
+            const validBlocks = updatedBlocks.filter(b => {
                 if (b.type === 'IMAGE' || b.type === 'DIVIDER') return true;
                 const sanitized = sanitizeBlockContent(b.content || "").trim();
                 return sanitized !== '';
@@ -1008,7 +1175,7 @@ function NewMaterialPageInner() {
                             <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider uppercase flex items-center justify-center leading-none" style={{ background: '#dee5d8', color: '#5a6157' }}>DRAFT</span>
                         </div>
                         <div className="relative inline-grid items-center max-w-[400px] min-w-[300px] overflow-hidden">
-                            <span className="invisible whitespace-pre text-xl font-bold tracking-tight px-1 row-start-1 col-start-1 select-none pointer-events-none" 
+                            <span className="invisible whitespace-pre text-xl font-bold tracking-tight px-1 row-start-1 col-start-1 select-none pointer-events-none"
                                 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                 {title || "Untitled Material"}&nbsp;
                             </span>
@@ -1024,14 +1191,16 @@ function NewMaterialPageInner() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isImporting}
-                        className="px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:bg-[rgba(65,104,63,0.05)] text-[#4caf50] border border-[rgba(76,175,80,0.2)] text-sm"
-                    >
-                        {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-                        Import Word
-                    </button>
+                    {!hasImported && (
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isImporting}
+                            className="px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:bg-[rgba(65,104,63,0.05)] text-[#4caf50] border border-[rgba(76,175,80,0.2)] text-sm"
+                        >
+                            {isImporting ? <Loader2 size={16} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">upload_file</span>}
+                            Import File
+                        </button>
+                    )}
                     <button onClick={handleSaveDraft} disabled={isSaving}
                         className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-green-900/10 text-sm text-white"
                         style={{ backgroundColor: '#4caf50' }}>
@@ -1068,8 +1237,8 @@ function NewMaterialPageInner() {
                         <div className="mt-4 px-2">
                             <label className="block text-[9px] font-black tracking-widest uppercase mb-1.5" style={{ color: '#adb4a8' }}>Material Type</label>
                             <div className="relative">
-                                <select 
-                                    value={materialType} 
+                                <select
+                                    value={materialType}
                                     onChange={e => setMaterialType(e.target.value)}
                                     className="w-full px-3 py-2 rounded-xl border border-[#adb4a8] bg-white text-xs font-bold outline-none focus:border-primary-500 transition-all appearance-none cursor-pointer pr-8"
                                     style={{ color: '#2d342b' }}
@@ -1091,17 +1260,17 @@ function NewMaterialPageInner() {
                             <h4 className="text-[10px] font-bold tracking-widest uppercase mb-4 px-2" style={{ color: 'rgba(45,52,43,0.4)' }}>On This Page</h4>
                             <nav className="space-y-1 overflow-y-auto pr-2 custom-scrollbar">
                                 {outlineItems.map(item => (
-                                    <button key={item.id} 
+                                    <button key={item.id}
                                         onClick={() => {
                                             const el = document.querySelector(`[data-block-id="${item.id}"]`);
                                             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         }}
                                         className="w-full text-left text-[11px] font-semibold py-2 px-3 rounded-xl hover:bg-[rgba(65,104,63,0.08)] transition-all truncate group flex items-center gap-2"
-                                        style={{ 
-                                            color: '#5a6157', 
-                                            paddingLeft: item.type === 'H2' ? '24px' : '12px' 
+                                        style={{
+                                            color: '#5a6157',
+                                            paddingLeft: item.type === 'H2' ? '24px' : '12px'
                                         }}>
-                                        <span className="w-1.5 h-1.5 rounded-full shrink-0 transition-all opacity-20 group-hover:opacity-100" 
+                                        <span className="w-1.5 h-1.5 rounded-full shrink-0 transition-all opacity-20 group-hover:opacity-100"
                                             style={{ background: item.type === 'H1' ? '#41683f' : '#adb4a8' }}></span>
                                         {stripHtml(item.content) || 'Untitled Section'}
                                     </button>
@@ -1113,7 +1282,7 @@ function NewMaterialPageInner() {
 
                 {/* Main Workspace - Multi-Page Architecture */}
                 <div className="flex-1 pb-48 scroll-smooth bg-[#f0f2eb] overflow-y-auto h-[calc(100vh-80px)]" onClick={() => setShowMenuForBlockId(null)}>
-                    
+
                     {/* Floating Design Toolbar - Sticky within Workspace */}
                     <div className="sticky top-0 z-[100] w-full pt-4 pb-2 flex justify-center pointer-events-none">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#adb4a8] rounded-2xl shadow-xl pointer-events-auto">
@@ -1175,9 +1344,9 @@ function NewMaterialPageInner() {
                             {/* Font Size & Color */}
                             <div className="flex items-center gap-1.5 relative">
                                 <div className="relative">
-                                    <button 
-                                        onClick={() => { setShowSizePicker(showSizePicker ? null : focusedBlockId); setShowColorPicker(null); }} 
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all ${showSizePicker ? 'bg-[#f1f5eb] text-[#4caf50]' : 'text-[#5a6157] hover:bg-[#f1f5eb] hover:text-[#4caf50]'}`} 
+                                    <button
+                                        onClick={() => { setShowSizePicker(showSizePicker ? null : focusedBlockId); setShowColorPicker(null); }}
+                                        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all ${showSizePicker ? 'bg-[#f1f5eb] text-[#4caf50]' : 'text-[#5a6157] hover:bg-[#f1f5eb] hover:text-[#4caf50]'}`}
                                         title="Font Size"
                                     >
                                         <Type size={16} />
@@ -1199,11 +1368,11 @@ function NewMaterialPageInner() {
                                         )}
                                     </AnimatePresence>
                                 </div>
-                                
+
                                 <div className="relative">
-                                    <button 
-                                        onClick={() => { setShowColorPicker(showColorPicker ? null : focusedBlockId); setShowSizePicker(null); }} 
-                                        className={`p-2 rounded-lg transition-all ${showColorPicker ? 'bg-[#f1f5eb]' : 'hover:bg-[#f1f5eb]'}`} 
+                                    <button
+                                        onClick={() => { setShowColorPicker(showColorPicker ? null : focusedBlockId); setShowSizePicker(null); }}
+                                        className={`p-2 rounded-lg transition-all ${showColorPicker ? 'bg-[#f1f5eb]' : 'hover:bg-[#f1f5eb]'}`}
                                         title="Text Color"
                                     >
                                         <div className="flex flex-col items-center">
@@ -1218,7 +1387,7 @@ function NewMaterialPageInner() {
                                                 className="absolute top-full right-0 mt-2 p-2 bg-white border border-[#dee1d8] rounded-xl shadow-xl z-[60] grid grid-cols-5 gap-1 w-40">
                                                 {COLORS.map(c => (
                                                     <button key={c.value} onClick={() => { updateBlockStyle(focusedBlockId!, { color: c.value }); setShowColorPicker(null); }}
-                                                        className="w-6 h-6 rounded-md border border-[#dee1d8] transition-transform hover:scale-110" 
+                                                        className="w-6 h-6 rounded-md border border-[#dee1d8] transition-transform hover:scale-110"
                                                         style={{ background: c.value }} title={c.name} />
                                                 ))}
                                             </motion.div>
@@ -1230,9 +1399,9 @@ function NewMaterialPageInner() {
                     </div>
 
 
-                    <div className="max-w-[1100px] mx-auto py-20 px-4 min-h-full">
+                    <div className="max-w-[1100px] mx-auto py-10 px-4 min-h-full">
                         {/* Single Continuous Wrapper */}
-                        <div className="bg-white shadow-[0_4px_24px_rgb(0,0,0,0.06)] border border-[#adb4a8] rounded-sm relative w-full min-h-[1100px] px-12 pt-16 pb-60 flex flex-col" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        <div className="bg-white shadow-[0_4px_24px_rgb(0,0,0,0.06)] border border-[#adb4a8] rounded-sm relative w-full min-h-[1100px] px-12 pt-10 pb-60 flex flex-col" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                             <Suspense fallback={
                                 <div className="flex-1 flex flex-col items-center justify-center py-40">
                                     <Loader2 size={32} className="animate-spin" style={{ color: '#4caf50' }} />
@@ -1240,243 +1409,243 @@ function NewMaterialPageInner() {
                                 </div>
                             }>
                                 <div className="flex-1 flex flex-col gap-y-1">
-                            {blocks.map((block, globalIndex) => {
-                                return (
-                                    <React.Fragment key={block.id}>
-                                        <div
-                                            className="group relative flex items-start gap-2"
-                                            data-block-wrapper={block.id}
-                                                            onMouseEnter={() => setHoveredBlockId(block.id)}
-                                                            onMouseLeave={() => setHoveredBlockId(null)}
-                                                        >
-                                                            {/* Left controls */}
-                                                            <div className={`absolute -left-12 top-2 flex flex-col gap-1 transition-opacity ${hoveredBlockId === block.id || showMenuForBlockId === block.id ? 'opacity-100' : 'opacity-0'}`}>
-                                                                <div className="relative">
-                                                                    <button 
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setShowMenuForBlockId(showMenuForBlockId === block.id ? null : block.id);
-                                                                        }}
-                                                                        className="p-1.5 rounded-lg transition-all hover:bg-[rgba(65,104,63,0.1)] group/btn" 
-                                                                        style={{ color: showMenuForBlockId === block.id ? '#4caf50' : '#adb4a8' }}
-                                                                    >
-                                                                        <Plus size={18} className={`transition-transform duration-300 ${showMenuForBlockId === block.id ? 'rotate-45' : ''}`} />
-                                                                    </button>
-
-                                                                    {/* Turn into... Menu Popup */}
-                                                                    <AnimatePresence>
-                                                                        {showMenuForBlockId === block.id && (
-                                                                            <motion.div 
-                                                                                initial={{ opacity: 0, scale: 0.9, y: -10 }} 
-                                                                                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                                                                                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                                                                                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-[#adb4a8] py-3 z-[150] overflow-hidden"
-                                                                                onClick={e => e.stopPropagation()}
-                                                                            >
-                                                                                <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#adb4a8] mb-1">Turn into...</div>
-                                                                                <div className="max-h-[350px] overflow-y-auto px-1 custom-scrollbar">
-                                                                                    {BLOCK_TYPES.map(bt => {
-                                                                                        const Icon = bt.icon;
-                                                                                        return (
-                                                                                            <button key={bt.id}
-                                                                                                onClick={() => { 
-                                                                                                    if (bt.id === 'TABLE') {
-                                                                                                        setTableTargetBlockId(block.id);
-                                                                                                        setShowTableModal(true);
-                                                                                                    } else {
-                                                                                                        updateBlockType(block.id, bt.id, block.content === '/' ? '' : undefined); 
-                                                                                                    }
-                                                                                                    setShowMenuForBlockId(null); 
-                                                                                                    setFocusedBlockId(block.id); 
-                                                                                                }}
-                                                                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[rgba(65,104,63,0.08)] transition-all group/item text-left"
-                                                                                            >
-                                                                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white border border-[#adb4a8] text-[#5a6157] group-hover/item:border-primary-200 group-hover/item:text-primary-600 transition-colors">
-                                                                                                    <Icon size={16} />
-                                                                                                </div>
-                                                                                                <div className="flex flex-col">
-                                                                                                    <span className="text-sm font-bold text-[#2d342b] group-hover/item:text-primary-700">{bt.label}</span>
-                                                                                                    <span className="text-[9px] font-medium text-[#adb4a8]">Convert this block</span>
-                                                                                                </div>
-                                                                                            </button>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </motion.div>
-                                                                        )}
-                                                                    </AnimatePresence>
-                                                                </div>
-                                                                <div className="p-1.5 cursor-grab active:cursor-grabbing text-[#adb4a8] hover:text-[#5a6157] transition-colors">
-                                                                    <GripVertical size={16} />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Block Content */}
-                                                            <div className="flex-1 min-w-0">
-                                                                {block.type === 'H1' && (
-                                                                    <EditableBlock
-                                                                        id={block.id}
-                                                                        html={block.content}
-                                                                        onFocus={() => setFocusedBlockId(block.id)}
-                                                                        onChange={val => updateBlockContent(block.id, val)}
-                                                                        onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                        onImagePaste={(file) => handleImagePaste(file, globalIndex)}
-                                                                        onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                        placeholder="Heading 1..."
-                                                                        shouldFocus={false}
-                                                                        className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-black bg-transparent outline-none py-1 mt-6 mb-4 leading-tight min-h-[1em]`}
-                                                                        style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '36px' }}
-                                                                    />
-                                                                )}
-                                                                {block.type === 'H2' && (
-                                                                    <EditableBlock
-                                                                        id={block.id}
-                                                                        html={block.content}
-                                                                        onFocus={() => setFocusedBlockId(block.id)}
-                                                                        onChange={val => updateBlockContent(block.id, val)}
-                                                                        onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                        onImagePaste={(file) => handleImagePaste(file, globalIndex)}
-                                                                        onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                        placeholder="Heading 2..."
-                                                                        shouldFocus={false}
-                                                                        className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 mt-4 mb-2 leading-tight min-h-[1em]`}
-                                                                        style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
-                                                                    />
-                                                                )}
-                                                                {block.type === 'PARAGRAPH' && (
-                                                                    <EditableBlock
-                                                                        id={block.id}
-                                                                        html={block.content}
-                                                                        onFocus={() => setFocusedBlockId(block.id)}
-                                                                        onChange={val => updateBlockContent(block.id, val)}
-                                                                        onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                        onImagePaste={(file) => handleImagePaste(file, globalIndex)}
-                                                                        onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                        shouldFocus={false}
-                                                                        className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} leading-relaxed bg-transparent outline-none py-1 min-h-[1.5em] whitespace-pre-wrap`}
-                                                                        style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
-                                                                    />
-                                                                )}
-                                                                {block.type === 'BULLET_LIST' && (
-                                                                    <div className="flex items-start gap-4 py-1">
-                                                                        <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-black shrink-0" />
-                                                                        <EditableBlock
-                                                                            id={block.id}
-                                                                            html={block.content}
-                                                                            onFocus={() => setFocusedBlockId(block.id)}
-                                                                            onChange={val => updateBlockContent(block.id, val)}
-                                                                            onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                            onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                            shouldFocus={false}
-                                                                            className="flex-1 outline-none min-h-[1.5em]"
-                                                                            style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {block.type === 'ORDERED_LIST' && (
-                                                                    <div className="flex items-start gap-4 py-1">
-                                                                        <span className="mt-1 text-lg font-bold min-w-[1.5em] text-black">
-                                                                            {blocks.slice(0, globalIndex + 1).filter(b => b.type === 'ORDERED_LIST').length}.
-                                                                        </span>
-                                                                        <EditableBlock
-                                                                            id={block.id}
-                                                                            html={block.content}
-                                                                            onFocus={() => setFocusedBlockId(block.id)}
-                                                                            onChange={val => updateBlockContent(block.id, val)}
-                                                                            onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                            onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                            shouldFocus={false}
-                                                                            className="flex-1 outline-none min-h-[1.5em]"
-                                                                            style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {block.type === 'QUOTE' && (
-                                                                    <div className="pl-6 border-l-4 border-[#adb4a8] py-2 my-4 italic text-[#5a6157]" style={{ fontSize: '20px' }}>
-                                                                        <EditableBlock
-                                                                            id={block.id}
-                                                                            html={block.content}
-                                                                            onFocus={() => setFocusedBlockId(block.id)}
-                                                                            onChange={val => updateBlockContent(block.id, val)}
-                                                                            onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                            onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                            shouldFocus={false}
-                                                                            className="w-full outline-none"
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {block.type === 'CODE_BLOCK' && (
-                                                                    <div className="bg-[#1e1e1e] rounded-md p-6 my-4 font-mono text-sm overflow-x-auto">
-                                                                        <textarea
-                                                                            value={block.content}
-                                                                            onChange={e => { handleTextareaInput(e); updateBlockContent(block.id, e.target.value); }}
-                                                                            onFocus={() => setFocusedBlockId(block.id)}
-                                                                            className="w-full bg-transparent text-[#d4d4d4] outline-none resize-none border-none min-h-[60px]"
-                                                                            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-                                                                            spellCheck={false}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {block.type === 'TABLE' && (
-                                                                     <TableBlock
-                                                                        id={block.id}
-                                                                        content={block.content}
-                                                                        onFocus={() => setFocusedBlockId(block.id)}
-                                                                        onChange={val => updateBlockContent(block.id, val)}
-                                                                        align={block.align as any}
-                                                                    />
-                                                                )}
-                                                                {block.type === 'DIVIDER' && (
-                                                                    <div className="py-8 flex items-center">
-                                                                        <div className="h-[2px] w-full bg-[#adb4a8]"></div>
-                                                                    </div>
-                                                                )}
-                                                                {block.type === 'IMAGE' && (
-                                                                    <div className="my-6 relative flex flex-col items-center">
-                                                                        {isUploading[block.id] ? (
-                                                                            <div className="h-48 flex items-center justify-center">
-                                                                                <Loader2 className="animate-spin text-[#adb4a8]" size={32} />
-                                                                            </div>
-                                                                        ) : block.content ? (
-                                                                            <img src={block.content} alt="Material" className="max-w-full rounded-md shadow-sm border border-[#adb4a8]" />
-                                                                        ) : (
-                                                                            <div className="w-full h-48 border-2 border-dashed border-[#adb4a8] rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-[#f1f5eb] transition-colors"
-                                                                                onClick={() => {
-                                                                                    const input = document.createElement('input');
-                                                                                    input.type = 'file';
-                                                                                    input.accept = 'image/*';
-                                                                                    input.onchange = async (e: any) => {
-                                                                                        const file = e.target.files?.[0];
-                                                                                        if (file) {
-                                                                                            setIsUploading(prev => ({ ...prev, [block.id]: true }));
-                                                                                            try { const url = await uploadToCloudinary(file); updateBlockContent(block.id, url); }
-                                                                                            finally { setIsUploading(prev => ({ ...prev, [block.id]: false })); }
-                                                                                        }
-                                                                                    };
-                                                                                    input.click();
-                                                                                }}>
-                                                                                <ImageIcon size={32} className="text-[#adb4a8] mb-2" />
-                                                                                <span className="text-sm font-medium text-[#adb4a8]">Upload Image</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Delete button */}
-                                                            <button onClick={() => removeBlock(block.id)}
-                                                                className={`absolute -right-8 top-2 p-1 text-[#adb4a8] opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all`}
-                                                                title="Delete Block">
-                                                                <Trash2 size={14} />
+                                    {blocks.map((block, globalIndex) => {
+                                        return (
+                                            <React.Fragment key={block.id}>
+                                                <div
+                                                    className="group relative flex items-start gap-2"
+                                                    data-block-wrapper={block.id}
+                                                    onMouseEnter={() => setHoveredBlockId(block.id)}
+                                                    onMouseLeave={() => setHoveredBlockId(null)}
+                                                >
+                                                    {/* Left controls */}
+                                                    <div className={`absolute -left-12 top-2 flex flex-col gap-1 transition-opacity ${hoveredBlockId === block.id || showMenuForBlockId === block.id ? 'opacity-100' : 'opacity-0'}`}>
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowMenuForBlockId(showMenuForBlockId === block.id ? null : block.id);
+                                                                }}
+                                                                className="p-1.5 rounded-lg transition-all hover:bg-[rgba(65,104,63,0.1)] group/btn"
+                                                                style={{ color: showMenuForBlockId === block.id ? '#4caf50' : '#adb4a8' }}
+                                                            >
+                                                                <Plus size={18} className={`transition-transform duration-300 ${showMenuForBlockId === block.id ? 'rotate-45' : ''}`} />
                                                             </button>
-                                                        </div>
-                                                    </React.Fragment>
-                                                );
-                                            })}
 
-                                            {/* Bottom click area to add block */}
-                                            <div className="py-20 cursor-text" onClick={() => { if (blocks.length === 0 || blocks[blocks.length - 1].content !== '' || blocks[blocks.length - 1].type !== 'PARAGRAPH') addBlock(blocks.length, 'PARAGRAPH'); }}>
-                                            </div>
+                                                            {/* Turn into... Menu Popup */}
+                                                            <AnimatePresence>
+                                                                {showMenuForBlockId === block.id && (
+                                                                    <motion.div
+                                                                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                                                                        className="absolute left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-[#adb4a8] py-3 z-[150] overflow-hidden"
+                                                                        onClick={e => e.stopPropagation()}
+                                                                    >
+                                                                        <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#adb4a8] mb-1">Turn into...</div>
+                                                                        <div className="max-h-[350px] overflow-y-auto px-1 custom-scrollbar">
+                                                                            {BLOCK_TYPES.map(bt => {
+                                                                                const Icon = bt.icon;
+                                                                                return (
+                                                                                    <button key={bt.id}
+                                                                                        onClick={() => {
+                                                                                            if (bt.id === 'TABLE') {
+                                                                                                setTableTargetBlockId(block.id);
+                                                                                                setShowTableModal(true);
+                                                                                            } else {
+                                                                                                updateBlockType(block.id, bt.id, block.content === '/' ? '' : undefined);
+                                                                                            }
+                                                                                            setShowMenuForBlockId(null);
+                                                                                            setFocusedBlockId(block.id);
+                                                                                        }}
+                                                                                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[rgba(65,104,63,0.08)] transition-all group/item text-left"
+                                                                                    >
+                                                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white border border-[#adb4a8] text-[#5a6157] group-hover/item:border-primary-200 group-hover/item:text-primary-600 transition-colors">
+                                                                                            <Icon size={16} />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-sm font-bold text-[#2d342b] group-hover/item:text-primary-700">{bt.label}</span>
+                                                                                            <span className="text-[9px] font-medium text-[#adb4a8]">Convert this block</span>
+                                                                                        </div>
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                        <div className="p-1.5 cursor-grab active:cursor-grabbing text-[#adb4a8] hover:text-[#5a6157] transition-colors">
+                                                            <GripVertical size={16} />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Block Content */}
+                                                    <div className="flex-1 min-w-0">
+                                                        {block.type === 'H1' && (
+                                                            <EditableBlock
+                                                                id={block.id}
+                                                                html={block.content}
+                                                                onFocus={() => setFocusedBlockId(block.id)}
+                                                                onChange={val => updateBlockContent(block.id, val)}
+                                                                onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                onImagePaste={(file) => handleImagePaste(file, globalIndex)}
+                                                                onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                placeholder="Heading 1..."
+                                                                shouldFocus={false}
+                                                                className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-black bg-transparent outline-none py-1 mt-6 mb-4 leading-tight min-h-[1em]`}
+                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '36px' }}
+                                                            />
+                                                        )}
+                                                        {block.type === 'H2' && (
+                                                            <EditableBlock
+                                                                id={block.id}
+                                                                html={block.content}
+                                                                onFocus={() => setFocusedBlockId(block.id)}
+                                                                onChange={val => updateBlockContent(block.id, val)}
+                                                                onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                onImagePaste={(file) => handleImagePaste(file, globalIndex)}
+                                                                onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                placeholder="Heading 2..."
+                                                                shouldFocus={false}
+                                                                className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 mt-4 mb-2 leading-tight min-h-[1em]`}
+                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
+                                                            />
+                                                        )}
+                                                        {block.type === 'PARAGRAPH' && (
+                                                            <EditableBlock
+                                                                id={block.id}
+                                                                html={block.content}
+                                                                onFocus={() => setFocusedBlockId(block.id)}
+                                                                onChange={val => updateBlockContent(block.id, val)}
+                                                                onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                onImagePaste={(file) => handleImagePaste(file, globalIndex)}
+                                                                onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                shouldFocus={false}
+                                                                className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} leading-relaxed bg-transparent outline-none py-1 min-h-[1.5em] whitespace-pre-wrap`}
+                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
+                                                            />
+                                                        )}
+                                                        {block.type === 'BULLET_LIST' && (
+                                                            <div className="flex items-start gap-4 py-1">
+                                                                <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+                                                                <EditableBlock
+                                                                    id={block.id}
+                                                                    html={block.content}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    onChange={val => updateBlockContent(block.id, val)}
+                                                                    onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                    onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                    shouldFocus={false}
+                                                                    className="flex-1 outline-none min-h-[1.5em]"
+                                                                    style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'ORDERED_LIST' && (
+                                                            <div className="flex items-start gap-4 py-1">
+                                                                <span className="mt-1 text-lg font-bold min-w-[1.5em] text-black">
+                                                                    {blocks.slice(0, globalIndex + 1).filter(b => b.type === 'ORDERED_LIST').length}.
+                                                                </span>
+                                                                <EditableBlock
+                                                                    id={block.id}
+                                                                    html={block.content}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    onChange={val => updateBlockContent(block.id, val)}
+                                                                    onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                    onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                    shouldFocus={false}
+                                                                    className="flex-1 outline-none min-h-[1.5em]"
+                                                                    style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'QUOTE' && (
+                                                            <div className="pl-6 border-l-4 border-[#adb4a8] py-2 my-4 italic text-[#5a6157]" style={{ fontSize: '20px' }}>
+                                                                <EditableBlock
+                                                                    id={block.id}
+                                                                    html={block.content}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    onChange={val => updateBlockContent(block.id, val)}
+                                                                    onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                    onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                    shouldFocus={false}
+                                                                    className="w-full outline-none"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'CODE_BLOCK' && (
+                                                            <div className="bg-[#1e1e1e] rounded-md p-6 my-4 font-mono text-sm overflow-x-auto">
+                                                                <textarea
+                                                                    value={block.content}
+                                                                    onChange={e => { handleTextareaInput(e); updateBlockContent(block.id, e.target.value); }}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    className="w-full bg-transparent text-[#d4d4d4] outline-none resize-none border-none min-h-[60px]"
+                                                                    style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+                                                                    spellCheck={false}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'TABLE' && (
+                                                            <TableBlock
+                                                                id={block.id}
+                                                                content={block.content}
+                                                                onFocus={() => setFocusedBlockId(block.id)}
+                                                                onChange={val => updateBlockContent(block.id, val)}
+                                                                align={block.align as any}
+                                                            />
+                                                        )}
+                                                        {block.type === 'DIVIDER' && (
+                                                            <div className="py-8 flex items-center">
+                                                                <div className="h-[2px] w-full bg-[#adb4a8]"></div>
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'IMAGE' && (
+                                                            <div className="my-6 relative flex flex-col items-center">
+                                                                {isUploading[block.id] ? (
+                                                                    <div className="h-48 flex items-center justify-center">
+                                                                        <Loader2 className="animate-spin text-[#adb4a8]" size={32} />
+                                                                    </div>
+                                                                ) : block.content ? (
+                                                                    <img src={block.content} alt="Material" className="max-w-full rounded-md shadow-sm border border-[#adb4a8]" />
+                                                                ) : (
+                                                                    <div className="w-full h-48 border-2 border-dashed border-[#adb4a8] rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-[#f1f5eb] transition-colors"
+                                                                        onClick={() => {
+                                                                            const input = document.createElement('input');
+                                                                            input.type = 'file';
+                                                                            input.accept = 'image/*';
+                                                                            input.onchange = async (e: any) => {
+                                                                                const file = e.target.files?.[0];
+                                                                                if (file) {
+                                                                                    setIsUploading(prev => ({ ...prev, [block.id]: true }));
+                                                                                    try { const url = await uploadToCloudinary(file); updateBlockContent(block.id, url); }
+                                                                                    finally { setIsUploading(prev => ({ ...prev, [block.id]: false })); }
+                                                                                }
+                                                                            };
+                                                                            input.click();
+                                                                        }}>
+                                                                        <ImageIcon size={32} className="text-[#adb4a8] mb-2" />
+                                                                        <span className="text-sm font-medium text-[#adb4a8]">Upload Image</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Delete button */}
+                                                    <button onClick={() => removeBlock(block.id)}
+                                                        className={`absolute -right-8 top-2 p-1 text-[#adb4a8] opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all`}
+                                                        title="Delete Block">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </React.Fragment>
+                                        );
+                                    })}
+
+                                    {/* Bottom click area to add block */}
+                                    <div className="py-20 cursor-text" onClick={() => { if (blocks.length === 0 || blocks[blocks.length - 1].content !== '' || blocks[blocks.length - 1].type !== 'PARAGRAPH') addBlock(blocks.length, 'PARAGRAPH'); }}>
+                                    </div>
                                 </div>
                             </Suspense>
                         </div>
@@ -1492,7 +1661,7 @@ function NewMaterialPageInner() {
             <AnimatePresence>
                 {showExitModal && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1504,7 +1673,7 @@ function NewMaterialPageInner() {
                                     <span className="material-symbols-outlined text-amber-500 text-xl">warning</span>
                                     <h3 className="text-lg font-bold text-zinc-900">Warning</h3>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setShowExitModal(false)}
                                     className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors"
                                 >
@@ -1518,17 +1687,17 @@ function NewMaterialPageInner() {
                                     Document not saved, do you want to save it?
                                 </p>
                             </div>
-                            
+
                             {/* Footer */}
                             <div className="px-6 py-5 flex flex-row justify-end gap-3">
-                                <button 
+                                <button
                                     onClick={() => setShowExitModal(false)}
                                     className="px-5 py-2.5 bg-zinc-50 text-zinc-600 rounded-xl font-bold text-xs hover:bg-zinc-100 transition-all active:scale-[0.98]"
                                 >
                                     Close
                                 </button>
-                                
-                                <button 
+
+                                <button
                                     onClick={() => {
                                         setHasChanges(false);
                                         if (taskId) {
@@ -1541,8 +1710,8 @@ function NewMaterialPageInner() {
                                 >
                                     Don't Save
                                 </button>
-                                
-                                <button 
+
+                                <button
                                     onClick={async () => {
                                         await handleSaveDraft();
                                         setHasChanges(false);
@@ -1568,7 +1737,7 @@ function NewMaterialPageInner() {
             <AnimatePresence>
                 {showTableModal && (
                     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1581,13 +1750,13 @@ function NewMaterialPageInner() {
                                 <h3 className="text-2xl font-black text-[#2d342b] mb-1">Create Table</h3>
                                 <p className="text-[#5a6157] text-sm font-medium">Specify your table dimensions.</p>
                             </div>
-                            
+
                             <div className="px-8 py-4 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[#adb4a8]">Rows</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             min="1" max="20"
                                             value={tableRows}
                                             onChange={e => setTableRows(Math.min(20, Math.max(1, parseInt(e.target.value) || 1)))}
@@ -1596,8 +1765,8 @@ function NewMaterialPageInner() {
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[#adb4a8]">Columns</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             min="1" max="10"
                                             value={tableCols}
                                             onChange={e => setTableCols(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
@@ -1606,15 +1775,15 @@ function NewMaterialPageInner() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-[#f8faf2] p-6 flex flex-col gap-3 mt-4">
-                                <button 
+                                <button
                                     onClick={confirmTableCreation}
                                     className="w-full py-4 bg-primary-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-900/20"
                                 >
                                     Create Table
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setShowTableModal(false)}
                                     className="w-full py-3.5 bg-white border border-[#adb4a8] text-[#5a6157] rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-zinc-50 transition-all"
                                 >

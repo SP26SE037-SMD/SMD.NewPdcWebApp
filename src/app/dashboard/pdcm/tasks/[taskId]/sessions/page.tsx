@@ -45,6 +45,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const [initialSessionJson, setInitialSessionJson] = useState<string | null>(null);
     const [existingMappings, setExistingMappings] = useState<CloSessionMapping[]>([]);
     const [isValidated, setIsValidated] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [remainingQuotas, setRemainingQuotas] = useState<any[]>([]);
@@ -371,14 +372,16 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             return;
         }
 
+        setIsDeleting(true);
         try {
             await SessionService.deleteSession(id);
             dispatch(removeSession({ syllabusId, index }));
             showToast("Session deleted successfully", "success");
+            setDeleteConfirm(null);
         } catch (error: any) {
             showToast(error.message || "Failed to delete session", "error");
         } finally {
-            setDeleteConfirm(null);
+            setIsDeleting(false);
         }
     };
 
@@ -428,7 +431,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                             >
                                 <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                                Import Session
+                                Import File
                             </button>
                             
                             <button
@@ -895,11 +898,20 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             </p>
                         </div>
                         <div className="flex gap-3 justify-center pt-2">
-                            <button onClick={() => setDeleteConfirm(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2">
+                            <button 
+                                onClick={() => setDeleteConfirm(null)} 
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2 disabled:opacity-50"
+                            >
                                 Cancel
                             </button>
-                            <button onClick={executeDeleteSession} className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2">
-                                Delete
+                            <button 
+                                onClick={executeDeleteSession} 
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2 flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isDeleting ? <Loader2 size={18} className="animate-spin" /> : null}
+                                {isDeleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -1299,7 +1311,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             setIsSaving(false);
                                         }
                                     }}
-                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-70'}`}
+                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-50 cursor-not-allowed'}`}
                                     style={{ background: isValidated ? '#41683f' : '#adb4a8' }}
                                 >
                                     {isSaving ? <span className="material-symbols-outlined animate-spin">refresh</span> : <span className="material-symbols-outlined text-[20px]">save</span>}

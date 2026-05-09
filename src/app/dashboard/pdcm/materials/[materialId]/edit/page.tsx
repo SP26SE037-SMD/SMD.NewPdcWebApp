@@ -1785,9 +1785,9 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                         </div>
                     </div>
 
-                    <div className="max-w-[1100px] mx-auto py-20 px-4 min-h-full">
+                    <div className="max-w-[1100px] mx-auto py-0 px-4 min-h-full">
                         {/* Single Continuous Wrapper */}
-                        <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-[#adb4a8] rounded-sm relative w-full min-h-[1100px] px-12 pt-16 pb-60 flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-[#adb4a8] rounded-sm relative w-full min-h-[1100px] px-12 pt-0 pb-60 flex flex-col" onClick={e => e.stopPropagation()}>
                             <div className="flex-1 flex flex-col gap-y-1">
                                 {isLoadingBlocks ? (
                                     <div className="flex-1 flex flex-col items-center justify-center py-40 gap-4">
