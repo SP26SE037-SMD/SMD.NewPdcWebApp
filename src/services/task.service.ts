@@ -80,8 +80,20 @@ export interface TaskItem {
   status: TaskStatus;
   priority: string;
   type: string;
+  action?: string;
   deadline: string;
+  document?: {
+    documentId: string;
+    documentUrl: string;
+  };
+  createdBy?: {
+    accountId: string;
+    email: string;
+    fullName: string;
+  };
   completedAt?: string | null;
+  targetId?: string | null;
+  rootTaskId?: string | null;
   createdAt: string;
   subjectsCount?: number;
   tags?: string[];
@@ -101,6 +113,11 @@ export interface TaskApiItem {
     fullName?: string;
     email?: string;
   };
+  assignTo?: {
+    accountId?: string;
+    fullName?: string;
+    email?: string;
+  };
   syllabusId?: string;
   syllabus?: {
     syllabusId?: string;
@@ -111,36 +128,49 @@ export interface TaskApiItem {
     status?: string;
   };
   curriculumId?: string | null;
+  curriculum_id?: string | null;
   majorId?: string | null;
-  major?: { majorId: string; majorCode: string; majorName: string; } | null;
+  major_id?: string | null;
+  major?: { 
+    majorId?: string; 
+    major_id?: string; 
+    majorCode?: string; 
+    major_code?: string; 
+    majorName?: string; 
+    major_name?: string; 
+  } | null;
   taskName: string;
+  task_name?: string;
   description: string;
   status: TaskStatus;
   priority: string;
   type: string;
-  deadline: string;
+  action?: string;
+  deadline?: string;
+  dueDate?: string;
+  document?: {
+    documentId: string;
+    documentUrl: string;
+  };
+  createdBy?: {
+    accountId: string;
+    email: string;
+    fullName: string;
+  };
   completedAt?: string | null;
+  target_id?: string | null;
+  targetId?: string | null;
+  root_task_id?: string | null;
+  rootTaskId?: string | null;
   createdAt: string;
 }
 
-type TaskPageApiItem = {
-  content?: TaskApiItem[];
-  page?: number;
-  size?: number;
-  totalElements?: number;
-  totalPages?: number;
-};
-
 export interface TasksPaginatedResponse {
-  status: number;
-  message: string;
-  data: {
-    content: TaskItem[];
-    page: number;
-    size: number;
-    totalElements: number;
-    totalPages: number;
-  };
+  content: TaskItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface TaskQueryParams {
@@ -148,6 +178,11 @@ export interface TaskQueryParams {
   status?: TaskStatus | string | string[];
   sprintId?: string;
   accountId?: string;
+  assignTo?: string;
+  createdBy?: string;
+  action?: string;
+  type?: string;
+  targetId?: string;
   majorId?: string;
   departmentId?: string;
   syllabusId?: string;
@@ -186,15 +221,6 @@ export interface BatchTaskPayload {
   tasks: CreateTaskPayload[];
 }
 
-// Helper to calculate progress
-const calculateProgress = (subjects: SubjectTaskDetail[]): number => {
-  if (!subjects.length) return 0;
-  const readyCount = subjects.filter(
-    (s) => s?.status === SUBJECT_STATUS.COMPLETED,
-  ).length;
-  return Math.round((readyCount / subjects.length) * 100);
-};
-
 export const TaskService = {
   getTasks: async (params?: TaskQueryParams): Promise<TasksPaginatedResponse> => {
     // If multiple statuses are provided, we map them into parallel requests.
@@ -204,20 +230,18 @@ export const TaskService = {
             return await TaskService.getTasks(singleParams);
         }));
 
-        // Merge results similarly to review-tasks
-        const combinedContent = results.flatMap(r => r?.data?.content || []);
+        const combinedContent = results.flatMap(r => r.content || []);
         const firstResult = results[0];
 
-        if (!firstResult) return { status: 200, message: "No data", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 } };
+        if (!firstResult) {
+            return { content: [], totalElements: 0, totalPages: 1, page: 0, size: params.size || 10 };
+        }
         
         return {
             ...firstResult,
-            data: {
-                ...firstResult.data,
-                content: combinedContent,
-                totalElements: results.reduce((acc, r) => acc + (r?.data?.totalElements || 0), 0),
-                totalPages: Math.max(1, ...results.map(r => r?.data?.totalPages || 1))
-            }
+            content: combinedContent,
+            totalElements: results.reduce((acc, r) => acc + (r.totalElements || 0), 0),
+            totalPages: Math.max(1, ...results.map(r => r.totalPages || 1))
         };
     }
 
@@ -237,18 +261,29 @@ export const TaskService = {
     if (params?.search) queryParams.append("search", params.search);
     if (params?.status && typeof params.status === 'string') queryParams.append("status", params.status);
     if (params?.sprintId) queryParams.append("sprintId", params.sprintId);
-    if (params?.accountId) queryParams.append("accountId", params.accountId);
+    
+    // Support both accountId (legacy) and assignTo (v2)
+    const assignTo = params?.assignTo || params?.accountId;
+    if (assignTo) queryParams.append("assignTo", assignTo);
+    
+    if (params?.createdBy) queryParams.append("createdBy", params.createdBy);
+    if (params?.action) queryParams.append("action", params.action);
+    if (params?.type) queryParams.append("type", params.type);
+    if (params?.targetId) queryParams.append("targetId", params.targetId);
     if (params?.majorId) queryParams.append("majorId", params.majorId);
     if (params?.departmentId)
       queryParams.append("departmentId", params.departmentId);
     if (params?.syllabusId) queryParams.append("syllabusId", params.syllabusId);
 
     const response = await apiClient.get<TasksPaginatedResponse>(
-          `/api/tasks?${queryParams.toString()}`,
+          `/api/v1/tasks-v2?${queryParams.toString()}`,
           { credentials: "include" },
       );
 
-    return response;
+    return {
+      ...response,
+      content: response.content ? response.content.map(TaskService.mapTaskApiToItem) : [],
+    };
   },
 
   mapTaskApiToItem: (task: any): TaskItem => ({
@@ -257,9 +292,9 @@ export const TaskService = {
     subjectId: task.subjectId || task.syllabus?.subjectId,
     subjectStatus: task.subjectStatus,
     account: {
-      accountId: task.account?.accountId || task.accountId || "",
-      email: task.account?.email || "",
-      fullName: task.account?.fullName || task.fullName || "Unassigned",
+      accountId: task.assignTo?.accountId || task.account?.accountId || task.accountId || "",
+      email: task.assignTo?.email || task.account?.email || task.email || "",
+      fullName: task.assignTo?.fullName || task.account?.fullName || task.fullName || "Unassigned",
     },
     syllabus: {
       syllabusId: task.syllabus?.syllabusId || task.syllabusId || "",
@@ -277,16 +312,35 @@ export const TaskService = {
     status: task.status,
     priority: task.priority,
     type: task.type,
-    deadline: task.deadline,
+    action: task.action,
+    deadline: task.deadline || task.dueDate,
+    document: task.document ? {
+      documentId: task.document.documentId,
+      documentUrl: task.document.documentUrl,
+      majorId: task.document.majorId || task.document.major_id,
+    } : undefined,
+    majorId: task.majorId ?? task.major?.majorId ?? task.document?.majorId ?? task.document?.major_id ?? null,
+    createdBy: task.createdBy ? {
+      accountId: task.createdBy.accountId,
+      email: task.createdBy.email,
+      fullName: task.createdBy.fullName,
+    } : undefined,
     completedAt: task.completedAt ?? null,
+    targetId: task.targetId ?? task.target_id ?? null,
+    rootTaskId: task.rootTaskId ?? task.root_task_id ?? null,
     createdAt: task.createdAt,
     syllabusStatus: task.syllabus?.status || null,
   }),
 
   getTaskById: async (taskId: string) => {
-    return apiClient.get<{ status: number; message: string; data: TaskItem }>(
-            `/api/tasks/${taskId}`,
-        );
+    const response = await apiClient.get<TaskApiItem>(
+      `/api/v1/tasks-v2/${taskId}`,
+    );
+    return {
+      status: 200,
+      message: "Success",
+      data: TaskService.mapTaskApiToItem(response)
+    };
   },
 
   getTaskByAccountId: async (id: string, status?: TaskStatus) => {
@@ -321,8 +375,8 @@ export const TaskService = {
     sprintId: string,
     departmentId: string,
     accountId?: string,
-  ) => {
-    const response = await TaskService.getTasks({
+  ): Promise<TasksPaginatedResponse> => {
+    return await TaskService.getTasks({
       sprintId,
       departmentId,
       accountId,
@@ -330,53 +384,21 @@ export const TaskService = {
       sortBy: "deadline",
       direction: "asc",
     });
-
-    const responseRecord = response.data as { data?: TaskPageApiItem };
-    const payload = responseRecord?.data ?? (response.data as TaskPageApiItem);
-    const rawContent = Array.isArray(payload?.content) ? payload.content : [];
-    const content = rawContent.map(TaskService.mapTaskApiToItem);
-
-    return {
-      ...response,
-      data: {
-        content,
-        page: payload?.page ?? 0,
-        size: payload?.size ?? 10,
-        totalElements: payload?.totalElements ?? content.length,
-        totalPages: payload?.totalPages ?? 1,
-      },
-    };
   },
 
-  getTasksBySprintId: async (sprintId: string, accountId?: string) => {
-    const response = await TaskService.getTasks({
+  getTasksBySprintId: async (sprintId: string, accountId?: string): Promise<TasksPaginatedResponse> => {
+    return await TaskService.getTasks({
       sprintId,
       accountId,
       size: 100,
       sortBy: "deadline",
       direction: "asc",
     });
-
-    const responseRecord = response.data as { data?: TaskPageApiItem };
-    const payload = responseRecord?.data ?? (response.data as TaskPageApiItem);
-    const rawContent = Array.isArray(payload?.content) ? payload.content : [];
-    const content = rawContent.map(TaskService.mapTaskApiToItem);
-
-    return {
-      ...response,
-      data: {
-        content,
-        page: payload?.page ?? 0,
-        size: payload?.size ?? 10,
-        totalElements: payload?.totalElements ?? content.length,
-        totalPages: payload?.totalPages ?? 1,
-      },
-    };
   },
 
-  updateTaskStatus: async (taskId: string, status: TaskStatus, accountId: string = "") => {
+  updateTaskStatus: async (taskId: string, status: TaskStatus) => {
     return apiClient.patch<{ status: number; message: string; data?: unknown }>(
-      `/api/tasks/${taskId}/status?status=${status}`,
+      `/api/v1/tasks-v2/${taskId}/status?request=${status}`,
       {},
       { credentials: "include" }
     );

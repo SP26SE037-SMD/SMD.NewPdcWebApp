@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
 import { useSearchParams } from "next/navigation";
-import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import StepNavigation from "./StepNavigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,7 +84,11 @@ const TreeNode = ({ label, icon, childrenList, defaultOpen = false }: any) => {
   );
 };
 
-export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: StepProps) {
+export default function CourseBuilderStep({
+  onNext,
+  onBack,
+  curriculumIdProp,
+}: StepProps) {
   const [rightTab, setRightTab] = useState<"WAREHOUSE" | "GROUPS" | "TREE">(
     "WAREHOUSE",
   );
@@ -550,7 +558,7 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
     <div className="min-h-screen px-4 md:px-12 pb-12 font-['Plus_Jakarta_Sans']">
       {/* Step Indicator (Progress Stepper) */}
       <header className="mb-10 max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-8">
           <div>
             <h1 className="text-4xl font-extrabold text-zinc-900 tracking-tight mb-2">
               Course Builder
@@ -950,30 +958,36 @@ export default function CourseBuilderStep({ onNext, onBack, curriculumIdProp }: 
             {rightTab === "WAREHOUSE" && (
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="space-y-3 mb-4">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                          size={14}
-                        />
-                        <input
-                          type="text"
-                          placeholder={searchBy === "code" ? "Search by code..." : "Tìm kiếm theo tên..."}
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                          className="w-full bg-white border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
-                        />
-                      </div>
-                      <select
-                        value={searchBy}
-                        onChange={(e) => setSearchBy(e.target.value as "code" | "name")}
-                        className="bg-white border-none rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-[var(--primary)] cursor-pointer transition-all appearance-none"
-                        style={{ width: "80px", textAlign: "center" }}
-                      >
-                        <option value="code">Code</option>
-                        <option value="name">Name</option>
-                      </select>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                        size={14}
+                      />
+                      <input
+                        type="text"
+                        placeholder={
+                          searchBy === "code"
+                            ? "Search by code..."
+                            : "Tìm kiếm theo tên..."
+                        }
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-white border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                      />
                     </div>
+                    <select
+                      value={searchBy}
+                      onChange={(e) =>
+                        setSearchBy(e.target.value as "code" | "name")
+                      }
+                      className="bg-white border-none rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-[var(--primary)] cursor-pointer transition-all appearance-none"
+                      style={{ width: "80px", textAlign: "center" }}
+                    >
+                      <option value="code">Code</option>
+                      <option value="name">Name</option>
+                    </select>
+                  </div>
                   <div className="relative group/dept">
                     <Building
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within/dept:text-[var(--primary)] transition-colors"

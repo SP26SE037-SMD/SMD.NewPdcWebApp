@@ -176,7 +176,7 @@ export default function CurriculumsManagement({
   return (
     <div className="min-h-screen bg-white">
       {/* Sticky Header - Academic Atelier Style */}
-      <div className="px-8 md:px-12 py-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white sticky top-0 z-30">
+      <div className="px-8 md:px-12 py-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white sticky top-0 z-20">
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 shadow-sm border border-primary-100 transition-all">
@@ -204,7 +204,7 @@ export default function CurriculumsManagement({
       </div>
 
       {/* Premium Navigation & Search */}
-      <div className="bg-white border-y border-zinc-100 sticky top-[120px] z-20 backdrop-blur-md bg-white/80">
+      <div className="bg-white border-y border-zinc-100 sticky top-[120px] z-10 backdrop-blur-md bg-white/80">
         <div className="max-w-[1600px] mx-auto px-8 md:px-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Status Tabs */}

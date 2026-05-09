@@ -309,7 +309,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
     <div className={`bg-zinc-50/50 flex flex-col ${isEmbedded ? "h-full" : "min-h-screen"}`}>
       {/* Sticky Header */}
       {!isEmbedded && (
-      <div className="bg-white border-b border-zinc-100 px-8 py-4 sticky top-0 z-40 shadow-sm">
+      <div className="bg-white border-b border-zinc-100 px-8 py-4 sticky top-0 z-20 shadow-sm">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button

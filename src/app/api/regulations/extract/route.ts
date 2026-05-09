@@ -11,10 +11,12 @@ export async function POST(request: Request) {
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        const backendResponse = await fetch(`${BACKEND_URL}/api/regulations/extract`, {
+        const backendUrl = `${BACKEND_URL}:8080/api/regulations/extract`;
+        console.log(`[BFF] Calling Backend: ${backendUrl}`);
+
+        const backendResponse = await fetch(backendUrl, {
             method: 'POST',
             headers: {
-                // Do NOT set Content-Type here, let fetch handle the boundary for multipart/form-data
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
             body: formData,
@@ -22,6 +24,7 @@ export async function POST(request: Request) {
         
         if (!backendResponse.ok) {
             const errorText = await backendResponse.text();
+            console.error(`[BFF] Backend Error (${backendResponse.status}):`, errorText);
             try {
                 const errorJson = JSON.parse(errorText);
                 return NextResponse.json(errorJson, { status: backendResponse.status });
