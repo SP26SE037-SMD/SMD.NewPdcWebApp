@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -63,6 +63,11 @@ export default function SprintManagementContent() {
   const { user, isLoading: isAuthLoading } = useSelector(
     (state: RootState) => state.auth,
   );
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const accountId = user?.accountId;
   const selectedCurriculumId = searchParams.get("curriculumId");
@@ -153,6 +158,19 @@ export default function SprintManagementContent() {
         : `/dashboard/hopdc/sprint-management/new-subject?${params.toString()}`,
     );
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex items-center gap-3 text-zinc-500">
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-[11px] font-bold uppercase tracking-widest">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedCurriculumId) {
     if (isCurriculumLoading || isAuthLoading) {

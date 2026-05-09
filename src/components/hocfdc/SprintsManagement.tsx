@@ -162,7 +162,7 @@ export const SprintsManagement = ({
               className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
             >
               <Plus size={16} strokeWidth={3} />
-              Initialize Sprint
+              Create Sprint
             </button>
             {curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5 bg-amber-50/50 px-3 py-1 rounded-lg border border-amber-100">
@@ -233,7 +233,7 @@ export const SprintsManagement = ({
                   href={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
                   className="flex items-center gap-2 bg-zinc-100 text-zinc-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl"
                 >
-                  BOARD <KanbanSquare size={14} />
+                  VIEW DETAILS <KanbanSquare size={14} />
                 </Link>
               </>
             )}

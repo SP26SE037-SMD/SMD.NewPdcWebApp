@@ -66,7 +66,8 @@ const DevelopCard = ({
   onAccept: (t: any) => void;
   router: any;
 }) => {
-  const deadline = task.deadline ? new Date(task.deadline) : null;
+  const deadlineVal = task.deadline || task.dueDate;
+  const deadline = deadlineVal ? new Date(deadlineVal) : null;
   const [now] = React.useState(() => Date.now());
   const daysLeft = deadline
     ? Math.ceil((deadline.getTime() - now) / 86400000)
@@ -229,7 +230,8 @@ const ReviewCard = ({
   onAccept: (t: any) => void;
   router: any;
 }) => {
-  const deadline = task.deadline ? new Date(task.deadline) : null;
+  const deadlineVal = task.deadline || task.dueDate;
+  const deadline = deadlineVal ? new Date(deadlineVal) : null;
   const [now] = React.useState(() => Date.now());
   const daysLeft = deadline
     ? Math.ceil((deadline.getTime() - now) / 86400000)
@@ -298,11 +300,11 @@ const ReviewCard = ({
           </div>
           <div className="text-xs flex gap-1 items-center truncate">
             <span className="font-semibold" style={{ color: C.onSurface }}>
-              {task.reviewer?.fullName || "Assigned Reviewer"}
+              {task.reviewer?.fullName || task.assignTo?.fullName || "Assigned Reviewer"}
             </span>
             <span className="text-zinc-400">&bull;</span>
             <span className="text-zinc-500 truncate">
-              {task.reviewer?.email || "reviewer@university.edu"}
+              {task.reviewer?.email || task.assignTo?.email || "reviewer@university.edu"}
             </span>
           </div>
         </div>
@@ -505,12 +507,15 @@ export default function PDCMDashboardContent({
         });
         return { data: res };
       } else {
-        return await ReviewTaskService.getReviewTasks(
-          user?.accountId || "",
-          params.status as string | string[],
-          params.page,
-          params.size,
-        );
+        const res = await TaskService.getTasksV2({
+          assignTo: user?.accountId,
+          action: 'REVIEW',
+          type: 'SYLLABUS',
+          status: reviewStatusMapping[statusTab],
+          page: page,
+          size: 10
+        });
+        return { data: res };
       }
     },
     enabled: !!user?.accountId,

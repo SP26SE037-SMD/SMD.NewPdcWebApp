@@ -54,7 +54,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     mutationFn: (data: SprintPayload) => SprintService.createSprint(data),
     onSuccess: (response) => {
       if (response.status === 1000) {
-        showToast("Sprint initialized successfully", "success");
+        showToast("Sprint created successfully", "success");
         queryClient.invalidateQueries({ queryKey: ["sprints"] });
         router.refresh(); // Revalidate the path to update server components
         onClose();
@@ -68,7 +68,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
         });
         setSelectedDeptId("");
       } else {
-        showToast(response.message || "Failed to initialize sprint", "error");
+        showToast(response.message || "Failed to create sprint", "error");
       }
     },
     onError: (error: any) => {
@@ -138,7 +138,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
             {/* Modal Header */}
             <div className="flex items-center justify-between p-8 border-b border-zinc-100 bg-zinc-50/50">
               <div className="space-y-1">
-                 <h2 className="text-3xl font-black text-zinc-900 tracking-tighter uppercase">Initialize Sprint</h2>
+                 <h2 className="text-3xl font-black text-primary tracking-tighter uppercase">Create Sprint</h2>
                  <div className="flex items-center gap-2">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                         <GraduationCap size={14} className="text-primary"/> 
@@ -157,7 +157,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
               </div>
               <button 
                 onClick={onClose}
-                className="p-3 bg-white border border-zinc-200 hover:bg-zinc-900 hover:text-white transition-all rounded-lg shadow-sm active:scale-95"
+                className="p-3 bg-white border border-zinc-200 text-zinc-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all rounded-lg shadow-sm active:scale-95"
               >
                 <X size={24} />
               </button>
@@ -168,7 +168,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                <div className="space-y-8">
                   <div className="space-y-3">
                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                        <Target size={14} className="text-zinc-900" /> Sprint Name / Campaign
+                        <Target size={14} className="text-primary" /> Sprint Name / Campaign
                      </label>
                      <input 
                        type="text" 
@@ -183,7 +183,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                    <div className="grid grid-cols-1 gap-8">
                       <div className="space-y-3">
                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                            <Building2 size={14} className="text-zinc-900" /> Academic Department (Sprint Owner)
+                            <Building2 size={14} className="text-primary" /> Academic Department (Sprint Owner)
                          </label>
                          <select
                            required
@@ -230,29 +230,29 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                </div>
 
                <div className="flex items-center gap-6 pt-6 border-t border-zinc-100">
-                  <div className="flex-1 p-4 bg-zinc-50 rounded-lg border-l-4 border-zinc-400">
-                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Status: {formData.status}</p>
-                     <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                        Newly initialized sprints default to Planning status.
+                  <div className="flex-1 p-4 bg-sky-50 rounded-lg border-l-4 border-sky-400">
+                     <p className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1">Status: {formData.status}</p>
+                     <p className="text-xs text-sky-600 font-medium leading-relaxed">
+                        Newly created sprints default to Planning status.
                      </p>
                   </div>
                   <div className="flex gap-4">
                      <button 
                        type="button"
                        onClick={onClose}
-                       className="px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                       className="px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-100 rounded-xl transition-all"
                      >
                         Cancel
                      </button>
                      <button 
                        type="submit"
                        disabled={createMutation.isPending}
-                       className="flex items-center gap-2 bg-zinc-100 text-zinc-900 px-10 py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                       className="flex items-center gap-2 bg-primary text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                      >
                         {createMutation.isPending ? (
-                          <>Launching <Loader2 size={16} className="animate-spin" /></>
+                          <>Saving <Loader2 size={16} className="animate-spin" /></>
                         ) : (
-                          <>Save & Launch <Plus size={16} strokeWidth={3} /></>
+                          <>Save <Plus size={16} strokeWidth={3} /></>
                         )}
                      </button>
                    </div>

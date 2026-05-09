@@ -210,17 +210,15 @@ export interface TaskQueryParamsV2 {
 
 export interface CreateTaskPayload {
   sprintId: string;
-  subjectId?: string;
-  syllabusId?: string;
-  accountId?: string;
-  curriculumId?: string;
+  assignTo?: string;
   taskName: string;
   description: string;
+  action?: string;
   priority: string | null;
-  status?: string;
   type: string;
-  deadline?: string;
-  createdAt?: string;
+  targetId?: string;
+  rootTaskId?: string | null;
+  dueDate?: string;
 }
 
 export interface UpdateTaskPayload {
@@ -442,7 +440,7 @@ export const TaskService = {
       status: number;
       message: string;
       data?: TaskApiItem;
-    }>("/api/tasks", payload, {
+    }>("/api/v1/tasks-v2", payload, {
       credentials: "include",
     });
   },

@@ -694,9 +694,9 @@ export function TaskList({ sprintId }: TaskListProps) {
     });
 
   const pdcmAccounts = useMemo<DepartmentAccount[]>(() => {
-    return departmentAccounts.filter(
-      (account) => account.roleName?.toUpperCase() === "PDCM",
-    );
+    // Return all department accounts for now since roleName might differ (e.g. PDCM_LEAD)
+    // or the backend might return roles differently.
+    return departmentAccounts;
   }, [departmentAccounts]);
 
   const {

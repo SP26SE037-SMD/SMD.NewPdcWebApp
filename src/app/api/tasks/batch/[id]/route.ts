@@ -14,7 +14,7 @@ export async function POST(
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-    const backendResponse = await fetch(`${BACKEND_URL}/api/tasks/batch/${id}`, {
+    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/tasks-v2/batch/${id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
