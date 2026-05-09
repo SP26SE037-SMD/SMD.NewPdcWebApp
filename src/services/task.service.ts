@@ -364,17 +364,20 @@ export const TaskService = {
     if (params?.targetId) queryParams.append("targetId", params.targetId);
 
     const response = await apiClient.get<TasksPaginatedResponse>(
-          `/api/tasks-v2?${queryParams.toString()}`,
+          `/api/v1/tasks-v2?${queryParams.toString()}`,
           { credentials: "include" },
       );
 
-    return response;
+    return {
+      ...response,
+      content: response.content ? response.content.map(TaskService.mapTaskApiToItem) : [],
+    };
   },
 
   mapTaskApiToItem: (task: any): TaskItem => ({
     taskId: task.taskId,
     sprintId: task.sprintId,
-    subjectId: task.subjectId || task.syllabus?.subjectId,
+    subjectId: task.subjectId || task.subject?.subjectId || task.syllabus?.subjectId,
     subjectStatus: task.subjectStatus,
     account: {
       accountId: task.assignTo?.accountId || task.account?.accountId || task.accountId || "",

@@ -277,7 +277,8 @@ function TaskRow({
     );
   };
 
-  const isReusedSubject = task.type === TASK_TYPE.REUSED_SUBJECT;
+  // action=UPDATE means self-do task (like reused subject), action=CREATE means assignable to subordinate
+  const isReusedSubject = task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT;
   const isDone = task.status === TASK_STATUS.DONE;
 
   const statusConfig = getTaskStatusConfig(task.status);
@@ -705,10 +706,10 @@ export function TaskList({ sprintId }: TaskListProps) {
     isError: isTasksError,
     error: tasksError,
   } = useQuery({
-    queryKey: ["assignments", sprintId, departmentId],
+    queryKey: ["assignments", sprintId],
     queryFn: () =>
-      TaskService.getTasksBySprintIdAndDepartmentId(sprintId, departmentId),
-    enabled: !!sprintId && !!departmentId,
+      TaskService.getTasksV2({ sprintId, size: 100 }),
+    enabled: !!sprintId,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -813,7 +814,7 @@ export function TaskList({ sprintId }: TaskListProps) {
       });
       showToast("Task assignment saved successfully", "success");
       await queryClient.invalidateQueries({
-        queryKey: ["assignments", sprintId, departmentId],
+        queryKey: ["assignments", sprintId],
       });
     },
     onError: (error, variables) => {
@@ -880,7 +881,7 @@ export function TaskList({ sprintId }: TaskListProps) {
     onSuccess: async () => {
       showToast("Task completed successfully", "success");
       await queryClient.invalidateQueries({
-        queryKey: ["assignments", sprintId, departmentId],
+        queryKey: ["assignments", sprintId],
       });
     },
     onError: (error: any) => {
