@@ -52,19 +52,17 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     queryFn: () => TaskService.getTasksBySprintId(sprintId),
   });
 
-  const tasks = ((tasksRes?.data as any)?.content as any[]) || [];
+  const tasks = tasksRes?.content || [];
   const totalTasks = tasks.length;
   
   const allTasksDone = totalTasks > 0 && tasks.every((t) => t.status === "DONE");
   const pendingSubjectsCount = tasks.filter((t) => 
     t.status === "DONE" && 
-    t.subjectStatus !== "COMPLETED" && 
-    t.subjectStatus !== "PUBLISHED"
+    t.subjectStatus !== "COMPLETED"
   ).length;
 
   const readyTasks = tasks.filter((t) => 
-    t.status === "DONE" && 
-    (t.subjectStatus === "COMPLETED" || t.subjectStatus === "PUBLISHED")
+    t.status === "DONE" && t.subjectStatus === "COMPLETED"
   ).length;
 
   const isSprintReadyToComplete = totalTasks > 0 && readyTasks === totalTasks;

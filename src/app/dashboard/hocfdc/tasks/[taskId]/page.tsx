@@ -9,6 +9,7 @@ import { MajorService, Major } from "@/services/major.service";
 import { PoService, PO } from "@/services/po.service";
 import { CurriculumService, CurriculumFramework, CURRICULUM_STATUS } from "@/services/curriculum.service";
 import { RequestService, RequestItem } from "@/services/request.service";
+import { DocumentService } from "@/services/document.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
@@ -42,9 +43,12 @@ export default function TaskDetailPage() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const initialMajorId = searchParams.get("majorId");
-  const [activeTab, setActiveTab] = useState<Tab>("major");
-  const [documentId, setDocumentId] = useState<string | null>(null);
+  const initialTargetId = searchParams.get("targetId");
+  const taskType = searchParams.get("type");
+
+  const [activeTab, setActiveTab] = useState<Tab>("process");
+  const [majorId, setMajorId] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(initialTargetId);
   const [task, setTask] = useState<TaskItem | null>(null);
   const [major, setMajor] = useState<Major | null>(null);
   const [pos, setPos] = useState<PO[]>([]);
@@ -77,37 +81,30 @@ export default function TaskDetailPage() {
         if (rawTask) {
           let mappedTask = TaskService.mapTaskApiToItem(rawTask);
 
-          // Use majorId from URL if present and detail API returns null
-          if (!mappedTask.majorId && initialMajorId) {
-            console.log("[TaskDetail] Using majorId from URL:", initialMajorId);
-            mappedTask.majorId = initialMajorId;
-          }
-
-          // FALLBACK: If majorId is still missing, try to find it in the list
-          if (!mappedTask.majorId && user?.accountId) {
-            console.log("[TaskDetail] majorId missing in detail, attempting fallback from task list...");
-            try {
-              const listRes = await TaskService.getTasks({ accountId: user.accountId, size: 100 });
-              const listTasks = listRes?.data?.content || [];
-              const taskFromList = listTasks.find(t => t.taskId === taskId);
-
-              if (taskFromList && taskFromList.majorId) {
-                console.log("[TaskDetail] Found majorId in list fallback:", taskFromList.majorId);
-                mappedTask = { ...mappedTask, majorId: taskFromList.majorId, major: taskFromList.major };
-              }
-            } catch (fallbackErr) {
-              console.error("[TaskDetail] Fallback failed:", fallbackErr);
-            }
-          }
-
-          console.log("[TaskDetail] Final Mapped Task:", mappedTask);
+          // Identify documentId: targetId is the documentId for MAJOR tasks
+          const effectiveDocId = mappedTask.targetId || initialTargetId || mappedTask.document?.documentId;
           
-          // Parse documentId from description
-          const docMatch = mappedTask.description?.match(/document ID:\s*([a-zA-Z0-9-]+)/i);
-          const parsedDocId = docMatch ? docMatch[1] : null;
-          if (parsedDocId) {
-            setDocumentId(parsedDocId);
-            if (!mappedTask.majorId) {
+          if (effectiveDocId) {
+            setDocumentId(effectiveDocId);
+            
+            // Check Document details to see if majorId is already assigned
+            try {
+              const docDetail = await DocumentService.getDocument(effectiveDocId);
+              console.log("[TaskDetail] Document Detail fetched for redirect check:", docDetail);
+              
+              // Handle cases where docDetail might be the wrapper or the data itself
+              const actualMajorId = docDetail?.majorId || (docDetail as any)?.data?.majorId;
+              
+              if (actualMajorId) {
+                console.log("[TaskDetail] Redirecting to MAJOR tab. Found majorId:", actualMajorId);
+                setMajorId(actualMajorId);
+                setActiveTab("major");
+              } else {
+                console.log("[TaskDetail] No majorId found in document, staying on PROCESS tab.");
+                setActiveTab("process");
+              }
+            } catch (docErr) {
+              console.error("[TaskDetail] Failed to fetch document details:", docErr);
               setActiveTab("process");
             }
           }
@@ -126,22 +123,24 @@ export default function TaskDetailPage() {
 
   // Load major when task is ready
   useEffect(() => {
-    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-    if (!effectiveMajorId) return;
+    if (!majorId) return;
 
     const load = async () => {
       setLoadingMajor(true);
       try {
-        const res = await MajorService.getMajorById(effectiveMajorId);
+        const res = await MajorService.getMajorById(majorId);
         setMajor((res as any)?.data as Major);
-        const posRes = await PoService.getPOsByMajorId(effectiveMajorId, { size: 100 });
+        const posRes = await PoService.getPOsByMajorId(majorId, { size: 100 });
         setPos((posRes as any)?.data?.content || []);
-
+        
         // Load existing curriculum for this major if any
         try {
-          const currRes = await CurriculumService.getCurriculumsByMajorId(effectiveMajorId);
+          const currRes = await CurriculumService.getCurriculumsByMajorId(majorId);
           const currList = (currRes as any)?.data || [];
-          if (currList.length > 0) setCurriculum(currList[0]);
+          if (currList.length > 0) {
+            const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
+            setCurriculum(fullRes?.data || fullRes);
+          }
         } catch { }
       } catch {
         toast.error("Failed to load major info");
@@ -150,17 +149,16 @@ export default function TaskDetailPage() {
       }
     };
     load();
-  }, [task?.majorId, task?.major?.majorId, taskId, initialMajorId]);
+  }, [majorId]);
 
   // Load rejection feedback if any
   useEffect(() => {
-    const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-    if (!effectiveMajorId) return;
+    if (!majorId) return;
 
     const checkRejection = async () => {
       try {
         const res = await RequestService.getRequests({
-          majorId: effectiveMajorId,
+          majorId: majorId,
           status: "REJECTED",
           size: 1,
           sortBy: "createdAt",
@@ -175,7 +173,7 @@ export default function TaskDetailPage() {
       }
     };
     checkRejection();
-  }, [task?.majorId, task?.major?.majorId, initialMajorId]);
+  }, [majorId]);
 
   // Save curriculum info
   const handleSaveCurriculum = async (data: any, proceed?: boolean) => {
@@ -186,7 +184,7 @@ export default function TaskDetailPage() {
         const res = await CurriculumService.updateCurriculum(curriculum.curriculumId, data);
         saved = (res as any)?.data as CurriculumFramework;
       } else {
-        const res = await CurriculumService.createCurriculum({ ...data, majorId: task?.majorId });
+        const res = await CurriculumService.createCurriculum({ ...data, majorId: majorId || "" });
         saved = (res as any)?.data as CurriculumFramework;
       }
       setCurriculum(saved);
@@ -205,7 +203,7 @@ export default function TaskDetailPage() {
       toast.error("Please create a curriculum first");
       return;
     }
-    if (!task?.majorId) {
+    if (!majorId) {
       toast.error("No major associated with this task");
       return;
     }
@@ -224,12 +222,12 @@ export default function TaskDetailPage() {
         status: "PENDING",
         createdById: user?.accountId || "",
         curriculumId: curriculum.curriculumId,
-        majorId: task.majorId,
+        majorId: majorId,
       });
 
       // 3. Update task status to DONE (Only for first-time submission)
       if (!rejectionRequest) {
-        await TaskService.updateTaskStatus(taskId as string, TASK_STATUS.DONE);
+        await TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
       }
 
       toast.success("Request submitted successfully!");
@@ -263,7 +261,7 @@ export default function TaskDetailPage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
+      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
         <div className="max-w-7xl mx-auto">
           {/* Rejection banner removed as per user request, moved to button near title */}
 
@@ -294,13 +292,13 @@ export default function TaskDetailPage() {
               <p className="text-sm text-on-surface-variant mt-0.5 max-w-2xl line-clamp-1">{task.description}</p>
             </div>
             <div className="flex items-center gap-3">
-              {task.major && (
+              {majorId && (
                 <button
-                  onClick={() => router.push(`/dashboard/hocfdc/${task.majorId || task.major?.majorId}`)}
+                  onClick={() => router.push(`/dashboard/hocfdc/${majorId}`)}
                   className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all flex items-center gap-2 group/major shadow-sm"
                 >
                   <Eye className="h-3.5 w-3.5 group-hover/major:scale-110 transition-transform" />
-                  <span>View Major: {task.major.majorCode}</span>
+                  <span>View Major: {major?.majorCode || "Detail"}</span>
                 </button>
               )}            </div>
           </div>
@@ -309,9 +307,9 @@ export default function TaskDetailPage() {
           <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-none pb-1">
             {ALL_TABS.filter(tab => {
               // Hide Process Document if there is a majorId
-              if (tab.id === "process") return !!documentId && !task.majorId;
+              if (tab.id === "process") return !!documentId && !majorId;
               // If there's no majorId but there is a documentId, hide everything else except Process
-              if (!task.majorId && !!documentId) return false;
+              if (!majorId && !!documentId) return false;
               return true;
             }).map((tab, idx) => {
               const isCompleted =
@@ -361,24 +359,8 @@ export default function TaskDetailPage() {
                       body: JSON.stringify({ majorId: newMajorId })
                     });
 
-                    // 2. Update Task with new majorId (Requires full existing task data)
-                    if (task) {
-                      await fetch(`/api/tasks/${taskId}/byVP`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          majorId: newMajorId,
-                          taskName: task.taskName,
-                          description: task.description,
-                          priority: task.priority || "MEDIUM",
-                          deadline: task.deadline,
-                          type: task.type || "CREATE_CURRICULUM"
-                        })
-                      });
-                    }
-
-                    // 3. Navigate back to tasks list and refresh
-                    toast.success("Document and Task linked to new Major successfully!");
+                    // 2. Navigate back to tasks list and refresh
+                    toast.success("Extraction completed and linked to Document!");
                     router.push('/dashboard/hocfdc/tasks');
                     router.refresh();
                   } catch (error) {
@@ -394,13 +376,13 @@ export default function TaskDetailPage() {
               <MajorDetailTab
                 major={major}
                 loading={loadingMajor}
-                majorId={task?.majorId || task?.major?.majorId || initialMajorId}
+                majorId={majorId}
               />
             )}
 
             {/* PO TAB */}
             {activeTab === "po" && (
-              <POTab pos={pos} loading={loadingMajor} majorId={task.majorId} />
+              <POTab pos={pos} loading={loadingMajor} majorId={majorId} />
             )}
 
             {/* CREATE CURRICULUM TAB */}
@@ -408,16 +390,21 @@ export default function TaskDetailPage() {
               <div className="bg-surface rounded-2xl border border-outline/20 overflow-hidden">
                 {!curriculum ? (
                   <CurriculumImportStep
-                    majorId={task?.majorId || ""}
+                    majorId={majorId || ""}
                     majorCode={major?.majorCode}
                     onImportSuccess={() => {
                       // Fetch the newly imported curriculum via majorId
-                      const effectiveMajorId = task?.majorId || task?.major?.majorId || initialMajorId;
-                      if (effectiveMajorId) {
-                        CurriculumService.getCurriculumsByMajorId(effectiveMajorId).then(res => {
+                      if (majorId) {
+                        CurriculumService.getCurriculumsByMajorId(majorId).then(async (res) => {
                           const currList = (res as any)?.data || [];
                           if (currList.length > 0) {
-                            setCurriculum(currList[0]);
+                            try {
+                              const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
+                              setCurriculum(fullRes?.data || fullRes);
+                            } catch (err) {
+                              console.error("Failed to fetch full curriculum detail:", err);
+                              setCurriculum(currList[0]);
+                            }
                           }
                           setActiveTab("plo"); // Auto move to next tab after import
                         }).catch(() => {
@@ -435,7 +422,7 @@ export default function TaskDetailPage() {
                       curriculumCode: curriculum.curriculumCode,
                       curriculumName: curriculum.curriculumName,
                       startYear: curriculum.startYear,
-                      majorId: curriculum.majorId || task?.majorId,
+                      majorId: curriculum.majorId || majorId,
                       description: curriculum.description,
                     }}
                     onSave={handleSaveCurriculum}
@@ -491,11 +478,11 @@ export default function TaskDetailPage() {
               <SubmitTab
                 curriculum={curriculum}
                 major={major}
-                task={task}
-                submitting={submitting}
+                majorId={majorId}
                 rejectionRequest={rejectionRequest}
-                onSubmit={handleSubmit}
                 onGoCreate={() => setActiveTab("curriculum")}
+                onSubmit={handleSubmit}
+                submitting={submitting}
               />
             )}
           </motion.div>
@@ -662,15 +649,21 @@ function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void
 }
 
 function SubmitTab({
-  curriculum, major, task, submitting, rejectionRequest, onSubmit, onGoCreate,
+  curriculum,
+  major,
+  majorId,
+  rejectionRequest,
+  onGoCreate,
+  onSubmit,
+  submitting
 }: {
   curriculum: CurriculumFramework | null;
   major: Major | null;
-  task: TaskItem;
-  submitting: boolean;
+  majorId: string | null;
   rejectionRequest: RequestItem | null;
-  onSubmit: (title: string, content: string) => void;
   onGoCreate: () => void;
+  onSubmit: (title: string, content: string) => void;
+  submitting: boolean;
 }) {
   const [title, setTitle] = useState(
     rejectionRequest
@@ -717,7 +710,7 @@ function SubmitTab({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-on-surface-variant font-medium">Major</span>
-            <span className="font-bold text-on-surface">{major?.majorName || task.majorId}</span>
+            <span className="font-bold text-on-surface">{major?.majorName || majorId}</span>
           </div>
         </div>
 

@@ -253,7 +253,7 @@ export default function RequestsPage() {
       if (status === "DRAFT") {
         // Find task and navigate to task detail
         const res = await TaskService.getTasks({ majorId, size: 100 });
-        const task = res?.data?.content?.find(
+        const task = res?.content?.find(
           (t) =>
             t.majorId === majorId ||
             t.major?.majorId === majorId ||

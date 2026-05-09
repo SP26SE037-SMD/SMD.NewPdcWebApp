@@ -172,7 +172,7 @@ export default function CurriculumReviewPage({ curriculumIdProp, isEmbedded = fa
     <div className={`bg-zinc-50/50 ${isEmbedded ? 'h-full flex-1 overflow-y-auto' : 'min-h-screen pb-20'}`}>
       {/* Sticky Header */}
       {!isEmbedded && (
-      <div className="bg-white/80 backdrop-blur-xl border-b border-zinc-100 sticky top-0 z-50 px-8 py-5">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-zinc-100 sticky top-0 z-20 px-8 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
             <button
@@ -224,7 +224,7 @@ export default function CurriculumReviewPage({ curriculumIdProp, isEmbedded = fa
       )}
 
       {isEmbedded && (
-        <div className="flex justify-between items-center p-6 border-b border-zinc-100 bg-white sticky top-0 z-50">
+        <div className="flex justify-between items-center p-6 border-b border-zinc-100 bg-white sticky top-20 z-20">
           <div className="flex flex-col">
             <span className="text-[12px] font-black text-emerald-500 uppercase tracking-widest">
               Simulation Active

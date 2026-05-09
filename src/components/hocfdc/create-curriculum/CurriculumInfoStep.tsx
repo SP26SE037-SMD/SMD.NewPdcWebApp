@@ -61,13 +61,12 @@ export default function CurriculumInfoStep({
   }, [formData, lastSavedData]);
 
   const { data: majorData, isLoading: isLoadingMajors } = useQuery({
-    queryKey: ["all-majors-non-draft"],
+    queryKey: ["all-majors-including-draft"],
     queryFn: () => MajorService.getMajors({ size: 1000 }), 
   });
 
   const majors = useMemo(() => {
-    const rawMajors = majorData?.data?.content || [];
-    return rawMajors.filter((m: Major) => m.status !== "DRAFT");
+    return majorData?.data?.content || [];
   }, [majorData]);
 
   const validation = useMemo(() => {

@@ -22,7 +22,7 @@ export default function HoCFDCDashboardContent() {
   const { user } = useSelector((state: RootState) => state.auth);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] =
-    useState<string>("INTERNAL_REVIEW");
+    useState<string>("");
   const [sortBy, setSortBy] = useState<"NAME" | "CURRICULUM_COUNT">("NAME");
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("ASC");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -32,7 +32,7 @@ export default function HoCFDCDashboardContent() {
   // Fetch Majors
   const { data: majorResponse, isLoading: isMajorsLoading } = useQuery({
     queryKey: ["majors-hoc", search, selectedStatus],
-    queryFn: () => MajorService.getMajors({ search, status: selectedStatus }),
+    queryFn: () => MajorService.getMajors({ search, status: selectedStatus === "DRAFT" ? "" : selectedStatus }),
   });
 
   // Fetch all Curriculums to count them per major
@@ -41,9 +41,11 @@ export default function HoCFDCDashboardContent() {
     queryFn: () => CurriculumService.getCurriculums({ size: 1000 }),
   });
 
-  const majors = (majorResponse?.data?.content || []).filter(
-    (m) => m.status !== "DRAFT",
-  );
+  // Filter majors in frontend based on selected status to ensure consistency (especially for DRAFT)
+  const majors = (majorResponse?.data?.content || []).filter((m) => {
+    if (selectedStatus === "") return true;
+    return m.status === selectedStatus;
+  });
   const curriculumsList = curriculumResponse?.data?.content || [];
 
   // Calculate counts per major code
@@ -129,7 +131,7 @@ export default function HoCFDCDashboardContent() {
                     exit={{ opacity: 0, y: 10 }}
                     className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-2xl shadow-xl z-50 overflow-hidden p-1"
                   >
-                    {["", "INTERNAL_REVIEW", "PUBLISHED", "ARCHIVED"].map(
+                    {["", "DRAFT", "INTERNAL_REVIEW", "PUBLISHED", "ARCHIVED"].map(
                       (status) => (
                         <button
                           key={status}
@@ -257,7 +259,9 @@ export default function HoCFDCDashboardContent() {
                               ? "bg-emerald-50 text-emerald-600 border border-emerald-100/50"
                               : major.status === "INTERNAL_REVIEW"
                                 ? "bg-amber-50 text-amber-600 border border-amber-100/50"
-                                : "bg-zinc-100 text-zinc-400"
+                                : major.status === "DRAFT"
+                                  ? "bg-sky-50 text-sky-600 border border-sky-100/50"
+                                  : "bg-zinc-100 text-zinc-400"
                           }`}
                         >
                           {major.status?.replace("_", " ")}
