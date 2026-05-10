@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Calendar, Plus, Target, GraduationCap, Loader2, Building2, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -49,6 +49,21 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     enabled: isOpen && !!curriculumId
   });
   const depts = (deptsRes?.data as any) || []; // API returns unique list of departments
+ 
+  // Auto-generate Sprint Name based on Curriculum and Department
+  useEffect(() => {
+    if (curriculum) {
+      const dept = depts.find((d: any) => d.departmentId === selectedDeptId);
+      const deptCode = dept ? dept.departmentCode : "";
+      const prefix = curriculum.curriculumCode;
+      
+      // Update name if it's empty or matches the pattern we're managing
+      setFormData(prev => ({
+        ...prev,
+        sprintName: deptCode ? `${prefix} - ${deptCode}` : `${prefix} - `
+      }));
+    }
+  }, [curriculum, selectedDeptId, depts]);
 
   const createMutation = useMutation({
     mutationFn: (data: SprintPayload) => SprintService.createSprint(data),

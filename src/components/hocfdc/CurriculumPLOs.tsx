@@ -71,9 +71,6 @@ export default function CurriculumPLOs({ curriculumIdProp, isEmbedded }: { curri
                 <p className="text-[13px] font-medium text-zinc-600 leading-relaxed group-hover:text-zinc-900 transition-colors">
                   {plo.description || "—"}
                 </p>
-                <div className="mt-4 pt-4 border-t border-zinc-50 flex items-center gap-3">
-                  <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">ID: {plo.ploId}</span>
-                </div>
               </motion.div>
             ))}
           </AnimatePresence>

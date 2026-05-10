@@ -81,7 +81,7 @@ export default function MappingMatrix({
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-6">
       <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] overflow-hidden flex flex-col gap-6 border border-zinc-200">
         <div className="flex justify-between items-center">
           <div>

@@ -508,7 +508,8 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           {standalones.map((sub: any) => (
                             <div
                               key={sub.subjectId}
-                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all duration-200 group hover:border-zinc-300 hover:shadow-md"
+                              onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
+                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all duration-200 group hover:border-zinc-300 hover:shadow-md cursor-pointer"
                             >
                               <div className="flex justify-between items-start mb-3">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">
@@ -525,9 +526,6 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                               <h4 className="text-sm font-black text-zinc-900 leading-snug mb-3">
                                 {sub.subjectName}
                               </h4>
-                              <p className="mb-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-semibold leading-relaxed text-zinc-900 line-clamp-2">
-                                {sub.description?.trim() || "No description provided."}
-                              </p>
                               <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-100">
                                 <div className="flex items-center gap-1.5 text-zinc-400">
                                   <Layers size={12} />
@@ -543,7 +541,8 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           {activeComboSubjects.map((sub: any) => (
                             <div
                               key={`combo-${sub.subjectId}`}
-                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-indigo-200 hover:shadow-md"
+                              onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
+                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-indigo-200 hover:shadow-md cursor-pointer"
                             >
                               <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-200" />
                               <div className="flex justify-between items-start mb-3 pl-1">
@@ -566,9 +565,6 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                               <h4 className="text-sm font-black text-indigo-950 leading-snug mb-3 pl-1">
                                 {sub.subjectName}
                               </h4>
-                              <p className="mb-3 ml-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-semibold leading-relaxed text-zinc-900 line-clamp-2">
-                                {sub.description?.trim() || "No description provided."}
-                              </p>
                               <div className="flex items-center justify-between mt-auto pt-3 border-t border-indigo-100/50 pl-1">
                                 <div className="flex items-center gap-1.5 text-indigo-400">
                                   <Layers size={12} />
@@ -737,7 +733,8 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                   {activeElectiveGroup.subjects.map((sub: any) => (
                     <div
                       key={sub.subjectId}
-                      className="p-5 rounded-[1.5rem] bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-emerald-300 hover:shadow-md"
+                      onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
+                      className="p-5 rounded-[1.5rem] bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-emerald-300 hover:shadow-md cursor-pointer"
                     >
                       <div className="flex justify-between items-start mb-3">
                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
