@@ -210,8 +210,12 @@ export const CurriculumService = {
     );
   },
 
+  validatePLOs: async (curriculumId: string) => {
+    return apiClient.get<any>(`/api/plos/curriculum/${curriculumId}/validate`);
+  },
+
   async syncStatus(id: string): Promise<APIResponse<any>> {
-    return await apiClient.patch(`/api/curriculums/${id}/sync-status`);
+    return await apiClient.patch(`/api/curriculums/${id}/sync-status`, {});
   },
 
   deleteCurriculum: async (id: string): Promise<APIResponse<void>> => {
