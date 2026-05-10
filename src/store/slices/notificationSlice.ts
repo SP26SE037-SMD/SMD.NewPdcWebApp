@@ -19,6 +19,8 @@ interface NotificationState {
   latestRealtimeNotification: NotificationData | null;
   /** Realtime status message from AI Processing */
   aiProcessingMessage: string | null;
+  /** Realtime status code from AI Processing */
+  aiProcessingStatus: string | null;
   /** Incremented whenever a task-related notification arrives to trigger UI refetch */
   refreshTaskTrigger: number;
 }
