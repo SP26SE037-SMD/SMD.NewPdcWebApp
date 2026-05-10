@@ -74,8 +74,6 @@ export default function ManageMajorsContent() {
     priority: "HIGH",
   });
 
-
-
   // Step 2: Program Outcomes State
   const [stagedPOs, setStagedPOs] = useState<CreatePOPload[]>([]);
   const [currentPO, setCurrentPO] = useState<CreatePOPload>({
@@ -182,18 +180,22 @@ export default function ManageMajorsContent() {
         majorName: existingMajorData.data.majorName,
         description: existingMajorData.data.description,
       });
-    } else if (wizardStep === 1 && typeof window !== "undefined" && !currentMajorId) {
+    } else if (
+      wizardStep === 1 &&
+      typeof window !== "undefined" &&
+      !currentMajorId
+    ) {
       const savedMajor = localStorage.getItem("pendingMajor");
       if (savedMajor) {
         try {
           setNewMajor(JSON.parse(savedMajor));
-        } catch(e) {}
+        } catch (e) {}
       }
       const savedPOs = localStorage.getItem("pendingPOs");
       if (savedPOs) {
         try {
           setStagedPOs(JSON.parse(savedPOs));
-        } catch(e) {}
+        } catch (e) {}
       }
     }
   }, [existingMajorData, wizardStep, currentMajorId]);
@@ -252,7 +254,6 @@ export default function ManageMajorsContent() {
     },
   });
 
-  
   const submitAllDataMutation = useMutation({
     mutationFn: async () => {
       // 1. Create Major
@@ -261,17 +262,17 @@ export default function ManageMajorsContent() {
         const majorRes = await MajorService.createMajor(newMajor);
         finalMajorId = majorRes.data.majorId;
       }
-      
+
       // 2. Create POs
       if (stagedPOs.length > 0 && finalMajorId) {
         await PoService.createMultiplePOs(finalMajorId, stagedPOs);
       }
-      
+
       // 3. Update status
       if (finalMajorId) {
         await MajorService.updateMajorStatus(finalMajorId, "INTERNAL_REVIEW");
       }
-      
+
       // 4. Create Task
       if (finalMajorId) {
         let actualDeadline = taskForm.deadline;
@@ -279,30 +280,33 @@ export default function ManageMajorsContent() {
           actualDeadline = new Date().toISOString().split("T")[0]; // fallback to today
         }
         await fetch("/api/v1/tasks-v2/byVP", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                taskName: taskForm.taskName,
-                description: taskForm.description,
-                action: "CREATE",
-                priority: taskForm.priority,
-                type: "CURRICULUM",
-                targetId: finalMajorId,
-                rootTaskId: null,
-                dueDate: actualDeadline
-            })
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            taskName: taskForm.taskName,
+            description: taskForm.description,
+            action: "CREATE",
+            priority: taskForm.priority,
+            type: "CURRICULUM",
+            targetId: finalMajorId,
+            rootTaskId: null,
+            dueDate: actualDeadline,
+          }),
         });
       }
-      
+
       return finalMajorId;
     },
     onSuccess: (newMajorId) => {
       queryClient.invalidateQueries({ queryKey: ["majors"] });
       setCurrentMajorId(newMajorId || null);
       setWizardStep(4);
-      showToast("Major created and submitted for Board Review successfully.", "success");
+      showToast(
+        "Major created and submitted for Board Review successfully.",
+        "success",
+      );
       setIsConfirmModalOpen(false);
       if (typeof window !== "undefined") {
         localStorage.removeItem("pendingMajor");
@@ -312,7 +316,7 @@ export default function ManageMajorsContent() {
     onError: (error: any) => {
       showToast(error.message || "Failed to submit major", "error");
       setIsConfirmModalOpen(false);
-    }
+    },
   });
 
   // Delete Major Mutation
@@ -364,10 +368,11 @@ export default function ManageMajorsContent() {
 
   // Filter mapping
   const statusTabs = [
-    { label: "All Programs", value: "" },
-    { label: "Active", value: "PUBLISHED" },
-    { label: "In Review", value: "INTERNAL_REVIEW" },
+    { label: "All Major", value: "" },
     { label: "Draft", value: "DRAFT" },
+    { label: "Internal Review", value: "INTERNAL_REVIEW" },
+    { label: "Published", value: "PUBLISHED" },
+    { label: "Archived", value: "ARCHIVED" },
   ];
 
   const filteredMajors = useMemo(() => {
@@ -450,10 +455,7 @@ export default function ManageMajorsContent() {
           </div>
 
           {wizardStep === 1 && (
-            <form
-              onSubmit={handleMajorIdentitySubmit}
-              className="space-y-8"
-            >
+            <form onSubmit={handleMajorIdentitySubmit} className="space-y-8">
               <div className="space-y-8">
                 <div className="bg-white rounded-xl p-8 border border-[#adb3b5]/10 shadow-sm">
                   <div className="flex items-center gap-3 mb-8">
@@ -547,7 +549,8 @@ export default function ManageMajorsContent() {
                     <button
                       type="submit"
                       disabled={
-                        createMutation.isPending || updateMajorMutation.isPending
+                        createMutation.isPending ||
+                        updateMajorMutation.isPending
                       }
                       className="px-8 py-3 bg-[#4caf50] text-white rounded-xl font-bold shadow-lg shadow-[#4caf50]/20 hover:bg-[#388e3c] transition-all flex items-center gap-2 disabled:opacity-50"
                     >
@@ -638,8 +641,6 @@ export default function ManageMajorsContent() {
                     )}
                   </div>
                 </div>
-
-
               </div>
 
               {/* Right Column: List */}
@@ -915,56 +916,76 @@ export default function ManageMajorsContent() {
 
                       <div className="px-8 flex flex-col gap-4 mb-8">
                         <div>
-                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                             Task Name
-                           </label>
-                           <input
-                             type="text"
-                             required
-                             value={taskForm.taskName}
-                             onChange={(e) => setTaskForm({...taskForm, taskName: e.target.value})}
-                             placeholder="e.g. Design Core Modules"
-                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
-                           />
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                            Task Name
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={taskForm.taskName}
+                            onChange={(e) =>
+                              setTaskForm({
+                                ...taskForm,
+                                taskName: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. Design Core Modules"
+                            className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
+                          />
                         </div>
                         <div>
-                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                             Task Description
-                           </label>
-                           <textarea
-                             rows={3}
-                             required
-                             value={taskForm.description}
-                             onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
-                             placeholder="Describe the objectives of this task..."
-                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all resize-none"
-                           />
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                            Task Description
+                          </label>
+                          <textarea
+                            rows={3}
+                            required
+                            value={taskForm.description}
+                            onChange={(e) =>
+                              setTaskForm({
+                                ...taskForm,
+                                description: e.target.value,
+                              })
+                            }
+                            placeholder="Describe the objectives of this task..."
+                            className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all resize-none"
+                          />
                         </div>
                         <div>
-                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                             Task Deadline
-                           </label>
-                           <input
-                             type="date"
-                             required
-                             value={taskForm.deadline}
-                             onChange={(e) => setTaskForm({...taskForm, deadline: e.target.value})}
-                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
-                           />
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                            Task Deadline
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={taskForm.deadline}
+                            onChange={(e) =>
+                              setTaskForm({
+                                ...taskForm,
+                                deadline: e.target.value,
+                              })
+                            }
+                            className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all"
+                          />
                         </div>
                         <div>
-                           <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
-                             Priority
-                           </label>
-                           <select
-                             value={taskForm.priority}
-                             onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
-                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
-                           >
-                             <option value="HIGH">High</option>
-                             <option value="MEDIUM">Medium</option>
-                             <option value="LOW">Low</option>
-                           </select>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5a6062] mb-1">
+                            Priority
+                          </label>
+                          <select
+                            value={taskForm.priority}
+                            onChange={(e) =>
+                              setTaskForm({
+                                ...taskForm,
+                                priority: e.target.value,
+                              })
+                            }
+                            className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
+                          >
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                          </select>
                         </div>
                       </div>
 
@@ -1030,18 +1051,6 @@ export default function ManageMajorsContent() {
         </div>
       ) : (
         <div className="p-12 max-w-7xl mx-auto space-y-12">
-          {/* Page Header */}
-          <section className="flex justify-end">
-            <button
-              onClick={handleInitialCreateAction}
-              className="px-6 py-3 bg-[#2d6a4f] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2"
-            >
-              <Plus size={18} strokeWidth={3} />
-              Create New Major
-            </button>
-          </section>
-
-
           {/* Major Catalog Section */}
           <section className="space-y-6">
             <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
@@ -1165,9 +1174,11 @@ export default function ManageMajorsContent() {
                                     ? "bg-[#b1f0ce] text-[#1d5c42]"
                                     : major.status === "INTERNAL_REVIEW"
                                       ? "bg-[#d5e8ce] text-[#465643]"
-                                      : major.status === "DRAFT"
-                                        ? "bg-[#dee3e6] text-[#5a6062]"
-                                        : "bg-[#f1f4f5] text-[#adb3b5]"
+                                      : major.status === "ARCHIVED"
+                                        ? "bg-[#fdebea] text-[#d32f2f]"
+                                        : major.status === "DRAFT"
+                                          ? "bg-[#dee3e6] text-[#5a6062]"
+                                          : "bg-[#f1f4f5] text-[#adb3b5]"
                                 }`}
                               >
                                 <span
@@ -1176,20 +1187,25 @@ export default function ManageMajorsContent() {
                                       ? "bg-[#2d6a4f]"
                                       : major.status === "INTERNAL_REVIEW"
                                         ? "bg-[#53634f]"
-                                        : "bg-[#767c7e]"
+                                        : major.status === "ARCHIVED"
+                                          ? "bg-[#d32f2f]"
+                                          : "bg-[#767c7e]"
                                   }`}
                                 ></span>
                                 {major.status.replace("_", " ")}
                               </span>
                             </td>
                             <td className="px-6 py-6 text-sm text-[#5a6062] font-medium">
-                              {major.createdAt ? new Date(
-                                major.createdAt,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "2-digit",
-                                year: "numeric",
-                              }) : "N/A"}
+                              {major.createdAt
+                                ? new Date(major.createdAt).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "2-digit",
+                                      year: "numeric",
+                                    },
+                                  )
+                                : "N/A"}
                             </td>
                             <td className="px-8 py-6 text-right">
                               <div className="flex items-center justify-end gap-2">

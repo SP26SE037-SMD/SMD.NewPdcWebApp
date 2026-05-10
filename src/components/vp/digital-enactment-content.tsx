@@ -121,7 +121,7 @@ export default function DigitalEnactmentContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-bold uppercase tracking-widest text-zinc-500 shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-[10px] text-sm font-bold uppercase tracking-widest text-zinc-500 shadow-sm">
               <Clock size={14} className="text-amber-500" />
               {loading ? "..." : total} Pending
             </div>
@@ -132,7 +132,7 @@ export default function DigitalEnactmentContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Content List (Mở rộng chiếm 12 cột vì đã xoá Filter) */}
           <div className="lg:col-span-12 space-y-6">
-            <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[10px] border border-zinc-100 shadow-sm overflow-hidden">
               <div className="px-8 py-6 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
                 <h3 className="text-base tracking-[0.2em] text-zinc-500">
                   Awaiting Request
@@ -188,7 +188,7 @@ export default function DigitalEnactmentContent() {
                         className="group flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 hover:bg-zinc-50/80 transition-all"
                       >
                         <div className="flex items-center gap-6">
-                          <div className="w-16 h-16 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:border-primary/20 group-hover:text-primary transition-all">
+                          <div className="w-16 h-16 rounded-[10px] bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:border-primary/20 group-hover:text-primary transition-all">
                             <FileText size={24} strokeWidth={1.5} />
                           </div>
                           <div className="space-y-1">
@@ -229,7 +229,7 @@ export default function DigitalEnactmentContent() {
                           <button
                             onClick={() => handleRequestClick(item)}
                             disabled={processing.includes(item.requestId)}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all active:scale-95 shadow-lg shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-primary transition-all active:scale-95 shadow-lg shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {processing.includes(item.requestId) ? (
                               <Loader2 size={14} className="animate-spin" />

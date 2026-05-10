@@ -142,13 +142,28 @@ export const NotificationPanel = () => {
 
     const handleNotifNavigate = useCallback(async (n: NotificationData) => {
         const entity = getEntityInfo(n);
-        if (!entity.id || !entity.type) return;
+        const role = user?.role || '';
+        const title = (n.title || '').trim();
+        
         setLoadingNotifId(n.notificationId);
         dispatch(markNotificationRead(n.notificationId));
         
         try {
-            const role = user?.role || '';
-            setIsNotiOpen(false); setIsAllNotiModalOpen(false);
+            setIsNotiOpen(false); 
+            setIsAllNotiModalOpen(false);
+
+            // SPECIAL CASE: Title-based navigation (even without entity ID)
+            if (role === 'HOCFDC' && title === 'New Task Assigned') {
+                router.push(`/dashboard/hocfdc/tasks`);
+                setLoadingNotifId(null);
+                return;
+            }
+
+            // Standard entity-based navigation
+            if (!entity.id || !entity.type) {
+                setLoadingNotifId(null);
+                return;
+            }
 
             // ROLE: VICE PRINCIPAL (VP)
             if (role === 'VP') {
@@ -156,6 +171,17 @@ export const NotificationPanel = () => {
                     router.push(`/dashboard/vice-principal/curriculums/${entity.id}/review`);
                 } else {
                     router.push(`/dashboard/vice-principal/digital-enactment`);
+                }
+                setLoadingNotifId(null);
+                return;
+            }
+
+            // ROLE: HOCFDC
+            if (role === 'HOCFDC') {
+                if (entity.type === 'task') {
+                    router.push(`/dashboard/hocfdc/tasks/${entity.id}`);
+                } else if (entity.type === 'curriculum') {
+                    router.push(`/dashboard/hocfdc/curriculums/${entity.id}`);
                 }
                 setLoadingNotifId(null);
                 return;
@@ -181,7 +207,7 @@ export const NotificationPanel = () => {
                         const status = (task.status || '').toUpperCase().replace(/\s+/g, '_');
                         if (status === 'TO_DO') {
                             setLoadingNotifId(null);
-                            return; // Open confirm modal logic would be handled here if needed in PDCM scope
+                            return;
                         }
                         const basePath = status === 'REVISION_REQUESTED' ? 'revisions' : 'tasks';
                         router.push(`/dashboard/pdcm/${basePath}/${task.taskId}/information`);
@@ -195,7 +221,7 @@ export const NotificationPanel = () => {
                         const status = (review.status || '').toUpperCase().replace(/\s+/g, '_');
                         if (status === 'PENDING') {
                             setLoadingNotifId(null);
-                            return; // Open confirm modal logic would be handled here
+                            return;
                         }
                         router.push(`/dashboard/pdcm/reviews/${review.reviewId}/information`);
                     } else {
@@ -207,8 +233,8 @@ export const NotificationPanel = () => {
             console.error('Failed to fetch entity detail:', err);
             // Fallback routing
             if (user?.role === 'PDCM') {
-                if (entity.type === 'task') router.push(`/dashboard/pdcm/tasks/${entity.id}/information`);
-                else if (entity.type === 'review') router.push(`/dashboard/pdcm/reviews/${entity.id}/information`);
+                if (entity.id && entity.type === 'task') router.push(`/dashboard/pdcm/tasks/${entity.id}/information`);
+                else if (entity.id && entity.type === 'review') router.push(`/dashboard/pdcm/reviews/${entity.id}/information`);
             }
         } finally {
             setLoadingNotifId(null);
@@ -326,7 +352,8 @@ export const NotificationPanel = () => {
                                     <div className="space-y-0">
                                         {notifications.slice(0, 6).map((n: NotificationData, idx: number) => {
                                             const entity = getEntityInfo(n);
-                                            const hasAction = !!entity.id;
+                                            const role = user?.role || '';
+                                            const hasAction = !!entity.id || (role === 'HOCFDC' && (n.title || '').trim() === 'New Task Assigned');
                                             return (
                                             <motion.div key={n.notificationId}
                                                 initial={{ opacity: 0, x: -8 }}
@@ -496,7 +523,8 @@ export const NotificationPanel = () => {
                                     <div className="divide-y divide-[#2d342b]/5">
                                         {paginatedNotis.map((n: NotificationData, idx: number) => {
                                             const entity = getEntityInfo(n);
-                                            const hasAction = !!entity.id;
+                                            const role = user?.role || '';
+                                            const hasAction = !!entity.id || (role === 'HOCFDC' && (n.title || '').trim() === 'New Task Assigned');
                                             return (
                                                 <motion.div key={n.notificationId}
                                                     initial={{ opacity: 0, y: 10 }}
