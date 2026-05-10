@@ -1063,8 +1063,7 @@ export default function CourseBuilderStep({
                                       ? "bg-emerald-500 text-white shadow-sm shadow-emerald-200"
                                       : s.status === "DRAFT"
                                         ? "bg-zinc-400 text-white shadow-sm shadow-zinc-200"
-                                        : s.status === "INTERNAL_REVIEW" ||
-                                            s.status === "STRUCTURE_REVIEW"
+                                        : s.status === "INTERNAL_REVIEW"
                                           ? "bg-amber-500 text-white shadow-sm shadow-amber-200"
                                           : "bg-indigo-500 text-white shadow-sm shadow-indigo-200"
                                   }`}
@@ -1304,7 +1303,7 @@ export default function CourseBuilderStep({
       <StepNavigation
         onNext={handleNextClick}
         onBack={onBack}
-        nextLabel="Review & Publish"
+        nextLabel="Review & Finalize"
       />
 
       {showConfirmModal && (

@@ -10,19 +10,20 @@
 const API_BASE_URL = ''; // Leave empty to use relative paths for BFF routes (/api/...)
 
 export const apiClient = {
-    async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    async get<T>(endpoint: string, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 ...options?.headers,
             },
+            signal: options?.signal,
             ...options,
         });
         return this.handleResponse(response);
     },
 
-    async post<T>(endpoint: string, body: any, options?: RequestInit): Promise<T> {
+    async post<T>(endpoint: string, body: any, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'POST',
             headers: {
@@ -30,12 +31,13 @@ export const apiClient = {
                 ...options?.headers,
             },
             body: JSON.stringify(body),
+            signal: options?.signal,
             ...options,
         });
         return this.handleResponse(response);
     },
 
-    async put<T>(endpoint: string, body: any, options?: RequestInit): Promise<T> {
+    async put<T>(endpoint: string, body: any, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'PUT',
             headers: {
@@ -43,12 +45,13 @@ export const apiClient = {
                 ...options?.headers,
             },
             body: JSON.stringify(body),
+            signal: options?.signal,
             ...options,
         });
         return this.handleResponse(response);
     },
 
-    async patch<T>(endpoint: string, body: any, options?: RequestInit): Promise<T> {
+    async patch<T>(endpoint: string, body: any, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'PATCH',
             headers: {
@@ -56,18 +59,20 @@ export const apiClient = {
                 ...options?.headers,
             },
             body: JSON.stringify(body),
+            signal: options?.signal,
             ...options,
         });
         return this.handleResponse(response);
     },
 
-    async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    async delete<T>(endpoint: string, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
                 ...options?.headers,
             },
+            signal: options?.signal,
             ...options,
         });
         return this.handleResponse(response);

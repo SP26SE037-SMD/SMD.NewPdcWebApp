@@ -161,10 +161,10 @@ export default function CurriculumReviewPage({ curriculumIdProp, isEmbedded = fa
   const handleConfirm = () => {
     if (
       confirm(
-        "Confirm architecture enactment? This will finalize the structure for institutional review.",
+        "Confirm architecture enactment? This will finalize the structure and start the syllabus development phase.",
       )
     ) {
-      mutation.mutate(CURRICULUM_STATUS.STRUCTURE_REVIEW);
+      mutation.mutate(CURRICULUM_STATUS.SYLLABUS_DEVELOP);
     }
   };
 

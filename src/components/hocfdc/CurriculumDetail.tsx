@@ -55,18 +55,6 @@ const ALL_STATUS_ORDER = [
     color: "#94a3b8",
   },
   {
-    id: CURRICULUM_STATUS.STRUCTURE_REVIEW,
-    label: "Structure Review",
-    icon: Search,
-    color: "#f59e0b",
-  },
-  {
-    id: CURRICULUM_STATUS.STRUCTURE_APPROVED,
-    label: "Structure Approved",
-    icon: CheckCircle2,
-    color: "#10b981",
-  },
-  {
     id: CURRICULUM_STATUS.SYLLABUS_DEVELOP,
     label: "Syllabus Develop",
     icon: Settings,
@@ -317,17 +305,6 @@ export default function CurriculumDetail({ id }: { id: string }) {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {(curriculum.curriculumStatus || curriculum.status) ===
-                CURRICULUM_STATUS.STRUCTURE_APPROVED && (
-                <button
-                  onClick={() =>
-                    handleStatusTransition(CURRICULUM_STATUS.SYLLABUS_DEVELOP)
-                  }
-                  className="px-5 py-2.5 bg-zinc-900 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-zinc-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  Start Syllabus Dev <Layers size={14} />
-                </button>
-              )}
 
               {(curriculum.curriculumStatus || curriculum.status) ===
                 CURRICULUM_STATUS.SYLLABUS_DEVELOP && (

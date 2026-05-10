@@ -205,7 +205,7 @@ export default function AcademicDocumentsContent() {
 
   // Upload & Validation State
   const [file, setFile] = useState<File | null>(null);
-  const [documentTitle, setDocumentTitle] = useState("");
+  const [documentTitle, setDocumentTitle] = useState("Programme Proposal of ");
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [validationState, setValidationState] = useState<
@@ -474,7 +474,7 @@ export default function AcademicDocumentsContent() {
   const resetModal = () => {
     setIsModalOpen(false);
     setFile(null);
-    setDocumentTitle("");
+    setDocumentTitle("Programme Proposal of ");
     setUploadedUrl(null);
     setPreviewUrl(null);
     setValidationState("idle");

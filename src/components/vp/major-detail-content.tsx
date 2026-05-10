@@ -807,8 +807,8 @@ export default function MajorDetailContent() {
                                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                                   curr.status === "PUBLISHED"
                                     ? "bg-[#b1f0ce] text-[#1d5c42]"
-                                    : curr.status === "STRUCTURE_REVIEW"
-                                      ? "bg-amber-100 text-amber-700"
+                                    : curr.status === "FINAL_REVIEW"
+                                      ? "bg-purple-100 text-purple-700"
                                       : curr.status === "DRAFT"
                                         ? "bg-[#f1f4f5] text-[#5a6062]"
                                         : curr.status === "ARCHIVED"
@@ -820,16 +820,16 @@ export default function MajorDetailContent() {
                               </span>
                             </td>
                             <td className="px-8 py-5 text-right">
-                              {curr.status === "STRUCTURE_REVIEW" ? (
+                              {curr.status === "FINAL_REVIEW" ? (
                                 <button
                                   onClick={() =>
                                     router.push(
                                       `/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`,
                                     )
                                   }
-                                  className="inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-amber-600 transition-all shadow-sm active:scale-95"
+                                  className="inline-flex items-center gap-2 px-5 py-2 bg-purple-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-sm active:scale-95"
                                 >
-                                  Review
+                                  Final Review
                                   <ChevronRight size={14} strokeWidth={2.5} />
                                 </button>
                               ) : (

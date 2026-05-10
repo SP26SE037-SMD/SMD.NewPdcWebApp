@@ -57,10 +57,7 @@ export default function PoPloMappingPage({ curriculumIdProp, isEmbedded = false 
     refetchOnWindowFocus: false,
   });
   const curriculum = curriculumRes?.data;
-  const isLocked = curriculum?.status
-    ? curriculum.status !== CURRICULUM_STATUS.DRAFT &&
-      curriculum.status !== CURRICULUM_STATUS.STRUCTURE_REVIEW
-    : false;
+  const isLocked = curriculum ? curriculum.status !== CURRICULUM_STATUS.DRAFT : false;
 
   // 2. Fetch PLOs for the Sidebar Detail Editing
   const { data: plosRes } = useQuery({

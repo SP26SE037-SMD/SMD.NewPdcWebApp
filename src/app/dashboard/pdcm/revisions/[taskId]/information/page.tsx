@@ -246,7 +246,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
                 {[
                     { icon: 'school', label: 'Credits', value: `${subjectData?.credits ?? syllabusData.credit ?? syllabusData.noCredit ?? 0} Credits` },
                     { icon: 'grade', label: 'Scoring Scale', value: `${subjectData?.scoringScale ?? (syllabusData.scoringScale || 10)} / 10` },
-                    { icon: 'check_circle', label: 'Min. Pass Score', value: `${subjectData?.minToPass ?? syllabusData.minAvgGrade ?? syllabusData.minAvgMarkToPass ?? 0} Points` },
+                    { icon: 'check_circle', label: 'Min. Pass Score', value: `${subjectData?.minToPass ?? syllabusData.minAvgMarkToPass ?? 0} Points` },
                     { icon: 'policy', label: 'Decision Level', value: subjectData?.decisionNo ? `Decision: ${subjectData.decisionNo}` : `Level ${syllabusData.decisionLevel || 1}`, highlight: true },
                 ].map((item) => (
                     <div key={item.label}

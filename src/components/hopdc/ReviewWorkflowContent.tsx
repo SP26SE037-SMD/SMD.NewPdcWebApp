@@ -146,10 +146,10 @@ export default function ReviewWorkflowContent() {
                   </div>
                   <div className="bg-background/30 rounded-2xl p-4 border border-border/50">
                     <div className="text-[11px] font-black uppercase text-muted mb-1 flex items-center gap-1.5 font-mono">
-                      <Award size={12} /> Min grade
+                      <Award size={12} /> Pass score
                     </div>
                     <div className="text-base font-black text-foreground">
-                      {syllabus.minAvgGrade}/10
+                      {syllabus.minAvgMarkToPass || 0}/10
                     </div>
                   </div>
                 </div>

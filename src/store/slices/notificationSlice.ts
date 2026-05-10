@@ -21,6 +21,8 @@ interface NotificationState {
   aiProcessingMessage: string | null;
   /** Realtime status code from AI Processing */
   aiProcessingStatus: string | null;
+  /** Incremented whenever a task-related notification arrives to trigger UI refetch */
+  refreshTaskTrigger: number;
 }
 
 const initialState: NotificationState = {
@@ -35,6 +37,7 @@ const initialState: NotificationState = {
   latestRealtimeNotification: null,
   aiProcessingMessage: null,
   aiProcessingStatus: null,
+  refreshTaskTrigger: 0,
 };
 
 /* ------------------------------------------------------------------ */
@@ -142,6 +145,11 @@ const notificationSlice = createSlice({
               }
               // Set as latest for toast popup
               state.latestRealtimeNotification = data;
+
+              // If it's a task notification, trigger a refresh for task lists
+              if (data.type === 'TASK') {
+                state.refreshTaskTrigger += 1;
+              }
             }
           }
           break;

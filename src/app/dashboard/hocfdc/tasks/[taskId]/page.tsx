@@ -7,15 +7,33 @@ import { RootState } from "@/store";
 import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 import { MajorService, Major } from "@/services/major.service";
 import { PoService, PO } from "@/services/po.service";
-import { CurriculumService, CurriculumFramework, CURRICULUM_STATUS } from "@/services/curriculum.service";
+import {
+  CurriculumService,
+  CurriculumFramework,
+  CURRICULUM_STATUS,
+} from "@/services/curriculum.service";
 import { RequestService, RequestItem } from "@/services/request.service";
 import { DocumentService } from "@/services/document.service";
+import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, ArrowLeft, BookOpen, Target, GraduationCap,
-  CheckCircle2, Send, Building2, Calendar, AlertCircle,
-  ChevronRight, Plus, Layers, Grid3X3, X, Eye, FileText,
-  ShieldCheck, FileSearch, Lightbulb, Gauge, Info
+  Loader2,
+  ArrowLeft,
+  BookOpen,
+  Target,
+  GraduationCap,
+  CheckCircle2,
+  Send,
+  Building2,
+  Calendar,
+  AlertCircle,
+  ChevronRight,
+  Plus,
+  Layers,
+  Grid3X3,
+  X,
+  Eye,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import CurriculumInfoStep from "@/components/hocfdc/create-curriculum/CurriculumInfoStep";
@@ -25,17 +43,53 @@ import MappingStep from "@/components/hocfdc/create-curriculum/MappingStep";
 import CourseBuilderStep from "@/components/hocfdc/create-curriculum/CourseBuilderStep";
 import PdfExtractionStep from "@/components/hocfdc/create-curriculum/PdfExtractionStep";
 
-type Tab = "process" | "major" | "po" | "curriculum" | "plo" | "mapping" | "semester" | "submit";
+type Tab =
+  | "process"
+  | "major"
+  | "po"
+  | "curriculum"
+  | "plo"
+  | "mapping"
+  | "semester"
+  | "submit";
 
 const ALL_TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "process", label: "Process Document", icon: <FileText className="h-4 w-4" /> },
-  { id: "major", label: "Major Detail", icon: <Building2 className="h-4 w-4" /> },
+  {
+    id: "process",
+    label: "Process Document",
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    id: "major",
+    label: "Major Detail",
+    icon: <Building2 className="h-4 w-4" />,
+  },
   { id: "po", label: "PO", icon: <Target className="h-4 w-4" /> },
-  { id: "curriculum", label: "Create Curriculum", icon: <BookOpen className="h-4 w-4" /> },
-  { id: "plo", label: "Create PLO", icon: <GraduationCap className="h-4 w-4" /> },
-  { id: "mapping", label: "Mapping PLO-PO", icon: <Grid3X3 className="h-4 w-4" /> },
-  { id: "semester", label: "Semester Structure", icon: <Layers className="h-4 w-4" /> },
-  { id: "submit", label: "Submit", icon: <Send className="h-4 w-4" /> },
+  {
+    id: "curriculum",
+    label: "Create Curriculum",
+    icon: <BookOpen className="h-4 w-4" />,
+  },
+  {
+    id: "plo",
+    label: "Create PLO",
+    icon: <GraduationCap className="h-4 w-4" />,
+  },
+  {
+    id: "mapping",
+    label: "Mapping PLO-PO",
+    icon: <Grid3X3 className="h-4 w-4" />,
+  },
+  {
+    id: "semester",
+    label: "Semester Structure",
+    icon: <Layers className="h-4 w-4" />,
+  },
+  {
+    id: "submit",
+    label: "Review & Finalize",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+  },
 ];
 
 export default function TaskDetailPage() {
@@ -53,28 +107,44 @@ export default function TaskDetailPage() {
   const [task, setTask] = useState<TaskItem | null>(null);
   const [major, setMajor] = useState<Major | null>(null);
   const [pos, setPos] = useState<PO[]>([]);
-  const [curriculum, setCurriculum] = useState<CurriculumFramework | null>(null);
+  const [curriculum, setCurriculum] = useState<CurriculumFramework | null>(
+    null,
+  );
   const [loadingTask, setLoadingTask] = useState(true);
   const [loadingMajor, setLoadingMajor] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(
+    null,
+  );
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [savingCurriculum, setSavingCurriculum] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [rejectionRequest, setRejectionRequest] = useState<RequestItem | null>(null);
+  const [rejectionRequest, setRejectionRequest] = useState<RequestItem | null>(
+    null,
+  );
 
   // Load task
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     const load = async () => {
       try {
-        const res = await TaskService.getTaskById(taskId);
+        const res = await TaskService.getTaskById(taskId, { signal: controller.signal });
+        if (!isMounted) return;
+        
         let rawTask = (res as any)?.data;
 
         console.log("[TaskDetail] Raw Response Data:", rawTask);
 
         // Handle case where detail API returns a paginated-like structure
-        if (rawTask && rawTask.content && Array.isArray(rawTask.content) && rawTask.content.length > 0) {
+        if (
+          rawTask &&
+          rawTask.content &&
+          Array.isArray(rawTask.content) &&
+          rawTask.content.length > 0
+        ) {
           rawTask = rawTask.content[0];
           console.log("[TaskDetail] Extracted from content[0]:", rawTask);
         }
@@ -83,73 +153,132 @@ export default function TaskDetailPage() {
           let mappedTask = TaskService.mapTaskApiToItem(rawTask);
 
           // Identify documentId: targetId is the documentId for MAJOR tasks
-          const effectiveDocId = mappedTask.targetId || initialTargetId || mappedTask.document?.documentId;
-          
+          const effectiveDocId =
+            mappedTask.targetId ||
+            initialTargetId ||
+            mappedTask.document?.documentId;
+
           if (effectiveDocId) {
             setDocumentId(effectiveDocId);
-            
+
             // Check Document details to see if majorId is already assigned
             try {
-              const docDetail = await DocumentService.getDocument(effectiveDocId);
-              console.log("[TaskDetail] Document Detail fetched for redirect check:", docDetail);
+              const docDetail =
+                await DocumentService.getDocument(effectiveDocId, { signal: controller.signal });
+              if (!isMounted) return;
               
+              console.log(
+                "[TaskDetail] Document Detail fetched for redirect check:",
+                docDetail,
+              );
+
               // Handle cases where docDetail might be the wrapper or the data itself
-              const actualMajorId = docDetail?.majorId || (docDetail as any)?.data?.majorId;
-              
+              const actualMajorId =
+                docDetail?.majorId || (docDetail as any)?.data?.majorId;
+
               if (actualMajorId) {
-                console.log("[TaskDetail] Redirecting to MAJOR tab. Found majorId:", actualMajorId);
+                console.log(
+                  "[TaskDetail] Found majorId:",
+                  actualMajorId,
+                );
                 setMajorId(actualMajorId);
+                
+                // Check if curriculum already reached SYLLABUS_DEVELOP status
+                try {
+                  const currRes = await CurriculumService.getCurriculumsByMajorId(actualMajorId, { signal: controller.signal });
+                  if (!isMounted) return;
+                  
+                  const currList = (currRes as any)?.data || [];
+                  const finalizedCurr = currList.find((c: any) => c.status === CURRICULUM_STATUS.SYLLABUS_DEVELOP);
+                  
+                  if (finalizedCurr) {
+                    console.log("[TaskDetail] Curriculum finalized, redirecting to detail page");
+                    router.replace(`/dashboard/hocfdc/curriculums/${finalizedCurr.curriculumId}`);
+                    return; // Stop further processing
+                  }
+                } catch (currErr) {
+                  console.error("[TaskDetail] Failed to check curriculum status:", currErr);
+                }
+
                 setActiveTab("major");
               } else {
-                console.log("[TaskDetail] No majorId found in document, staying on PROCESS tab.");
+                console.log(
+                  "[TaskDetail] No majorId found in document, staying on PROCESS tab.",
+                );
                 setActiveTab("process");
               }
             } catch (docErr) {
-              console.error("[TaskDetail] Failed to fetch document details:", docErr);
+              console.error(
+                "[TaskDetail] Failed to fetch document details:",
+                docErr,
+              );
               setActiveTab("process");
             }
           }
 
           setTask(mappedTask);
+          if (isMounted) {
+            setLoadingTask(false);
+          }
+        } else {
+          // Task loaded but rawTask is empty
+          if (isMounted) {
+            setLoadingTask(false);
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (!isMounted) return;
+        if (err.name === 'AbortError') return;
+        
         console.error("[TaskDetail] Failed to load task:", err);
-        toast.error("Failed to load task");
+        toast.error("Failed to load task. Please check your connection.");
+        if (isMounted) {
+          setLoadingTask(false);
+        }
       } finally {
-        setLoadingTask(false);
+        // Only stop loading if we haven't initiated a redirect
+        // We can detect this by checking if task was set or if the logic reached the end
       }
     };
     load();
+    
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [taskId]);
+
+  const refreshMajorData = async (mId: string) => {
+    setLoadingMajor(true);
+    try {
+      const res = await MajorService.getMajorById(mId);
+      setMajor((res as any)?.data as Major);
+      const posRes = await PoService.getPOsByMajorId(mId, { size: 100 });
+      setPos((posRes as any)?.data?.content || []);
+
+      // Load existing curriculum for this major if any
+      try {
+        const currRes = await CurriculumService.getCurriculumsByMajorId(mId);
+        const currList = (currRes as any)?.data || [];
+        if (currList.length > 0) {
+          const fullRes = await CurriculumService.getCurriculumById(
+            currList[0].curriculumId,
+          );
+          setCurriculum(fullRes?.data || fullRes);
+        }
+      } catch {}
+    } catch {
+      toast.error("Failed to load major info");
+    } finally {
+      setLoadingMajor(false);
+    }
+  };
 
   // Load major when task is ready
   useEffect(() => {
-    if (!majorId) return;
-
-    const load = async () => {
-      setLoadingMajor(true);
-      try {
-        const res = await MajorService.getMajorById(majorId);
-        setMajor((res as any)?.data as Major);
-        const posRes = await PoService.getPOsByMajorId(majorId, { size: 100 });
-        setPos((posRes as any)?.data?.content || []);
-        
-        // Load existing curriculum for this major if any
-        try {
-          const currRes = await CurriculumService.getCurriculumsByMajorId(majorId);
-          const currList = (currRes as any)?.data || [];
-          if (currList.length > 0) {
-            const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
-            setCurriculum(fullRes?.data || fullRes);
-          }
-        } catch { }
-      } catch {
-        toast.error("Failed to load major info");
-      } finally {
-        setLoadingMajor(false);
-      }
-    };
-    load();
+    if (majorId) {
+      refreshMajorData(majorId);
+    }
   }, [majorId]);
 
   // Load rejection feedback if any
@@ -182,10 +311,16 @@ export default function TaskDetailPage() {
     try {
       let saved: CurriculumFramework;
       if (curriculum?.curriculumId) {
-        const res = await CurriculumService.updateCurriculum(curriculum.curriculumId, data);
+        const res = await CurriculumService.updateCurriculum(
+          curriculum.curriculumId,
+          data,
+        );
         saved = (res as any)?.data as CurriculumFramework;
       } else {
-        const res = await CurriculumService.createCurriculum({ ...data, majorId: majorId || "" });
+        const res = await CurriculumService.createCurriculum({
+          ...data,
+          majorId: majorId || "",
+        });
         saved = (res as any)?.data as CurriculumFramework;
       }
       setCurriculum(saved);
@@ -198,8 +333,8 @@ export default function TaskDetailPage() {
     }
   };
 
-  // Submit request
-  const handleSubmit = async (title: string, content: string) => {
+  // Finalize curriculum
+  const handleFinalize = async () => {
     if (!curriculum?.curriculumId) {
       toast.error("Please create a curriculum first");
       return;
@@ -210,31 +345,17 @@ export default function TaskDetailPage() {
     }
     setSubmitting(true);
     try {
-      // 1. Update curriculum status to STRUCTURE_REVIEW
-      await CurriculumService.updateCurriculumStatus(
-        curriculum.curriculumId,
-        CURRICULUM_STATUS.STRUCTURE_REVIEW
-      );
+      // 1. Sync curriculum status and dependencies (PLO, Subjects, etc.)
+      await CurriculumService.syncStatus(curriculum.curriculumId);
 
-      // 2. Create the request
-      await RequestService.createRequest({
-        title,
-        content,
-        status: "PENDING",
-        createdById: user?.accountId || "",
-        curriculumId: curriculum.curriculumId,
-        majorId: majorId,
-      });
-
-      // 3. Update task status to DONE (Only for first-time submission)
-      if (!rejectionRequest) {
-        await TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
-      }
-
-      toast.success("Request submitted successfully!");
-      router.push("/dashboard/hocfdc/requests");
+      toast.success("Curriculum finalized and synchronized successfully!");
+      router.replace(`/dashboard/hocfdc/curriculums/${curriculum.curriculumId}`);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Failed to submit request");
+      toast.error(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to finalize curriculum",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -244,7 +365,9 @@ export default function TaskDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="animate-spin text-primary h-10 w-10" />
-        <p className="text-sm font-medium text-on-surface-variant">Loading task...</p>
+        <p className="text-sm font-medium text-on-surface-variant">
+          Loading task...
+        </p>
       </div>
     );
   }
@@ -254,7 +377,12 @@ export default function TaskDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <AlertCircle className="h-12 w-12 text-error" />
         <p className="text-on-surface font-bold">Task not found</p>
-        <button onClick={() => router.back()} className="text-primary text-sm font-medium hover:underline">Go Back</button>
+        <button
+          onClick={() => router.back()}
+          className="text-primary text-sm font-medium hover:underline"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -277,7 +405,9 @@ export default function TaskDetailPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-black text-on-surface tracking-tight">{task.taskName}</h1>
+                <h1 className="text-2xl font-black text-on-surface tracking-tight">
+                  {task.taskName}
+                </h1>
                 {rejectionRequest && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -286,11 +416,15 @@ export default function TaskDetailPage() {
                     className="px-3 py-1.5 bg-error/10 text-error border border-error/20 rounded-xl flex items-center gap-2 hover:bg-error/20 transition-all group"
                   >
                     <AlertCircle className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">View Feedback</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      View Feedback
+                    </span>
                   </motion.button>
                 )}
               </div>
-              <p className="text-sm text-on-surface-variant mt-0.5 max-w-2xl line-clamp-1">{task.description}</p>
+              <p className="text-sm text-on-surface-variant mt-0.5 max-w-2xl line-clamp-1">
+                {task.description}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               {majorId && (
@@ -301,12 +435,13 @@ export default function TaskDetailPage() {
                   <Eye className="h-3.5 w-3.5 group-hover/major:scale-110 transition-transform" />
                   <span>View Major: {major?.majorCode || "Detail"}</span>
                 </button>
-              )}            </div>
+              )}{" "}
+            </div>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-none pb-1">
-            {ALL_TABS.filter(tab => {
+            {ALL_TABS.filter((tab) => {
               // Hide Process Document if there is a majorId
               if (tab.id === "process") return !!documentId && !majorId;
               // If there's no majorId but there is a documentId, hide everything else except Process
@@ -320,16 +455,19 @@ export default function TaskDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    activeTab === tab.id
                       ? "bg-primary text-on-primary shadow-md shadow-primary/20"
                       : "text-on-surface-variant hover:bg-surface-container"
-                    }`}
+                  }`}
                 >
                   {tab.icon}
                   {tab.label}
-                  {isCompleted && tab.id !== "major" && tab.id !== "process" && (
-                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                  )}
+                  {isCompleted &&
+                    tab.id !== "major" &&
+                    tab.id !== "process" && (
+                      <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                    )}
                 </button>
               );
             })}
@@ -349,26 +487,31 @@ export default function TaskDetailPage() {
           >
             {/* PROCESS DOCUMENT TAB */}
             {activeTab === "process" && documentId && (
-              <PdfExtractionStep 
-                documentId={documentId} 
+              <PdfExtractionStep
+                documentId={documentId}
                 onComplete={async (newMajorId) => {
                   try {
                     // 1. Update Document with new majorId
                     await fetch(`/api/document/${documentId}`, {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ majorId: newMajorId })
+                      body: JSON.stringify({ majorId: newMajorId }),
                     });
 
                     // 2. Navigate back to tasks list and refresh
-                    toast.success("Extraction completed and linked to Document!");
-                    router.push('/dashboard/hocfdc/tasks');
+                    toast.success(
+                      "Extraction completed and linked to Document!",
+                    );
+                    router.push("/dashboard/hocfdc/tasks");
                     router.refresh();
                   } catch (error) {
-                    console.error("Failed to link Major to Task and Document:", error);
+                    console.error(
+                      "Failed to link Major to Task and Document:",
+                      error,
+                    );
                     toast.error("Failed to update Task and Document linking.");
                   }
-                }} 
+                }}
               />
             )}
 
@@ -394,22 +537,10 @@ export default function TaskDetailPage() {
                     majorId={majorId || ""}
                     majorCode={major?.majorCode}
                     onImportSuccess={() => {
-                      // Fetch the newly imported curriculum via majorId
+                      // Fetch the newly imported curriculum and refreshed POs via majorId
                       if (majorId) {
-                        CurriculumService.getCurriculumsByMajorId(majorId).then(async (res) => {
-                          const currList = (res as any)?.data || [];
-                          if (currList.length > 0) {
-                            try {
-                              const fullRes = await CurriculumService.getCurriculumById(currList[0].curriculumId);
-                              setCurriculum(fullRes?.data || fullRes);
-                            } catch (err) {
-                              console.error("Failed to fetch full curriculum detail:", err);
-                              setCurriculum(currList[0]);
-                            }
-                          }
+                        refreshMajorData(majorId).then(() => {
                           setActiveTab("plo"); // Auto move to next tab after import
-                        }).catch(() => {
-                          setActiveTab("plo");
                         });
                       } else {
                         setActiveTab("plo");
@@ -444,7 +575,10 @@ export default function TaskDetailPage() {
                 />
               </div>
             ) : activeTab === "plo" ? (
-              <NoCurriculumPlaceholder onGoCreate={() => setActiveTab("curriculum")} label="PLOs" />
+              <NoCurriculumPlaceholder
+                onGoCreate={() => setActiveTab("curriculum")}
+                label="PLOs"
+              />
             ) : null}
 
             {/* MAPPING TAB */}
@@ -457,7 +591,10 @@ export default function TaskDetailPage() {
                 />
               </div>
             ) : activeTab === "mapping" ? (
-              <NoCurriculumPlaceholder onGoCreate={() => setActiveTab("curriculum")} label="Mapping" />
+              <NoCurriculumPlaceholder
+                onGoCreate={() => setActiveTab("curriculum")}
+                label="Mapping"
+              />
             ) : null}
 
             {/* SEMESTER STRUCTURE TAB */}
@@ -470,19 +607,21 @@ export default function TaskDetailPage() {
                 />
               </div>
             ) : activeTab === "semester" ? (
-              <NoCurriculumPlaceholder onGoCreate={() => setActiveTab("curriculum")} label="Semester Structure" />
+              <NoCurriculumPlaceholder
+                onGoCreate={() => setActiveTab("curriculum")}
+                label="Semester Structure"
+              />
             ) : null}
 
             {/* SUBMIT TAB */}
 
             {activeTab === "submit" && (
-              <SubmitTab
+              <FinalizeTab
                 curriculum={curriculum}
                 major={major}
                 majorId={majorId}
-                rejectionRequest={rejectionRequest}
                 onGoCreate={() => setActiveTab("curriculum")}
-                onSubmit={handleSubmit}
+                onFinalize={handleFinalize}
                 submitting={submitting}
               />
             )}
@@ -516,7 +655,12 @@ export default function TaskDetailPage() {
                       <AlertCircle className="h-7 w-7 text-error" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black text-[#2d3335] tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Review Feedback</h3>
+                      <h3
+                        className="text-2xl font-black text-[#2d3335] tracking-tight"
+                        style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+                      >
+                        Review Feedback
+                      </h3>
                     </div>
                   </div>
                   <button
@@ -529,11 +673,18 @@ export default function TaskDetailPage() {
 
                 <div className="bg-[#f1f4f5] rounded-3xl p-8 mb-8 border border-outline/5 shadow-inner">
                   <div className="flex items-center gap-2 mb-4 text-[#5a6062]">
-                    <span className="material-symbols-outlined text-[20px]">history_edu</span>
-                    <span className="text-xs font-bold uppercase tracking-widest">VP Feedback Comment</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      history_edu
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-widest">
+                      VP Feedback Comment
+                    </span>
                   </div>
                   <p className="text-[#2d3335] text-lg font-medium leading-relaxed italic">
-                    "{rejectionRequest.comment || "No specific feedback provided. Please review the curriculum structure carefully according to academic standards."}"
+                    "
+                    {rejectionRequest.comment ||
+                      "No specific feedback provided. Please review the curriculum structure carefully according to academic standards."}
+                    "
                   </p>
                 </div>
 
@@ -556,15 +707,24 @@ export default function TaskDetailPage() {
 
 // ─── Sub-components ───────────────────────────────────────────────
 
-function MajorDetailTab({ major, loading, majorId }: { major: Major | null; loading: boolean; majorId?: string | null }) {
+function MajorDetailTab({
+  major,
+  loading,
+  majorId,
+}: {
+  major: Major | null;
+  loading: boolean;
+  majorId?: string | null;
+}) {
   if (loading) return <LoadingCard />;
-  if (!major) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-3 text-on-surface-variant">
-      <Building2 className="h-12 w-12 opacity-30" />
-      <p className="font-bold">No major information available</p>
-      {majorId && <p className="text-xs opacity-60">Major ID: {majorId}</p>}
-    </div>
-  );
+  if (!major)
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-on-surface-variant">
+        <Building2 className="h-12 w-12 opacity-30" />
+        <p className="font-bold">No major information available</p>
+        {majorId && <p className="text-xs opacity-60">Major ID: {majorId}</p>}
+      </div>
+    );
 
   return (
     <div className="space-y-6">
@@ -578,227 +738,117 @@ function MajorDetailTab({ major, loading, majorId }: { major: Major | null; load
               <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black uppercase tracking-wider">
                 {major.majorCode}
               </span>
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${major.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-                }`}>
+              <span
+                className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
+                  major.status === "ACTIVE"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-surface-container text-on-surface-variant"
+                }`}
+              >
                 {major.status}
               </span>
             </div>
-            <h2 className="text-2xl font-black text-on-surface">{major.majorName}</h2>
-            <p className="text-on-surface-variant mt-2 leading-relaxed">{major.description || "No description available."}</p>
+            <h2 className="text-2xl font-black text-on-surface">
+              {major.majorName}
+            </h2>
+            <p className="text-on-surface-variant mt-2 leading-relaxed">
+              {major.description || "No description available."}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InfoCard label="Created At" value={major.createdAt ? new Date(major.createdAt).toLocaleDateString("vi-VN") : "—"} />
+        <InfoCard
+          label="Created At"
+          value={
+            major.createdAt
+              ? new Date(major.createdAt).toLocaleDateString("vi-VN")
+              : "—"
+          }
+        />
         <InfoCard label="Status" value={major.status || "—"} />
       </div>
     </div>
   );
 }
 
-function POTab({ pos, loading, majorId }: { pos: PO[]; loading: boolean; majorId?: string | null }) {
-  const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  const handleValidate = async () => {
-    if (!majorId) return;
-    setValidating(true);
-    try {
-      const res = await PoService.validatePOs(majorId);
-      
-      if (res.status === 9001) {
-        setValidationError("Failed to validate with AI. Please try again.");
-        setValidationResult(null);
-        return;
-      }
-
-      setValidationError(null);
-      setValidationResult(res.data);
-      toast.success("Validation completed!");
-    } catch (error: any) {
-      if (error?.status === 9001 || error?.response?.data?.status === 9001) {
-        setValidationError("Failed to validate with AI. Please try again.");
-        setValidationResult(null);
-      } else {
-        toast.error(error.message || "Failed to validate POs");
-      }
-    } finally {
-      setValidating(false);
-    }
-  };
-
+function POTab({
+  pos,
+  loading,
+  majorId,
+}: {
+  pos: PO[];
+  loading: boolean;
+  majorId?: string | null;
+}) {
   if (loading) return <LoadingCard />;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-black text-on-surface tracking-tight">Program Objectives</h2>
-          <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">Verify POs against Master Regulations and institutional standards</p>
-        </div>
-        <div className="flex items-center gap-2">
-        <div className="flex flex-col items-end gap-1">
-          <button
-            onClick={handleValidate}
-            disabled={validating || pos.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-black uppercase tracking-wider hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 active:scale-95"
-          >
-            {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-            <span>{validating ? "Validate POs" : "Validate POs"}</span>
-          </button>
-          {validationError && (
-            <p className="text-[9px] font-bold text-error uppercase tracking-widest px-1 animate-in fade-in slide-in-from-top-1">
-              {validationError}
-            </p>
-          )}
-        </div>
-          <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant border border-outline/10">
-            {pos.length} POs
-          </span>
-        </div>
+        <h2 className="text-xl font-black text-on-surface">
+          Program Objectives
+        </h2>
+        <span className="px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant">
+          {pos.length} POs
+        </span>
       </div>
-
-      {validationResult && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl border border-primary/15 shadow-xl shadow-primary/5 overflow-hidden"
-        >
-          <div className="p-6 border-b border-primary/10 bg-primary/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-black text-on-surface text-sm uppercase tracking-wider">Validation Analysis</h3>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">AI-Powered Compliance Report</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-0.5">Similarity Score</p>
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 w-24 bg-surface-container rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary" 
-                      style={{ width: validationResult.overall_similarity_score }} 
-                    />
-                  </div>
-                  <span className="text-sm font-black text-primary">{validationResult.overall_similarity_score}</span>
-                </div>
-              </div>
-              <div className={`px-3 py-1.5 rounded-xl flex items-center gap-2 border ${
-                validationResult.is_compliant 
-                  ? "bg-emerald-50 border-emerald-100 text-emerald-600" 
-                  : "bg-amber-50 border-amber-100 text-amber-600"
-              }`}>
-                {validationResult.is_compliant ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  {validationResult.is_compliant ? "Compliant" : "Needs Review"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-on-surface">
-                <FileSearch className="h-4 w-4 text-primary" />
-                <h4 className="text-xs font-black uppercase tracking-widest">Mismatch Details</h4>
-              </div>
-              <div className="bg-surface-container/30 rounded-2xl p-4 border border-outline/5">
-                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
-                  {validationResult.mismatch_details}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-on-surface">
-                <Lightbulb className="h-4 w-4 text-amber-500" />
-                <h4 className="text-xs font-black uppercase tracking-widest">Suggestions</h4>
-              </div>
-              <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/50">
-                <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line font-medium">
-                  {validationResult.suggestions}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {pos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-on-surface-variant border-2 border-dashed border-outline/30 rounded-2xl">
           <Target className="h-12 w-12 opacity-30" />
           <p className="font-bold">No Program Objectives found</p>
-          <p className="text-xs opacity-60">POs are defined at the major level</p>
+          <p className="text-xs opacity-60">
+            POs are defined at the major level
+          </p>
         </div>
       ) : (
         <div className="grid gap-3">
-          {pos.map((po, idx) => {
-            const mappingStatus = validationResult?.mapping_report?.find((m: any) => m.code === (po.poCode || `PO${idx + 1}`))?.status;
-            
-            // Border color logic based on status
-            const borderClass = mappingStatus === 'MATCHED' 
-              ? "border-emerald-500 shadow-sm shadow-emerald-500/10" 
-              : mappingStatus === 'PARTIAL_MATCH'
-              ? "border-amber-500 shadow-sm shadow-amber-500/10"
-              : (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING')
-              ? "border-error shadow-sm shadow-error/10"
-              : "border-outline/20 hover:border-primary/30";
-
-            return (
-              <div 
-                key={po.poId} 
-                className={`flex items-start gap-4 p-5 bg-surface rounded-2xl border transition-all ${borderClass}`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                  mappingStatus === 'MATCHED' ? "bg-emerald-500/10 text-emerald-600" : 
-                  mappingStatus === 'PARTIAL_MATCH' ? "bg-amber-500/10 text-amber-600" :
-                  (mappingStatus === 'DUPLICATED' || mappingStatus === 'MISSING') ? "bg-error/10 text-error" : 
-                  "bg-primary/10 text-primary"
-                }`}>
-                  <span className="text-xs font-black">{po.poCode || `P${idx + 1}`}</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-on-surface text-sm leading-relaxed">{po.description}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      po.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-surface-container text-on-surface-variant"
-                    }`}>
-                      {po.status}
-                    </span>
-                    {mappingStatus && (
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        mappingStatus === "MATCHED" ? "bg-emerald-500 text-white" : 
-                        mappingStatus === "PARTIAL_MATCH" ? "bg-amber-500 text-white" :
-                        "bg-error text-white"
-                      }`}>
-                        {mappingStatus === "MATCHED" ? "Match Regulation" : 
-                         mappingStatus === "PARTIAL_MATCH" ? "Partial Match" : 
-                         mappingStatus === "DUPLICATED" ? "Duplicated" : "Missing"}
-                      </span>
-                    )}
-                  </div>
-                </div>
+          {pos.map((po, idx) => (
+            <div
+              key={po.poId}
+              className="flex items-start gap-4 p-5 bg-surface rounded-2xl border border-outline/20 hover:border-primary/30 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-xs font-black text-primary">
+                  {po.poCode || `P${idx + 1}`}
+                </span>
               </div>
-            );
-          })}
+              <div className="flex-1">
+                <p className="font-semibold text-on-surface text-sm leading-relaxed">
+                  {po.description}
+                </p>
+                <span
+                  className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    po.status === "ACTIVE"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-surface-container text-on-surface-variant"
+                  }`}
+                >
+                  {po.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void; label: string }) {
+function NoCurriculumPlaceholder({
+  onGoCreate,
+  label,
+}: {
+  onGoCreate: () => void;
+  label: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4 text-on-surface-variant border-2 border-dashed border-outline/30 rounded-2xl">
       <BookOpen className="h-12 w-12 opacity-30" />
       <p className="font-bold">Please create a curriculum first</p>
-      <p className="text-xs opacity-60">You need a curriculum before managing {label}</p>
+      <p className="text-xs opacity-60">
+        You need a curriculum before managing {label}
+      </p>
       <button
         onClick={onGoCreate}
         className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-bold mt-2 hover:bg-primary/90 transition active:scale-95"
@@ -809,103 +859,130 @@ function NoCurriculumPlaceholder({ onGoCreate, label }: { onGoCreate: () => void
   );
 }
 
-function SubmitTab({
+function FinalizeTab({
   curriculum,
   major,
   majorId,
-  rejectionRequest,
   onGoCreate,
-  onSubmit,
-  submitting
+  onFinalize,
+  submitting,
 }: {
   curriculum: CurriculumFramework | null;
   major: Major | null;
   majorId: string | null;
-  rejectionRequest: RequestItem | null;
   onGoCreate: () => void;
-  onSubmit: (title: string, content: string) => void;
+  onFinalize: () => void;
   submitting: boolean;
 }) {
-  const [title, setTitle] = useState(
-    rejectionRequest
-      ? `Resubmit Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
-      : `Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
-  );
-  const [content, setContent] = useState(
-    rejectionRequest
-      ? `Updated curriculum ${curriculum?.curriculumCode || ""} based on feedback and resubmitting for review.`
-      : `Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`
-  );
-
-  useEffect(() => {
-    setTitle(
-      rejectionRequest
-        ? `Resubmit Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
-        : `Review: ${curriculum?.curriculumCode || major?.majorName || "Curriculum"}`.substring(0, 50)
-    );
-    setContent(
-      rejectionRequest
-        ? `Updated curriculum ${curriculum?.curriculumCode || ""} based on feedback and resubmitting for review.`
-        : `Submitting curriculum ${curriculum?.curriculumCode || ""} for review.`
-    );
-  }, [major, curriculum, rejectionRequest]);
-
   if (!curriculum) {
-    return <NoCurriculumPlaceholder onGoCreate={onGoCreate} label="submission" />;
+    return (
+      <NoCurriculumPlaceholder onGoCreate={onGoCreate} label="finalization" />
+    );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-surface rounded-2xl border border-outline/20 p-8">
-        <h2 className="text-xl font-black text-on-surface mb-2">Submit Request</h2>
-        <p className="text-on-surface-variant text-sm mb-8">
-          Review the information below and submit your curriculum for approval.
+    <div className="max-w-3xl mx-auto space-y-8 py-8">
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h2 className="text-3xl font-black text-on-surface tracking-tight">
+          Review & Finalize
+        </h2>
+        <p className="text-on-surface-variant max-w-md mx-auto">
+          Please review the curriculum structure one last time. Once finalized,
+          it will be moved to the syllabus development phase.
         </p>
+      </div>
 
-        {/* Summary */}
-        <div className="bg-surface-container/50 rounded-xl p-5 mb-6 space-y-3">
-          <h3 className="text-xs font-black uppercase tracking-wider text-on-surface-variant mb-3">Request Summary</h3>
-          <div className="flex justify-between text-sm">
-            <span className="text-on-surface-variant font-medium">Curriculum</span>
-            <span className="font-bold text-on-surface">{curriculum.curriculumCode} — {curriculum.curriculumName}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-on-surface-variant font-medium">Major</span>
-            <span className="font-bold text-on-surface">{major?.majorName || majorId}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-surface rounded-2xl border border-outline/20 p-6 space-y-6">
+          <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+            <BookOpen className="w-4 h-4" /> Curriculum Info
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase mb-1">
+                Code
+              </p>
+              <p className="font-bold text-on-surface">
+                {curriculum.curriculumCode}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase mb-1">
+                Name
+              </p>
+              <p className="font-bold text-on-surface">
+                {curriculum.curriculumName}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase mb-1">
+                Major
+              </p>
+              <p className="font-bold text-on-surface">
+                {major?.majorName || majorId}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase mb-1">
+                Start Year
+              </p>
+              <p className="font-bold text-on-surface">
+                {curriculum.startYear}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Form */}
-        <div className="space-y-5">
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-on-surface-variant mb-2">Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-surface-container/40 border border-outline/20 rounded-xl px-4 py-3 text-sm font-medium text-on-surface outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/15 transition"
-              placeholder="Request title"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-on-surface-variant mb-2">Content</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={4}
-              className="w-full bg-surface-container/40 border border-outline/20 rounded-xl px-4 py-3 text-sm font-medium text-on-surface outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/15 transition resize-none"
-              placeholder="Describe the request..."
-            />
-          </div>
-
-          <button
-            onClick={() => onSubmit(title, content)}
-            disabled={submitting || !title.trim() || !content.trim()}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-on-primary rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-            {submitting ? "Submitting..." : "Submit Request"}
-          </button>
+        <div className="bg-surface rounded-2xl border border-outline/20 p-6 space-y-6">
+          <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+            <Layers className="h-4 w-4" /> Readiness Checklist
+          </h3>
+          <ul className="space-y-3">
+            {[
+              "Major details verified",
+              "POs defined and updated",
+              "PLOs defined and mapped to POs",
+              "Subjects organized by semesters",
+              "Credit allocation balanced",
+            ].map((item, i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3 text-sm font-medium text-on-surface"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
+      </div>
+
+      <div className="bg-primary/5 rounded-2xl border border-primary/20 p-8 flex flex-col items-center text-center space-y-6">
+        <div className="space-y-2">
+          <h3 className="text-lg font-black text-primary">Ready to proceed?</h3>
+          <p className="text-sm text-on-surface-variant max-w-sm">
+            Finalizing will mark this task as complete and prepare the
+            curriculum for the next stage of development.
+          </p>
+        </div>
+
+        <button
+          onClick={onFinalize}
+          disabled={submitting}
+          className="w-full max-w-sm flex items-center justify-center gap-3 py-4 bg-primary text-on-primary rounded-2xl font-black text-base shadow-xl shadow-primary/25 hover:bg-primary/90 transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {submitting ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-6 w-6" />
+          )}
+          {submitting ? "Finalizing..." : "Finalize Curriculum"}
+        </button>
       </div>
     </div>
   );
@@ -923,7 +1000,9 @@ function LoadingCard() {
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-surface rounded-2xl border border-outline/20 p-5">
-      <p className="text-xs font-black uppercase tracking-wider text-on-surface-variant mb-1">{label}</p>
+      <p className="text-xs font-black uppercase tracking-wider text-on-surface-variant mb-1">
+        {label}
+      </p>
       <p className="font-bold text-on-surface">{value}</p>
     </div>
   );

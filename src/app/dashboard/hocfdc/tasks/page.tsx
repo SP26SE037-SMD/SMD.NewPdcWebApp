@@ -97,6 +97,14 @@ export default function TasksPage() {
     fetchTasks();
   }, [user?.accountId, activeTab, search, page]);
 
+  const { refreshTaskTrigger } = useSelector((state: RootState) => state.notification);
+
+  useEffect(() => {
+    if (refreshTaskTrigger > 0) {
+      fetchTasks();
+    }
+  }, [refreshTaskTrigger]);
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: totalElements };
     tasks.forEach((task) => {

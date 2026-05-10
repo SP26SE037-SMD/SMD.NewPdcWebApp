@@ -640,7 +640,6 @@ function TaskRow({
         subjectId={task.subjectId || ""}
         accountEmail={user?.email || ""}
         minBloomLevel={subjectDetail?.minBloomLevel || 0}
-        minAvgGrade={subjectDetail?.minToPass || 0}
         isOpen={isCreateSyllabusOpen}
         onClose={() => setIsCreateSyllabusOpen(false)}
         onSuccess={async (newSyllabus: any) => {

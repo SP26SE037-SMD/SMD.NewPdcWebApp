@@ -2,8 +2,6 @@ import { apiClient } from "@/lib/api-client";
 
 export const CURRICULUM_STATUS = {
   DRAFT: 'DRAFT',
-  STRUCTURE_REVIEW: 'STRUCTURE_REVIEW',
-  STRUCTURE_APPROVED: 'STRUCTURE_APPROVED',
   SYLLABUS_DEVELOP: 'SYLLABUS_DEVELOP',
   FINAL_REVIEW: 'FINAL_REVIEW',
   SIGNED: 'SIGNED',
@@ -133,9 +131,10 @@ export const CurriculumService = {
     );
   },
 
-  getCurriculumsByMajorId: async (majorId: string) => {
+  getCurriculumsByMajorId: async (majorId: string, options?: { signal?: AbortSignal }) => {
     return apiClient.get<APIResponse<CurriculumFramework[]>>(
       `/api/curriculums/major/${majorId}`,
+      options,
     );
   },
 
@@ -211,6 +210,14 @@ export const CurriculumService = {
     );
   },
 
+  validatePLOs: async (curriculumId: string) => {
+    return apiClient.get<any>(`/api/plos/curriculum/${curriculumId}/validate`);
+  },
+
+  async syncStatus(id: string): Promise<APIResponse<any>> {
+    return await apiClient.patch(`/api/curriculums/${id}/sync-status`, {});
+  },
+
   deleteCurriculum: async (id: string): Promise<APIResponse<void>> => {
     return apiClient.delete<APIResponse<void>>(`/api/curriculums/${id}`);
   },
@@ -232,9 +239,5 @@ export const CurriculumService = {
       }
       return data;
     });
-  },
-
-  validatePLOs: async (curriculumId: string) => {
-    return apiClient.post<APIResponse<any>>(`/api/plos/curriculum/${curriculumId}/validate-plo`, {});
   },
 };

@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Manage Majors | VP Dashboard | SMD',
-    description: 'Add new academic majors or suspend existing program standards.',
+    description: 'Monitor and manage institutional academic majors and program standards.',
 };
 
 export default function ManageMajorsPage() {

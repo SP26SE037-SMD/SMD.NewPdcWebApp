@@ -11,7 +11,6 @@ interface CreateSyllabusModalProps {
   subjectId: string;
   accountEmail: string;
   minBloomLevel: number;
-  minAvgGrade: number;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (createdSyllabus?: any) => void;
@@ -21,7 +20,6 @@ export function CreateSyllabusModal({
   subjectId,
   accountEmail,
   minBloomLevel,
-  minAvgGrade,
   isOpen,
   onClose,
   onSuccess,
@@ -76,7 +74,6 @@ export function CreateSyllabusModal({
       subjectId,
       syllabusName: syllabusName.trim(),
       minBloomLevel,
-      minAvgGrade,
     };
 
     setIsSubmitting(true);
@@ -149,21 +146,17 @@ export function CreateSyllabusModal({
               />
             </div>
 
-            <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 flex flex-wrap gap-x-6 gap-y-2">
-              <div className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
-                Thresholds:
+              <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 flex flex-wrap gap-x-6 gap-y-2">
+                <div className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                  Thresholds:
+                </div>
+                <div className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
+                  Min Bloom:{" "}
+                  <span className="text-amber-900 font-bold">
+                    {minBloomLevel}
+                  </span>
+                </div>
               </div>
-              <div className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
-                Min Bloom:{" "}
-                <span className="text-amber-900 font-bold">
-                  {minBloomLevel}
-                </span>
-              </div>
-              <div className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
-                Min Avg:{" "}
-                <span className="text-amber-900 font-bold">{minAvgGrade}</span>
-              </div>
-            </div>
 
             {/* Source Selection Section */}
             {/* <div className="space-y-3">

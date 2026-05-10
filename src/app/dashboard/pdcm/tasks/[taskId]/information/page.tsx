@@ -301,7 +301,7 @@ info: {
                     {
                         icon: 'check_circle',
                         label: 'Min To Pass Score',
-                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgGrade ?? syllabusData?.minAvgMarkToPass ?? 0}`,
+                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgMarkToPass ?? 0}`,
                     },
                     {
                         icon: 'policy',

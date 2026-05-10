@@ -34,10 +34,6 @@ import {
 
 const STATUS_COLORS: Record<string, string> = {
   [CURRICULUM_STATUS.DRAFT]: "text-zinc-500 bg-zinc-50 border-zinc-100",
-  [CURRICULUM_STATUS.STRUCTURE_REVIEW]:
-    "text-blue-600 bg-blue-50 border-blue-100",
-  [CURRICULUM_STATUS.STRUCTURE_APPROVED]:
-    "text-primary-600 bg-primary-50 border-primary-100",
   [CURRICULUM_STATUS.SYLLABUS_DEVELOP]:
     "text-indigo-600 bg-indigo-50 border-indigo-100",
   [CURRICULUM_STATUS.FINAL_REVIEW]:
@@ -159,14 +155,11 @@ export default function CurriculumsManagement({
   const TABS: StatusTab[] = [
     { label: "All Repository", value: "" },
     { label: "Draft", value: CURRICULUM_STATUS.DRAFT },
-    { label: "Structure Reviewing", value: CURRICULUM_STATUS.STRUCTURE_REVIEW },
-    {
-      label: "Structure Approved",
-      value: CURRICULUM_STATUS.STRUCTURE_APPROVED,
-    },
     { label: "Syllabus Develop", value: CURRICULUM_STATUS.SYLLABUS_DEVELOP },
     { label: "Final Review", value: CURRICULUM_STATUS.FINAL_REVIEW },
+    { label: "Signed", value: CURRICULUM_STATUS.SIGNED },
     { label: "Published", value: CURRICULUM_STATUS.PUBLISHED },
+    { label: "Archived", value: CURRICULUM_STATUS.ARCHIVED },
   ];
 
   const handleTabChange = (status: string) => {

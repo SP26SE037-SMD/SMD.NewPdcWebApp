@@ -89,7 +89,7 @@ export default function PoPloMatrix({
     initialIsLocked !== undefined
       ? initialIsLocked
       : curriculum?.status 
-        ? (curriculum.status !== CURRICULUM_STATUS.DRAFT && curriculum.status !== CURRICULUM_STATUS.STRUCTURE_REVIEW)
+        ? curriculum.status !== CURRICULUM_STATUS.DRAFT
         : false;
 
   // 2. Fetch POs

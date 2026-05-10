@@ -24,7 +24,7 @@ import { GroupService } from "@/services/group.service";
 import { PoService, PO } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
 import StepNavigation from "./StepNavigation";
-import { SubjectService } from "@/services/subject.service";
+import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { MajorService } from "@/services/major.service";
@@ -210,22 +210,19 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
   // 3. Finalize Mutation
   const finalizeMutation = useMutation({
     mutationFn: async () => {
-      const toastId = toast.loading("Submitting curriculum for review...");
+      const toastId = toast.loading("Finalizing curriculum structure...");
       try {
-        // 1. Update curriculum status
-        await CurriculumService.updateCurriculumStatus(
-          curriculumId!,
-          CURRICULUM_STATUS.STRUCTURE_REVIEW,
-        );
+        // 1. Sync curriculum status and dependencies
+        await CurriculumService.syncStatus(curriculumId!);
 
-        // 2. Create review task (request)
+        // 4. Create review task (request)
         const curriculumName = curriculum?.curriculumNameEn || curriculum?.curriculumName || "Untitled Curriculum";
         const majorName = major?.majorName || "Unknown Major";
         
         await RequestService.createRequest({
-          title: `Review: ${curriculum?.curriculumCode || curriculumName}`.substring(0, 50),
-          content: `Review curriculum ${curriculumName} of major ${majorName}`,
-          status: "PENDING",
+          title: `Structure Finalized: ${curriculum?.curriculumCode || curriculumName}`.substring(0, 50),
+          content: `Finalized curriculum structure for ${curriculumName} of major ${majorName}`,
+          status: "DONE",
           createdById: user?.accountId || "",
           curriculumId: curriculumId!,
           majorId: majorId as string,
@@ -239,7 +236,7 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["curriculum", curriculumId] });
-      router.push("/dashboard/hocfdc/curriculums?submitted=true&status=STRUCTURE_REVIEW");
+      router.replace(`/dashboard/hocfdc/curriculums/${curriculumId}`);
     },
   });
 

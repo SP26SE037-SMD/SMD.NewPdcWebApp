@@ -701,7 +701,6 @@ export default function NewSubjectContent() {
         subjectId={subject.subjectId}
         accountEmail={user?.email || ""}
         minBloomLevel={subject?.minBloomLevel || 0}
-        minAvgGrade={subject.minToPass || 0}
         isOpen={isCreateSyllabusModalOpen}
         onClose={() => setIsCreateSyllabusModalOpen(false)}
         onSuccess={handleSyllabusModalSuccess}

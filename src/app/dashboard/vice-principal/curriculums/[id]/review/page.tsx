@@ -119,7 +119,7 @@ export default function VicePrincipalReviewPage() {
         id,
         newStatus as any,
       );
-      if (newStatus === CURRICULUM_STATUS.STRUCTURE_APPROVED) {
+      if (newStatus === CURRICULUM_STATUS.SYLLABUS_DEVELOP) {
         await SubjectService.updateSubjectStatusesBulk(
           id,
           SUBJECT_STATUS.DEFINED,
@@ -220,7 +220,7 @@ export default function VicePrincipalReviewPage() {
 
       // Determine target curriculum status based on current status
       const currentStatus = curriculum?.status;
-      let targetStatus: string = CURRICULUM_STATUS.STRUCTURE_APPROVED;
+      let targetStatus: string = CURRICULUM_STATUS.SYLLABUS_DEVELOP;
 
       if (currentStatus === CURRICULUM_STATUS.FINAL_REVIEW) {
         targetStatus = CURRICULUM_STATUS.SIGNED;
