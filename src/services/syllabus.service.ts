@@ -17,7 +17,6 @@ export interface CreateSyllabusPayload {
   subjectId: string;
   syllabusName: string;
   minBloomLevel: number;
-  minAvgGrade: number;
 }
 
 export interface SubjectSyllabus {
@@ -25,7 +24,7 @@ export interface SubjectSyllabus {
   syllabusName: string;
   status?: SyllabusStatus;
   minBloomLevel?: number;
-  minAvgGrade?: number;
+  minAvgMarkToPass?: number;
   createdAt?: string;
 }
 
@@ -47,7 +46,7 @@ export interface SubjectSyllabusOption {
 
 export interface PendingReviewSyllabus extends SubjectSyllabusOption {
   minBloomLevel: number;
-  minAvgGrade: number;
+  minAvgMarkToPass: number;
   createdAt: string;
 }
 
@@ -154,7 +153,6 @@ export const SyllabusService = {
       syllabusId: string;
       syllabusName: string;
       minBloomLevel: number;
-      minAvgGrade: number;
       status: string;
       createdAt: string;
       approvedDate: string;
@@ -172,64 +170,13 @@ export const SyllabusService = {
       credit?: number;
     }>
   > {
-    // MOCK DATA FALLBACK for Revision Demo
-    if (syllabusId === "ebc492b4-e22d-4c3e-bfa3-0d315ab32dbf") {
-        return {
-            status: 200,
-            message: "Success (Mock Data)",
-            data: {
-                syllabusId: "ebc492b4-e22d-4c3e-bfa3-0d315ab32dbf",
-                syllabusName: "Mock Syllabus Demo",
-                minBloomLevel: 4,
-                minAvgGrade: 5,
-                status: "REVISION_REQUESTED",
-                createdAt: "2026-04-01T00:00:00Z",
-                approvedDate: "2026-04-05T00:00:00Z",
-                subjectId: "sub-mock-001",
-                subjectCode: "SWP391",
-                subjectName: "Software Development Project",
-                version: "1.0",
-                noCredit: 3,
-                scoringScale: 10,
-                minAvgMarkToPass: 5,
-                decisionLevel: 1,
-                credit: 3
-            }
-        };
-    }
-
     const response = await fetch(`/api/syllabus/${syllabusId}`, {
       method: "GET",
       credentials: "include",
       headers: { accept: "*/*" },
     });
-
+ 
     if (!response.ok) {
-      if (response.status === 403) {
-        console.warn(`Permission denied for syllabus ${syllabusId}. Using safe fallback.`);
-        return {
-          status: 403,
-          message: "Limited access - Role permissions restricted",
-          data: {
-            syllabusId: syllabusId,
-            syllabusName: "Syllabus Context (Protected)",
-            minBloomLevel: 4,
-            minAvgGrade: 5,
-            status: "PROTECTED",
-            createdAt: new Date().toISOString(),
-            approvedDate: new Date().toISOString(),
-            subjectId: "restricted-subject",
-            subjectCode: "N/A",
-            subjectName: "Subject Details Restricted",
-            version: "N/A",
-            noCredit: 3,
-            scoringScale: 10,
-            minAvgMarkToPass: 5,
-            decisionLevel: 1,
-            credit: 3
-          } as any
-        };
-      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData?.message || "Failed to fetch syllabus details");
     }

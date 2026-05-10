@@ -71,7 +71,7 @@ export function SyllabusInfoTab({ syllabus, subject }: SyllabusInfoTabProps) {
                     {
                         icon: 'check_circle',
                         label: 'Min to Pass',
-                        value: `${subject?.minToPass || syllabus?.minAvgGrade || syllabus?.minAvgMarkToPass || 0} Points`,
+                        value: `${subject?.minToPass || syllabus?.minAvgMarkToPass || 0} Points`,
                     },
                     {
                         icon: 'policy',

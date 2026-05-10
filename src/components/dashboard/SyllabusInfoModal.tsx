@@ -304,7 +304,7 @@ export function SyllabusInfoModal({ isOpen, onClose, syllabusInfo: overrideInfo,
                                     {
                                         icon: 'check_circle',
                                         label: 'Min. Pass Score',
-                                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgGrade ?? syllabusData?.minAvgMarkToPass ?? 0} Points`,
+                                        value: `${subjectData?.minToPass ?? syllabusData?.minAvgMarkToPass ?? 0} Points`,
                                     },
                                     {
                                         icon: 'policy',

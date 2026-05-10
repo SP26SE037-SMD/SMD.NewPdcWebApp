@@ -15,7 +15,7 @@ interface CreatedSyllabusItem {
   syllabusName: string;
   status?: string;
   minBloomLevel: number;
-  minAvgGrade: number;
+  minAvgMarkToPass?: number;
   createdAt?: string;
 }
 
@@ -112,7 +112,7 @@ export function useNewSubjectLogic() {
       syllabusName: String(payload?.syllabusName ?? payload?.name ?? "Unnamed"),
       status: typeof payload?.status === "string" ? payload.status : undefined,
       minBloomLevel: Number(payload?.minBloomLevel ?? 0),
-      minAvgGrade: Number(payload?.minAvgGrade ?? 0),
+      minAvgMarkToPass: Number(payload?.minAvgMarkToPass ?? payload?.minAvgGrade ?? 0),
       createdAt:
         typeof payload?.createdAt === "string" ? payload.createdAt : undefined,
     };
