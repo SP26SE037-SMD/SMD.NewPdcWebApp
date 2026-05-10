@@ -419,9 +419,10 @@ export const TaskService = {
     syllabusStatus: task.syllabus?.status || null,
   }),
 
-  getTaskById: async (taskId: string) => {
+  getTaskById: async (taskId: string, options?: { signal?: AbortSignal }) => {
     const response = await apiClient.get<TaskApiItem>(
       `/api/v1/tasks-v2/${taskId}`,
+      options,
     );
     return {
       status: 200,

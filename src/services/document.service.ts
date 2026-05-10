@@ -11,8 +11,8 @@ export interface DocumentDetail {
 }
 
 export const DocumentService = {
-  getDocument: async (id: string): Promise<DocumentDetail> => {
-    const res = await apiClient.get<any>(`/api/document/${id}`);
+  getDocument: async (id: string, options?: { signal?: AbortSignal }): Promise<DocumentDetail> => {
+    const res = await apiClient.get<any>(`/api/document/${id}`, options);
     return res.data;
   }
 };

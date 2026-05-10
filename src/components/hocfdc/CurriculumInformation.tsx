@@ -57,18 +57,6 @@ const ALL_STATUS_ORDER = [
     color: "#94a3b8",
   },
   {
-    id: CURRICULUM_STATUS.STRUCTURE_REVIEW,
-    label: "Structure Review",
-    icon: Search,
-    color: "#f59e0b",
-  },
-  {
-    id: CURRICULUM_STATUS.STRUCTURE_APPROVED,
-    label: "Structure Approved",
-    icon: CheckCircle2,
-    color: "#10b981",
-  },
-  {
     id: CURRICULUM_STATUS.SYLLABUS_DEVELOP,
     label: "Syllabus Develop",
     icon: Settings,
@@ -390,17 +378,6 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
 
             <div className="h-8 w-px bg-zinc-100 mx-2" />
 
-            {/* Transition Actions */}
-            {curriculum.status === CURRICULUM_STATUS.STRUCTURE_APPROVED && (
-              <button
-                onClick={() =>
-                  handleStatusTransition(CURRICULUM_STATUS.SYLLABUS_DEVELOP)
-                }
-                className="px-5 py-2.5 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all shadow-sm flex items-center gap-2"
-              >
-                Start Syllabus Development <Layers size={14} />
-              </button>
-            )}
 
             {curriculum.status === CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
               <button
