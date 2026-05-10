@@ -304,56 +304,43 @@ const SourceDocumentItem = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const cleanItem = item.replace(/^[-•]\s*/, "").trim();
-  const parts = cleanItem.split('/');
-  const [formData, setFormData] = useState(() => {
-    if (parts.length <= 6) {
-      return {
-        src: parts[0] || "?",
-        sub: parts[1] || "?",
-        title: parts[2] || "",
-        author: parts[3] || "x",
-        publisher: parts[4] || "x",
-        year: parts[5] || "x"
-      };
-    } else {
-      return {
-        src: parts[0] || "?",
-        sub: parts[1] || "?",
-        year: parts[parts.length - 1] || "x",
-        publisher: parts[parts.length - 2] || "x",
-        author: parts[parts.length - 3] || "x",
-        title: parts.slice(2, parts.length - 3).join("/") || ""
-      };
-    }
+  const match = cleanItem.match(/(.+)\s*\(([^)]+)\)/);
+  
+  const initialTitle = match ? match[1].trim() : cleanItem;
+  const rawParts = match ? match[2].split('|') : [];
+  const parts = [...rawParts];
+  while (parts.length < 5) parts.push("?");
+
+  const [formData, setFormData] = useState({
+    title: initialTitle,
+    src: parts[0] || "?",
+    sub: parts[1] || "?",
+    author: parts[2] || "x",
+    publisher: parts[3] || "x",
+    year: parts[4] || "x"
   });
 
   // Sync state when item prop changes (crucial for deletion/shifting)
   useEffect(() => {
     const clean = item.replace(/^[-•]\s*/, "").trim();
-    const pts = clean.split('/');
-    if (pts.length <= 6) {
-      setFormData({
-        src: pts[0] || "?",
-        sub: pts[1] || "?",
-        title: pts[2] || "",
-        author: pts[3] || "x",
-        publisher: pts[4] || "x",
-        year: pts[5] || "x"
-      });
-    } else {
-      setFormData({
-        src: pts[0] || "?",
-        sub: pts[1] || "?",
-        year: pts[pts.length - 1] || "x",
-        publisher: pts[pts.length - 2] || "x",
-        author: pts[pts.length - 3] || "x",
-        title: pts.slice(2, pts.length - 3).join("/") || ""
-      });
-    }
+    const m = clean.match(/(.+)\s*\(([^)]+)\)/);
+    const initTitle = m ? m[1].trim() : clean;
+    const rParts = m ? m[2].split('|') : [];
+    const pts = [...rParts];
+    while (pts.length < 5) pts.push("?");
+    
+    setFormData({
+      title: initTitle,
+      src: pts[0] || "?",
+      sub: pts[1] || "?",
+      author: pts[2] || "x",
+      publisher: pts[3] || "x",
+      year: pts[4] || "x"
+    });
   }, [item]);
 
   const handleLocalSave = () => {
-    const newString = `${formData.src}/${formData.sub}/${formData.title}/${formData.author}/${formData.publisher}/${formData.year}`;
+    const newString = `${formData.title} (${formData.src}|${formData.sub}|${formData.author}|${formData.publisher}|${formData.year})`;
     onSave(newString);
     setIsEditing(false);
   };
@@ -363,59 +350,65 @@ const SourceDocumentItem = ({
       <div className="flex flex-col gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl shadow-inner animate-in zoom-in-95 duration-200">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Source Code</label>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Source Code</label>
             <input 
-              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-bold text-emerald-700 focus:border-emerald-600 outline-none shadow-sm"
               value={formData.src}
               onChange={e => setFormData({...formData, src: e.target.value})}
+              placeholder="e.g. MEDICINE_BK1"
             />
           </div>
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Subject Code</label>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Subject Code</label>
             <input 
-              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-bold text-primary focus:border-emerald-600 outline-none shadow-sm"
               value={formData.sub}
               onChange={e => setFormData({...formData, sub: e.target.value})}
+              placeholder="e.g. ENG001"
             />
           </div>
         </div>
         <div>
-          <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Document Title</label>
+          <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Source Name (Document Title)</label>
           <textarea 
-            className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-emerald-600 outline-none min-h-[60px]"
+            className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-sm font-bold text-on-surface focus:border-emerald-600 outline-none min-h-[60px] shadow-sm"
             value={formData.title}
             onChange={e => setFormData({...formData, title: e.target.value})}
+            placeholder="Enter document title..."
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Author</label>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Author</label>
             <input 
-              className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+              className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
               value={formData.author}
               onChange={e => setFormData({...formData, author: e.target.value})}
+              placeholder="Author name"
             />
           </div>
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase">Publisher / Year</label>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Publisher & Year</label>
             <div className="flex gap-2">
               <input 
-                className="flex-1 bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs focus:border-emerald-600 outline-none"
+                className="flex-1 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.publisher}
                 onChange={e => setFormData({...formData, publisher: e.target.value})}
+                placeholder="Publisher"
               />
               <input 
-                className="w-16 bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-emerald-600 outline-none"
+                className="w-20 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-black text-center focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.year}
                 onChange={e => setFormData({...formData, year: e.target.value})}
+                placeholder="2024"
               />
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-1">
-          <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition">Cancel</button>
-          <button onClick={handleLocalSave} className="px-4 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg shadow-md hover:bg-emerald-700 transition flex items-center gap-1">
-            <Save className="w-3 h-3" /> Save
+        <div className="flex justify-end gap-2 mt-1 pt-2 border-t border-emerald-200/50">
+          <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-xs font-bold text-emerald-700/60 hover:bg-emerald-100 rounded-lg transition uppercase tracking-wider">Cancel</button>
+          <button onClick={handleLocalSave} className="px-5 py-1.5 text-xs font-black bg-emerald-600 text-white rounded-lg shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 uppercase tracking-widest">
+            <Save className="w-3.5 h-3.5" /> Save Changes
           </button>
         </div>
       </div>
@@ -615,7 +608,7 @@ const RegulationCard = ({
                     onClick={() => {
                       const template = isCourseMapping 
                         ? "- New Subject (CODE|1|3|30|15|90)"
-                        : "- SRC/SUB/Title/Author/Publisher/2024";
+                        : "- Source Name (SRC|SUB|Author|Publisher|2024)";
                       onUpdate(reg.id, "content", reg.content + "\n" + template);
                     }}
                     className="w-full py-2 border border-dashed border-outline/30 rounded-xl text-xs font-bold text-on-surface-variant/50 hover:border-primary/50 hover:text-primary transition flex items-center justify-center gap-2"
@@ -759,34 +752,18 @@ export default function PdfExtractionStep({
 
               // Format specific long comma-separated strings into multiline with bullet points
               if (code === "SOURCE_DOCUMENTS") {
-                // Logic: Each item has exactly 6 fields separated by 5 slashes.
-                // The 6th field (Year) is followed by a comma and the start of the next item.
-                const allParts = content.split('/');
-                const items: string[] = [];
-                let currentItemParts: string[] = [];
-                
-                for (let i = 0; i < allParts.length; i++) {
-                  const part = allParts[i].trim();
-                  if (currentItemParts.length < 5) {
-                    currentItemParts.push(part);
-                  } else {
-                    // This is the 6th part (Year + potentially next item's first part)
-                    const splitByComma = part.split(/,\s*/);
-                    const year = splitByComma[0];
-                    currentItemParts.push(year);
-                    
-                    // Save the completed item
-                    items.push("- " + currentItemParts.join('/'));
-                    
-                    // Start next item with the remaining parts (if any)
-                    currentItemParts = splitByComma.slice(1);
-                  }
-                }
-                // Handle last item if exists
-                if (currentItemParts.length > 0 && currentItemParts.some(p => p.trim())) {
-                  items.push("- " + currentItemParts.join('/'));
-                }
-                content = items.join("\n");
+                // Format specific long comma-separated strings into multiline with bullet points
+                // Logic: Title(SRC|SUB|Author|Publisher|Year), Title(...)
+                content = content
+                  .split(/\),\s*/)
+                  .map((item: string, idx: number, arr: any[]) => {
+                    const clean = item.trim();
+                    if (!clean) return "";
+                    // Re-add the closing parenthesis except for the last item which might already have it
+                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(')') ? ')' : ''}`;
+                  })
+                  .filter(l => l.trim() && l !== "- )")
+                  .join("\n");
               } else if (code === "COURSE_MAPPING") {
                 // COURSE_MAPPING items end with a closing parenthesis followed by a comma
                 content = content

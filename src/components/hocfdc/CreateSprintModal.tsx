@@ -53,17 +53,21 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
   // Auto-generate Sprint Name based on Curriculum and Department
   useEffect(() => {
     if (curriculum) {
-      const dept = depts.find((d: any) => d.departmentId === selectedDeptId);
+      const deptsList = (deptsRes?.data as any) || [];
+      const dept = deptsList.find((d: any) => d.departmentId === selectedDeptId);
       const deptCode = dept ? dept.departmentCode : "";
       const prefix = curriculum.curriculumCode;
+      const newName = deptCode ? `${prefix} - ${deptCode}` : `${prefix} - `;
       
-      // Update name if it's empty or matches the pattern we're managing
-      setFormData(prev => ({
-        ...prev,
-        sprintName: deptCode ? `${prefix} - ${deptCode}` : `${prefix} - `
-      }));
+      setFormData(prev => {
+        if (prev.sprintName === newName) return prev;
+        return {
+          ...prev,
+          sprintName: newName
+        };
+      });
     }
-  }, [curriculum, selectedDeptId, depts]);
+  }, [curriculum, selectedDeptId, deptsRes?.data]);
 
   const createMutation = useMutation({
     mutationFn: (data: SprintPayload) => SprintService.createSprint(data),

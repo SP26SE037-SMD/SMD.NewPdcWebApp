@@ -6,7 +6,8 @@ export type SheetData = (string | number | null)[][];
 
 export interface ExcelErrorMap {
   [sheetName: string]: {
-    [rowIndex: number]: string; // Error message for that row
+    [rowIndex: number]: string; // Error message for that row index
+    // Note: index -1 is used for general sheet errors
   };
 }
 
@@ -76,6 +77,19 @@ export default function ExcelPreviewTable({ workbookData, errorMap }: ExcelPrevi
 
       {/* Spreadsheet Content */}
       <div className="flex-1 overflow-auto bg-white relative excel-scrollbar">
+        {/* General Sheet Errors Banner */}
+        {currentSheetErrors[-1] && (
+          <div className="sticky top-0 left-0 right-0 z-30 bg-red-50 border-b border-red-200 p-3 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-[10px] font-black text-red-800 uppercase tracking-widest mb-1">Sheet Validation Error</h4>
+              <p className="text-xs text-red-700 font-bold whitespace-pre-wrap leading-relaxed">
+                {currentSheetErrors[-1]}
+              </p>
+            </div>
+          </div>
+        )}
+
         {currentSheetData.length === 0 ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant text-sm">
             This sheet is empty.

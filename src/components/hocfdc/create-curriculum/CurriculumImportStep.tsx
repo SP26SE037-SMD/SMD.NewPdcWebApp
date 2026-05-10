@@ -191,9 +191,9 @@ export default function CurriculumImportStep({ majorId, majorCode, onImportSucce
               if (d.rowNumber) {
                 rowLoc = `Row ${d.rowNumber}`;
                 exactRowIndex = d.rowNumber - 1; // 0-indexed for table
-              } else if (d.ploCode || d.subjectCode || d.curriculumCode || d.majorCode || d.poCode) {
-                const codeToMatch = d.ploCode || d.subjectCode || d.curriculumCode || d.majorCode || d.poCode;
-                rowLoc = `${d.ploCode ? 'PLO' : (codeKey || 'Code')} ${codeToMatch}`;
+              } else if (d.ploCode || d.subjectCode || d.curriculumCode || d.majorCode || d.poCode || d.sourceCode) {
+                const codeToMatch = d.ploCode || d.subjectCode || d.curriculumCode || d.majorCode || d.poCode || d.sourceCode;
+                rowLoc = `${d.ploCode ? 'PLO' : (d.sourceCode ? 'Source' : (codeKey || 'Code'))} ${codeToMatch}`;
                 
                 // Attempt to find the exact row in the parsed Excel data
                 // We'll search all rows and all columns, or specifically the first few columns
@@ -230,6 +230,10 @@ export default function CurriculumImportStep({ majorId, majorCode, onImportSucce
 
               if (exactRowIndex !== -1) {
                 newErrorMap[sheetName][exactRowIndex] = d.message;
+              } else {
+                // Catch general sheet errors (no specific row)
+                const existing = newErrorMap[sheetName][-1];
+                newErrorMap[sheetName][-1] = existing ? `${existing}\n${d.message}` : d.message;
               }
 
               errorList.push({
