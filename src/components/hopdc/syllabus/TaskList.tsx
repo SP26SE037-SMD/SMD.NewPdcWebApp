@@ -715,24 +715,24 @@ export function TaskList({ sprintId }: TaskListProps) {
   const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] =
     useState("");
 
-  const taskTypes = useMemo(() => {
-    const types = Array.from(new Set(tasks.map((t) => t.type || "OTHER")));
-    return types.sort();
+  const taskActions = useMemo(() => {
+    const actions = Array.from(new Set(tasks.map((t) => t.action || "OTHER")));
+    return actions.sort();
   }, [tasks]);
 
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
-  // Set default type when tasks load
+  // Set default action when tasks load
   useEffect(() => {
-    if (taskTypes.length > 0 && !selectedType) {
-      setSelectedType(taskTypes[0]);
+    if (taskActions.length > 0 && !selectedAction) {
+      setSelectedAction(taskActions[0]);
     }
-  }, [taskTypes, selectedType]);
+  }, [taskActions, selectedAction]);
 
   const filteredTasks = useMemo(() => {
-    if (!selectedType) return tasks;
-    return tasks.filter((t) => (t.type || "OTHER") === selectedType);
-  }, [tasks, selectedType]);
+    if (!selectedAction) return tasks;
+    return tasks.filter((t) => (t.action || "OTHER") === selectedAction);
+  }, [tasks, selectedAction]);
 
   const saveTaskMutation = useMutation({
     mutationFn: async ({
@@ -1015,23 +1015,23 @@ export function TaskList({ sprintId }: TaskListProps) {
         )}
       </div>
 
-      {taskTypes.length > 0 && (
+      {taskActions.length > 0 && (
         <div className="flex flex-wrap gap-2 p-1.5 bg-zinc-100/50 rounded-2xl w-fit border border-zinc-200">
-          {taskTypes.map((type) => (
+          {taskActions.map((action) => (
             <button
-              key={type}
-              onClick={() => setSelectedType(type)}
+              key={action}
+              onClick={() => setSelectedAction(action)}
               className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
-                selectedType === type
+                selectedAction === action
                   ? "bg-white text-[var(--primary)] shadow-sm shadow-zinc-200 border border-zinc-200"
                   : "text-zinc-500 hover:text-zinc-700 hover:bg-white/50"
               }`}
             >
-              {type.replace(/_/g, " ")}
+              {action.replace(/_/g, " ")}
               <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${
-                selectedType === type ? "bg-[var(--primary)] text-white" : "bg-zinc-200 text-zinc-600"
+                selectedAction === action ? "bg-[var(--primary)] text-white" : "bg-zinc-200 text-zinc-600"
               }`}>
-                {tasks.filter(t => (t.type || "OTHER") === type).length}
+                {tasks.filter(t => (t.action || "OTHER") === action).length}
               </span>
             </button>
           ))}
@@ -1041,7 +1041,7 @@ export function TaskList({ sprintId }: TaskListProps) {
       <div className="space-y-4">
         {filteredTasks.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-base font-medium text-zinc-500">
-            No tasks found for {selectedType?.replace(/_/g, " ") || "this type"}.
+            No tasks found for {selectedAction?.replace(/_/g, " ") || "this action"}.
           </div>
         ) : (
           filteredTasks.map((task) => {
