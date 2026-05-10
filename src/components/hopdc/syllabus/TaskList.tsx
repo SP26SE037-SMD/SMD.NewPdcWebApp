@@ -234,13 +234,6 @@ function TaskRow({
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const { data: reviewTasksRes, isLoading: isReviewTasksLoading } = useQuery({
-    queryKey: ["review-tasks-by-task", task.taskId],
-    queryFn: () => ReviewTaskService.getReviewTasksByTaskId(task.taskId),
-    enabled: isExpanded,
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
 
   const { data: subjectDetailRes } = useQuery({
     queryKey: ["subject-detail-for-task", task.subjectId],
@@ -250,9 +243,10 @@ function TaskRow({
 
   const subjectDetail = subjectDetailRes;
 
-  const reviewTasks = reviewTasksRes?.data?.content || [];
-  const latestReview = reviewTasks[0];
-  const isLatestFromHoCFDC = ((latestReview as any)?.reviewer as any)?.role === "HOCFDC";
+  const reviewTasks: any[] = [];
+  const isReviewTasksLoading = false;
+  const latestReview = null;
+  const isLatestFromHoCFDC = false;
 
   const hasActiveReview = reviewTasks.some(
     (r: any) =>
@@ -593,32 +587,11 @@ function TaskRow({
                 </span>
               </div>
 
-              {isReviewTasksLoading ? (
-                <div className="flex items-center gap-3 text-zinc-400 py-6">
-                  <Loader2 size={16} className="animate-spin" />
-                  <span className="text-[11px] font-black uppercase tracking-widest">
-                    Fetching Review History...
-                  </span>
-                </div>
-              ) : reviewTasks.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3">
-                  {reviewTasks.map((review: ReviewTaskItem, idx: number) => (
-                    <ReviewTaskItemRow
-                      key={review.reviewId}
-                      review={review}
-                      onRecreateTask={() => setIsModalOpen(true)}
-                      isLatest={idx === 0}
-                      isTaskDone={isDone}
-                    />
-                  ))}
-                </div>
-              ) : (
                 <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-3xl">
                   <p className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
-                    No review activities recorded yet
+                    Review history display disabled
                   </p>
                 </div>
-              )}
             </div>
           </motion.div>
         )}
@@ -678,8 +651,7 @@ export function TaskList({ sprintId }: TaskListProps) {
       queryClient.invalidateQueries({ queryKey: ["sprints"] }),
       queryClient.invalidateQueries({ queryKey: ["hopdc-receive-task-curriculum-detail"] }),
       queryClient.invalidateQueries({ queryKey: ["syllabus"] }),
-      queryClient.invalidateQueries({ queryKey: ["assignments"] }),
-      queryClient.invalidateQueries({ queryKey: ["review-tasks-by-task"] })
+      queryClient.invalidateQueries({ queryKey: ["assignments"] })
     ]);
     
     router.refresh();

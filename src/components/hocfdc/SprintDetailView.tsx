@@ -44,6 +44,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const { showToast } = useToast();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isQuickLaunchConfirmOpen, setIsQuickLaunchConfirmOpen] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const { data: sprintRes, isLoading: sprintLoading } = useQuery({
     queryKey: ["sprint", sprintId],
@@ -130,6 +132,51 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const sprint = sprintRes?.data;
   const isLoading = sprintLoading;
 
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (sprint?.status === SPRINT_STATUS.PLANNING) {
+        e.preventDefault();
+        e.returnValue = "You haven't started this sprint yet. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [sprint?.status]);
+
+  React.useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      if (sprint?.status !== SPRINT_STATUS.PLANNING) return;
+
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+
+      if (anchor && anchor.href && !anchor.href.includes("#") && !anchor.getAttribute("target")) {
+        const currentUrl = window.location.href;
+        const targetUrl = anchor.href;
+
+        // Only block if it's actually leaving the current planning page
+        if (targetUrl !== currentUrl && !targetUrl.includes(window.location.pathname)) {
+          e.preventDefault();
+          setPendingHref(targetUrl);
+          setIsLeaveConfirmOpen(true);
+        }
+      }
+    };
+
+    document.addEventListener("click", handleAnchorClick, true);
+    return () => document.removeEventListener("click", handleAnchorClick, true);
+  }, [sprint?.status]);
+
+  const handleBack = () => {
+    if (sprint?.status === SPRINT_STATUS.PLANNING) {
+      setIsLeaveConfirmOpen(true);
+    } else {
+      router.back();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
@@ -156,7 +203,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       {/* Back Button & Breadcrumb */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="p-2 border border-zinc-200 bg-white hover:bg-zinc-900 hover:text-white transition-all rounded-xl group shadow-sm"
         >
           <ChevronLeft
@@ -242,7 +289,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   onClick={() => {
                     if (!isSprintReadyToComplete) {
                       showToast(
-                        `Cannot complete: All tasks must be DONE and all subjects must be COMPLETED or PUBLISHED. (${readyTasks}/${totalTasks} ready)`,
+                        `Cannot complete: All tasks must be completed and approved. (${readyTasks}/${totalTasks} ready)`,
                         "error",
                       );
                       return;
@@ -329,24 +376,6 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Warning Banner for Pending Subjects */}
-      {allTasksDone && pendingSubjectsCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 shadow-sm"
-        >
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
-            <AlertCircle size={20} />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Pending Subject Approvals</h4>
-            <p className="text-xs text-amber-700 font-medium">
-              All tasks are <span className="font-bold">DONE</span>, but there are still <span className="font-bold">{pendingSubjectsCount}</span> subjects that need to be reviewed and approved before you can complete this sprint.
-            </p>
-          </div>
-        </motion.div>
-      )}
 
       {/* Task List Section */}
       <div className="space-y-4">
@@ -390,6 +419,24 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           batchMutation.mutate();
         }}
         onClose={() => setIsQuickLaunchConfirmOpen(false)}
+      />
+
+      <ConfirmModal
+        isOpen={isLeaveConfirmOpen}
+        size="md"
+        title="Sprint Not Started"
+        message="You haven't started this sprint yet. Are you sure you want to leave the planning board?"
+        confirmLabel="Leave Anyway"
+        cancelLabel="Stay & Start"
+        onConfirm={() => {
+          setIsLeaveConfirmOpen(false);
+          if (pendingHref) {
+            window.location.href = pendingHref;
+          } else {
+            router.back();
+          }
+        }}
+        onClose={() => setIsLeaveConfirmOpen(false)}
       />
     </div>
   );

@@ -223,7 +223,7 @@ export default function VicePrincipalReviewPage() {
       let targetStatus: string = CURRICULUM_STATUS.SYLLABUS_DEVELOP;
 
       if (currentStatus === CURRICULUM_STATUS.FINAL_REVIEW) {
-        targetStatus = CURRICULUM_STATUS.SIGNED;
+        targetStatus = CURRICULUM_STATUS.PUBLISHED;
       }
 
       mutation.mutate(targetStatus as any);

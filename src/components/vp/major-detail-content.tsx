@@ -74,8 +74,8 @@ export default function MajorDetailContent() {
     });
 
   const curriculums = curriculumsResponse?.data || [];
-  const hasSignedCurriculum = curriculums.some(
-    (curr: any) => curr.status === "SIGNED",
+  const hasPublishedCurriculum = curriculums.some(
+    (curr: any) => curr.status === "PUBLISHED",
   );
 
   // POs Query
@@ -554,7 +554,7 @@ export default function MajorDetailContent() {
                   <button
                     onClick={() => updateStatusMutation.mutate("PUBLISHED")}
                     disabled={
-                      updateStatusMutation.isPending || !hasSignedCurriculum
+                      updateStatusMutation.isPending || !hasPublishedCurriculum
                     }
                     className="px-8 py-3 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-[#2d6a4f]/10 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-40 disabled:grayscale disabled:cursor-not-allowed"
                   >
@@ -565,10 +565,10 @@ export default function MajorDetailContent() {
                     )}
                     Publish Major
                   </button>
-                  {!hasSignedCurriculum && (
+                  {!hasPublishedCurriculum && (
                     <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100">
                       <AlertCircle size={12} />
-                      Requires 1 SIGNED Curriculum to proceed
+                      Requires 1 PUBLISHED Curriculum to proceed
                     </span>
                   )}
                 </>

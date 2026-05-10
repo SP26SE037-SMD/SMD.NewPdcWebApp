@@ -272,9 +272,8 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
         <thead>
           <tr className="bg-primary/20 border-b border-primary/10 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900">
             <th className="px-6 py-5 font-black">Task Name</th>
+            <th className="px-6 py-5 font-black">Description</th>
             <th className="px-6 py-5 font-black">Assignee</th>
-            <th className="px-6 py-5 font-black">Syllabus Name</th>
-            <th className="px-6 py-5 font-black">Subject Status</th>
             <th className="px-6 py-5 font-black">Deadline</th>
             <th className="px-6 py-5 font-black">Status</th>
             <th className="px-6 py-5 font-black text-right">Actions</th>
@@ -298,6 +297,15 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                       {task.taskId.split("-")[1]}
                     </span>
                   </div>
+                </div>
+              </td>
+
+              {/* Task Description */}
+              <td className="px-6 py-5">
+                <div className="flex flex-col gap-1 max-w-[250px]">
+                  <p className="text-xs font-medium text-zinc-600 leading-relaxed line-clamp-2" title={task.description}>
+                    {task.description || <span className="text-zinc-400 italic font-medium tracking-tight">No description provided</span>}
+                  </p>
                 </div>
               </td>
 
@@ -328,41 +336,6 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                 </div>
               </td>
 
-              {/* Syllabus Name */}
-              <td className="px-6 py-5">
-                <div className="flex items-center gap-2">
-                  {task.syllabus?.syllabusName === "Unnamed Syllabus" ||
-                  !task.syllabus?.syllabusName ? (
-                    <span className="text-xs text-zinc-400 italic font-medium tracking-tight">
-                      No Syllabus
-                    </span>
-                  ) : (
-                    <div className="px-3 py-1.5 bg-primary text-white text-[10px] font-black tracking-widest rounded-lg shadow-sm">
-                      {task.syllabus?.syllabusName}
-                    </div>
-                  )}
-                </div>
-              </td>
-
-              {/* Subject Status */}
-              <td className="px-6 py-5">
-                {(() => {
-                  const status = task.subjectStatus || task.subjectsDetail?.[0]?.status;
-                  if (!status) return <span className="text-xs text-zinc-400 italic font-medium">N/A</span>;
-                  
-                  let colorClass = "text-zinc-600 bg-zinc-50 border-zinc-100";
-                  if (status === ('COMPLETED' as any) || status === ('PUBLISHED' as any)) colorClass = "text-emerald-600 bg-emerald-50 border-emerald-100";
-                  if (status === 'PENDING_REVIEW') colorClass = "text-amber-600 bg-amber-50 border-amber-100";
-                  if (status === ('IN_PROGRESS' as any)) colorClass = "text-blue-600 bg-blue-50 border-blue-100";
-                  if (status === 'WAITING_SYLLABUS') colorClass = "text-rose-600 bg-rose-50 border-rose-100";
-
-                  return (
-                    <div className={`px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest inline-block ${colorClass}`}>
-                      {status.replace('_', ' ')}
-                    </div>
-                  );
-                })()}
-              </td>
 
               {/* Deadline */}
               <td className="px-6 py-5">
