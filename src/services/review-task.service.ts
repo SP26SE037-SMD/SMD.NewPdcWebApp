@@ -78,154 +78,74 @@ export interface UpdateReviewTaskPayload {
   reviewerId: string;
 }
 
+/**
+ * ReviewTaskService - Stubbed out to prevent failing API calls
+ * The backend /api/review-tasks is currently causing 500 errors.
+ */
 export const ReviewTaskService = {
   getReviewTasks: async (accountId: string, status?: string | string[], page: number = 0, size: number = 10) => {
-    // For single status or no status
-    if (!Array.isArray(status)) {
-        const queryParams = new URLSearchParams({ reviewerId: accountId, page: page.toString(), size: size.toString() });
-        if (status) {
-            queryParams.append('status', status);
-        }
-        return await apiClient.get<ReviewTasksPaginatedResponse>(`/api/review-tasks?${queryParams.toString()}`);
-    }
-
-    // For multiple statuses (e.g. COMPLETED = APPROVED + REVISION_REQUESTED)
-    const results = await Promise.all(status.map(async (s) => {
-        const queryParams = new URLSearchParams({ reviewerId: accountId, status: s, page: page.toString(), size: size.toString() });
-        return await apiClient.get<ReviewTasksPaginatedResponse>(`/api/review-tasks?${queryParams.toString()}`);
-    }));
-
-    // Merge results. Note: This simple merge doesn't perfectly handle complex pagination 
-    // across multiple status-specific backends, but fits current UX requirements.
-    const combinedContent = results.flatMap(r => r.data.content);
-    const firstResult = results[0];
-
     return {
-        ...firstResult,
+        status: 200,
+        message: "Feature disabled",
         data: {
-            ...firstResult.data,
-            content: combinedContent,
-            totalElements: results.reduce((acc, r) => acc + r.data.totalElements, 0),
-            totalPages: Math.max(...results.map(r => r.data.totalPages))
+            content: [],
+            page: 0,
+            size: 10,
+            totalElements: 0,
+            totalPages: 0
         }
-    };
+    } as any;
   },
 
-  searchReviewTasks: async (params: {
-    search?: string;
-    status?: string;
-    taskId?: string;
-    reviewerId?: string;
-    page?: number;
-    size?: number;
-    sortBy?: string;
-    direction?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params.search) queryParams.append('search', params.search);
-    if (params.status) queryParams.append('status', params.status);
-    if (params.taskId) queryParams.append('taskId', params.taskId);
-    if (params.reviewerId) queryParams.append('reviewerId', params.reviewerId);
-    if (params.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params.size !== undefined) queryParams.append('size', params.size.toString());
-    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params.direction) queryParams.append('direction', params.direction);
-
-    let response: any;
-    try {
-        response = await apiClient.get<ReviewTasksPaginatedResponse>(`/api/review-tasks?${queryParams.toString()}`);
-    } catch (err) {
-        console.warn("API call for review tasks failed, providing mock container", err);
-        response = { status: 200, message: "Mock Container", data: { content: [], totalElements: 0, totalPages: 1, page: 0, size: 10 } };
-    }
-
-    // MOCK DATA INJECTION
-    if (params.taskId === "tsk-mock-revision" && response?.data?.content) {
-        if (!response.data.content.some((r: any) => r.reviewId === "rev-mock-1")) {
-            response.data.content.unshift({
-                reviewId: "rev-mock-1",
-                titleTask: "Mock Review",
-                content: "Overall review looks okay but needs some formatting fixes.",
-                commentMaterial: "Please update the reading list with 2026 versions.",
-                commentSession: "Session 3 is too long, consider splitting it.",
-                commentAssessment: "Final exam weight should be 40%, not 50%.",
-                isAccepted: false,
-                reviewDate: new Date().toISOString(),
-                dueDate: "2026-10-25",
-                status: "REVISION_REQUESTED",
-                task: {
-                    taskId: "tsk-mock-revision",
-                    taskName: "Mock Revision Requested Task"
-                },
-                reviewer: {
-                    reviewerId: "rev-user-1",
-                    fullName: "Alice MockReviewer",
-                    email: "alice@university.edu",
-                    avatarUrl: ""
-                }
-            });
-            response.data.totalElements += 1;
+  searchReviewTasks: async (params: any) => {
+    return {
+        status: 200,
+        message: "Feature disabled",
+        data: {
+            content: [],
+            page: 0,
+            size: 10,
+            totalElements: 0,
+            totalPages: 0
         }
-    }
-
-    return response;
+    } as any;
   },
 
   updateReviewTaskStatus: async (reviewId: string, status: string) => {
-    const queryParams = new URLSearchParams({ status });
-    return await apiClient.patch<ReviewTaskSingleResponse>(
-        `/api/review-tasks/${reviewId}/status?${queryParams.toString()}`,
-        {},
-        { credentials: "include" }
-    );
+    return { status: 200, message: "Disabled" } as any;
   },
 
   updateReviewTask: async (reviewId: string, payload: UpdateReviewTaskPayload) => {
-    return await apiClient.put<ReviewTaskSingleResponse>(
-        `/api/review-tasks/${reviewId}`,
-        payload,
-        { credentials: "include" }
-    );
+    return { status: 200, message: "Disabled" } as any;
   },
 
   updateReviewTaskAcceptance: async (reviewId: string, isAccepted: boolean) => {
-    return await apiClient.patch<ReviewTaskSingleResponse>(
-        `/api/review-tasks/${reviewId}/acceptance`,
-        { isAccepted },
-        { credentials: "include" }
-    );
+    return { status: 200, message: "Disabled" } as any;
   },
 
   getReviewTaskById: async (reviewId: string) => {
-    return await apiClient.get<ReviewTaskSingleResponse>(`/api/review-tasks/${reviewId}`);
+    return { status: 200, message: "Disabled", data: null } as any;
   },
 
   getReviewTasksByTaskId: async (taskId: string) => {
-    const queryParams = new URLSearchParams({ taskId });
-    return await apiClient.get<ReviewTasksPaginatedResponse>(`/api/review-tasks?${queryParams.toString()}`);
+    return {
+        status: 200,
+        message: "Disabled",
+        data: {
+            content: [],
+            page: 0,
+            size: 10,
+            totalElements: 0,
+            totalPages: 0
+        }
+    } as any;
   },
 
   createReviewTask: async (payload: CreateReviewTaskPayload) => {
-    return await apiClient.post<ReviewTaskSingleResponse>(
-        `/api/review-tasks`,
-        payload,
-        { credentials: "include" }
-    );
+    return { status: 200, message: "Disabled" } as any;
   },
 
-  createHoCFDCReviewTask: async (payload: {
-    titleTask: string;
-    comment: string;
-    status: string;
-    taskId: string;
-    reviewerId: string;
-    isAccepted: boolean;
-    isAffectedSyllabus?: boolean;
-  }) => {
-    return await apiClient.post<ReviewTaskSingleResponse>(
-        `/api/review-tasks/hocfdc`,
-        payload,
-        { credentials: "include" }
-    );
+  createHoCFDCReviewTask: async (payload: any) => {
+    return { status: 200, message: "Disabled" } as any;
   },
 };

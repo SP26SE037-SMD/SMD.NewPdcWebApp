@@ -3,7 +3,6 @@ import { ApiResponse, PageableResponse, ApiResponseWithoutData } from "@/types/a
 
 export const SUBJECT_STATUS = {
     DRAFT: 'DRAFT',
-    DEFINED: 'DEFINED',
     WAITING_SYLLABUS: 'WAITING_SYLLABUS',
     PENDING_REVIEW: 'PENDING_REVIEW',
     COMPLETED: 'COMPLETED',

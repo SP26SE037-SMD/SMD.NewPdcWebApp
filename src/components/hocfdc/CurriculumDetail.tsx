@@ -67,12 +67,6 @@ const ALL_STATUS_ORDER = [
     color: "#8b5cf6",
   },
   {
-    id: CURRICULUM_STATUS.SIGNED,
-    label: "Signed",
-    icon: PenTool,
-    color: "#f43f5e",
-  },
-  {
     id: CURRICULUM_STATUS.PUBLISHED,
     label: "Published",
     icon: Rocket,
@@ -205,12 +199,29 @@ export default function CurriculumDetail({ id }: { id: string }) {
     queryFn: () => CurriculumService.getCurriculumById(id),
   });
   const curriculum = data?.data;
-  const [activeTab, setActiveTab] = useState<TabType>("info");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "info";
+  const [activeTab, setActiveTab] = useState<TabType>(
+    TABS.some((t) => t.id === initialTab) ? initialTab : "info"
+  );
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  const searchParams = useSearchParams();
   const isFromRejected = searchParams.get("isFromRejected") === "true";
   const feedback = searchParams.get("feedback");
+
+  // Sync tab with URL if it changes
+  React.useEffect(() => {
+    const tab = searchParams.get("tab") as TabType;
+    if (tab && TABS.some((t) => t.id === tab) && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
+
+  // Force refetch on mount to ensure latest status
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+    queryClient.invalidateQueries({ queryKey: ["sprints", id] });
+  }, [id, queryClient]);
 
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -324,17 +335,6 @@ export default function CurriculumDetail({ id }: { id: string }) {
                 </button>
               )}
 
-              {(curriculum.curriculumStatus || curriculum.status) ===
-                CURRICULUM_STATUS.SIGNED && (
-                <button
-                  onClick={() =>
-                    handleStatusTransition(CURRICULUM_STATUS.PUBLISHED)
-                  }
-                  className="px-5 py-2.5 bg-emerald-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  Publish <Share2 size={14} />
-                </button>
-              )}
             </div>
           </div>
 

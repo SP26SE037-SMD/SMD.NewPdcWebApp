@@ -288,15 +288,10 @@ export default function DashboardLayout({
               icon: "dashboard",
               label: "Overview",
             },
-          ],
-        },
-        {
-          group: "Strategic Operations",
-          items: [
             {
               href: "/dashboard/hopdc/sprint-management",
               icon: "event_available",
-              label: "Receive Sprints",
+              label: "Curriculum Deliverables",
             },
           ],
         },
@@ -360,7 +355,8 @@ export default function DashboardLayout({
 
         {/* Logo Section */}
         <div className="p-6 mb-4">
-          {user?.role === "VP" && isSidebarOpen ? (
+          {/* {user?.role === "VP" && isSidebarOpen ? ( */}
+          {isSidebarOpen ? (
             <div className="flex items-center gap-3 px-2">
               <img
                 src="/icon.png"
@@ -373,7 +369,7 @@ export default function DashboardLayout({
               />
               <div className="overflow-hidden">
                 <h2 className="font-bold text-[#1d5c42] leading-tight whitespace-nowrap">
-                  Office of the VP
+                  Office of the {user?.role}
                 </h2>
                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
                   Academic Affairs

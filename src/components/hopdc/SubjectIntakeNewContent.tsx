@@ -6,6 +6,7 @@ import { CreateCloModal } from "@/components/hopdc/subject/CreateCloModal";
 import { UpdateCloModal } from "@/components/hopdc/subject/UpdateCloModal";
 import { CreateSyllabusModal } from "@/components/hopdc/subject/CreateSyllabusModal";
 import { CloPloMapping } from "@/components/hopdc/subject/CloPloMapping";
+import { CloImportModal } from "@/components/hopdc/subject/CloImportModal";
 import { useNewSubjectLogic } from "@/components/hopdc/hook/NewSubjectLogic";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -167,6 +168,8 @@ export default function NewSubjectContent() {
     isCreateCloModalOpen,
     setIsCreateCloModalOpen,
     isUpdateCloModalOpen,
+    isImportClosModalOpen,
+    setIsImportClosModalOpen,
     handleUpdateCloModalClose,
     cloToEdit,
     handleCloEdit,
@@ -204,6 +207,8 @@ export default function NewSubjectContent() {
     publishedSyllabus,
     isPublishedSyllabusLoading,
     currentSyllabus,
+    handleImportClos,
+    isMatrixReadOnly,
   } = useNewSubjectLogic();
 
   const router = useRouter();
@@ -447,16 +452,18 @@ export default function NewSubjectContent() {
               syncMatrix={syncMatrix}
               submittingKey={submittingKey}
               mappingNotice={mappingNotice}
+              isReadOnly={isMatrixReadOnly}
+              onCreateClo={isMatrixReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
+              onEditClo={isMatrixReadOnly ? undefined : handleCloEdit}
+              onDeleteClo={isMatrixReadOnly ? undefined : deleteClo}
+              deletingCloId={deletingCloId}
               hasUnsavedChanges={hasUnsavedChanges}
               addedCount={addedCount}
               deletedCount={deletedCount}
-              onCreateClo={isReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
-              onEditClo={isReadOnly ? undefined : handleCloEdit}
-              onDeleteClo={isReadOnly ? undefined : deleteClo}
-              deletingCloId={deletingCloId}
+              onImportClos={isMatrixReadOnly ? undefined : async () => setIsImportClosModalOpen(true)}
+              isImportingClos={submittingKey === "import"}
               iconBgColor="bg-emerald-50"
               iconTextColor="text-emerald-700"
-              isReadOnly={isReadOnly}
             />
           </div>
         )}
@@ -476,7 +483,7 @@ export default function NewSubjectContent() {
                     </h2>
                     <p className="text-sm text-zinc-500">
                       Manage and track syllabus lifecycles for the current
-                      sprint.
+                      curriculum deliverables.
                     </p>
                   </div>
                 </div>
@@ -646,7 +653,7 @@ export default function NewSubjectContent() {
                         </p>
                         <p className="text-sm font-bold text-amber-900">
                           This subject has not been assigned a syllabus for the
-                          current sprint task yet.
+                          current curriculum deliverables yet.
                         </p>
                       </div>
                     </div>
@@ -714,6 +721,17 @@ export default function NewSubjectContent() {
           setSelectedSyllabusIdForSources("");
         }}
         hideAddButton={true}
+      />
+
+      <CloImportModal
+        isOpen={isImportClosModalOpen}
+        onClose={() => setIsImportClosModalOpen(false)}
+        onImport={async (file) => {
+          return await handleImportClos(file);
+        }}
+        plos={plos}
+        isImporting={submittingKey === "import"}
+        subjectCode={subject.subjectCode}
       />
     </div>
   );

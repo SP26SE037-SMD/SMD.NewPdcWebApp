@@ -38,8 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
     "text-indigo-600 bg-indigo-50 border-indigo-100",
   [CURRICULUM_STATUS.FINAL_REVIEW]:
     "text-amber-600 bg-amber-50 border-amber-100",
-  [CURRICULUM_STATUS.SIGNED]:
-    "text-primary-700 bg-primary-50 border-primary-200",
   [CURRICULUM_STATUS.PUBLISHED]:
     "text-primary-700 bg-primary-50 border-primary-200",
   [CURRICULUM_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
@@ -157,7 +155,6 @@ export default function CurriculumsManagement({
     { label: "Draft", value: CURRICULUM_STATUS.DRAFT },
     { label: "Syllabus Develop", value: CURRICULUM_STATUS.SYLLABUS_DEVELOP },
     { label: "Final Review", value: CURRICULUM_STATUS.FINAL_REVIEW },
-    { label: "Signed", value: CURRICULUM_STATUS.SIGNED },
     { label: "Published", value: CURRICULUM_STATUS.PUBLISHED },
     { label: "Archived", value: CURRICULUM_STATUS.ARCHIVED },
   ];

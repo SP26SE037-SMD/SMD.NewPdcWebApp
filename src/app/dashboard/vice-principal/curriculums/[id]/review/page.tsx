@@ -122,7 +122,7 @@ export default function VicePrincipalReviewPage() {
       if (newStatus === CURRICULUM_STATUS.SYLLABUS_DEVELOP) {
         await SubjectService.updateSubjectStatusesBulk(
           id,
-          SUBJECT_STATUS.DEFINED,
+          SUBJECT_STATUS.WAITING_SYLLABUS,
           undefined,
           SUBJECT_STATUS.DRAFT,
         );
@@ -223,7 +223,7 @@ export default function VicePrincipalReviewPage() {
       let targetStatus: string = CURRICULUM_STATUS.SYLLABUS_DEVELOP;
 
       if (currentStatus === CURRICULUM_STATUS.FINAL_REVIEW) {
-        targetStatus = CURRICULUM_STATUS.SIGNED;
+        targetStatus = CURRICULUM_STATUS.PUBLISHED;
       }
 
       mutation.mutate(targetStatus as any);

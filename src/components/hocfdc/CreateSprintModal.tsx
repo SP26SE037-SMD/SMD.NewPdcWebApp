@@ -49,21 +49,36 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     enabled: isOpen && !!curriculumId
   });
   const depts = (deptsRes?.data as any) || []; // API returns unique list of departments
+
+  // Fetch Existing Sprints to filter out departments that already have one
+  const { data: existingSprintsRes } = useQuery({
+    queryKey: ["sprints", curriculumId],
+    queryFn: () => SprintService.getSprints({ curriculumId, size: 100 }),
+    enabled: isOpen && !!curriculumId
+  });
+  const existingSprints = existingSprintsRes?.data?.content || [];
+  const existingDeptIds = new Set(existingSprints.map((s: any) => s.departmentId));
+
+  const filteredDepts = depts.filter((d: any) => !existingDeptIds.has(d.departmentId));
  
   // Auto-generate Sprint Name based on Curriculum and Department
   useEffect(() => {
     if (curriculum) {
-      const dept = depts.find((d: any) => d.departmentId === selectedDeptId);
+      const deptsList = (deptsRes?.data as any) || [];
+      const dept = deptsList.find((d: any) => d.departmentId === selectedDeptId);
       const deptCode = dept ? dept.departmentCode : "";
       const prefix = curriculum.curriculumCode;
+      const newName = deptCode ? `${prefix} - ${deptCode}` : `${prefix} - `;
       
-      // Update name if it's empty or matches the pattern we're managing
-      setFormData(prev => ({
-        ...prev,
-        sprintName: deptCode ? `${prefix} - ${deptCode}` : `${prefix} - `
-      }));
+      setFormData(prev => {
+        if (prev.sprintName === newName) return prev;
+        return {
+          ...prev,
+          sprintName: newName
+        };
+      });
     }
-  }, [curriculum, selectedDeptId, depts]);
+  }, [curriculum, selectedDeptId, deptsRes?.data]);
 
   const createMutation = useMutation({
     mutationFn: (data: SprintPayload) => SprintService.createSprint(data),
@@ -207,12 +222,18 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                            className="w-full bg-zinc-50 border border-zinc-200 p-4 font-black text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl text-lg shadow-sm"
                          >
                            <option value="">Select Department...</option>
-                           {depts.map((d: any) => (
+                           {filteredDepts.map((d: any) => (
                              <option key={d.departmentId} value={d.departmentId}>
                                {d.departmentName} ({d.departmentCode})
                              </option>
                            ))}
                          </select>
+                         {filteredDepts.length === 0 && depts.length > 0 && (
+                           <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                             <X size={12} />
+                             All involved departments already have an active sprint.
+                           </p>
+                         )}
                       </div>
                    </div>
 

@@ -13,9 +13,9 @@ export async function PATCH(
     const { taskId } = await params;
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
-
+    const status = searchParams.get('status') || searchParams.get('request');
     const backendResponse = await fetch(
-      `${BACKEND_URL}/api/v1/tasks-v2/${taskId}/status?request=${searchParams.get('request')}`, 
+      `${BACKEND_URL}/api/v1/tasks-v2/${taskId}/status?status=${status}`, 
       {
         method: "PATCH",
         headers: {

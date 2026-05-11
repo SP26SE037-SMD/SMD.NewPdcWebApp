@@ -31,6 +31,20 @@ export interface CloGenerationResponse {
   description: string;
 }
 
+export interface ImportDetail {
+  subjectCode: string;
+  cloCode: string;
+  status: "SUCCESS" | "FAILED";
+  message: string;
+}
+
+export interface ImportData {
+  total: number;
+  success: number;
+  failed: number;
+  details: ImportDetail[];
+}
+
 export interface CloCheckRequest {
   cloContent: string;
   targetLevel: number;
@@ -260,5 +274,22 @@ export const CloPloService = {
       detectedLevel: String(normalized.detectedLevel ?? ""),
       suggestion: String(normalized.suggestion ?? ""),
     };
+  },
+  async importClos(file: File): Promise<ApiResponse<ImportData>> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/clos/import", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to import CLOs");
+    }
+
+    return response.json();
   },
 };

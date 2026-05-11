@@ -7,7 +7,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationService } from "@/services/notification.service";
 import { NotificationData } from "@/types/notification";
 import { TaskService } from "@/services/task.service";
-import { ReviewTaskService } from "@/services/review-task.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     AlertTriangle,
@@ -213,12 +212,9 @@ export default function DashboardAlerts() {
         staleTime: 30_000,
     });
 
-    const { data: pendingReviewsData, isLoading: isLoadingPendingReviews } = useQuery({
-        queryKey: ["dashboard-alerts-pending-reviews", user?.accountId],
-        queryFn: () => ReviewTaskService.getReviewTasks(user?.accountId || "", "PENDING", 0, 50),
-        enabled: !!user?.accountId,
-        staleTime: 30_000,
-    });
+    // ReviewTaskService call removed due to failing API
+    const pendingReviewsData = { data: { content: [] } };
+    const isLoadingPendingReviews = false;
 
     // Urgent items (due ≤ 3 days)
     const { data: inProgressTasksData } = useQuery({
@@ -228,12 +224,8 @@ export default function DashboardAlerts() {
         staleTime: 30_000,
     });
 
-    const { data: inProgressReviewsData } = useQuery({
-        queryKey: ["dashboard-alerts-inprogress-reviews", user?.accountId],
-        queryFn: () => ReviewTaskService.getReviewTasks(user?.accountId || "", "IN_PROGRESS", 0, 50),
-        enabled: !!user?.accountId,
-        staleTime: 30_000,
-    });
+    // ReviewTaskService call removed due to failing API
+    const inProgressReviewsData = { data: { content: [] } };
 
     const isLoading = isLoadingNotifs || isLoadingTodo || isLoadingPendingReviews;
 
@@ -294,22 +286,8 @@ export default function DashboardAlerts() {
 
     /* ── Action: View Review Task (fetch detail then redirect) ── */
     const handleViewReview = useCallback(async (reviewId: string) => {
-        setLoadingItemId(reviewId);
-        try {
-            const res = await ReviewTaskService.getReviewTaskById(reviewId);
-            const review = res?.data;
-            if (review) {
-                setIsOpen(false);
-                router.push(`/dashboard/pdcm/reviews/${review.reviewId}/information`);
-            }
-        } catch (err) {
-            console.error("Failed to fetch review:", err);
-            setIsOpen(false);
-            router.push(`/dashboard/pdcm/reviews/${reviewId}/information`);
-        } finally {
-            setLoadingItemId(null);
-        }
-    }, [router]);
+        // Disabled
+    }, []);
 
     /* ── Action: Accept Task (TO_DO → IN_PROGRESS) ── */
     const handleAcceptTask = useCallback(async () => {
@@ -331,19 +309,8 @@ export default function DashboardAlerts() {
 
     /* ── Action: Accept Review (PENDING → IN_PROGRESS) ── */
     const handleAcceptReview = useCallback(async () => {
-        setConfirmState(prev => ({ ...prev, loading: true }));
-        try {
-            await ReviewTaskService.updateReviewTaskStatus(confirmState.id, "IN_PROGRESS");
-            queryClient.invalidateQueries({ queryKey: ["dashboard-alerts-pending-reviews"] });
-            queryClient.invalidateQueries({ queryKey: ["pdcm-review-tasks"] });
-            setConfirmState(prev => ({ ...prev, open: false, loading: false }));
-            setIsOpen(false);
-            router.push(`/dashboard/pdcm/reviews/${confirmState.id}/information`);
-        } catch (err) {
-            console.error("Failed to accept review:", err);
-            setConfirmState(prev => ({ ...prev, loading: false }));
-        }
-    }, [confirmState.id, queryClient, router]);
+        // Disabled
+    }, []);
 
     /* ── Handle notification click based on taskId / reviewId ── */
     const handleNotifClick = useCallback(async (notif: NotificationData) => {

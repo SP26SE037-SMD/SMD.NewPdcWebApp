@@ -6,18 +6,27 @@ export type SheetData = (string | number | null)[][];
 
 export interface ExcelErrorMap {
   [sheetName: string]: {
-    [rowIndex: number]: string; // Error message for that row
+    [rowIndex: number]: string; // Error message for that row index
+    // Note: index -1 is used for general sheet errors
   };
 }
 
 interface ExcelPreviewTableProps {
   workbookData: { [sheetName: string]: SheetData };
   errorMap: ExcelErrorMap;
+  hideTabs?: boolean;
 }
 
-export default function ExcelPreviewTable({ workbookData, errorMap }: ExcelPreviewTableProps) {
+export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: ExcelPreviewTableProps) {
   const sheetNames = Object.keys(workbookData);
   const [activeSheet, setActiveSheet] = useState<string>(sheetNames[0] || "");
+
+  // Sync activeSheet when workbookData changes
+  React.useEffect(() => {
+    if (sheetNames.length > 0 && (!activeSheet || !workbookData[activeSheet])) {
+      setActiveSheet(sheetNames[0]);
+    }
+  }, [workbookData, sheetNames, activeSheet]);
 
   if (sheetNames.length === 0) return null;
 
@@ -37,45 +46,60 @@ export default function ExcelPreviewTable({ workbookData, errorMap }: ExcelPrevi
   return (
     <div className="w-full bg-surface border border-outline/20 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[600px] max-h-[70vh]">
       {/* Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto bg-surface-container/30 px-2 pt-2 border-b border-outline/10 scrollbar-hide">
-        {sheetNames.map((sheetName) => {
-          const hasError = Object.keys(errorMap[sheetName] || {}).length > 0;
-          const isActive = activeSheet === sheetName;
-          
-          return (
-            <button
-              key={sheetName}
-              onClick={() => setActiveSheet(sheetName)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold transition relative ${
-                isActive
-                  ? "bg-surface text-primary border-t border-x border-outline/10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] z-10"
-                  : "text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface"
-              }`}
-            >
-              <FileSpreadsheet className={`w-4 h-4 ${isActive ? "text-primary" : "text-on-surface-variant/70"}`} />
-              {sheetName}
-              
-              {hasError && (
-                <span className="flex h-2 w-2 relative ml-1">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
-                </span>
-              )}
-              
-              {/* Active indicator line */}
-              {isActive && (
-                <motion.div 
-                  layoutId="activeTab" 
-                  className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-primary z-20"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {!hideTabs && (
+        <div className="flex items-center gap-1 overflow-x-auto bg-surface-container/30 px-2 pt-2 border-b border-outline/10 scrollbar-hide">
+          {sheetNames.map((sheetName) => {
+            const hasError = Object.keys(errorMap[sheetName] || {}).length > 0;
+            const isActive = activeSheet === sheetName;
+            
+            return (
+              <button
+                key={sheetName}
+                onClick={() => setActiveSheet(sheetName)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold transition relative ${
+                  isActive
+                    ? "bg-surface text-primary border-t border-x border-outline/10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] z-10"
+                    : "text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface"
+                }`}
+              >
+                <FileSpreadsheet className={`w-4 h-4 ${isActive ? "text-primary" : "text-on-surface-variant/70"}`} />
+                {sheetName}
+                
+                {hasError && (
+                  <span className="flex h-2 w-2 relative ml-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+                  </span>
+                )}
+                
+                {/* Active indicator line */}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeTab" 
+                    className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-primary z-20"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Spreadsheet Content */}
       <div className="flex-1 overflow-auto bg-white relative excel-scrollbar">
+        {/* General Sheet Errors Banner */}
+        {currentSheetErrors[-1] && (
+          <div className="sticky top-0 left-0 right-0 z-30 bg-red-50 border-b border-red-200 p-3 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-[10px] font-black text-red-800 uppercase tracking-widest mb-1">Sheet Validation Error</h4>
+              <p className="text-xs text-red-700 font-bold whitespace-pre-wrap leading-relaxed">
+                {currentSheetErrors[-1]}
+              </p>
+            </div>
+          </div>
+        )}
+
         {currentSheetData.length === 0 ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant text-sm">
             This sheet is empty.
@@ -114,7 +138,7 @@ export default function ExcelPreviewTable({ workbookData, errorMap }: ExcelPrevi
                     key={rowIndex} 
                     className={`group transition-colors ${
                       isHeaderRow 
-                        ? 'bg-primary/10 font-bold' 
+                        ? 'font-bold' 
                         : isErrorRow 
                           ? 'bg-red-50 hover:bg-red-100 relative' 
                           : 'hover:bg-surface-variant/20'
@@ -134,17 +158,24 @@ export default function ExcelPreviewTable({ workbookData, errorMap }: ExcelPrevi
                     {Array.from({ length: Math.max(...currentSheetData.map(r => r.length)) }).map((_, colIndex) => {
                       const cellValue = row[colIndex];
                       
-                      // Check if this specific cell should be purple
+                      // Check if this specific cell should be purple (Original logic)
                       const isPurpleCell = (activeSheet === "Major" && rowIndex === 3 && (colIndex === 0 || colIndex === 1)) ||
                                            (activeSheet === "Curriculum" && rowIndex === 3 && (colIndex === 0 || colIndex === 1 || colIndex === 2));
+
+                      // New logic for green cells: A1, B1, C1, D1, A4, B4, C4, D4
+                      const isGreenCell = 
+                        (rowIndex === 0 && (colIndex === 0 || colIndex === 1 || colIndex === 2 || colIndex === 3)) || // A1, B1, C1, D1
+                        (rowIndex === 3 && (colIndex === 0 || colIndex === 1 || colIndex === 2 || colIndex === 3)); // A4, B4, C4, D4
 
                       return (
                         <td 
                           key={colIndex} 
                           className={`border border-outline/10 px-3 py-2 relative text-xs align-top ${
-                            isHeaderRow || isPurpleCell ? 'text-center' : ''
+                            isHeaderRow || isPurpleCell || isGreenCell ? 'text-center' : ''
                           } ${
                             isPurpleCell ? 'bg-[#EADEF7] font-bold text-[#4B0082]' : ''
+                          } ${
+                            isGreenCell ? 'bg-emerald-100 font-bold text-emerald-800' : ''
                           } ${
                             isErrorRow ? 'text-red-700' : 'text-on-surface'
                           }`}

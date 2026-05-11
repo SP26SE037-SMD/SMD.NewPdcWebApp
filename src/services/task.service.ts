@@ -486,7 +486,7 @@ export const TaskService = {
 
   updateTaskStatus: async (taskId: string, status: TaskStatus) => {
     return apiClient.patch<{ status: number; message: string; data?: unknown }>(
-      `/api/v1/tasks-v2/${taskId}/status?request=${status}`,
+      `/api/v1/tasks-v2/${taskId}/status?status=${status}`,
       {},
       { credentials: "include" }
     );

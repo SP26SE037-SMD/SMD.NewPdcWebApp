@@ -29,7 +29,8 @@ export default async function SubjectsPage({
             page: page.toString(),
             size: '6',
             sortBy: sortBy,
-            direction: direction
+            direction: direction,
+            searchBy: 'all'
         });
         if (search) queryParams.append('search', search);
         if (status) queryParams.append('status', status);

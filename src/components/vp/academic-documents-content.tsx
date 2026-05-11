@@ -22,12 +22,17 @@ import {
   FileSearch,
   SearchCheck,
   ShieldAlert,
+  ChevronRight,
+  ArrowLeft,
+  FileBox,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { clearAiProcessingMessage } from "@/store/slices/notificationSlice";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth";
+import { MajorService, Major } from "@/services/major.service";
+import { DocumentService, DocumentDetail } from "@/services/document.service";
 
 // Helper to get cookie value in client-side (used if needed for direct calls)
 const getCookie = (name: string) => {
@@ -155,53 +160,25 @@ const removeVietnameseTones = (str: string) => {
   return str;
 };
 
-// --- MOCK DATA ---
-// Mock data for Organized Tab (Pending is fetched from API)
-
-const MOCK_ORGANIZED_DOCS = [
-  {
-    majorName: "Information Technology (IT)",
-    documents: [
-      {
-        id: 101,
-        title: "Đề án mở ngành IT 2023",
-        fileName: "IT-Proposal-2023.pdf",
-        date: "2023-01-15",
-      },
-      {
-        id: 102,
-        title: "Quyết định phê duyệt IT",
-        fileName: "Approval-IT.pdf",
-        date: "2023-02-20",
-      },
-    ],
-  },
-  {
-    majorName: "Artificial Intelligence (AI)",
-    documents: [
-      {
-        id: 201,
-        title: "Đề án ngành Trí tuệ nhân tạo",
-        fileName: "AI-Proposal-Final.pdf",
-        date: "2023-06-10",
-      },
-    ],
-  },
-];
+ 
 
 export default function AcademicDocumentsContent() {
   const [activeTab, setActiveTab] = useState<"pending" | "organized">(
     "pending",
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [expandedMajor, setExpandedMajor] = useState<string | null>(
-    "Information Technology (IT)",
-  );
 
   // API State
   const [pendingDocs, setPendingDocs] = useState<any[]>([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [assigningTask, setAssigningTask] = useState(false);
+
+  // Organized by Major State
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [loadingMajors, setLoadingMajors] = useState(false);
+  const [selectedMajor, setSelectedMajor] = useState<Major | null>(null);
+  const [majorDocs, setMajorDocs] = useState<DocumentDetail[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   // Upload & Validation State
   const [file, setFile] = useState<File | null>(null);
@@ -239,8 +216,16 @@ export default function AcademicDocumentsContent() {
   useEffect(() => {
     if (activeTab === "pending") {
       fetchPendingDocs();
+    } else if (activeTab === "organized") {
+      fetchMajors();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (selectedMajor) {
+      fetchDocsByMajor(selectedMajor.majorId);
+    }
+  }, [selectedMajor]);
 
   // WebSocket Watcher for Validation
   useEffect(() => {
@@ -301,6 +286,36 @@ export default function AcademicDocumentsContent() {
       showToast("Could not load pending documents", "error");
     } finally {
       setLoadingPending(false);
+    }
+  };
+
+  const fetchMajors = async () => {
+    setLoadingMajors(true);
+    try {
+      // Query as requested: searchBy=all&page=0&size=10&sort=majorCode&sort=asc
+      const res = await MajorService.getMajors({
+        searchBy: "all",
+        page: 0,
+        size: 50, // Taking more to show all
+        sort: ["majorCode", "asc"],
+      });
+      setMajors(res.data.content);
+    } catch (error: any) {
+      showToast(error.message || "Failed to load majors", "error");
+    } finally {
+      setLoadingMajors(false);
+    }
+  };
+
+  const fetchDocsByMajor = async (majorId: string) => {
+    setLoadingDocs(true);
+    try {
+      const res = await DocumentService.getAllDocuments({ majorId });
+      setMajorDocs(res.data);
+    } catch (error: any) {
+      showToast(error.message || "Failed to load major documents", "error");
+    } finally {
+      setLoadingDocs(false);
     }
   };
 
@@ -696,74 +711,134 @@ export default function AcademicDocumentsContent() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            {MOCK_ORGANIZED_DOCS.map((major) => (
-              <div
-                key={major.majorName}
-                className="bg-white rounded-xl shadow-sm border border-black/5 overflow-hidden"
-              >
+            {/* Navigation Header if Major Selected */}
+            {selectedMajor && (
+              <div className="flex items-center justify-between mb-4">
                 <button
-                  onClick={() =>
-                    setExpandedMajor(
-                      expandedMajor === major.majorName
-                        ? null
-                        : major.majorName,
-                    )
-                  }
-                  className="w-full flex items-center justify-between p-5 hover:bg-zinc-50 transition-colors"
+                  onClick={() => setSelectedMajor(null)}
+                  className="flex items-center gap-2 text-[#1d5c42] font-bold text-sm hover:translate-x-[-4px] transition-transform"
                 >
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="w-10 h-10 bg-[#e8f5e9] text-[#1d5c42] rounded-xl flex items-center justify-center shrink-0">
-                      <Folder size={20} />
-                    </div>
-                    <h3 className="font-bold text-lg">{major.majorName}</h3>
-                  </div>
-                  <ChevronDown
-                    size={20}
-                    className={`text-zinc-400 transition-transform ${expandedMajor === major.majorName ? "rotate-180" : ""}`}
-                  />
+                  <ArrowLeft size={18} />
+                  Back to Majors
                 </button>
+                <div className="flex items-center gap-2 text-zinc-400 text-sm font-medium">
+                  <Folder size={14} />
+                  <span>Majors</span>
+                  <ChevronRight size={14} />
+                  <span className="text-[#1d5c42] font-bold">{selectedMajor.majorName}</span>
+                </div>
+              </div>
+            )}
 
-                <AnimatePresence>
-                  {expandedMajor === major.majorName && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-black/5 bg-zinc-50/50"
+            {!selectedMajor ? (
+              // Folders View
+              loadingMajors ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-40 bg-white rounded-2xl border border-zinc-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : majors.length === 0 ? (
+                <div className="text-center p-20 bg-white rounded-2xl border border-zinc-100">
+                  <Folder size={48} className="mx-auto text-zinc-200 mb-4" />
+                  <p className="text-zinc-500 font-medium">No majors found.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {majors.map((major) => (
+                    <motion.button
+                      key={major.majorId}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedMajor(major)}
+                      className="group bg-white p-6 rounded-2xl border border-zinc-200/60 hover:border-[#1d5c42]/30 hover:shadow-xl hover:shadow-[#1d5c42]/5 transition-all text-left relative overflow-hidden"
                     >
-                      <div className="p-5 space-y-2">
-                        {major.documents.map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center justify-between p-4 bg-white rounded-xl border border-black/5 hover:border-[#1d5c42]/30 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <FileText
-                                size={18}
-                                className="text-zinc-400 shrink-0"
-                              />
-                              <div>
-                                <p className="font-bold text-[#2d3335]">
-                                  {doc.title}
-                                </p>
-                                <p className="text-xs text-zinc-500">
-                                  {doc.fileName} • {doc.date}
-                                </p>
-                              </div>
-                            </div>
-                            <button className="p-2 text-zinc-400 hover:text-[#1d5c42] hover:bg-[#e8f5e9] rounded-lg transition-colors shrink-0">
-                              <ExternalLink size={18} />
-                            </button>
+                      {/* Decorative Folder Shape Background */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full translate-x-12 -translate-y-12 group-hover:scale-150 transition-transform duration-500" />
+                      
+                      <div className="relative z-10">
+                        <div className="w-12 h-12 bg-emerald-50 text-[#1d5c42] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#1d5c42] group-hover:text-white transition-colors duration-300">
+                          <Folder size={24} />
+                        </div>
+                        <h3 className="font-bold text-zinc-800 mb-1 line-clamp-1 group-hover:text-[#1d5c42] transition-colors">
+                          {major.majorName}
+                        </h3>
+                        <p className="text-[10px] uppercase tracking-wider font-black text-zinc-400 group-hover:text-zinc-500">
+                          {major.majorCode}
+                        </p>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )
+            ) : (
+              // Documents Grid View
+              loadingDocs ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="space-y-3">
+                      <div className="aspect-[3/4] bg-white rounded-xl border border-zinc-100 animate-pulse" />
+                      <div className="h-4 bg-zinc-100 rounded w-3/4 animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : majorDocs.length === 0 ? (
+                <div className="text-center p-20 bg-white rounded-2xl border border-zinc-100">
+                  <FileBox size={48} className="mx-auto text-zinc-200 mb-4" />
+                  <p className="text-zinc-500 font-medium">No documents found for this major.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+                  {majorDocs.map((doc) => (
+                    <motion.div
+                      key={doc.documentId}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group cursor-pointer"
+                      onClick={() => window.open(doc.documentUrl, "_blank")}
+                    >
+                      {/* PDF Cover Mockup */}
+                      <div className="aspect-[3/4] bg-white rounded-xl border border-zinc-200 shadow-sm group-hover:shadow-xl group-hover:border-[#1d5c42]/30 group-hover:translate-y-[-8px] transition-all duration-300 overflow-hidden relative flex flex-col p-4">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <FileText size={32} />
                           </div>
-                        ))}
+                          <div className="text-center">
+                            <div className="h-1 w-12 bg-zinc-100 mx-auto rounded-full mb-1" />
+                            <div className="h-1 w-8 bg-zinc-100 mx-auto rounded-full" />
+                          </div>
+                        </div>
+                        
+                        {/* Overlay with details on hover */}
+                        <div className="absolute inset-0 bg-[#1d5c42]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                          <ExternalLink className="text-white mb-2" size={24} />
+                          <span className="text-white text-[10px] font-bold uppercase tracking-widest">Open PDF</span>
+                        </div>
+                        
+                        {/* Status Badge */}
+                        <div className="absolute top-2 right-2">
+                           <div className="px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 text-[8px] font-black uppercase tracking-tighter">
+                             PDF
+                           </div>
+                        </div>
+                      </div>
+                      
+                      {/* Document Info */}
+                      <div className="mt-3 text-center">
+                        <h4 className="font-bold text-xs text-zinc-700 group-hover:text-[#1d5c42] transition-colors line-clamp-2 leading-relaxed">
+                          {doc.name || doc.description || doc.documentUrl.split('/').pop()?.split('?')[0] || "Untitled Document"}
+                        </h4>
+                        <p className="text-[9px] text-zinc-400 mt-1 font-medium">
+                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : "Unknown date"}
+                        </p>
                       </div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+                  ))}
+                </div>
+              )
+            )}
           </motion.div>
         )}
       </div>

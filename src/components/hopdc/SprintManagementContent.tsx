@@ -230,7 +230,7 @@ export default function SprintManagementContent() {
         <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-center">
           <p className="text-rose-700 font-bold">Missing account id</p>
           <p className="text-rose-500 text-base mt-2">
-            Cannot load assigned sprints for this user.
+            Cannot load assigned work packages for this user.
           </p>
         </div>
       </div>
