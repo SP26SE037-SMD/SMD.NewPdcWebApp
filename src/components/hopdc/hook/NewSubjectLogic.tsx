@@ -240,7 +240,8 @@ export function useNewSubjectLogic() {
     });
   };
 
-  const isMatrixReadOnly = associatedTask?.type === "SUBJECT" && associatedTask?.action === "UPDATE";
+  const isCloStructureReadOnly = associatedTask?.type === "SUBJECT" && associatedTask?.action === "UPDATE";
+  const isMappingReadOnly = false; // Always allow mapping for now as per user request
 
   return {
     ...mappingLogic,
@@ -275,6 +276,7 @@ export function useNewSubjectLogic() {
     isTaskLoading,
     sprintId,
     currentSyllabus,
-    isMatrixReadOnly,
+    isCloStructureReadOnly,
+    isMappingReadOnly,
   };
 }

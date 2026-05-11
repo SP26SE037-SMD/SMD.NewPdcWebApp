@@ -212,7 +212,7 @@ export const CloPloService = {
   },
 
   async bulkConfigure(payload: any): Promise<ApiResponse<any>> {
-    const response = await fetch(`/api/clo-plo-mappings/bulk`, {
+    const response = await fetch(`/api/clo-plo-mappings/bulk-configure`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
