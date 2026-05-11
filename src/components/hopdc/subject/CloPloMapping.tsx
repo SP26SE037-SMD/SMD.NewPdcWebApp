@@ -65,9 +65,12 @@ interface CloPloMappingProps {
   deletedCount?: number;
   iconBgColor?: string;
   iconTextColor?: string;
-  isReadOnly?: boolean;
   onImportClos?: (clos: any[]) => Promise<void>;
   isImportingClos?: boolean;
+  disableMapping?: boolean;
+  hideImport?: boolean;
+  hideCreate?: boolean;
+  hideSync?: boolean;
 }
 
 export function CloPloMapping({
@@ -91,9 +94,12 @@ export function CloPloMapping({
   deletedCount = 0,
   iconBgColor = "bg-emerald-50",
   iconTextColor = "text-emerald-700",
-  isReadOnly = false,
   onImportClos,
   isImportingClos = false,
+  disableMapping = false,
+  hideImport = false,
+  hideCreate = false,
+  hideSync = false,
 }: CloPloMappingProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [cloToDelete, setCloToDelete] = useState<string | null>(null);
@@ -170,7 +176,7 @@ export function CloPloMapping({
             <CheckCircle2 size={14} className="text-emerald-600" />
             Validate Mapping
           </button>
-          {!isReadOnly && (
+          {!hideImport && (
             <>
               <button
                 type="button"
@@ -187,7 +193,7 @@ export function CloPloMapping({
               </button>
             </>
           )}
-          {onCreateClo && (
+          {onCreateClo && !hideCreate && (
             <button
               type="button"
               onClick={onCreateClo}
@@ -198,7 +204,7 @@ export function CloPloMapping({
             </button>
           )}
           {/* Sync Button Container */}
-          {!isReadOnly && (
+          {!hideSync && (
             <div className="flex flex-col items-end gap-1.5">
               <button
                 type="button"
@@ -238,7 +244,7 @@ export function CloPloMapping({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
         <p className="text-sm font-medium text-zinc-600 italic">
           <Info size={14} className="inline mr-1.5 text-zinc-400" />
-          {isReadOnly 
+          {disableMapping 
             ? "Mapping alignment is locked for finalized tasks." 
             : "Click on the intersections to toggle mapping relationships."}
         </p>
@@ -367,8 +373,8 @@ export function CloPloMapping({
                         return (
                           <td 
                             key={plo.ploId} 
-                            onClick={isReadOnly ? undefined : () => toggleMapping(clo.cloId, plo.ploId)} 
-                            className={`p-4 border-b border-zinc-100 text-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer hover:bg-zinc-100/50'} ${mapped ? "bg-emerald-50/20" : ""}`}
+                            onClick={disableMapping ? undefined : () => toggleMapping(clo.cloId, plo.ploId)} 
+                            className={`p-4 border-b border-zinc-100 text-center ${disableMapping ? 'cursor-default' : 'cursor-pointer hover:bg-zinc-100/50'} ${mapped ? "bg-emerald-50/20" : ""}`}
                           >
                             <div className="flex items-center justify-center">
                               {mapped ? (

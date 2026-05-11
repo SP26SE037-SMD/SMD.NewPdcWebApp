@@ -208,7 +208,8 @@ export default function NewSubjectContent() {
     isPublishedSyllabusLoading,
     currentSyllabus,
     handleImportClos,
-    isMatrixReadOnly,
+    isCloStructureReadOnly,
+    isMappingReadOnly,
   } = useNewSubjectLogic();
 
   const router = useRouter();
@@ -452,15 +453,18 @@ export default function NewSubjectContent() {
               syncMatrix={syncMatrix}
               submittingKey={submittingKey}
               mappingNotice={mappingNotice}
-              isReadOnly={isMatrixReadOnly}
-              onCreateClo={isMatrixReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
-              onEditClo={isMatrixReadOnly ? undefined : handleCloEdit}
-              onDeleteClo={isMatrixReadOnly ? undefined : deleteClo}
+              disableMapping={isMappingReadOnly}
+              hideImport={isCloStructureReadOnly}
+              hideCreate={isCloStructureReadOnly}
+              hideSync={isMappingReadOnly}
+              onCreateClo={isCloStructureReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
+              onEditClo={isCloStructureReadOnly ? undefined : handleCloEdit}
+              onDeleteClo={isCloStructureReadOnly ? undefined : deleteClo}
               deletingCloId={deletingCloId}
               hasUnsavedChanges={hasUnsavedChanges}
               addedCount={addedCount}
               deletedCount={deletedCount}
-              onImportClos={isMatrixReadOnly ? undefined : async () => setIsImportClosModalOpen(true)}
+              onImportClos={isCloStructureReadOnly ? undefined : async () => setIsImportClosModalOpen(true)}
               isImportingClos={submittingKey === "import"}
               iconBgColor="bg-emerald-50"
               iconTextColor="text-emerald-700"
