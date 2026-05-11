@@ -73,4 +73,8 @@ export class MappingService {
     static async validatePoPloMappings(curriculumId: string, mappings: { poId: string; ploId: string }[]): Promise<ApiResponse<any>> {
         return apiClient.post<ApiResponse<any>>(`/api/po-plo-mappings/curriculum/${curriculumId}/validate`, mappings);
     }
+
+    static async validateCloPloMappings(curriculumId: string, subjectId: string, mappings: { cloId: string; ploId: string; contributionLevel: string }[]): Promise<ApiResponse<any>> {
+        return apiClient.post<ApiResponse<any>>(`/api/clo-plo-mappings/curriculum/${curriculumId}/subject/${subjectId}/validate`, mappings);
+    }
 }
