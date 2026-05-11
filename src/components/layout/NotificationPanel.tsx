@@ -17,7 +17,6 @@ import {
 } from '@/store/slices/notificationSlice';
 import { NotificationData } from '@/types/notification';
 import { TaskService } from '@/services/task.service';
-import { ReviewTaskService } from '@/services/review-task.service';
 
 function getEntityInfo(n: NotificationData): { type: 'task' | 'review' | 'curriculum' | null; id: string | null } {
     if (n.taskId) return { type: 'task', id: n.taskId };
@@ -215,18 +214,7 @@ export const NotificationPanel = () => {
                         router.push(`/dashboard/pdcm/tasks/${entity.id}/information`);
                     }
                 } else if (entity.type === 'review') {
-                    const res = await ReviewTaskService.getReviewTaskById(entity.id);
-                    const review = res?.data;
-                    if (review) {
-                        const status = (review.status || '').toUpperCase().replace(/\s+/g, '_');
-                        if (status === 'PENDING') {
-                            setLoadingNotifId(null);
-                            return;
-                        }
-                        router.push(`/dashboard/pdcm/reviews/${review.reviewId}/information`);
-                    } else {
-                        router.push(`/dashboard/pdcm/reviews/${entity.id}/information`);
-                    }
+                    // Disabled due to failing API
                 }
             }
         } catch (err) {

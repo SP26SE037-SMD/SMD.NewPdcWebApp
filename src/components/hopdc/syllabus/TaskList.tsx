@@ -30,25 +30,13 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  PlusCircle,
-  ClipboardCheck,
-  Loader2,
   BookOpen,
   ExternalLink,
   Plus,
   BookText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CreateReviewTaskModal } from "./CreateReviewTaskModal";
 import { CreateSyllabusModal } from "../subject/CreateSyllabusModal";
-import { ReviewTaskItemRow } from "./ReviewTaskItemRow";
-import {
-  ReviewTaskItem,
-  ReviewTaskService,
-  REVIEW_TASK_STATUS,
-} from "@/services/review-task.service";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -225,38 +213,16 @@ function TaskRow({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
+  const { data: subjectRes } = useQuery({
+    queryKey: ["subject", task.subjectId],
+    queryFn: () => SubjectService.getSubjectById(task.subjectId!),
+    enabled: !!task.subjectId && isCreateSyllabusOpen,
+  });
+  const subjectDetail = subjectRes?.data;
+
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
-
-  const { data: subjectDetailRes } = useQuery({
-    queryKey: ["subject-detail-for-task", task.subjectId],
-    queryFn: () => SubjectService.getSubjectDetail(task.subjectId!),
-    enabled: !!task.subjectId,
-  });
-
-  const subjectDetail = subjectDetailRes;
-
-  const reviewTasks: any[] = [];
-  const isReviewTasksLoading = false;
-  const latestReview = null;
-  const isLatestFromHoCFDC = false;
-
-  const hasActiveReview = reviewTasks.some(
-    (r: any) =>
-      r.status === REVIEW_TASK_STATUS.PENDING ||
-      r.status === REVIEW_TASK_STATUS.IN_PROGRESS ||
-      r.isAccepted === null ||
-      r.isAccepted === undefined,
-  );
-
-  const handleCreateReview = async (payload: any) => {
-    await ReviewTaskService.createReviewTask(payload);
-    await queryClient.invalidateQueries({
-      queryKey: ["review-tasks-by-task", task.taskId],
-    });
-    router.refresh();
-  };
 
   const goToSubjectDetail = () => {
     const isReadOnly = task.status === TASK_STATUS.DONE;
@@ -265,9 +231,13 @@ function TaskRow({
     );
   };
 
+  const handleCreateReview = async (payload: any) => {
+    // Review feature disabled as requested
+  };
+
   // action=UPDATE means self-do task (like reused subject), action=CREATE means assignable to subordinate
   const isReusedSubject =
-    task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT;
+    task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT || task.type === "SUBJECT";
   const isDone = task.status === TASK_STATUS.DONE;
 
   const statusConfig = getTaskStatusConfig(task.status);
@@ -306,16 +276,7 @@ function TaskRow({
 
         <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-1 flex items-center justify-center">
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-400 hover:text-zinc-900"
-            >
-              {isExpanded ? (
-                <ChevronDown size={20} />
-              ) : (
-                <ChevronRight size={20} />
-              )}
-            </button>
+            {/* Expanded section removed as requested */}
           </div>
 
           <div className="lg:col-span-4 space-y-2">
@@ -519,90 +480,15 @@ function TaskRow({
                       : "SAVE TASK"}
               </button>
 
-              {!isReusedSubject && (
-                <div className="relative group/btn">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    disabled={hasActiveReview || isDone || isLatestFromHoCFDC}
-                    className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-100 px-5 py-3 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all shadow-sm rounded-xl active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                    title={
-                      isDone
-                        ? "Task is already completed"
-                        : hasActiveReview
-                          ? "A review is already in progress"
-                          : isLatestFromHoCFDC
-                            ? "Review from HoCFDC must be acknowledged first"
-                            : "Assign Reviewer"
-                    }
-                  >
-                    <PlusCircle size={16} />
-                    {isDone
-                      ? "Task Finished"
-                      : hasActiveReview
-                        ? "Review Active"
-                        : isLatestFromHoCFDC
-                          ? "HoCFDC Locked"
-                          : "Assign Reviewer"}
-                  </button>
-                  {(hasActiveReview || isDone || isLatestFromHoCFDC) && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-zinc-900 text-white text-[9px] font-bold rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {isDone
-                        ? "Cannot assign reviewer to a finished task"
-                        : isLatestFromHoCFDC
-                          ? "Review feedback from HoCFDC must be acknowledged first"
-                          : "Ongoing review must be finished first"}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Assign Reviewer button removed as requested */}
             </div>
           </div>
         </div>
       </div>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-zinc-50/50 border-t border-zinc-100"
-          >
-            <div className="p-8 space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <ClipboardCheck size={16} className="text-zinc-400" />
-                  <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                    Review Cycle Logs
-                  </h4>
-                </div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase">
-                  {reviewTasks.length} AUDITS FOUND
-                </span>
-              </div>
+      {/* Sub Task List section removed as requested */}
 
-              <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-3xl">
-                <p className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
-                  Review history display disabled
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <CreateReviewTaskModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateReview}
-        taskId={task.taskId}
-        taskName={task.taskName}
-        reviewers={pdcmAccounts}
-        taskDeadline={task.deadline}
-        sprintDeadline={sprintDeadline}
-        assigneeId={task.account?.accountId}
-      />
+      {/* CreateReviewTaskModal removed as requested */}
 
       <CreateSyllabusModal
         subjectId={task.subjectId || ""}
