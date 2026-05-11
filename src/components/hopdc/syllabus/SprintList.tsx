@@ -126,7 +126,7 @@ export const SprintsReceive = ({
       title={
         <div className="space-y-1">
           <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-            Receive Assigned Sprints
+            Curriculum Deliverables
           </h1>
         </div>
       }

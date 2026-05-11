@@ -107,7 +107,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         curriculumId,
         SUBJECT_STATUS.WAITING_SYLLABUS,
         departmentId,
-        SUBJECT_STATUS.DEFINED,
+        SUBJECT_STATUS.DRAFT,
       );
       return batchRes;
     },

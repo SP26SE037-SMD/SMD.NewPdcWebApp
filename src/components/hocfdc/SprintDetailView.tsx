@@ -77,7 +77,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       SprintService.updateSprintStatus(sprintId, status),
     onSuccess: (res) => {
       if (res.status === 1000) {
-        showToast(`Sprint updated to ${res.data?.status}`, "success");
+        showToast(`Work Package updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] });
 
         if (res.data?.status === SPRINT_STATUS.COMPLETED && sprint?.curriculumId) {
@@ -111,7 +111,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         sprint.curriculumId,
         SUBJECT_STATUS.WAITING_SYLLABUS,
         sprint.departmentId,
-        SUBJECT_STATUS.DEFINED,
+        SUBJECT_STATUS.DRAFT,
       );
       if (statusRes.status !== 1000) {
         throw new Error("Tasks generated, but failed to sync subject statuses.");
@@ -136,7 +136,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (sprint?.status === SPRINT_STATUS.PLANNING) {
         e.preventDefault();
-        e.returnValue = "You haven't started this sprint yet. Are you sure you want to leave?";
+        e.returnValue = "You haven't started this deliverable package yet. Are you sure you want to leave?";
         return e.returnValue;
       }
     };
@@ -173,7 +173,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     if (sprint?.status === SPRINT_STATUS.PLANNING) {
       setIsLeaveConfirmOpen(true);
     } else {
-      router.back();
+      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=sprints`);
     }
   };
 
@@ -183,7 +183,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-zinc-900 border-t-transparent animate-spin rounded-full" />
           <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">
-            Loading Sprint Intelligence...
+            Loading Deliverable Intelligence...
           </p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   if (!sprint) {
     return (
       <div className="p-8 text-center border border-zinc-100 bg-white rounded-2xl shadow-sm">
-        <p className="font-bold text-zinc-500">Sprint not found.</p>
+        <p className="font-bold text-zinc-500">Deliverable Package not found.</p>
       </div>
     );
   }
@@ -213,10 +213,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         </button>
         <div className="flex flex-col">
           <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">
-            Campaign / Sprint Detail
+            Curriculum / Deliverable Details
           </p>
           <h1 className="font-black text-2xl tracking-tight text-zinc-900">
-            Sprint Management
+            Curriculum Deliverables Management
           </h1>
         </div>
       </div>
@@ -246,9 +246,14 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   {sprint.status}
                 </span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight text-zinc-900">
-                {sprint.sprintName}
-              </h2>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  Active Curriculum
+                </p>
+                <h2 className="text-3xl font-black tracking-tight text-zinc-900">
+                  {sprint.sprintName}
+                </h2>
+              </div>
               <div className="flex items-center gap-6 text-sm font-bold text-zinc-500">
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-zinc-400" />
@@ -264,7 +269,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                 <button
                   onClick={() => {
                     if (totalTasks === 0) {
-                      showToast("Cannot start an empty sprint. Please add tasks first.", "error");
+                      showToast("Cannot start an empty deliverable package. Please add tasks first.", "error");
                       return;
                     }
                     handleStatusChange(
@@ -280,7 +285,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   ) : (
                     <Play size={16} fill="currentColor" />
                   )}
-                  START SPRINT
+                  START DELIVERABLE BATCH
                 </button>
               )}
 
@@ -307,7 +312,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
-                  COMPLETE SPRINT
+                  COMPLETE DELIVERABLES
                 </button>
               )}
 
@@ -322,7 +327,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   disabled={updateStatusMutation.isPending}
                   className="flex items-center gap-2 bg-zinc-100 text-zinc-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all rounded-xl disabled:opacity-50"
                 >
-                  <RotateCcw size={16} /> RE-OPEN SPRINT
+                  <RotateCcw size={16} /> RE-OPEN DELIVERABLES
                 </button>
               )}
 
@@ -331,7 +336,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   onClick={() => {
                     if (
                       confirm(
-                        "Confirm SPRINT CANCELLATION? This will halt all associated task flows.",
+                        "Confirm DELIVERABLE CANCELLATION? This will halt all associated task flows.",
                       )
                     ) {
                       handleStatusChange(
@@ -342,7 +347,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   }}
                   disabled={updateStatusMutation.isPending}
                   className="px-6 py-4 bg-white border border-zinc-100 text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50 flex items-center justify-center"
-                  title="Cancel Sprint"
+                  title="Cancel Deliverables"
                 >
                   <XCircle size={16} />
                 </button>
@@ -424,8 +429,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       <ConfirmModal
         isOpen={isLeaveConfirmOpen}
         size="md"
-        title="Sprint Not Started"
-        message="You haven't started this sprint yet. Are you sure you want to leave the planning board?"
+        title="Deliverables Not Started"
+        message="You haven't started this deliverable package yet. Are you sure you want to leave the planning board?"
         confirmLabel="Leave Anyway"
         cancelLabel="Stay & Start"
         onConfirm={() => {
@@ -433,7 +438,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           if (pendingHref) {
             window.location.href = pendingHref;
           } else {
-            router.back();
+            router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=sprints`);
           }
         }}
         onClose={() => setIsLeaveConfirmOpen(false)}

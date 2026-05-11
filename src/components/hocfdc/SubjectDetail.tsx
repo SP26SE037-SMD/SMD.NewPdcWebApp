@@ -32,7 +32,7 @@ import { SubjectPrerequisiteRoadmap } from "./SubjectPrerequisiteRoadmap";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
-  [SUBJECT_STATUS.DEFINED]: "text-blue-600 bg-blue-50 border-blue-100",
+
   [SUBJECT_STATUS.WAITING_SYLLABUS]:
     "text-indigo-600 bg-indigo-50 border-indigo-100",
   [SUBJECT_STATUS.PENDING_REVIEW]:

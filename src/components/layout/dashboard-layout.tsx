@@ -291,7 +291,7 @@ export default function DashboardLayout({
             {
               href: "/dashboard/hopdc/sprint-management",
               icon: "event_available",
-              label: "Receive Sprints",
+              label: "Curriculum Deliverables",
             },
           ],
         },

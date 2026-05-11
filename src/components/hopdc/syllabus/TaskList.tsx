@@ -166,12 +166,7 @@ const getSubjectStatusConfig = (status?: string) => {
         bg: "bg-blue-50",
         border: "border-blue-100",
       };
-    case "DEFINED":
-      return {
-        text: "text-indigo-600",
-        bg: "bg-indigo-50",
-        border: "border-indigo-100",
-      };
+
     case "ARCHIVED":
       return {
         text: "text-zinc-500",
@@ -234,7 +229,6 @@ function TaskRow({
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
-
   const { data: subjectDetailRes } = useQuery({
     queryKey: ["subject-detail-for-task", task.subjectId],
     queryFn: () => SubjectService.getSubjectDetail(task.subjectId!),
@@ -272,7 +266,8 @@ function TaskRow({
   };
 
   // action=UPDATE means self-do task (like reused subject), action=CREATE means assignable to subordinate
-  const isReusedSubject = task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT;
+  const isReusedSubject =
+    task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT;
   const isDone = task.status === TASK_STATUS.DONE;
 
   const statusConfig = getTaskStatusConfig(task.status);
@@ -542,18 +537,18 @@ function TaskRow({
                     }
                   >
                     <PlusCircle size={16} />
-                    {isDone 
-                      ? "Task Finished" 
-                      : hasActiveReview 
-                        ? "Review Active" 
+                    {isDone
+                      ? "Task Finished"
+                      : hasActiveReview
+                        ? "Review Active"
                         : isLatestFromHoCFDC
                           ? "HoCFDC Locked"
                           : "Assign Reviewer"}
                   </button>
                   {(hasActiveReview || isDone || isLatestFromHoCFDC) && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-zinc-900 text-white text-[9px] font-bold rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {isDone 
-                        ? "Cannot assign reviewer to a finished task" 
+                      {isDone
+                        ? "Cannot assign reviewer to a finished task"
                         : isLatestFromHoCFDC
                           ? "Review feedback from HoCFDC must be acknowledged first"
                           : "Ongoing review must be finished first"}
@@ -587,11 +582,11 @@ function TaskRow({
                 </span>
               </div>
 
-                <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-3xl">
-                  <p className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
-                    Review history display disabled
-                  </p>
-                </div>
+              <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-3xl">
+                <p className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
+                  Review history display disabled
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
@@ -645,15 +640,17 @@ export function TaskList({ sprintId }: TaskListProps) {
       localStorage.removeItem("hopdc_last_sprint_id");
       localStorage.removeItem("hopdc_last_curriculum_id");
     }
-    
+
     // Aggressive revalidation of all dashboard data
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["sprints"] }),
-      queryClient.invalidateQueries({ queryKey: ["hopdc-receive-task-curriculum-detail"] }),
+      queryClient.invalidateQueries({
+        queryKey: ["hopdc-receive-task-curriculum-detail"],
+      }),
       queryClient.invalidateQueries({ queryKey: ["syllabus"] }),
-      queryClient.invalidateQueries({ queryKey: ["assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["assignments"] }),
     ]);
-    
+
     router.refresh();
     router.push("/dashboard/hopdc/sprint-management");
   };
@@ -678,8 +675,7 @@ export function TaskList({ sprintId }: TaskListProps) {
     error: tasksError,
   } = useQuery({
     queryKey: ["assignments", sprintId],
-    queryFn: () =>
-      TaskService.getTasksV2({ sprintId, size: 100 }),
+    queryFn: () => TaskService.getTasksV2({ sprintId, size: 100 }),
     enabled: !!sprintId,
     staleTime: 0,
     refetchOnMount: "always",
@@ -753,7 +749,10 @@ export function TaskList({ sprintId }: TaskListProps) {
             "INTERNAL_REVIEW",
           );
         } catch (error) {
-          console.warn("Soft fail: Unable to update CLOs to INTERNAL_REVIEW", error);
+          console.warn(
+            "Soft fail: Unable to update CLOs to INTERNAL_REVIEW",
+            error,
+          );
         }
       }
 
@@ -766,7 +765,10 @@ export function TaskList({ sprintId }: TaskListProps) {
             "IN_PROGRESS",
           );
         } catch (error) {
-          console.warn("Soft fail: Unable to update syllabus to IN_PROGRESS", error);
+          console.warn(
+            "Soft fail: Unable to update syllabus to IN_PROGRESS",
+            error,
+          );
         }
       }
 
@@ -969,15 +971,15 @@ export function TaskList({ sprintId }: TaskListProps) {
           size={14}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        Back to Sprint Management
+        Back to Curriculum Deliverables
       </button>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-black tracking-tight text-zinc-900">
-            Assign Tasks
+            Deliverable Execution
           </h1>
           <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider">
-            {sprint?.sprintName || "Sprint Management"}
+            {sprint?.sprintName || "Curriculum Deliverables"}
           </p>
         </div>
 
@@ -987,7 +989,7 @@ export function TaskList({ sprintId }: TaskListProps) {
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">
-                  Sprint Deadline
+                  Deliverable Deadline
                 </span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-200/50 text-[9px] font-black text-amber-700 uppercase tracking-tight">
                   {(() => {
@@ -1028,10 +1030,14 @@ export function TaskList({ sprintId }: TaskListProps) {
               }`}
             >
               {action.replace(/_/g, " ")}
-              <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${
-                selectedAction === action ? "bg-[var(--primary)] text-white" : "bg-zinc-200 text-zinc-600"
-              }`}>
-                {tasks.filter(t => (t.action || "OTHER") === action).length}
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[9px] ${
+                  selectedAction === action
+                    ? "bg-[var(--primary)] text-white"
+                    : "bg-zinc-200 text-zinc-600"
+                }`}
+              >
+                {tasks.filter((t) => (t.action || "OTHER") === action).length}
               </span>
             </button>
           ))}
@@ -1041,41 +1047,46 @@ export function TaskList({ sprintId }: TaskListProps) {
       <div className="space-y-4">
         {filteredTasks.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-base font-medium text-zinc-500">
-            No tasks found for {selectedAction?.replace(/_/g, " ") || "this action"}.
+            No tasks found for{" "}
+            {selectedAction?.replace(/_/g, " ") || "this action"}.
           </div>
         ) : (
           filteredTasks.map((task) => {
-            const originalIndex = tasks.findIndex(t => t.taskId === task.taskId);
+            const originalIndex = tasks.findIndex(
+              (t) => t.taskId === task.taskId,
+            );
             return (
               <TaskRow
-              key={task.taskId}
-              task={task}
-              pdcmAccounts={pdcmAccounts}
-              syllabusOptions={syllabiByTaskId[task.taskId]}
-              onSave={handleSaveTask}
-              isSaving={
-                saveTaskMutation.isPending &&
-                saveTaskMutation.variables?.taskId === task.taskId
-              }
-              saveError={saveErrorByTaskId[task.taskId]}
-              saveSuccess={saveSuccessByTaskId[task.taskId]}
-              isSyllabusLoading={syllabiQueries[originalIndex]?.isLoading ?? false}
-              selection={selectionByTaskId[task.taskId] || {}}
-              onSelectionChange={(field, value) =>
-                handleSelectionChange(task.taskId, field, value)
-              }
-              curriculumId={curriculumId}
-              sprintId={sprintId}
-              onComplete={(t) => completeTaskMutation.mutate(t)}
-              isCompleting={completeTaskMutation.isPending}
-              currentUser={user as User | null}
-              onManageSources={(id, name) => {
-                setSelectedSyllabusIdForSources(id);
-                setSelectedSyllabusNameForSources(name);
-                setIsSourcesModalOpen(true);
-              }}
-              sprintDeadline={sprint?.endDate}
-            />
+                key={task.taskId}
+                task={task}
+                pdcmAccounts={pdcmAccounts}
+                syllabusOptions={syllabiByTaskId[task.taskId]}
+                onSave={handleSaveTask}
+                isSaving={
+                  saveTaskMutation.isPending &&
+                  saveTaskMutation.variables?.taskId === task.taskId
+                }
+                saveError={saveErrorByTaskId[task.taskId]}
+                saveSuccess={saveSuccessByTaskId[task.taskId]}
+                isSyllabusLoading={
+                  syllabiQueries[originalIndex]?.isLoading ?? false
+                }
+                selection={selectionByTaskId[task.taskId] || {}}
+                onSelectionChange={(field, value) =>
+                  handleSelectionChange(task.taskId, field, value)
+                }
+                curriculumId={curriculumId}
+                sprintId={sprintId}
+                onComplete={(t) => completeTaskMutation.mutate(t)}
+                isCompleting={completeTaskMutation.isPending}
+                currentUser={user as User | null}
+                onManageSources={(id, name) => {
+                  setSelectedSyllabusIdForSources(id);
+                  setSelectedSyllabusNameForSources(name);
+                  setIsSourcesModalOpen(true);
+                }}
+                sprintDeadline={sprint?.endDate}
+              />
             );
           })
         )}

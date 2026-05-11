@@ -122,7 +122,7 @@ export default function VicePrincipalReviewPage() {
       if (newStatus === CURRICULUM_STATUS.SYLLABUS_DEVELOP) {
         await SubjectService.updateSubjectStatusesBulk(
           id,
-          SUBJECT_STATUS.DEFINED,
+          SUBJECT_STATUS.WAITING_SYLLABUS,
           undefined,
           SUBJECT_STATUS.DRAFT,
         );

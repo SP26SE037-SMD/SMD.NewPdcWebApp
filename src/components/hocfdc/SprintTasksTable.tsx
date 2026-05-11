@@ -52,7 +52,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
     mutationFn: (taskId: string) => TaskService.deleteTask(taskId),
     onSuccess: (res) => {
       if (res.status === 1000) {
-        showToast("Task removed from sprint", "success");
+        showToast("Task removed from deliverable package", "success");
         queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
       } else {
         showToast(res.message || "Delete failed", "error");
@@ -257,7 +257,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               No tasks assigned yet
             </p>
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Start by adding a department package to this sprint to track
+              Start by adding a department package to this deliverable package to track
               academic progress.
             </p>
           </div>

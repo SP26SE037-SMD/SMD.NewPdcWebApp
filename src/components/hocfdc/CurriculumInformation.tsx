@@ -246,12 +246,11 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
   if (!curriculum) return null;
 
   const SUBJECT_STATUS_COLORS: Record<string, string> = {
-    DRAFT: "text-zinc-500 bg-zinc-50 border-zinc-100",
-    DEFINED: "text-blue-500 bg-blue-50 border-blue-100",
-    WAITING_SYLLABUS: "text-indigo-500 bg-indigo-50 border-indigo-100",
-    PENDING_REVIEW: "text-amber-500 bg-amber-50 border-amber-100",
-    COMPLETED: "text-emerald-500 bg-emerald-50 border-emerald-100",
-    ARCHIVED: "text-red-500 bg-red-50 border-red-100",
+    [SUBJECT_STATUS.DRAFT]: "text-zinc-500 bg-zinc-50 border-zinc-100",
+    [SUBJECT_STATUS.WAITING_SYLLABUS]: "text-indigo-500 bg-indigo-50 border-indigo-100",
+    [SUBJECT_STATUS.PENDING_REVIEW]: "text-amber-500 bg-amber-50 border-amber-100",
+    [SUBJECT_STATUS.COMPLETED]: "text-emerald-500 bg-emerald-50 border-emerald-100",
+    [SUBJECT_STATUS.ARCHIVED]: "text-red-500 bg-red-50 border-red-100",
   };
 
   const handleStatusTransition = (newStatus: string) => {

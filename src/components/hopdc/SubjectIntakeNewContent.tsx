@@ -476,7 +476,7 @@ export default function NewSubjectContent() {
                     </h2>
                     <p className="text-sm text-zinc-500">
                       Manage and track syllabus lifecycles for the current
-                      sprint.
+                      curriculum deliverables.
                     </p>
                   </div>
                 </div>
@@ -646,7 +646,7 @@ export default function NewSubjectContent() {
                         </p>
                         <p className="text-sm font-bold text-amber-900">
                           This subject has not been assigned a syllabus for the
-                          current sprint task yet.
+                          current curriculum deliverables yet.
                         </p>
                       </div>
                     </div>

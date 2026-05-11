@@ -199,12 +199,29 @@ export default function CurriculumDetail({ id }: { id: string }) {
     queryFn: () => CurriculumService.getCurriculumById(id),
   });
   const curriculum = data?.data;
-  const [activeTab, setActiveTab] = useState<TabType>("info");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "info";
+  const [activeTab, setActiveTab] = useState<TabType>(
+    TABS.some((t) => t.id === initialTab) ? initialTab : "info"
+  );
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  const searchParams = useSearchParams();
   const isFromRejected = searchParams.get("isFromRejected") === "true";
   const feedback = searchParams.get("feedback");
+
+  // Sync tab with URL if it changes
+  React.useEffect(() => {
+    const tab = searchParams.get("tab") as TabType;
+    if (tab && TABS.some((t) => t.id === tab) && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
+
+  // Force refetch on mount to ensure latest status
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+    queryClient.invalidateQueries({ queryKey: ["sprints", id] });
+  }, [id, queryClient]);
 
   const { user } = useSelector((state: RootState) => state.auth);
 
