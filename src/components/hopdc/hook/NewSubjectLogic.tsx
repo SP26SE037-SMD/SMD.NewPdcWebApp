@@ -53,6 +53,7 @@ export function useNewSubjectLogic() {
   >("subject");
   const [isCreateCloModalOpen, setIsCreateCloModalOpen] = useState(false);
   const [isUpdateCloModalOpen, setIsUpdateCloModalOpen] = useState(false);
+  const [isImportClosModalOpen, setIsImportClosModalOpen] = useState(false);
   const [cloToEdit, setCloToEdit] = useState<SubjectClo | null>(null);
 
   const handleCloEdit = (clo: SubjectClo) => {
@@ -239,6 +240,8 @@ export function useNewSubjectLogic() {
     });
   };
 
+  const isMatrixReadOnly = associatedTask?.type === "SUBJECT" && associatedTask?.action === "UPDATE";
+
   return {
     ...mappingLogic,
     user,
@@ -247,6 +250,8 @@ export function useNewSubjectLogic() {
     isCreateCloModalOpen,
     setIsCreateCloModalOpen,
     isUpdateCloModalOpen,
+    isImportClosModalOpen,
+    setIsImportClosModalOpen,
     handleUpdateCloModalClose,
     cloToEdit,
     handleCloEdit,
@@ -270,5 +275,6 @@ export function useNewSubjectLogic() {
     isTaskLoading,
     sprintId,
     currentSyllabus,
+    isMatrixReadOnly,
   };
 }

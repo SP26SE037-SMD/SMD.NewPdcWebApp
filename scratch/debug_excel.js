@@ -1,0 +1,10 @@
+const XLSX = require('xlsx');
+const fs = require('fs');
+const data = fs.readFileSync('public/Subject_CLOs.xlsx');
+const workbook = XLSX.read(data, { type: 'buffer' });
+console.log('SheetNames:', workbook.SheetNames);
+const sheet = workbook.Sheets[workbook.SheetNames[0]];
+const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+console.log('JSON Data Length:', jsonData.length);
+console.log('JSON Data Row 0:', jsonData[0]);
+console.log('JSON Data Row 3:', jsonData[3]);

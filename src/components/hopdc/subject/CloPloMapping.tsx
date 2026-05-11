@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { GitBranch, Plus, Trash2, Loader2, Save, Info, CheckCircle2, Circle, Pencil } from "lucide-react";
+import React, { useState } from "react";
+import { GitBranch, Plus, Trash2, Loader2, Save, Info, CheckCircle2, Circle, Pencil, Download, Upload } from "lucide-react";
 import { SubjectClo } from "@/services/cloplo.service";
 import { PLO } from "@/services/curriculum.service";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
@@ -66,6 +66,8 @@ interface CloPloMappingProps {
   iconBgColor?: string;
   iconTextColor?: string;
   isReadOnly?: boolean;
+  onImportClos?: (clos: any[]) => Promise<void>;
+  isImportingClos?: boolean;
 }
 
 export function CloPloMapping({
@@ -90,9 +92,13 @@ export function CloPloMapping({
   iconBgColor = "bg-emerald-50",
   iconTextColor = "text-emerald-700",
   isReadOnly = false,
+  onImportClos,
+  isImportingClos = false,
 }: CloPloMappingProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [cloToDelete, setCloToDelete] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [localImporting, setLocalImporting] = useState(false);
 
   const handleDeleteClick = (cloId: string) => {
     setCloToDelete(cloId);
@@ -116,6 +122,16 @@ export function CloPloMapping({
   };
 
   const isSyncing = submittingKey === "sync";
+
+  const handleDownloadTemplate = () => {
+    window.location.href = "/Subject_CLOs.xlsx";
+  };
+
+  const handleImportClick = () => {
+    if (onImportClos) {
+      onImportClos([]); // Trigger the modal in SubjectIntakeNewContent
+    }
+  };
 
   return (
     <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm p-6 md:p-8 space-y-6 overflow-hidden">
@@ -146,6 +162,31 @@ export function CloPloMapping({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => console.log("Validate Mapping triggered")}
+            className="h-10 px-4 rounded-xl border border-zinc-200 bg-white text-zinc-700 text-[11px] font-black uppercase tracking-widest hover:bg-zinc-50 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <CheckCircle2 size={14} className="text-emerald-600" />
+            Validate Mapping
+          </button>
+          {!isReadOnly && (
+            <>
+              <button
+                type="button"
+                onClick={handleImportClick}
+                disabled={isImportingClos || localImporting}
+                className="h-10 px-4 rounded-xl border border-zinc-200 bg-white text-zinc-700 text-[11px] font-black uppercase tracking-widest hover:bg-zinc-50 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
+              >
+                {isImportingClos || localImporting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                Import Excel
+              </button>
+            </>
+          )}
           {onCreateClo && (
             <button
               type="button"

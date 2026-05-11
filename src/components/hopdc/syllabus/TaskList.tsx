@@ -224,7 +224,16 @@ function TaskRow({
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const goToSubjectDetail = () => {
+  const goToSubjectDetail = async () => {
+    if (task.status === TASK_STATUS.TO_DO) {
+      try {
+        await TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+        queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      } catch (err) {
+        console.error("Failed to update task status:", err);
+      }
+    }
+
     const isReadOnly = task.status === TASK_STATUS.DONE;
     router.push(
       `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}${isReadOnly ? "&readOnly=true" : ""}`,

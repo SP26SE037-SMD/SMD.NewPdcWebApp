@@ -28,9 +28,9 @@ export function useSubjectMappingLogic() {
   const subject = subjectRes;
 
   const { data: ploRes, isLoading: isPloLoading } = useQuery({
-    queryKey: ["curriculum-plos", curriculumId, "INTERNAL_REVIEW"],
+    queryKey: ["curriculum-plos", curriculumId],
     queryFn: () =>
-      CurriculumService.getPloByCurriculumId(curriculumId!, "INTERNAL_REVIEW"),
+      CurriculumService.getPloByCurriculumId(curriculumId!),
     enabled: !!curriculumId,
   });
 
@@ -40,9 +40,7 @@ export function useSubjectMappingLogic() {
     enabled: !!subjectId,
   });
 
-  const plos = (ploRes?.data?.content ?? []).filter(
-    (plo) => plo.status?.toUpperCase() === "INTERNAL_REVIEW",
-  );
+  const plos = ploRes?.data?.content ?? [];
   const clos = cloRes?.data?.content ?? [];
 
   const [localMapping, setLocalMapping] = useState<Record<string, string>>({});
@@ -171,6 +169,36 @@ export function useSubjectMappingLogic() {
     }
   };
 
+  const handleImportClos = async (file: File) => {
+    if (!subjectId) return;
+    setSubmittingKey("import");
+    setMappingNotice("");
+
+    try {
+      const response = await CloPloService.importClos(file);
+      
+      // If there are failures, we don't invalidate queries yet 
+      // because we want the user to fix the file first
+      if (response?.data && response.data.failed === 0) {
+        setMappingNotice("Successfully imported all CLOs from Excel.");
+        await queryClient.invalidateQueries({
+          queryKey: ["subject-clos", subjectId],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["clo-plo-mappings", subjectId, curriculumId],
+        });
+        setTimeout(() => setMappingNotice(""), 5000);
+      }
+
+      return response; // Return full response
+    } catch (err: any) {
+      setMappingNotice(err.message || "Failed to import CLOs.");
+      return { status: 500, message: err.message };
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
   const goToReceiveTasks = () => {
     const sprintId = searchParams.get("sprintId");
     if (sprintId && curriculumId) {
@@ -217,5 +245,6 @@ export function useSubjectMappingLogic() {
     hasUnsavedChanges,
     addedCount,
     deletedCount,
+    handleImportClos,
   };
 }
