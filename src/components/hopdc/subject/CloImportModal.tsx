@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { X, UploadCloud, FileType2, Loader2, CheckCircle2, AlertCircle, Download, Info, FileSpreadsheet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
-import ExcelPreviewTable, { SheetData, ExcelErrorMap } from "@/components/hocfdc/create-curriculum/ExcelPreviewTable";
+import ExcelCloPreview from "./ExcelCloPreview";
+import { SheetData, ExcelErrorMap } from "@/components/hocfdc/create-curriculum/ExcelPreviewTable";
 import { PLO } from "@/services/curriculum.service";
 
 interface CloImportModalProps {
@@ -258,7 +259,7 @@ export function CloImportModal({ isOpen, onClose, onImport, plos, isImporting, s
               
               {file ? (
                 <div className="flex-1 overflow-hidden rounded-3xl border border-zinc-200 shadow-inner bg-white">
-                  <ExcelPreviewTable workbookData={workbookData} errorMap={errorMap} hideTabs={true} />
+                  <ExcelCloPreview workbookData={workbookData} errorMap={errorMap} />
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-[32px] bg-white/50">
