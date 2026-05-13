@@ -356,7 +356,27 @@ export default function DashboardLayout({
         {/* Logo Section */}
         <div className="p-6 mb-4">
           {/* {user?.role === "VP" && isSidebarOpen ? ( */}
-          {isSidebarOpen ? (
+          {user?.role == "HOCFDC" && isSidebarOpen ? (
+            <div className="flex items-center gap-3 px-2">
+              <div className="overflow-hidden text-right">
+                <h2 className="font-bold text-[#1d5c42] leading-tight whitespace-nowrap">
+                  {user?.role}
+                </h2>
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                  Academic Affairs
+                </p>
+              </div>
+              <img
+                src="/icon-with-name.png"
+                alt="SMD System"
+                className={
+                  isSidebarOpen
+                    ? "h-10 w-auto object-contain"
+                    : "h-10 w-10 object-contain"
+                }
+              />
+            </div>
+          ) : (
             <div className="flex items-center gap-3 px-2">
               <img
                 src="/icon.png"
@@ -376,21 +396,6 @@ export default function DashboardLayout({
                 </p>
               </div>
             </div>
-          ) : (
-            <Link
-              href="/"
-              className="flex items-center justify-center lg:justify-start"
-            >
-              <img
-                src="/icon-with-name.png"
-                alt="SMD System"
-                className={
-                  isSidebarOpen
-                    ? "h-10 w-auto object-contain"
-                    : "h-10 w-10 object-contain"
-                }
-              />
-            </Link>
           )}
         </div>
 

@@ -152,12 +152,14 @@ export default function CurriculumsManagement({
 
   const TABS: StatusTab[] = [
     { label: "All Repository", value: "" },
-    { label: "Draft", value: CURRICULUM_STATUS.DRAFT },
     { label: "Syllabus Develop", value: CURRICULUM_STATUS.SYLLABUS_DEVELOP },
     { label: "Final Review", value: CURRICULUM_STATUS.FINAL_REVIEW },
     { label: "Published", value: CURRICULUM_STATUS.PUBLISHED },
     { label: "Archived", value: CURRICULUM_STATUS.ARCHIVED },
   ];
+
+  // Filter out DRAFT curriculums as requested
+  const displayData = initialData.filter(curr => curr.status !== CURRICULUM_STATUS.DRAFT);
 
   const handleTabChange = (status: string) => {
     updateUrlParams({ status, page: 0 });
@@ -261,7 +263,7 @@ export default function CurriculumsManagement({
             <div className="space-y-12">
               <div className="grid grid-cols-1 gap-6">
                 <AnimatePresence mode="popLayout">
-                  {initialData.map((curriculum, idx) => (
+                  {displayData.map((curriculum, idx) => (
                     <motion.div
                       key={curriculum.curriculumId}
                       layout
@@ -391,7 +393,7 @@ export default function CurriculumsManagement({
                     </motion.div>
                   ))}
 
-                  {initialData.length === 0 && (
+                  {displayData.length === 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -421,7 +423,7 @@ export default function CurriculumsManagement({
                     <p className="text-sm font-bold text-zinc-500">
                       Displaying{" "}
                       <span className="text-zinc-900">
-                        {initialData.length}
+                        {displayData.length}
                       </span>{" "}
                       of{" "}
                       <span className="text-zinc-900 tracking-tight">

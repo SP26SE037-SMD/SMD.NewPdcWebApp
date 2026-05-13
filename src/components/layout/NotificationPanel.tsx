@@ -96,6 +96,25 @@ export const NotificationPanel = () => {
     const [filterUnread, setFilterUnread] = useState(false);
     
     const notiRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Initialize audio on mount
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            audioRef.current = new Audio("/sounds/notification.wav");
+            audioRef.current.volume = 0.5; // Moderate volume
+        }
+    }, []);
+
+    // Play sound when new notification arrives
+    useEffect(() => {
+        if (latestRealtimeNotification && audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => {
+                // Silently ignore autoplay blocks in production
+            });
+        }
+    }, [latestRealtimeNotification]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
