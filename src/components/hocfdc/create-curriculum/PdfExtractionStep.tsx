@@ -687,6 +687,8 @@ export default function PdfExtractionStep({
   });
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [startTime, setStartTime] = useState<number | undefined>(undefined);
 
@@ -1053,6 +1055,49 @@ export default function PdfExtractionStep({
     }
   };
 
+  const handleDeleteAndRetry = async () => {
+    const majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
+    if (!majorId) {
+      setExtractionState("idle");
+      return;
+    }
+
+    setIsDiscardModalOpen(true);
+  };
+
+  const confirmDeleteAndRetry = async () => {
+    const majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
+    if (!majorId) {
+      setExtractionState("idle");
+      setIsDiscardModalOpen(false);
+      return;
+    }
+
+    setIsDiscardModalOpen(false);
+    setDeleting(true);
+    try {
+      await MajorService.deleteMajor(majorId);
+      
+      // Cleanup session
+      sessionStorage.removeItem(`extracted_major_${documentId}`);
+      sessionStorage.removeItem(`extraction_status_${documentId}`);
+      sessionStorage.removeItem(`extraction_start_time_${documentId}`);
+      
+      // Reset state
+      setExtractionState("idle");
+      setMajorForm({ majorCode: "", majorName: "", description: "" });
+      setRegulations([]);
+      setExtractionError(null);
+      
+      toast.success("Extraction discarded successfully. You can now try again.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to delete extracted data");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)]">
       {/* LEFT: PDF Viewer */}
@@ -1310,10 +1355,23 @@ export default function PdfExtractionStep({
               </div>
 
               {/* Action Footer */}
-              <div className="p-5 border-t border-outline/20 bg-surface flex justify-end gap-3 shrink-0">
+              <div className="p-5 border-t border-outline/20 bg-surface flex justify-between items-center gap-3 shrink-0">
+                <button
+                  onClick={handleDeleteAndRetry}
+                  disabled={saving || deleting}
+                  className="px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {deleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Discard & Retry
+                </button>
+
                 <button
                   onClick={handleConfirm}
-                  disabled={saving}
+                  disabled={saving || deleting}
                   className="px-6 py-3 bg-[#1d5c42] text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#144330] transition shadow-lg shadow-[#1d5c42]/20 disabled:opacity-50"
                 >
                   {saving ? (
@@ -1325,6 +1383,53 @@ export default function PdfExtractionStep({
                 </button>
               </div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Discard Confirmation Modal */}
+        <AnimatePresence>
+          {isDiscardModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsDiscardModalOpen(false)}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                    <AlertTriangle className="text-red-600 h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-on-surface mb-2">
+                    Discard Extraction?
+                  </h3>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">
+                    Are you sure you want to discard this extraction? All extracted major data and regulations will be deleted permanently from the system. This action cannot be undone.
+                  </p>
+                </div>
+                <div className="bg-zinc-50 p-6 flex justify-end gap-3">
+                  <button
+                    onClick={() => setIsDiscardModalOpen(false)}
+                    className="px-4 py-2 text-sm font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteAndRetry}
+                    className="px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-lg shadow-red-600/20"
+                  >
+                    Yes, Discard All
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </div>

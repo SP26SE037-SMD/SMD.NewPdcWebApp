@@ -43,6 +43,9 @@ export default function HoCFDCDashboardContent() {
 
   // Filter majors in frontend based on selected status to ensure consistency (especially for DRAFT)
   const majors = (majorResponse?.data?.content || []).filter((m) => {
+    // HoCFDC should NOT see DRAFT majors at all in the main view
+    if (m.status === "DRAFT") return false;
+    
     if (selectedStatus === "") return true;
     return m.status === selectedStatus;
   });
@@ -131,7 +134,7 @@ export default function HoCFDCDashboardContent() {
                     exit={{ opacity: 0, y: 10 }}
                     className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-2xl shadow-xl z-50 overflow-hidden p-1"
                   >
-                    {["", "DRAFT", "INTERNAL_REVIEW", "PUBLISHED", "ARCHIVED"].map(
+                    {["", "INTERNAL_REVIEW", "PUBLISHED", "ARCHIVED"].map(
                       (status) => (
                         <button
                           key={status}
