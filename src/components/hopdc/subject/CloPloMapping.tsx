@@ -401,7 +401,7 @@ export function CloPloMapping({
                   <Lightbulb className="h-4 w-4 text-amber-500" />
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">AI Suggestions</span>
                 </div>
-                <p className="text-xs text-zinc-600 leading-relaxed font-medium italic whitespace-pre-line">
+                <p className="text-sm text-zinc-600 leading-relaxed font-medium italic whitespace-pre-line">
                   {validationResult.suggestions}
                 </p>
               </div>
@@ -472,9 +472,16 @@ export function CloPloMapping({
                       <td className="p-4 border-b border-zinc-100 sticky left-0 bg-white group-hover:bg-zinc-50/80 transition-colors z-10 w-[320px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                         <div className="flex flex-col gap-1.5 pr-2">
                           <div className="flex items-center justify-between gap-2">
-                            <span className={`text-[13px] font-black tracking-tight ${isUnmapped ? "text-red-600" : "text-zinc-900"}`}>
-                              {clo.cloCode || "CLO"}
-                            </span>
+                            {(() => {
+                              const hasInvalidMapping = validationResult?.invalid_mappings?.some((m: any) => m.clo_code === clo.cloCode);
+                              return (
+                                <span className={`text-[13px] font-black tracking-tight px-1 rounded ${
+                                  hasInvalidMapping ? "bg-amber-100 text-amber-900" : isUnmapped ? "text-red-600" : "text-zinc-900"
+                                }`}>
+                                  {clo.cloCode || "CLO"}
+                                </span>
+                              );
+                            })()}
                             <div className="flex items-center gap-1.5">
                               <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200">
                                 B{clo.bloomLevel}
@@ -508,21 +515,42 @@ export function CloPloMapping({
                       </td>
                       {plos.map((plo) => {
                         const mapped = isMapped(clo.cloId, plo.ploId);
+                        const invalidMapping = validationResult?.invalid_mappings?.find(
+                          (m: any) => m.clo_code === clo.cloCode && m.plo_code === plo.ploCode
+                        );
+
                         return (
                           <td 
                             key={plo.ploId} 
                             onClick={disableMapping ? undefined : () => toggleMapping(clo.cloId, plo.ploId)} 
-                            className={`p-4 border-b border-zinc-100 text-center ${disableMapping ? 'cursor-default' : 'cursor-pointer hover:bg-zinc-100/50'} ${mapped ? "bg-emerald-50/20" : ""}`}
+                            className={`p-4 border-b border-zinc-100 text-center relative group/cell ${
+                              disableMapping ? 'cursor-default' : 'cursor-pointer hover:bg-zinc-100/50'
+                            } ${mapped ? (invalidMapping ? "bg-amber-50" : "bg-emerald-50/20") : ""}`}
                           >
                             <div className="flex items-center justify-center">
                               {mapped ? (
-                                <div className="h-6 w-6 rounded-lg bg-emerald-100 flex items-center justify-center text-[#0b7a47] shadow-sm animate-in zoom-in duration-200">
-                                  <CheckCircle2 size={16} />
+                                <div className={`h-6 w-6 rounded-lg flex items-center justify-center shadow-sm animate-in zoom-in duration-200 ${
+                                  invalidMapping ? "bg-amber-200 text-amber-900 border border-amber-300" : "bg-emerald-100 text-[#0b7a47]"
+                                }`}>
+                                  {invalidMapping ? <AlertTriangle size={14} /> : <CheckCircle2 size={16} />}
                                 </div>
                               ) : (
                                 <Circle size={16} className="text-zinc-200 group-hover:text-zinc-300 transition-colors" />
                               )}
                             </div>
+
+                            {/* Invalid Mapping Reason Tooltip */}
+                            {invalidMapping && (
+                              <div className="absolute opacity-0 invisible group-hover/cell:opacity-100 group-hover/cell:visible transition-all duration-300 bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] bg-white border border-amber-200 shadow-2xl rounded-2xl p-4 z-[110] text-left pointer-events-none">
+                                <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-amber-50">
+                                  <AlertTriangle size={14} className="text-amber-500" />
+                                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Logic Warning</p>
+                                </div>
+                                <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
+                                  "{invalidMapping.reason}"
+                                </p>
+                              </div>
+                            )}
                           </td>
                         );
                       })}

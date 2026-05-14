@@ -20,6 +20,7 @@ import {
   TASK_STATUS,
   TASK_TYPE,
   TaskItem,
+  TaskStatus,
   TaskService,
 } from "@/services/task.service";
 import { RootState } from "@/store";
@@ -189,6 +190,10 @@ interface TaskRowProps {
   currentUser: User | null;
   onManageSources: (syllabusId: string, syllabusName: string) => void;
   sprintDeadline?: string;
+  onUpdateStatus: (taskId: string, status: TaskStatus) => void;
+  isUpdatingStatus: boolean;
+  children?: (TaskItem & { children?: TaskItem[] })[];
+  level?: number;
 }
 
 function TaskRow({
@@ -209,8 +214,12 @@ function TaskRow({
   currentUser,
   onManageSources,
   sprintDeadline,
+  onUpdateStatus,
+  isUpdatingStatus,
+  children = [],
+  level = 0,
 }: TaskRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(level === 0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
   const { data: subjectRes } = useQuery({
@@ -223,11 +232,15 @@ function TaskRow({
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { showToast } = useToast();
 
   const goToSubjectDetail = async () => {
     if (task.status === TASK_STATUS.TO_DO) {
       try {
-        await TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+        await TaskService.updateTaskStatus(
+          task.taskId,
+          TASK_STATUS.IN_PROGRESS,
+        );
         queryClient.invalidateQueries({ queryKey: ["assignments"] });
       } catch (err) {
         console.error("Failed to update task status:", err);
@@ -246,7 +259,9 @@ function TaskRow({
 
   // action=UPDATE means self-do task (like reused subject), action=CREATE means assignable to subordinate
   const isReusedSubject =
-    task.action === "UPDATE" || task.type === TASK_TYPE.REUSED_SUBJECT || task.type === "SUBJECT";
+    task.action === "UPDATE" ||
+    task.type === TASK_TYPE.REUSED_SUBJECT ||
+    task.type === "SUBJECT";
   const isDone = task.status === TASK_STATUS.DONE;
 
   const statusConfig = getTaskStatusConfig(task.status);
@@ -279,225 +294,255 @@ function TaskRow({
     : selectedAccountId;
 
   return (
-    <div className="group relative bg-white border border-zinc-100 hover:border-zinc-300 transition-all rounded-2xl overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-stretch">
-        <div className={`w-2 ${statusConfig.color}`} />
+    <div
+      className={`group relative transition-all ${level > 0 ? "ml-8 mt-4" : ""}`}
+    >
+      {/* Tree Line Connector */}
+      {level > 0 && (
+        <div className="absolute -left-4 top-0 bottom-0 w-px bg-zinc-200">
+          <div className="absolute top-8 left-0 w-4 h-px bg-zinc-200" />
+        </div>
+      )}
 
-        <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-1 flex items-center justify-center">
-            {/* Expanded section removed as requested */}
-          </div>
+      <div
+        className={`bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow ${
+          level === 0
+            ? "border-zinc-200"
+            : level === 1
+              ? "border-emerald-200 bg-emerald-50/5"
+              : "border-indigo-100 bg-indigo-50/5"
+        }`}
+      >
+        <div className="flex flex-col lg:flex-row items-stretch">
+          <div className={`w-2 ${statusConfig.color}`} />
 
-          <div className="lg:col-span-4 space-y-2">
-            <div className="flex items-center gap-3">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md`}
-              >
-                <StatusIcon size={12} />
-                {task.status || "UNKNOWN"}
-              </span>
+          <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div className="lg:col-span-1 flex items-center justify-center">
+              {children.length > 0 && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className={`p-2 rounded-xl transition-all ${
+                    isExpanded
+                      ? "bg-zinc-900 text-white rotate-180"
+                      : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                  }`}
+                >
+                  <ArrowLeft size={16} className="-rotate-90" />
+                </button>
+              )}
             </div>
 
-            <h3 className="text-xl font-black text-zinc-900 tracking-tight">
-              Task: {task.taskName || "N/A"}
-            </h3>
-
-            <p className="text-base font-medium text-zinc-500 line-clamp-2">
-              Description: {task.description || "N/A"}
-            </p>
-
-            <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
-                  Subject Status
-                </span>
-                <div className="flex items-center gap-3">
+            <div className="lg:col-span-4 space-y-2">
+              <div className="flex items-center gap-3">
+                {level === 0 ? (
+                  <div className="relative flex items-center gap-2 group/status">
+                    <div className="relative">
+                      <select
+                        value={task.status}
+                        onChange={(e) =>
+                          onUpdateStatus(
+                            task.taskId,
+                            e.target.value as TaskStatus,
+                          )
+                        }
+                        disabled={isUpdatingStatus}
+                        className={`inline-flex items-center gap-1.5 pl-2 pr-6 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md outline-none cursor-pointer hover:brightness-95 transition-all appearance-none disabled:opacity-50`}
+                      >
+                        <option value={TASK_STATUS.TO_DO}>TO DO</option>
+                        <option value={TASK_STATUS.IN_PROGRESS}>
+                          IN PROGRESS
+                        </option>
+                        <option value={TASK_STATUS.DONE}>DONE</option>
+                      </select>
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                        <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[4px] border-t-current ml-1" />
+                      </div>
+                    </div>
+                    {isUpdatingStatus && (
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+                    )}
+                  </div>
+                ) : (
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(task.subjectStatus).bg} ${getSubjectStatusConfig(task.subjectStatus).text} ${getSubjectStatusConfig(task.subjectStatus).border}`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md`}
                   >
-                    {task.subjectStatus || "DRAFT"}
+                    <StatusIcon size={12} />
+                    {task.status || "UNKNOWN"}
                   </span>
-                  <button
-                    onClick={goToSubjectDetail}
-                    className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                )}
+                {level > 0 && (
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                      level === 1
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-indigo-100 text-indigo-700"
+                    }`}
                   >
-                    Subject Detail
-                    <ExternalLink
-                      size={12}
-                      className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                    Level {level + 1}
+                  </span>
+                )}
+              </div>
+
+              <h3
+                className={`font-black tracking-tight ${level === 0 ? "text-xl text-zinc-900" : "text-base text-zinc-800"}`}
+              >
+                {task.taskName || "N/A"}
+              </h3>
+
+              <p className="text-sm font-medium text-zinc-500 line-clamp-2 italic">
+                {task.description || "N/A"}
+              </p>
+
+              {level === 0 && (
+                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                      Subject Status
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(task.subjectStatus).bg} ${getSubjectStatusConfig(task.subjectStatus).text} ${getSubjectStatusConfig(task.subjectStatus).border}`}
+                      >
+                        {task.subjectStatus || "DRAFT"}
+                      </span>
+                      <button
+                        onClick={goToSubjectDetail}
+                        className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        Subject Detail
+                        <ExternalLink
+                          size={12}
+                          className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Accept/Reject Loop for Level 2 tasks (Syllabus Creation/Update) */}
+              {level === 1 &&
+                children.some((c) => c.status === TASK_STATUS.DONE) && (
+                  <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle size={14} className="text-amber-600" />
+                      <span className="text-xs font-black text-amber-700 uppercase tracking-wider">
+                        HoPDC Decision Required
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-colors">
+                        Accept Syllabus
+                      </button>
+                      <button className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-colors">
+                        Reject & Request Update
+                      </button>
+                    </div>
+                    <textarea
+                      placeholder="Add comments for the creator..."
+                      className="w-full p-2 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 min-h-[60px]"
                     />
+                  </div>
+                )}
+            </div>
+
+            <div className="lg:col-span-4 grid grid-cols-1 gap-3 border-l border-zinc-100 pl-6">
+              <div className="space-y-1">
+                <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                  Assignee
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200">
+                    {task.account?.fullName
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </div>
+                  <span className="text-sm font-bold text-zinc-700">
+                    {task.account?.fullName || "Unassigned"}
+                  </span>
+                </div>
+              </div>
+
+              {level < 2 && (
+                <div className="space-y-1">
+                  <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                    Workflow Actions
+                  </p>
+                  <button
+                    onClick={() =>
+                      showToast(
+                        `Assigning ${level === 0 ? "Creator" : "Reviewer"} for: ${task.taskName}`,
+                        "success",
+                      )
+                    }
+                    className="w-full flex items-center justify-center gap-2 py-1.5 bg-zinc-900 text-white text-[10px] font-black uppercase rounded-lg hover:bg-zinc-800 transition-colors"
+                  >
+                    <Plus size={12} />
+                    {level === 0 ? "Assign Creator" : "Assign Reviewer"}
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-4 grid grid-cols-1 gap-3 border-l border-zinc-100 pl-6">
-            <div className="space-y-1">
-              <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                Assignee
-              </p>
-              <select
-                value={selectedAccountId}
-                onChange={(e) => onSelectionChange("accountId", e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none transition focus:border-emerald-400 disabled:bg-zinc-100 disabled:cursor-not-allowed"
-                disabled={hasAssignedAccount || isReusedSubject}
-              >
-                {isReusedSubject ? (
-                  <option value={currentUser?.accountId}>
-                    HoPDC (Self-Mapping)
-                  </option>
-                ) : (
-                  <>
-                    <option value="">Select account...</option>
-                    {hasAssignedAccount &&
-                      selectedAccountId &&
-                      !hasSelectedAccountInOptions && (
-                        <option value={selectedAccountId}>
-                          {lockedAccountLabel}
-                        </option>
-                      )}
-                    {pdcmAccounts.map((account) => (
-                      <option key={account.accountId} value={account.accountId}>
-                        {getAccountLabel(account)}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
+              )}
             </div>
 
-            {!isReusedSubject && (
-              <div className="space-y-1">
-                <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                  Syllabus
+            <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center gap-2">
+              <div className="text-right">
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">
+                  Status
                 </p>
-                {hasAssignedAccount ? (
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-base text-zinc-700 min-h-10 flex items-center">
-                    {isSyllabusLoading
-                      ? "Loading..."
-                      : selectedSyllabus
-                        ? getSyllabusLabel(selectedSyllabus as any)
-                        : "N/A"}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={selectedSyllabusId}
-                      onChange={(e) =>
-                        onSelectionChange("syllabusId", e.target.value)
-                      }
-                      disabled={isSyllabusLoading}
-                      className="w-[240px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none transition focus:border-emerald-400 disabled:bg-zinc-100 truncate"
-                    >
-                      <option value="">Select syllabus...</option>
-                      {syllabusOptions.map((s) => (
-                        <option key={s.syllabusId} value={s.syllabusId}>
-                          {getSyllabusLabel(s)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateSyllabusOpen(true)}
-                      className="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors shrink-0 disabled:opacity-50"
-                      title="Create New Syllabus"
-                    >
-                      <Plus size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const s = syllabusOptions.find(
-                          (opt) => opt.syllabusId === selectedSyllabusId,
-                        );
-                        onManageSources(
-                          selectedSyllabusId,
-                          s ? getSyllabusLabel(s) : "",
-                        );
-                      }}
-                      disabled={!selectedSyllabusId}
-                      className="h-10 w-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors shrink-0 disabled:opacity-50 disabled:grayscale disabled:bg-zinc-100 disabled:border-zinc-200"
-                      title="Manage Reference Materials"
-                    >
-                      <BookText size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!isReusedSubject && (
-              <div className="space-y-1">
-                <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                  Deadline
-                </p>
-                <div className="relative">
-                  <Calendar
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
-                  />
-                  <input
-                    type="date"
-                    value={selectedDeadline}
-                    onChange={(e) =>
-                      onSelectionChange("deadline", e.target.value)
-                    }
-                    disabled={hasAssignedAccount}
-                    className="w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm text-zinc-700 outline-none transition focus:border-emerald-400 disabled:bg-zinc-50 disabled:text-zinc-500 disabled:cursor-not-allowed"
-                  />
+                <div
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    task.status === TASK_STATUS.DONE
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                      : "bg-amber-100 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {task.status}
                 </div>
               </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center gap-2">
-            <div className="flex flex-col gap-2 min-w-[160px]">
-              <button
-                type="button"
-                onClick={() => {
-                  if (isReusedSubject) {
-                    onComplete(task);
-                  } else {
-                    onSave(task, selectedSyllabusId);
-                  }
-                }}
-                disabled={
-                  isSaving ||
-                  isCompleting ||
-                  (hasAssignedAccount && !isReusedSubject) ||
-                  (isReusedSubject && isDone)
-                }
-                className={`flex items-center justify-center gap-2 px-5 py-3 text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 rounded-xl disabled:opacity-60 ${
-                  isReusedSubject
-                    ? isDone
-                      ? "bg-emerald-100 text-emerald-600 border border-emerald-200"
-                      : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
-                    : hasAssignedAccount
-                      ? "bg-zinc-100 text-zinc-400 border border-zinc-200"
-                      : "bg-zinc-900 text-white hover:bg-zinc-800"
-                }`}
-              >
-                {isSaving || isCompleting
-                  ? "Processing..."
-                  : isReusedSubject
-                    ? isDone
-                      ? "MAPPING DONE"
-                      : "MARK AS DONE"
-                    : hasAssignedAccount
-                      ? "SAVED TASK"
-                      : "SAVE TASK"}
-              </button>
-
-              {/* Assign Reviewer button removed as requested */}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Sub Task List section removed as requested */}
-
-      {/* CreateReviewTaskModal removed as requested */}
+      {/* Recursive Children Rendering */}
+      <AnimatePresence>
+        {isExpanded && children.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            {children.map((child) => (
+              <TaskRow
+                key={child.taskId}
+                task={child}
+                children={child.children}
+                level={level + 1}
+                pdcmAccounts={pdcmAccounts}
+                syllabusOptions={syllabusOptions}
+                onSave={onSave}
+                isSaving={isSaving}
+                saveError={saveError}
+                saveSuccess={saveSuccess}
+                isSyllabusLoading={isSyllabusLoading}
+                selection={selection}
+                onSelectionChange={onSelectionChange}
+                curriculumId={curriculumId}
+                sprintId={sprintId}
+                onComplete={onComplete}
+                isCompleting={isCompleting}
+                currentUser={currentUser}
+                onManageSources={onManageSources}
+                onUpdateStatus={onUpdateStatus}
+                isUpdatingStatus={isUpdatingStatus}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <CreateSyllabusModal
         subjectId={task.subjectId || ""}
@@ -620,10 +665,105 @@ export function TaskList({ sprintId }: TaskListProps) {
     }
   }, [taskActions, selectedAction]);
 
+  const getMockTasks = (): TaskItem[] => {
+    return [
+      {
+        taskId: "mock-root-1",
+        taskName: "CREATE SUBJECT: SOFTWARE ARCHITECTURE (SE301)",
+        description:
+          "Develop full syllabus including CLOs, PLO mapping, and course content.",
+        action: "CREATE",
+        status: TASK_STATUS.IN_PROGRESS,
+        priority: "HIGH",
+        type: TASK_TYPE.NEW_SUBJECT,
+        deadline: new Date(Date.now() + 86400000 * 7).toISOString(),
+        createdAt: new Date().toISOString(),
+        subjectStatus: "DRAFT",
+        subjectId: "sub-mock-1",
+        account: { accountId: "hopdc-1", fullName: "HoPDC Manager" },
+      } as any,
+      {
+        taskId: "mock-child-1.1",
+        rootTaskId: "mock-root-1",
+        taskName: "CREATE SYLLABUS",
+        description: "Draft the initial syllabus structure and CLO mappings.",
+        action: "CREATE",
+        status: TASK_STATUS.DONE,
+        priority: "MEDIUM",
+        type: "SYLLABUS_DEVELOP",
+        deadline: new Date(Date.now() + 86400000 * 2).toISOString(),
+        createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        account: { accountId: "creator-1", fullName: "Nguyen Van A (Creator)" },
+        targetId: "syl-mock-1",
+        syllabus: { syllabusId: "syl-mock-1", syllabusName: "Syllabus V1.0" },
+      } as any,
+      {
+        taskId: "mock-subchild-1.1.1",
+        rootTaskId: "mock-child-1.1",
+        taskName: "REVIEW SYLLABUS",
+        description:
+          "Peer review of the initial draft for Software Architecture.",
+        action: "CREATE",
+        status: TASK_STATUS.DONE,
+        priority: "MEDIUM",
+        type: "REVIEW",
+        deadline: new Date(Date.now() + 86400000 * 4).toISOString(),
+        createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+        account: { accountId: "reviewer-1", fullName: "Tran Thi B (Reviewer)" },
+      } as any,
+      {
+        taskId: "mock-child-1.2",
+        rootTaskId: "mock-root-1",
+        taskName: "UPDATE SYLLABUS (RE-WORK)",
+        description:
+          "Fix the CLO mappings as per the review comments in Task 1.1.1. Please detail the Software Design Pattern section.",
+        action: "CREATE",
+        status: TASK_STATUS.IN_PROGRESS,
+        priority: "HIGH",
+        type: "SYLLABUS_UPDATE",
+        deadline: new Date(Date.now() + 86400000 * 6).toISOString(),
+        createdAt: new Date().toISOString(),
+        account: { accountId: "creator-1", fullName: "Nguyen Van A (Creator)" },
+        targetId: "syl-mock-1",
+      } as any,
+    ];
+  };
+
   const filteredTasks = useMemo(() => {
-    if (!selectedAction) return tasks;
-    return tasks.filter((t) => (t.action || "OTHER") === selectedAction);
+    let baseTasks = tasks;
+    if (selectedAction === "CREATE") {
+      // Inject mock data for demonstration as requested
+      baseTasks = [
+        ...getMockTasks(),
+        ...tasks.filter((t) => t.action === "CREATE"),
+      ];
+    } else if (selectedAction) {
+      baseTasks = tasks.filter((t) => (t.action || "OTHER") === selectedAction);
+    }
+    return baseTasks;
   }, [tasks, selectedAction]);
+
+  const groupedTasks = useMemo(() => {
+    const taskMap: Record<string, TaskItem & { children?: TaskItem[] }> = {};
+    const roots: (TaskItem & { children?: TaskItem[] })[] = [];
+
+    // First pass: initialize map
+    filteredTasks.forEach((task) => {
+      taskMap[task.taskId] = { ...task, children: [] };
+    });
+
+    // Second pass: build hierarchy
+    filteredTasks.forEach((task) => {
+      if (task.rootTaskId && taskMap[task.rootTaskId]) {
+        taskMap[task.rootTaskId].children?.push(taskMap[task.taskId]);
+      } else {
+        // If no parent or parent not in filtered list, it's a root
+        roots.push(taskMap[task.taskId]);
+      }
+    });
+
+    return roots;
+  }, [filteredTasks]);
 
   const saveTaskMutation = useMutation({
     mutationFn: async ({
@@ -754,6 +894,27 @@ export function TaskList({ sprintId }: TaskListProps) {
     },
     onError: (error: any) => {
       showToast(error.message || "Failed to complete task", "error");
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({
+      taskId,
+      status,
+    }: {
+      taskId: string;
+      status: TaskStatus;
+    }) => {
+      return TaskService.updateTaskStatus(taskId, status);
+    },
+    onSuccess: async () => {
+      showToast("Status updated successfully", "success");
+      await queryClient.invalidateQueries({
+        queryKey: ["assignments", sprintId],
+      });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to update status", "error");
     },
   });
 
@@ -940,13 +1101,13 @@ export function TaskList({ sprintId }: TaskListProps) {
       )}
 
       <div className="space-y-4">
-        {filteredTasks.length === 0 ? (
+        {groupedTasks.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-base font-medium text-zinc-500">
             No tasks found for{" "}
             {selectedAction?.replace(/_/g, " ") || "this action"}.
           </div>
         ) : (
-          filteredTasks.map((task) => {
+          groupedTasks.map((task) => {
             const originalIndex = tasks.findIndex(
               (t) => t.taskId === task.taskId,
             );
@@ -955,7 +1116,7 @@ export function TaskList({ sprintId }: TaskListProps) {
                 key={task.taskId}
                 task={task}
                 pdcmAccounts={pdcmAccounts}
-                syllabusOptions={syllabiByTaskId[task.taskId]}
+                syllabusOptions={syllabiByTaskId[task.taskId] || []}
                 onSave={handleSaveTask}
                 isSaving={
                   saveTaskMutation.isPending &&
@@ -964,7 +1125,9 @@ export function TaskList({ sprintId }: TaskListProps) {
                 saveError={saveErrorByTaskId[task.taskId]}
                 saveSuccess={saveSuccessByTaskId[task.taskId]}
                 isSyllabusLoading={
-                  syllabiQueries[originalIndex]?.isLoading ?? false
+                  originalIndex !== -1
+                    ? (syllabiQueries[originalIndex]?.isLoading ?? false)
+                    : false
                 }
                 selection={selectionByTaskId[task.taskId] || {}}
                 onSelectionChange={(field, value) =>
@@ -981,6 +1144,14 @@ export function TaskList({ sprintId }: TaskListProps) {
                   setIsSourcesModalOpen(true);
                 }}
                 sprintDeadline={sprint?.endDate}
+                onUpdateStatus={(taskId, status) =>
+                  updateStatusMutation.mutate({ taskId, status })
+                }
+                isUpdatingStatus={
+                  updateStatusMutation.isPending &&
+                  updateStatusMutation.variables?.taskId === task.taskId
+                }
+                children={task.children}
               />
             );
           })
