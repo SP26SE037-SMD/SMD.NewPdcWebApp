@@ -146,6 +146,12 @@ export const RequestService = {
         });
     },
 
+    createRequestV2: async (payload: { title: string; content: string; type: string; targetId: string; receivedById?: string | null }) => {
+        return apiClient.post<any>("/api/requests", payload, {
+            credentials: "include",
+        });
+    },
+
     updateRequest: (id: string, data: RequestUpdatePayload) => {
         return apiClient.put<RequestDetailResponse>(`/api/requests/${id}`, data);
     },

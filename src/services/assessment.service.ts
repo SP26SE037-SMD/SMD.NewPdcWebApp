@@ -15,7 +15,6 @@ export interface AssessmentItem {
     knowledgeSkill: string;
     gradingGuide: string;
     note: string;
-    status: string;
     cloIds?: string[];
     createdAt?: string;
 }
@@ -44,11 +43,8 @@ export interface PaginatedResponse<T> {
 }
 
 export class AssessmentService {
-    static async getAssessmentsBySyllabusId(syllabusId: string, status?: string) {
+    static async getAssessmentsBySyllabusId(syllabusId: string) {
         let url = `/api/assessments/syllabus/${syllabusId}`;
-        if (status) {
-            url += `?status=${status}`;
-        }
         console.log("ASSESSMENT SERVICE GET URL:", url);
         let response: any;
         try {

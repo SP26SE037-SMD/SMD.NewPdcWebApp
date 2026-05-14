@@ -38,7 +38,7 @@ export default function PDCMReviewMaterialsPage({ params }: { params: Promise<{ 
 
     const { data: materialsRes, isLoading: isMaterialsLoading } = useQuery({
         queryKey: ['pdcm-materials', syllabusId],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId || "", 'PENDING_REVIEW'),
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId || ""),
         enabled: !!syllabusId,
         staleTime: 5 * 60 * 1000,
     });

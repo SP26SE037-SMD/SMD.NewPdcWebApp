@@ -37,7 +37,6 @@ type Material = {
     uploadedAt: string;
     id: number;
     version: number;
-    status: string;
     syllabusId: string;
 };
 
@@ -57,7 +56,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
 
     const { data: materialsData, isLoading: isMaterialsLoading } = useQuery({
         queryKey: ['pdcm-materials', syllabusId, 'DRAFT'],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'DRAFT'),
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!),
         enabled: !!syllabusId,
         staleTime: 0,
         refetchOnMount: 'always'

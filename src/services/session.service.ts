@@ -51,11 +51,8 @@ export interface SessionItem {
 
 export class SessionService {
     // New Detailed Endpoints
-    static async getDetailedSessions(syllabusId: string, page = 0, size = 100, status?: string) {
+    static async getDetailedSessions(syllabusId: string, page = 0, size = 100) {
         let url = `/api/session-material-blocks?syllabusId=${syllabusId}&page=${page}&size=${size}`;
-        if (status) {
-            url += `&status=${status}`;
-        }
         let response: any;
         try {
             response = await apiClient.get<any>(url);
@@ -92,8 +89,8 @@ export class SessionService {
         return apiClient.post('/api/sessions/bulk', payload);
     }
 
-    static async getSessions(syllabusId: string, status = 'DRAFT', page = 0, size = 100) {
-        return apiClient.get<any>(`/api/sessions?syllabusId=${syllabusId}&status=${status}&page=${page}&size=${size}&sort=sessionNumber,asc`);
+    static async getSessions(syllabusId: string, page = 0, size = 100) {
+        return apiClient.get<any>(`/api/sessions?syllabusId=${syllabusId}&page=${page}&size=${size}&sort=sessionNumber,asc`);
     }
 
     static async createSession(payload: any) {

@@ -37,7 +37,6 @@ type Material = {
     uploadedAt: string;
     id: number;
     version: number;
-    status: string;
     syllabusId: string;
 };
 
@@ -60,7 +59,7 @@ export default function RevisionMaterialsPage({ params }: { params: Promise<{ ta
 
     const { data: materialsData, isLoading: isMaterialsLoading } = useQuery({
         queryKey: ['pdcm-materials', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'REVISION_REQUESTED'),
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!),
         enabled: !!syllabusId,
     });
 

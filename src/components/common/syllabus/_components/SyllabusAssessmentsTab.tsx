@@ -190,7 +190,7 @@ export function SyllabusAssessmentsTab({
                   const effectiveStatus =
                     groupStatus && groupStatus !== "PENDING"
                       ? groupStatus
-                      : assessment.status;
+                      : "PENDING_REVIEW";
                   const style = getIndividualStatusStyle(effectiveStatus);
                   return (
                     <span
