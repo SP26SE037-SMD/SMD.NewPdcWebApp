@@ -225,13 +225,15 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 await TaskService.updateTaskStatus(taskId, 'DONE');
 
                                 // 3. Create a Review Request
-                                await RequestService.createRequestV2({
+                                const requestPayload = {
                                     title: "Review Syllabus",
                                     content: "The syllabus has been fully configured and is submitted for HoPDC review.",
                                     type: "REVIEW",
                                     targetId: syllabusId,
                                     receivedById: taskData?.createdBy?.accountId || null
-                                });
+                                };
+                                console.log("=== CREATE REQUEST PAYLOAD ===", requestPayload);
+                                await RequestService.createRequestV2(requestPayload);
 
                                 showToast("Syllabus configuration submitted to HoPDC successfully!", "success");
                                 router.push('/dashboard/pdcm');
@@ -257,7 +259,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                             <>
                                 <div className="absolute inset-0 bg-primary-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                                 <Send size={22} className="relative group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                <span className="relative">Submit to HoPDC</span>
+                                <span className="relative">Submit</span>
                                 <ArrowRight size={20} className="relative opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                             </>
                         )}

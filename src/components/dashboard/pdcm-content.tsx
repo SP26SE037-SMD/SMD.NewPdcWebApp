@@ -195,6 +195,7 @@ const DevelopCard = ({
         ) : (
           <button
             onClick={() => {
+              console.log("=== TASK PAYLOAD ON DO TASK ===", task);
               const basePath =
                 status === "REVISION_REQUESTED" ? "revisions" : "tasks";
               router.push(
