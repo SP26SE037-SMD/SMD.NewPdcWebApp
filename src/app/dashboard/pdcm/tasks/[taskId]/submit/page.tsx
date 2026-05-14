@@ -16,6 +16,7 @@ import { SessionService } from '@/services/session.service';
 import { MaterialService } from '@/services/material.service';
 import { AssessmentService } from '@/services/assessment.service';
 import { SyllabusService } from '@/services/syllabus.service';
+import { RequestService } from '@/services/request.service';
 import { useToast } from '@/components/ui/Toast';
 
 export default function SubmitPage({ params }: { params: Promise<{ taskId: string }> }) {
@@ -46,7 +47,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     // Fetch Materials to ensure count is accurate
     const { data: materialsRes } = useQuery({
         queryKey: ['pdcm-materials', syllabusId, 'DRAFT'],
-        queryFn: () => (syllabusId ? MaterialService.getMaterialsBySyllabusId(syllabusId, 'DRAFT') : null),
+        queryFn: () => (syllabusId ? MaterialService.getMaterialsBySyllabusId(syllabusId) : null),
         enabled: !!syllabusId,
         staleTime: 0,
         refetchOnMount: 'always'
@@ -217,17 +218,20 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                             
                             setIsSubmitting(true);
                             try {
-                                // 1. Update Sessions Status
-                                await SessionService.updateSyllabusSessionsStatus(syllabusId, 'PENDING_REVIEW');
-                                
-                                // 2. Update Assessments Status
-                                await AssessmentService.updateSyllabusAssessmentsStatus(syllabusId, 'PENDING_REVIEW');
-                                
-                                // 3. Update Materials Status
-                                await MaterialService.updateSyllabusMaterialsStatus(syllabusId, 'PENDING_REVIEW');
-                                
-                                // 4. Update Syllabus Status
+                                // 1. Update Syllabus Status
                                 await SyllabusService.updateSyllabusStatus(syllabusId, accountId, 'PENDING_REVIEW');
+
+                                // 2. Update Task Status to DONE
+                                await TaskService.updateTaskStatus(taskId, 'DONE');
+
+                                // 3. Create a Review Request
+                                await RequestService.createRequestV2({
+                                    title: "Review Syllabus",
+                                    content: "The syllabus has been fully configured and is submitted for HoPDC review.",
+                                    type: "REVIEW",
+                                    targetId: syllabusId,
+                                    receivedById: taskData?.createdBy?.accountId || null
+                                });
 
                                 showToast("Syllabus configuration submitted to HoPDC successfully!", "success");
                                 router.push('/dashboard/pdcm');

@@ -10,14 +10,11 @@ export async function GET(
 ) {
     try {
         const { syllabusId } = await params;
-        const url = new URL(request.url);
-        const status = url.searchParams.get("status");
         
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
-        const queryParams = status ? `?status=${status}` : "";
 
-        const response = await fetch(`${API_BASE_URL}/api/assessments/syllabus/${syllabusId}${queryParams}`, {
+        const response = await fetch(`${API_BASE_URL}/api/assessments/syllabus/${syllabusId}`, {
             headers: {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {}),

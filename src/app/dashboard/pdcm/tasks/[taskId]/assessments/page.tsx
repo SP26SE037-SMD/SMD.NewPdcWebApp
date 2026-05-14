@@ -296,8 +296,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 questionType: "",
                 knowledgeSkill: "",
                 gradingGuide: "",
-                note: "",
-                status: "DRAFT"
+                note: ""
             }
         }));
         setExpandedIndex(newIndex);
@@ -384,7 +383,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                         assessment: {
                                             part: (assessments.length > 0 ? Math.max(...assessments.map(a => a.part || 0)) : 0) + 1,
                                             weight: 0,
-                                            status: 'DRAFT',
                                             syllabusId: syllabusId!,
                                             categoryId: '',
                                             typeId: '',
@@ -1375,7 +1373,6 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                                 knowledgeSkill: assessment.knowledgeSkill || "",
                                                 gradingGuide: assessment.gradingGuide || "",
                                                 note: assessment.note || "",
-                                                status: assessment.status || "DRAFT",
                                             };
                                             console.log("VALIDATE SINGLE ASSESSMENT PAYLOAD:", [validatePayload]);
                                             const res = await AssessmentService.validateAssessments(syllabusId, [validatePayload]) as any;

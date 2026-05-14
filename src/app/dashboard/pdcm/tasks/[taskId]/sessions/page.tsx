@@ -71,7 +71,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, error: sessionError, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId],
-        queryFn: () => syllabusId ? SessionService.getSessions(syllabusId, 'DRAFT', 0, 100) : Promise.reject('No syllabusId'),
+        queryFn: () => syllabusId ? SessionService.getSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
         enabled: !!syllabusId
     });
 
@@ -88,7 +88,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const { data: materialsRes } = useQuery({
         queryKey: ['materials', syllabusId, 'DRAFT'],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'DRAFT'),
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!),
         enabled: !!syllabusId,
     });
     const materials = Array.isArray(materialsRes?.data) ? materialsRes.data :

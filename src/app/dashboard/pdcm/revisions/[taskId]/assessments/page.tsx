@@ -55,7 +55,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
     const { data: assessmentDataRes, isLoading: isAssessmentLoading, refetch: refetchAssessments } = useQuery({
         queryKey: ['assessments', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => (syllabusId ? AssessmentService.getAssessmentsBySyllabusId(syllabusId, 'REVISION_REQUESTED') : null),
+        queryFn: () => (syllabusId ? AssessmentService.getAssessmentsBySyllabusId(syllabusId) : null),
         enabled: !!syllabusId,
     });
 
@@ -119,7 +119,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 typeId: defaultType?.typeId || "",
                 typeName: defaultType?.typeName || "",
                 part: 1, weight: 0, completionCriteria: "", duration: 0,
-                questionType: "", knowledgeSkill: "", gradingGuide: "", note: "", status: "DRAFT"
+                questionType: "", knowledgeSkill: "", gradingGuide: "", note: ""
             }
         }));
         setExpandedIndex(assessments.length);

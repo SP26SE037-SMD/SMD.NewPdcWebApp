@@ -49,7 +49,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100, 'REVISION_REQUESTED') : Promise.reject('No syllabusId'),
+        queryFn: () => syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
         enabled: !!syllabusId
     });
 
@@ -66,7 +66,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
     const { data: materialsRes } = useQuery({
         queryKey: ['materials', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!, 'REVISION_REQUESTED'),
+        queryFn: () => MaterialService.getMaterialsBySyllabusId(syllabusId!),
         enabled: !!syllabusId,
     });
     const materials = Array.isArray(materialsRes?.data) ? materialsRes.data :

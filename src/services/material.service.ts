@@ -7,20 +7,15 @@ export interface MaterialItem {
   uploadedAt: string;
   id: number;
   version: number;
-  status: string;
   syllabusId: string;
 }
 
 export const MaterialService = {
-  getMaterialsBySyllabusId: async (syllabusId: string, status?: string) => {
-    const queryParams = new URLSearchParams();
-    if (status) queryParams.append("status", status);
-
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+  getMaterialsBySyllabusId: async (syllabusId: string) => {
     let response: any;
     try {
       response = await apiClient.get<{ status: number; message: string; data: MaterialItem[] }>(
-        `/api/materials/syllabus/${syllabusId}${queryString}`
+        `/api/materials/syllabus/${syllabusId}`
       );
     } catch (err) {
       console.warn("API Call for materials failed, using mock container", err);
