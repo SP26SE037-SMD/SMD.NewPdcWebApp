@@ -121,20 +121,22 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
         <div className="space-y-0 relative">
 
             {/* ── Header ── */}
-            <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
+            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-[#2d342b] tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                    <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                         Materials
                     </h1>
-                    <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
-                        <span>{materials.length} items total</span>
-                        <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
+                    <p className="text-xs font-semibold flex items-center gap-2" style={{ color: C.onSurfaceVariant }}>
+                        <span>{materials.length} item{materials.length !== 1 ? 's' : ''} total</span>
+                        <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
+                        <span>Drag and drop available</span>
                     </p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-3">
                     <button
                         onClick={() => setIsImportModalOpen(true)}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
+                        className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border"
+                        style={{ borderColor: `${C.primary}40`, color: C.primary, background: `${C.primary}08` }}
                     >
                         <span className="material-symbols-outlined text-[18px]">upload_file</span>
                         Import File
@@ -142,7 +144,8 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
 
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white bg-[#00966d] hover:bg-[#00845f]"
+                        className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white"
+                        style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}40` }}
                     >
                         <Plus size={18} />
                         New Material
@@ -150,36 +153,49 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                 </div>
             </div>
 
-
             {/* ── Content Area ── */}
-            <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pb-10">
                 <div className="max-w-6xl mx-auto">
 
                     {materials.length === 0 ? (
-                        <div className="text-center py-24 rounded-2xl" style={{ background: '#ffffff', border: '2px dashed #adb4a8' }}>
-                            <div className="p-4 rounded-full bg-slate-50 w-fit mx-auto mb-4 border border-slate-100 text-slate-300">
-                                <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>auto_stories</span>
+                        <div className="text-center py-24 rounded-[32px] bg-white transition-all hover:shadow-sm" style={{ border: `2px dashed ${C.outlineVariant}40` }}>
+                            <div className="p-5 rounded-full w-fit mx-auto mb-5" style={{ background: `${C.primaryContainer}4d` }}>
+                                <span className="material-symbols-outlined text-[48px]" style={{ color: C.primary }}>auto_stories</span>
                             </div>
-                            <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
+                            <h3 className="text-lg font-bold mb-2" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
+                            <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>Get started by creating a new material document or importing an existing file.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {materials.map(material => (
                                 <div key={material.materialId}
-                                    className="rounded-xl p-4 group transition-all hover:shadow-md"
-                                    style={{ background: C.surfaceContainerLowest, border: `1px solid ${C.outlineVariant}1a` }}
+                                    className="relative bg-white rounded-[24px] p-6 group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                                    style={{ border: `1px solid ${C.outlineVariant}33` }}
                                 >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: C.primary }}>
-                                            {material.materialType || 'Document'}
-                                        </span>
+                                    <div className="flex items-start justify-between mb-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: `${C.primary}1a`, color: C.primary }}>
+                                                <span className="material-symbols-outlined text-[22px]">
+                                                    {material.materialType === 'PDF' ? 'picture_as_pdf' : material.materialType === 'VIDEO' ? 'smart_display' : 'description'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: C.primary }}>
+                                                    {material.materialType || 'Document'}
+                                                </span>
+                                                <div className="flex items-center gap-1 mt-0.5" style={{ color: C.onSurfaceVariant }}>
+                                                    <span className="material-symbols-outlined text-[12px]">schedule</span>
+                                                    <span className="text-[10px] font-semibold tracking-wide">{new Date(material.uploadedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div className="relative">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === material.materialId ? null : material.materialId); }}
-                                                className="p-1 rounded-lg hover:bg-[#dee5d8] transition-colors"
+                                                className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors"
                                                 style={{ color: C.onSurfaceVariant }}
                                             >
-                                                <MoreVertical size={16} />
+                                                <MoreVertical size={18} />
                                             </button>
 
                                             <AnimatePresence>
@@ -190,16 +206,16 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                                                             initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                                             animate={{ opacity: 1, scale: 1, y: 0 }}
                                                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                            className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-[#dee1d8] py-2 z-20"
+                                                            className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-zinc-100 py-2 z-20"
                                                         >
-                                                            <button onClick={() => openModal(material, 'RENAME')} className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-[#f1f5eb] transition-colors" style={{ color: '#2d342b' }}>
-                                                                <Edit2 size={14} /> Rename
+                                                            <button onClick={() => openModal(material, 'RENAME')} className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-3 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                <Edit2 size={16} /> Rename
                                                             </button>
-                                                            <button onClick={() => openModal(material, 'TYPE')} className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-[#f1f5eb] transition-colors" style={{ color: '#2d342b' }}>
-                                                                <FileType size={14} /> Change Type
+                                                            <button onClick={() => openModal(material, 'TYPE')} className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-3 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                <FileType size={16} /> Change Type
                                                             </button>
-                                                            <button onClick={() => openModal(material, 'ORDER')} className="w-full px-4 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-[#f1f5eb] transition-colors" style={{ color: '#2d342b' }}>
-                                                                <ListOrdered size={14} /> Change Order
+                                                            <button onClick={() => openModal(material, 'ORDER')} className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-3 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                <ListOrdered size={16} /> Change Order
                                                             </button>
                                                         </motion.div>
                                                     </>
@@ -207,28 +223,25 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                                             </AnimatePresence>
                                         </div>
                                     </div>
-                                    <h3 className="text-sm font-bold mb-3 line-clamp-2" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                    <h3 className="text-[17px] font-extrabold mb-6 line-clamp-2 leading-snug" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                         {material.title}
                                     </h3>
-                                    <div className="flex items-center gap-1.5 mb-3" style={{ color: C.onSurfaceVariant }}>
-                                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>schedule</span>
-                                        <span className="text-[10px]">{new Date(material.uploadedAt).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex gap-2">
+                                    
+                                    <div className="flex gap-3">
                                         <button
                                             onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-primary/5 active:scale-95"
-                                            style={{ border: `1.5px solid ${C.primary}`, color: C.primary }}
+                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                            style={{ background: `${C.primaryContainer}80`, color: C.primary }}
                                         >
-                                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>visibility</span>
+                                            <span className="material-symbols-outlined text-[18px]">visibility</span>
                                             View
                                         </button>
                                         <button
                                             onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-primary/5 active:scale-95 text-on-surface-variant/80"
-                                            style={{ border: `1.5px solid ${C.outlineVariant}4d` }}
+                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-zinc-100 hover:scale-[1.02] active:scale-[0.98]"
+                                            style={{ border: `1px solid ${C.outlineVariant}4d`, color: C.onSurfaceVariant }}
                                         >
-                                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                                            <span className="material-symbols-outlined text-[18px]">edit</span>
                                             Edit
                                         </button>
                                     </div>

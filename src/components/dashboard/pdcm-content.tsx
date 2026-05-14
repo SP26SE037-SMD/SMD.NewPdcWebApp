@@ -523,12 +523,21 @@ export default function PDCMDashboardContent({
   });
 
   const acceptTaskMutation = useMutation({
-    mutationFn: (task: any) => {
+    mutationFn: async (task: any) => {
       if (navTab === "develop") {
-        return TaskService.updateTaskStatus(
+        const result = await TaskService.updateTaskStatus(
           task.taskId,
           TASK_STATUS.IN_PROGRESS,
         );
+        const sId = task.syllabus?.syllabusId || task.syllabusId || task.targetId || task.target_id;
+        if (sId && user?.accountId) {
+          try {
+            await SyllabusService.updateSyllabusStatus(sId, user.accountId, 'IN_PROGRESS');
+          } catch (e) {
+            console.warn("Could not update syllabus status to IN_PROGRESS", e);
+          }
+        }
+        return result;
       } else {
         return ReviewTaskService.updateReviewTaskAcceptance(
           task.reviewId || task.taskId,

@@ -1044,12 +1044,28 @@ function NewMaterialPageInner() {
                 console.warn("Failed to fetch existing materials for ID calculation, defaulting to 0", err);
             }
 
-            const materialRes = await MaterialService.createMaterial({
-                title,
-                materialType,
-                id: nextId,
-                syllabusId: syllabusId as string
-            });
+            let materialRes;
+            try {
+                materialRes = await MaterialService.createMaterial({
+                    title,
+                    materialType,
+                    id: nextId,
+                    syllabusId: syllabusId as string
+                });
+            } catch (createErr: any) {
+                if (createErr?.message?.includes("IN_PROGRESS or REVISION_REQUESTED") && user?.accountId) {
+                    console.log("Auto-fixing syllabus status to IN_PROGRESS...");
+                    await SyllabusService.updateSyllabusStatus(syllabusId as string, user.accountId, 'IN_PROGRESS');
+                    materialRes = await MaterialService.createMaterial({
+                        title,
+                        materialType,
+                        id: nextId,
+                        syllabusId: syllabusId as string
+                    });
+                } else {
+                    throw createErr;
+                }
+            }
             const theNewId = materialRes?.data?.materialId || materialRes?.data?.id;
 
             // Upload base64 images to Cloudinary before saving
