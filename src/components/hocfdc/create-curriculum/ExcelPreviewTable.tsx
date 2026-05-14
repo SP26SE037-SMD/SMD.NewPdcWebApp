@@ -158,26 +158,30 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                     {Array.from({ length: Math.max(...currentSheetData.map(r => r.length)) }).map((_, colIndex) => {
                       const cellValue = row[colIndex];
                       
-                      // Check if this specific cell should be purple (Original logic)
-                      const isPurpleCell = (activeSheet === "Major" && rowIndex === 3 && (colIndex === 0 || colIndex === 1)) ||
-                                           (activeSheet === "Curriculum" && rowIndex === 3 && (colIndex === 0 || colIndex === 1 || colIndex === 2));
-
-                      // New logic for green cells: A1, B1, C1, D1, A4, B4, C4, D4
-                      const isGreenCell = 
-                        (rowIndex === 0 && (colIndex === 0 || colIndex === 1 || colIndex === 2 || colIndex === 3)) || // A1, B1, C1, D1
-                        (rowIndex === 3 && (colIndex === 0 || colIndex === 1 || colIndex === 2 || colIndex === 3)); // A4, B4, C4, D4
+                      // Specific highlighting logic per user request
+                      let isHighlighted = false;
+                      
+                      if (activeSheet === "Major") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 3) || (rowIndex === 3 && colIndex < 2);
+                      } else if (activeSheet === "Curriculum") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 5) || (rowIndex === 3 && colIndex < 3);
+                      } else if (activeSheet === "Subject") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 15);
+                      } else if (activeSheet === "Group") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 4);
+                      } else if (activeSheet === "Semester Mapping") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 4);
+                      } else if (activeSheet === "Source") {
+                        isHighlighted = (rowIndex === 0 && colIndex < 7);
+                      }
 
                       return (
                         <td 
                           key={colIndex} 
                           className={`border border-outline/10 px-3 py-2 relative text-xs align-top ${
-                            isHeaderRow || isPurpleCell || isGreenCell ? 'text-center' : ''
+                            isHighlighted ? 'bg-emerald-100 font-bold text-emerald-800 text-center' : 'text-left font-normal text-on-surface'
                           } ${
-                            isPurpleCell ? 'bg-[#EADEF7] font-bold text-[#4B0082]' : ''
-                          } ${
-                            isGreenCell ? 'bg-emerald-100 font-bold text-emerald-800' : ''
-                          } ${
-                            isErrorRow ? 'text-red-700' : 'text-on-surface'
+                            isErrorRow ? 'text-red-700' : ''
                           }`}
                           title={cellValue !== undefined && cellValue !== null ? String(cellValue) : ""}
                         >

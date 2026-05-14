@@ -142,21 +142,21 @@ const SimulatedExtractionProgress = ({ startTime }: { startTime?: number }) => {
   );
 };
 
-const CourseMappingItem = ({ 
-  item, 
+const CourseMappingItem = ({
+  item,
   onSave,
-  onDelete
-}: { 
-  item: string; 
+  onDelete,
+}: {
+  item: string;
   onSave: (val: string) => void;
   onDelete: () => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const cleanItem = item.replace(/^[-•]\s*/, "").trim();
   const match = cleanItem.match(/(.+)\s*\(([^)]+)\)/);
-  
+
   const initialName = match ? match[1].trim() : cleanItem;
-  const rawParts = match ? match[2].split('|') : [];
+  const rawParts = match ? match[2].split("|") : [];
   const parts = [...rawParts];
   while (parts.length < 6) parts.push("?");
 
@@ -167,7 +167,7 @@ const CourseMappingItem = ({
     tc: parts[2],
     lt: parts[3],
     th: parts[4],
-    self: parts[5]
+    self: parts[5],
   });
 
   // Sync state when item prop changes (crucial for deletion/shifting)
@@ -175,10 +175,10 @@ const CourseMappingItem = ({
     const clean = item.replace(/^[-•]\s*/, "").trim();
     const m = clean.match(/(.+)\s*\(([^)]+)\)/);
     const initName = m ? m[1].trim() : clean;
-    const rParts = m ? m[2].split('|') : [];
+    const rParts = m ? m[2].split("|") : [];
     const pts = [...rParts];
     while (pts.length < 6) pts.push("?");
-    
+
     setFormData({
       name: initName,
       code: pts[0],
@@ -186,7 +186,7 @@ const CourseMappingItem = ({
       tc: pts[2],
       lt: pts[3],
       th: pts[4],
-      self: pts[5]
+      self: pts[5],
     });
   }, [item]);
 
@@ -201,37 +201,57 @@ const CourseMappingItem = ({
       <div className="flex flex-col gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl shadow-inner animate-in zoom-in-95 duration-200">
         <div className="grid grid-cols-4 gap-2">
           <div className="col-span-3">
-            <label className="text-[9px] font-bold text-primary/60 uppercase">Subject Name</label>
-            <input 
+            <label className="text-[9px] font-bold text-primary/60 uppercase">
+              Subject Name
+            </label>
+            <input
               className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-primary outline-none"
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
             />
           </div>
           <div>
-            <label className="text-[9px] font-bold text-primary/60 uppercase">Code</label>
-            <input 
+            <label className="text-[9px] font-bold text-primary/60 uppercase">
+              Code
+            </label>
+            <input
               className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-sm focus:border-primary outline-none"
               value={formData.code}
-              onChange={e => setFormData({...formData, code: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, code: e.target.value })
+              }
             />
           </div>
         </div>
         <div className="grid grid-cols-5 gap-2">
           {["sem", "tc", "lt", "th", "self"].map((field) => (
             <div key={field}>
-              <label className="text-[9px] font-bold text-primary/60 uppercase">{field === "self" ? "Self" : field}</label>
-              <input 
+              <label className="text-[9px] font-bold text-primary/60 uppercase">
+                {field === "self" ? "Self" : field}
+              </label>
+              <input
                 className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-primary outline-none"
                 value={(formData as any)[field]}
-                onChange={e => setFormData({...formData, [field]: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, [field]: e.target.value })
+                }
               />
             </div>
           ))}
         </div>
         <div className="flex justify-end gap-2 mt-1">
-          <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition">Cancel</button>
-          <button onClick={handleLocalSave} className="px-4 py-1 text-xs font-bold bg-primary text-white rounded-lg shadow-md hover:bg-primary-dark transition flex items-center gap-1">
+          <button
+            onClick={() => setIsEditing(false)}
+            className="px-3 py-1 text-xs font-bold text-on-surface-variant hover:bg-black/5 rounded-lg transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleLocalSave}
+            className="px-4 py-1 text-xs font-bold bg-primary text-white rounded-lg shadow-md hover:bg-primary-dark transition flex items-center gap-1"
+          >
             <Save className="w-3 h-3" /> Save
           </button>
         </div>
@@ -242,17 +262,19 @@ const CourseMappingItem = ({
   return (
     <div className="flex flex-col gap-1.5 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-primary/30 transition-all group/item relative">
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-        <button 
+        <button
           onClick={() => setIsEditing(true)}
           className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-colors"
           title="Edit subject"
         >
           <Edit2 className="w-3.5 h-3.5" />
         </button>
-        <button 
+        <button
           onClick={(e) => {
             e.stopPropagation();
-            if (window.confirm("Are you sure you want to remove this subject?")) {
+            if (
+              window.confirm("Are you sure you want to remove this subject?")
+            ) {
               onDelete();
             }
           }}
@@ -262,30 +284,38 @@ const CourseMappingItem = ({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-      
+
       <div className="flex items-start justify-between gap-2 pr-8">
-        <span className="font-bold text-sm text-on-surface leading-tight flex-1">{formData.name}</span>
+        <span className="font-bold text-sm text-on-surface leading-tight flex-1">
+          {formData.name}
+        </span>
         <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
           {formData.code}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">Semester</span>
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">
+            Semester
+          </span>
           <span className="text-xs font-bold text-primary">{formData.sem}</span>
         </div>
         <div className="flex items-center gap-1.5 border-l border-outline/10 pl-4">
-          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">Credits</span>
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">
+            Credits
+          </span>
           <span className="text-xs font-bold text-primary">{formData.tc}</span>
         </div>
         <div className="flex items-center gap-1.5 border-l border-outline/10 pl-4">
-          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">T/P/S</span>
+          <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase">
+            T/P/S
+          </span>
           <div className="flex items-center gap-1 text-xs font-medium text-on-surface-variant">
-             <span className="font-bold text-primary">{formData.lt}</span>
-             <span className="opacity-30">/</span>
-             <span className="font-bold text-primary">{formData.th}</span>
-             <span className="opacity-30">/</span>
-             <span className="font-bold text-primary">{formData.self}</span>
+            <span className="font-bold text-primary">{formData.lt}</span>
+            <span className="opacity-30">/</span>
+            <span className="font-bold text-primary">{formData.th}</span>
+            <span className="opacity-30">/</span>
+            <span className="font-bold text-primary">{formData.self}</span>
           </div>
         </div>
       </div>
@@ -293,21 +323,21 @@ const CourseMappingItem = ({
   );
 };
 
-const SourceDocumentItem = ({ 
-  item, 
+const SourceDocumentItem = ({
+  item,
   onSave,
-  onDelete
-}: { 
-  item: string; 
+  onDelete,
+}: {
+  item: string;
   onSave: (val: string) => void;
   onDelete: () => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const cleanItem = item.replace(/^[-•]\s*/, "").trim();
   const match = cleanItem.match(/(.+)\s*\(([^)]+)\)/);
-  
+
   const initialTitle = match ? match[1].trim() : cleanItem;
-  const rawParts = match ? match[2].split('|') : [];
+  const rawParts = match ? match[2].split("|") : [];
   const parts = [...rawParts];
   while (parts.length < 5) parts.push("?");
 
@@ -317,7 +347,7 @@ const SourceDocumentItem = ({
     sub: parts[1] || "?",
     author: parts[2] || "x",
     publisher: parts[3] || "x",
-    year: parts[4] || "x"
+    year: parts[4] || "x",
   });
 
   // Sync state when item prop changes (crucial for deletion/shifting)
@@ -325,17 +355,17 @@ const SourceDocumentItem = ({
     const clean = item.replace(/^[-•]\s*/, "").trim();
     const m = clean.match(/(.+)\s*\(([^)]+)\)/);
     const initTitle = m ? m[1].trim() : clean;
-    const rParts = m ? m[2].split('|') : [];
+    const rParts = m ? m[2].split("|") : [];
     const pts = [...rParts];
     while (pts.length < 5) pts.push("?");
-    
+
     setFormData({
       title: initTitle,
       src: pts[0] || "?",
       sub: pts[1] || "?",
       author: pts[2] || "x",
       publisher: pts[3] || "x",
-      year: pts[4] || "x"
+      year: pts[4] || "x",
     });
   }, [item]);
 
@@ -350,64 +380,94 @@ const SourceDocumentItem = ({
       <div className="flex flex-col gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl shadow-inner animate-in zoom-in-95 duration-200">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Source Code</label>
-            <input 
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+              Source Code
+            </label>
+            <input
               className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-bold text-emerald-700 focus:border-emerald-600 outline-none shadow-sm"
               value={formData.src}
-              onChange={e => setFormData({...formData, src: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, src: e.target.value })
+              }
               placeholder="e.g. MEDICINE_BK1"
             />
           </div>
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Subject Code</label>
-            <input 
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+              Subject Code
+            </label>
+            <input
               className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-bold text-primary focus:border-emerald-600 outline-none shadow-sm"
               value={formData.sub}
-              onChange={e => setFormData({...formData, sub: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, sub: e.target.value })
+              }
               placeholder="e.g. ENG001"
             />
           </div>
         </div>
         <div>
-          <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Source Name (Document Title)</label>
-          <textarea 
+          <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+            Source Name (Document Title)
+          </label>
+          <textarea
             className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-sm font-bold text-on-surface focus:border-emerald-600 outline-none min-h-[60px] shadow-sm"
             value={formData.title}
-            onChange={e => setFormData({...formData, title: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             placeholder="Enter document title..."
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Author</label>
-            <input 
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+              Author
+            </label>
+            <input
               className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
               value={formData.author}
-              onChange={e => setFormData({...formData, author: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, author: e.target.value })
+              }
               placeholder="Author name"
             />
           </div>
           <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">Publisher & Year</label>
+            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+              Publisher & Year
+            </label>
             <div className="flex gap-2">
-              <input 
+              <input
                 className="flex-1 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.publisher}
-                onChange={e => setFormData({...formData, publisher: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, publisher: e.target.value })
+                }
                 placeholder="Publisher"
               />
-              <input 
+              <input
                 className="w-20 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-black text-center focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.year}
-                onChange={e => setFormData({...formData, year: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, year: e.target.value })
+                }
                 placeholder="2024"
               />
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-1 pt-2 border-t border-emerald-200/50">
-          <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-xs font-bold text-emerald-700/60 hover:bg-emerald-100 rounded-lg transition uppercase tracking-wider">Cancel</button>
-          <button onClick={handleLocalSave} className="px-5 py-1.5 text-xs font-black bg-emerald-600 text-white rounded-lg shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 uppercase tracking-widest">
+          <button
+            onClick={() => setIsEditing(false)}
+            className="px-3 py-1.5 text-xs font-bold text-emerald-700/60 hover:bg-emerald-100 rounded-lg transition uppercase tracking-wider"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleLocalSave}
+            className="px-5 py-1.5 text-xs font-black bg-emerald-600 text-white rounded-lg shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 uppercase tracking-widest"
+          >
             <Save className="w-3.5 h-3.5" /> Save Changes
           </button>
         </div>
@@ -418,17 +478,19 @@ const SourceDocumentItem = ({
   return (
     <div className="flex flex-col gap-2 p-3 bg-white border border-outline/10 rounded-xl shadow-sm hover:border-emerald-600/30 transition-all group/item relative">
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-        <button 
+        <button
           onClick={() => setIsEditing(true)}
           className="p-1.5 rounded-lg hover:bg-emerald-600/10 text-emerald-600 transition-colors"
           title="Edit document"
         >
           <Edit2 className="w-3.5 h-3.5" />
         </button>
-        <button 
+        <button
           onClick={(e) => {
             e.stopPropagation();
-            if (window.confirm("Are you sure you want to remove this document?")) {
+            if (
+              window.confirm("Are you sure you want to remove this document?")
+            ) {
               onDelete();
             }
           }}
@@ -440,7 +502,12 @@ const SourceDocumentItem = ({
       </div>
 
       <div className="flex items-start justify-between gap-2 pr-8">
-        <span className="font-bold text-sm text-on-surface leading-tight flex-1 whitespace-normal break-words" title={formData.title}>{formData.title}</span>
+        <span
+          className="font-bold text-sm text-on-surface leading-tight flex-1 whitespace-normal break-words"
+          title={formData.title}
+        >
+          {formData.title}
+        </span>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className="text-[9px] font-black bg-emerald-600/10 text-emerald-700 px-2 py-0.5 rounded uppercase tracking-wider">
             SRC: {formData.src}
@@ -450,16 +517,28 @@ const SourceDocumentItem = ({
           </span>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-1">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Author</span>
-          <span className="text-[11px] font-medium text-on-surface whitespace-normal break-words" title={formData.author}>{formData.author === 'x' ? 'Unknown' : formData.author}</span>
+          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">
+            Author
+          </span>
+          <span
+            className="text-[11px] font-medium text-on-surface whitespace-normal break-words"
+            title={formData.author}
+          >
+            {formData.author === "x" ? "Unknown" : formData.author}
+          </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Publisher / Year</span>
+          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">
+            Publisher / Year
+          </span>
           <span className="text-[11px] font-medium text-on-surface">
-            {formData.publisher === 'x' ? 'Unknown' : formData.publisher} {formData.year !== 'x' && <span className="opacity-40">({formData.year})</span>}
+            {formData.publisher === "x" ? "Unknown" : formData.publisher}{" "}
+            {formData.year !== "x" && (
+              <span className="opacity-40">({formData.year})</span>
+            )}
           </span>
         </div>
       </div>
@@ -565,17 +644,32 @@ const RegulationCard = ({
                   <div className="flex items-center justify-between px-1">
                     {isCourseMapping ? (
                       <div className="text-[10px] font-bold text-on-surface-variant/60 flex items-center gap-3">
-                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> T: Theory</span>
-                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> P: Practical</span>
-                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> S: Self-study</span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-primary/20"></div>{" "}
+                          T: Theory
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-primary/20"></div>{" "}
+                          P: Practical
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-primary/20"></div>{" "}
+                          S: Self-study
+                        </span>
                       </div>
                     ) : (
                       <div className="text-[10px] font-bold text-on-surface-variant/60 flex items-center gap-3">
-                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-600/20"></div> SRC: Source Code</span>
-                         <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/20"></div> SUB: Subject Code</span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-emerald-600/20"></div>{" "}
+                          SRC: Source Code
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-primary/20"></div>{" "}
+                          SUB: Subject Code
+                        </span>
                       </div>
                     )}
-                    <button 
+                    <button
                       onClick={() => setIsRawMode(true)}
                       className="text-[10px] font-black text-primary hover:underline flex items-center gap-1"
                     >
@@ -584,36 +678,55 @@ const RegulationCard = ({
                   </div>
                   <div className="grid gap-2 max-h-[450px] overflow-y-auto pr-1 custom-scrollbar">
                     {(() => {
-                      const lines = reg.content.split('\n').filter(l => l.trim());
+                      const lines = reg.content
+                        .split("\n")
+                        .filter((l) => l.trim());
                       return lines.map((line: string, i: number) => {
                         const handleItemSave = (newVal: string) => {
                           const newLines = [...lines];
                           newLines[i] = `- ${newVal}`;
-                          onUpdate(reg.id, "content", newLines.join('\n'));
+                          onUpdate(reg.id, "content", newLines.join("\n"));
                         };
 
                         const handleItemDelete = () => {
                           const newLines = [...lines];
                           newLines.splice(i, 1);
-                          onUpdate(reg.id, "content", newLines.join('\n'));
+                          onUpdate(reg.id, "content", newLines.join("\n"));
                         };
-                        
-                        return isCourseMapping 
-                          ? <CourseMappingItem key={i} item={line} onSave={handleItemSave} onDelete={handleItemDelete} />
-                          : <SourceDocumentItem key={i} item={line} onSave={handleItemSave} onDelete={handleItemDelete} />
+
+                        return isCourseMapping ? (
+                          <CourseMappingItem
+                            key={i}
+                            item={line}
+                            onSave={handleItemSave}
+                            onDelete={handleItemDelete}
+                          />
+                        ) : (
+                          <SourceDocumentItem
+                            key={i}
+                            item={line}
+                            onSave={handleItemSave}
+                            onDelete={handleItemDelete}
+                          />
+                        );
                       });
                     })()}
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
-                      const template = isCourseMapping 
+                      const template = isCourseMapping
                         ? "- New Subject (CODE|1|3|30|15|90)"
                         : "- Source Name (SRC|SUB|Author|Publisher|2024)";
-                      onUpdate(reg.id, "content", reg.content + "\n" + template);
+                      onUpdate(
+                        reg.id,
+                        "content",
+                        reg.content + "\n" + template,
+                      );
                     }}
                     className="w-full py-2 border border-dashed border-outline/30 rounded-xl text-xs font-bold text-on-surface-variant/50 hover:border-primary/50 hover:text-primary transition flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-3 h-3" /> {isCourseMapping ? "ADD SUBJECT" : "ADD SOURCE DOCUMENT"}
+                    <Plus className="w-3 h-3" />{" "}
+                    {isCourseMapping ? "ADD SUBJECT" : "ADD SOURCE DOCUMENT"}
                   </button>
                 </div>
               ) : (
@@ -627,20 +740,24 @@ const RegulationCard = ({
                   />
                   <div className="flex items-center justify-between">
                     <div className="text-[10px] text-on-surface-variant/50 italic">
-                      {isRawMode ? "You are editing in Raw Mode" : "Generic regulation"}
+                      {isRawMode
+                        ? "You are editing in Raw Mode"
+                        : "Generic regulation"}
                     </div>
                     <div className="flex gap-2">
                       {isStructured && (
-                        <button 
+                        <button
                           onClick={() => setIsRawMode(false)}
                           className="px-3 py-1.5 text-xs font-bold text-on-surface-variant hover:bg-surface-variant/20 rounded-lg transition"
                         >
                           Cancel
                         </button>
                       )}
-                      <button 
+                      <button
                         onClick={handleSaveRaw}
-                        disabled={localContent === reg.content && localType === reg.type}
+                        disabled={
+                          localContent === reg.content && localType === reg.type
+                        }
                         className="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg shadow-md hover:bg-primary-dark transition flex items-center gap-1.5 disabled:opacity-50 disabled:shadow-none"
                       >
                         <Save className="h-3.5 w-3.5" /> Save Changes
@@ -705,7 +822,9 @@ export default function PdfExtractionStep({
         // Fetch Major Info
         const majorRes = await fetch(`/api/majors/${majorId}`);
         if (!majorRes.ok) {
-          console.warn("Major ID not found in system, resetting state to idle.");
+          console.warn(
+            "Major ID not found in system, resetting state to idle.",
+          );
           setExtractionState("idle");
           sessionStorage.removeItem(`extracted_major_${documentId}`);
           return;
@@ -762,9 +881,9 @@ export default function PdfExtractionStep({
                     const clean = item.trim();
                     if (!clean) return "";
                     // Re-add the closing parenthesis except for the last item which might already have it
-                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(')') ? ')' : ''}`;
+                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(")") ? ")" : ""}`;
                   })
-                  .filter(l => l.trim() && l !== "- )")
+                  .filter((l) => l.trim() && l !== "- )")
                   .join("\n");
               } else if (code === "COURSE_MAPPING") {
                 // COURSE_MAPPING items end with a closing parenthesis followed by a comma
@@ -774,9 +893,9 @@ export default function PdfExtractionStep({
                     const clean = item.trim();
                     if (!clean) return "";
                     // Re-add the closing parenthesis except for the last item which might already have it
-                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(')') ? ')' : ''}`;
+                    return `- ${clean}${idx < arr.length - 1 || !clean.endsWith(")") ? ")" : ""}`;
                   })
-                  .filter(l => l.trim() && l !== "- )")
+                  .filter((l) => l.trim() && l !== "- )")
                   .join("\n");
               }
 
@@ -820,16 +939,18 @@ export default function PdfExtractionStep({
     const savedMajorId = sessionStorage.getItem(
       `extracted_major_${documentId}`,
     );
-    const isProcessing = sessionStorage.getItem(
-      `extraction_status_${documentId}`
-    ) === "extracting";
+    const isProcessing =
+      sessionStorage.getItem(`extraction_status_${documentId}`) ===
+      "extracting";
 
     if (savedMajorId && extractionState === "idle") {
       setExtractionState("extracting");
       fetchFinalData(savedMajorId);
     } else if (isProcessing && extractionState === "idle") {
       setExtractionState("extracting");
-      const savedStartTime = sessionStorage.getItem(`extraction_start_time_${documentId}`);
+      const savedStartTime = sessionStorage.getItem(
+        `extraction_start_time_${documentId}`,
+      );
       if (savedStartTime) setStartTime(Number(savedStartTime));
     }
   }, [documentId, extractionState, fetchFinalData]);
@@ -862,7 +983,14 @@ export default function PdfExtractionStep({
         dispatch(clearAiProcessingMessage());
       }
     }
-  }, [aiProcessingStatus, extractionState, dispatch, aiProcessingMessage, documentId, fetchFinalData]);
+  }, [
+    aiProcessingStatus,
+    extractionState,
+    dispatch,
+    aiProcessingMessage,
+    documentId,
+    fetchFinalData,
+  ]);
 
   // 1. Fetch document URL
   useEffect(() => {
@@ -897,7 +1025,10 @@ export default function PdfExtractionStep({
     const now = Date.now();
     setStartTime(now);
     sessionStorage.setItem(`extraction_status_${documentId}`, "extracting");
-    sessionStorage.setItem(`extraction_start_time_${documentId}`, now.toString());
+    sessionStorage.setItem(
+      `extraction_start_time_${documentId}`,
+      now.toString(),
+    );
 
     try {
       // 1. Fetch the PDF file as a Blob from the Supabase URL
@@ -971,12 +1102,15 @@ export default function PdfExtractionStep({
     if (id && !id.startsWith("reg-")) {
       try {
         let majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
-        
+
         // Fallback: If session missing, try to fetch via majorCode
         if (!majorId && majorForm.majorCode) {
-          const majorRes = await MajorService.getMajorByCode(majorForm.majorCode);
+          const majorRes = await MajorService.getMajorByCode(
+            majorForm.majorCode,
+          );
           majorId = majorRes.data?.majorId;
-          if (majorId) sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
+          if (majorId)
+            sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
         }
 
         if (!majorId) {
@@ -988,7 +1122,10 @@ export default function PdfExtractionStep({
         if (reg) {
           // Prepare formatted value for backend (revert multiline/bullets to comma-separated)
           let backendValue = field === "content" ? value : reg.content;
-          if (reg.code === "COURSE_MAPPING" || reg.code === "SOURCE_DOCUMENTS") {
+          if (
+            reg.code === "COURSE_MAPPING" ||
+            reg.code === "SOURCE_DOCUMENTS"
+          ) {
             backendValue = backendValue
               .split("\n")
               .map((line) => line.replace(/^[-•]\s*/, "").trim())
@@ -1019,7 +1156,12 @@ export default function PdfExtractionStep({
   const addRegulation = () => {
     setRegulations([
       ...regulations,
-      { id: Date.now().toString(), type: "Custom Rule", code: "CUSTOM_RULE", content: "" },
+      {
+        id: Date.now().toString(),
+        type: "Custom Rule",
+        code: "CUSTOM_RULE",
+        content: "",
+      },
     ]);
   };
 
@@ -1029,7 +1171,9 @@ export default function PdfExtractionStep({
     try {
       const majorId = sessionStorage.getItem(`extracted_major_${documentId}`);
       if (!majorId) {
-        toast.error("No extracted Major ID found in session. Please try extracting again.");
+        toast.error(
+          "No extracted Major ID found in session. Please try extracting again.",
+        );
         return;
       }
 
@@ -1041,7 +1185,7 @@ export default function PdfExtractionStep({
         description: majorForm.description,
       });
 
-      // 2. Note: Regulations are currently kept in local state 'regulations'. 
+      // 2. Note: Regulations are currently kept in local state 'regulations'.
       // If there's a bulk save API, it should be called here.
       // For now, we proceed to link the Major to the Task and Document.
 
@@ -1077,19 +1221,21 @@ export default function PdfExtractionStep({
     setDeleting(true);
     try {
       await MajorService.deleteMajor(majorId);
-      
+
       // Cleanup session
       sessionStorage.removeItem(`extracted_major_${documentId}`);
       sessionStorage.removeItem(`extraction_status_${documentId}`);
       sessionStorage.removeItem(`extraction_start_time_${documentId}`);
-      
+
       // Reset state
       setExtractionState("idle");
       setMajorForm({ majorCode: "", majorName: "", description: "" });
       setRegulations([]);
       setExtractionError(null);
-      
-      toast.success("Extraction discarded successfully. You can now try again.");
+
+      toast.success(
+        "Extraction discarded successfully. You can now try again.",
+      );
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to delete extracted data");
@@ -1200,7 +1346,8 @@ export default function PdfExtractionStep({
               <p className="text-on-surface-variant text-sm text-primary font-medium max-w-sm flex items-center justify-center">
                 {aiProcessingStatus === "IMPORT_SUCCESS" ? (
                   <span>
-                    Extract success, importing Major <Timer startTime={startTime} />
+                    Extract success, importing Major{" "}
+                    <Timer startTime={startTime} />
                   </span>
                 ) : aiProcessingMessage ? (
                   <span>
@@ -1208,7 +1355,8 @@ export default function PdfExtractionStep({
                   </span>
                 ) : (
                   <span>
-                    Reading sections and parsing regulations <Timer startTime={startTime} />
+                    Reading sections and parsing regulations{" "}
+                    <Timer startTime={startTime} />
                   </span>
                 )}
               </p>
@@ -1411,7 +1559,9 @@ export default function PdfExtractionStep({
                     Discard Extraction?
                   </h3>
                   <p className="text-sm text-on-surface-variant leading-relaxed">
-                    Are you sure you want to discard this extraction? All extracted major data and regulations will be deleted permanently from the system. This action cannot be undone.
+                    Are you sure you want to discard this extraction? All
+                    extracted major data and regulations will be deleted
+                    permanently from the system. This action cannot be undone.
                   </p>
                 </div>
                 <div className="bg-zinc-50 p-6 flex justify-end gap-3">
