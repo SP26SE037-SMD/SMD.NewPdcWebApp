@@ -38,7 +38,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     // Fetch Sessions to ensure count is accurate even if not visited sessions tab
     const { data: sessionsRes } = useQuery({
         queryKey: ['sessions', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => (syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100) : null),
+        queryFn: () => (syllabusId ? SessionService.getSessions(syllabusId, 0, 100) : null),
         enabled: !!syllabusId
     });
 

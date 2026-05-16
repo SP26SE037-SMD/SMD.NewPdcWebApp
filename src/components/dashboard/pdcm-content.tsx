@@ -158,7 +158,7 @@ const DevelopCard = ({
                     ? "REVISION REQ"
                     : "DONE"}
           </span>
-          <DaysLeftBadge daysLeft={daysLeft} />
+          {status !== "DONE" && <DaysLeftBadge daysLeft={daysLeft} />}
         </div>
       </div>
 
@@ -192,6 +192,19 @@ const DevelopCard = ({
             </span>
             Pending Review
           </span>
+        ) : status === "DONE" ? (
+          <button
+            onClick={() => {
+              router.push(`/dashboard/pdcm/tasks/${task.taskId}/information`);
+            }}
+            className="btn-pdcm-ghost px-5 py-2 rounded-xl text-sm w-full md:w-auto flex items-center justify-center gap-2 transition-all hover:bg-zinc-100"
+            style={{ border: `1px solid ${C.outline}30` }}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              visibility
+            </span>
+            View
+          </button>
         ) : (
           <button
             onClick={() => {
@@ -523,12 +536,21 @@ export default function PDCMDashboardContent({
   });
 
   const acceptTaskMutation = useMutation({
-    mutationFn: (task: any) => {
+    mutationFn: async (task: any) => {
       if (navTab === "develop") {
-        return TaskService.updateTaskStatus(
+        const result = await TaskService.updateTaskStatus(
           task.taskId,
           TASK_STATUS.IN_PROGRESS,
         );
+        const sId = task.syllabus?.syllabusId || task.syllabusId || task.targetId || task.target_id;
+        if (sId && user?.accountId) {
+          try {
+            await SyllabusService.updateSyllabusStatus(sId, user.accountId, 'IN_PROGRESS');
+          } catch (e) {
+            console.warn("Could not update syllabus status to IN_PROGRESS", e);
+          }
+        }
+        return result;
       } else {
         return ReviewTaskService.updateReviewTaskAcceptance(
           task.reviewId || task.taskId,
