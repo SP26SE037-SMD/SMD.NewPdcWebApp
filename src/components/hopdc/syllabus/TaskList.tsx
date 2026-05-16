@@ -35,9 +35,12 @@ import {
   ExternalLink,
   Plus,
   BookText,
+  Layers,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreateSyllabusModal } from "../subject/CreateSyllabusModal";
+import { CreateSyllabusTaskModal } from "./CreateSyllabusTaskModal";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -149,20 +152,58 @@ const getSubjectStatusConfig = (status?: string) => {
         bg: "bg-amber-50",
         border: "border-amber-100",
       };
+    case "IN_PROGRESS":
     case "WAITING_SYLLABUS":
       return {
         text: "text-blue-600",
         bg: "bg-blue-50",
         border: "border-blue-100",
       };
-
     case "ARCHIVED":
       return {
         text: "text-zinc-500",
         bg: "bg-zinc-50",
         border: "border-zinc-200",
       };
-    case "DRAFT":
+    default:
+      return {
+        text: "text-zinc-500",
+        bg: "bg-zinc-50",
+        border: "border-zinc-200",
+      };
+  }
+};
+
+const getSyllabusStatusConfig = (status?: string) => {
+  const normalized = status?.toUpperCase() || "DRAFT";
+
+  switch (normalized) {
+    case "PUBLISHED":
+    case "APPROVED":
+      return {
+        text: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-100",
+      };
+    case "PENDING_REVIEW":
+    case "REVIEWING":
+      return {
+        text: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-100",
+      };
+    case "IN_PROGRESS":
+      return {
+        text: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-100",
+      };
+    case "REVISION_REQUESTED":
+      return {
+        text: "text-rose-600",
+        bg: "bg-rose-50",
+        border: "border-rose-100",
+      };
     default:
       return {
         text: "text-zinc-500",
@@ -192,6 +233,8 @@ interface TaskRowProps {
   sprintDeadline?: string;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   isUpdatingStatus: boolean;
+  onOpenTaskModal: (mode: "CREATE" | "UPDATE" | "REVIEW", parentTask: TaskItem) => void;
+  validatingTaskId?: string | null;
   children?: (TaskItem & { children?: TaskItem[] })[];
   level?: number;
 }
@@ -216,9 +259,12 @@ function TaskRow({
   sprintDeadline,
   onUpdateStatus,
   isUpdatingStatus,
+  onOpenTaskModal,
+  validatingTaskId = null,
   children = [],
   level = 0,
 }: TaskRowProps) {
+  const isThisValidating = validatingTaskId === task.taskId;
   const [isExpanded, setIsExpanded] = useState(level === 0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
@@ -249,7 +295,26 @@ function TaskRow({
 
     const isReadOnly = task.status === TASK_STATUS.DONE;
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}${isReadOnly ? "&readOnly=true" : ""}`,
+      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
+    );
+  };
+
+  const goToSyllabusDetail = async () => {
+    if (task.status === TASK_STATUS.TO_DO) {
+      try {
+        await TaskService.updateTaskStatus(
+          task.taskId,
+          TASK_STATUS.IN_PROGRESS,
+        );
+        queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      } catch (err) {
+        console.error("Failed to update task status:", err);
+      }
+    }
+
+    const isReadOnly = task.status === TASK_STATUS.DONE;
+    router.push(
+      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${task.targetId}&tab=syllabus${isReadOnly ? "&readOnly=true" : ""}`,
     );
   };
 
@@ -321,10 +386,8 @@ function TaskRow({
               {children.length > 0 && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className={`p-2 rounded-xl transition-all ${
-                    isExpanded
-                      ? "bg-zinc-900 text-white rotate-180"
-                      : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                  className={`p-2 rounded-xl transition-all bg-zinc-100 text-zinc-500 hover:bg-zinc-200 ${
+                    isExpanded ? "rotate-180" : ""
                   }`}
                 >
                   <ArrowLeft size={16} className="-rotate-90" />
@@ -370,17 +433,6 @@ function TaskRow({
                     {task.status || "UNKNOWN"}
                   </span>
                 )}
-                {level > 0 && (
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      level === 1
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-indigo-100 text-indigo-700"
-                    }`}
-                  >
-                    Level {level + 1}
-                  </span>
-                )}
               </div>
 
               <h3
@@ -393,7 +445,7 @@ function TaskRow({
                 {task.description || "N/A"}
               </p>
 
-              {level === 0 && (
+              {(level === 0 || task.type === "SUBJECT" || task.type === TASK_TYPE.NEW_SUBJECT) && (
                 <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
@@ -420,30 +472,91 @@ function TaskRow({
                 </div>
               )}
 
-              {/* Accept/Reject Loop for Level 2 tasks (Syllabus Creation/Update) */}
-              {level === 1 &&
-                children.some((c) => c.status === TASK_STATUS.DONE) && (
-                  <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+              {level === 1 && (
+                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                      Syllabus Status
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).bg} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).text} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).border}`}
+                      >
+                        {task.syllabus?.status || task.syllabusStatus || "DRAFT"}
+                      </span>
+                      <button
+                        onClick={goToSyllabusDetail}
+                        className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        Syllabus Detail
+                        <ExternalLink
+                          size={12}
+                          className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Accept/Reject Loop for Level 1 tasks (Syllabus Creation/Update) */}
+              {level === 1 && children.length > 0 && (
+                children.some((c) => c.status === TASK_STATUS.DONE) ? (
+                  <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3 animate-in fade-in slide-in-from-top-1 duration-300">
                     <div className="flex items-center gap-2">
-                      <AlertCircle size={14} className="text-amber-600" />
-                      <span className="text-xs font-black text-amber-700 uppercase tracking-wider">
+                      <div className="p-1 rounded-md bg-amber-200/50 text-amber-700">
+                        <AlertCircle size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">
                         HoPDC Decision Required
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-colors">
+                      <button 
+                        onClick={() => onUpdateStatus(task.taskId, TASK_STATUS.DONE)}
+                        className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-emerald-200"
+                      >
                         Accept Syllabus
                       </button>
-                      <button className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-colors">
+                      <button 
+                        onClick={() => {
+                          const comment = (document.getElementById(`comment-${task.taskId}`) as HTMLTextAreaElement)?.value;
+                          if (!comment) {
+                             showToast("Please add a comment for rejection", "error");
+                             return;
+                          }
+                          onOpenTaskModal("UPDATE", task);
+                        }}
+                        className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-all shadow-sm hover:shadow-rose-200"
+                      >
                         Reject & Request Update
                       </button>
                     </div>
                     <textarea
+                      id={`comment-${task.taskId}`}
                       placeholder="Add comments for the creator..."
-                      className="w-full p-2 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 min-h-[60px]"
+                      className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
                     />
                   </div>
-                )}
+                ) : (
+                  <div className="mt-4 p-4 rounded-xl border border-zinc-200 border-dashed bg-zinc-50/50 flex items-start gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="mt-0.5 p-2 rounded-[10px] bg-white border border-zinc-200 text-zinc-400 shadow-sm">
+                      <Clock size={16} className="animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
+                            In Peer Review Workflow
+                         </span>
+                         <span className="px-1.5 py-0.5 rounded-full bg-zinc-200 text-[8px] font-black text-zinc-500 uppercase tracking-tight">Pending</span>
+                      </div>
+                      <p className="text-[10px] font-bold text-zinc-400 leading-relaxed max-w-[320px]">
+                        This syllabus is currently being reviewed. Once the peer review is completed, you will be required to perform a <span className="text-zinc-600">Final Review</span> here to approve it for institutional use.
+                      </p>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
 
             <div className="lg:col-span-4 grid grid-cols-1 gap-3 border-l border-zinc-100 pl-6">
@@ -472,36 +585,76 @@ function TaskRow({
                     Workflow Actions
                   </p>
                   <button
-                    onClick={() =>
-                      showToast(
-                        `Assigning ${level === 0 ? "Creator" : "Reviewer"} for: ${task.taskName}`,
-                        "success",
-                      )
-                    }
-                    className="w-full flex items-center justify-center gap-2 py-1.5 bg-zinc-900 text-white text-[10px] font-black uppercase rounded-lg hover:bg-zinc-800 transition-colors"
+                    onClick={() => onOpenTaskModal(level === 0 ? "CREATE" : "REVIEW", task)}
+                    disabled={isThisValidating}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg hover:brightness-95 transition-all shadow-md shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Plus size={12} />
-                    {level === 0 ? "Assign Creator" : "Assign Reviewer"}
+                    {isThisValidating && level === 0 ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Plus size={12} />
+                    )}
+                    {level === 0 ? "Create Syllabus" : "Review Syllabus"}
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center gap-2">
-              <div className="text-right">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">
-                  Status
-                </p>
-                <div
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                    task.status === TASK_STATUS.DONE
-                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                      : "bg-amber-100 text-amber-700 border-amber-200"
-                  }`}
-                >
-                  {task.status}
+            <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center">
+              {children.length > 0 ? (
+                <div className="w-full max-w-[180px] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="p-1 rounded-md bg-zinc-100 text-zinc-500">
+                        <Layers size={10} />
+                      </div>
+                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                        Subtasks
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-900 bg-zinc-50 px-1.5 py-0.5 rounded-md border border-zinc-100">
+                      {children.filter((c) => c.status === TASK_STATUS.DONE)
+                        .length}
+                      /{children.length} Done
+                    </span>
+                  </div>
+
+                  <div className="flex gap-1 h-1.5 w-full">
+                    {children.map((child) => (
+                      <div
+                        key={child.taskId}
+                        title={`${child.taskName}: ${child.status}`}
+                        className={`flex-1 rounded-full transition-all duration-300 ${
+                          child.status === TASK_STATUS.DONE
+                            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                            : child.status === TASK_STATUS.IN_PROGRESS
+                              ? "bg-amber-500"
+                              : "bg-zinc-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-tighter text-zinc-400">
+                    <span>{Math.round((children.filter(c => c.status === TASK_STATUS.DONE).length / children.length) * 100)}% Progress</span>
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span>Done</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span>IP</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center lg:items-end gap-1 opacity-40">
+                   <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">No Subtasks</span>
+                   <div className="h-1 w-24 bg-zinc-100 rounded-full" />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -538,6 +691,8 @@ function TaskRow({
                 onManageSources={onManageSources}
                 onUpdateStatus={onUpdateStatus}
                 isUpdatingStatus={isUpdatingStatus}
+                onOpenTaskModal={onOpenTaskModal}
+                validatingTaskId={validatingTaskId}
               />
             ))}
           </motion.div>
@@ -593,6 +748,52 @@ export function TaskList({ sprintId }: TaskListProps) {
 
     router.refresh();
     router.push("/dashboard/hopdc/sprint-management");
+  };
+
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskModalMode, setTaskModalMode] = useState<"CREATE" | "UPDATE" | "REVIEW">("CREATE");
+  const [taskModalParentTask, setTaskModalParentTask] = useState<TaskItem | null>(null);
+  const [validatingTaskId, setValidatingTaskId] = useState<string | null>(null);
+
+  const onOpenTaskModal = async (
+    mode: "CREATE" | "UPDATE" | "REVIEW",
+    parentTask: TaskItem,
+  ) => {
+    if (mode === "CREATE") {
+      setValidatingTaskId(parentTask.taskId);
+      try {
+        if (!curriculumId || !parentTask.subjectId) {
+          showToast("Missing curriculum or subject info", "error");
+          return;
+        }
+
+        const res = await CloPloService.getMappingsBySubjectAndCurriculum(
+          parentTask.subjectId,
+          curriculumId,
+        );
+        const mappings = res.data || [];
+
+        if (mappings.length === 0) {
+          showToast(
+            "Môn học này chưa có CLOs hoặc CLO-PLO mapping. Vui lòng cấu hình trước khi tạo Syllabus!",
+            "warning",
+          );
+          return;
+        }
+      } catch (err) {
+        showToast(
+          "Không thể kiểm tra dữ liệu CLO-PLO. Vui lòng thử lại.",
+          "error",
+        );
+        return;
+      } finally {
+        setValidatingTaskId(null);
+      }
+    }
+
+    setTaskModalMode(mode);
+    setTaskModalParentTask(parentTask);
+    setIsTaskModalOpen(true);
   };
 
   const { data: departmentAccounts = [], isLoading: isAccountsLoading } =
@@ -652,7 +853,8 @@ export function TaskList({ sprintId }: TaskListProps) {
     useState("");
 
   const taskActions = useMemo(() => {
-    const actions = Array.from(new Set(tasks.map((t) => t.action || "OTHER")));
+    const actions = Array.from(new Set(tasks.map((t) => t.action || "OTHER")))
+      .filter(action => action !== "REVIEW");
     return actions.sort();
   }, [tasks]);
 
@@ -729,41 +931,37 @@ export function TaskList({ sprintId }: TaskListProps) {
     ];
   };
 
-  const filteredTasks = useMemo(() => {
-    let baseTasks = tasks;
-    if (selectedAction === "CREATE") {
-      // Inject mock data for demonstration as requested
-      baseTasks = [
-        ...getMockTasks(),
-        ...tasks.filter((t) => t.action === "CREATE"),
-      ];
-    } else if (selectedAction) {
-      baseTasks = tasks.filter((t) => (t.action || "OTHER") === selectedAction);
-    }
-    return baseTasks;
-  }, [tasks, selectedAction]);
-
   const groupedTasks = useMemo(() => {
     const taskMap: Record<string, TaskItem & { children?: TaskItem[] }> = {};
     const roots: (TaskItem & { children?: TaskItem[] })[] = [];
 
-    // First pass: initialize map
-    filteredTasks.forEach((task) => {
+    // Combine mock and real tasks to build the full tree structure
+    const allTasksForTree = [
+      ...(selectedAction === "CREATE" ? getMockTasks() : []),
+      ...tasks,
+    ];
+
+    // First pass: initialize map with all tasks
+    allTasksForTree.forEach((task) => {
       taskMap[task.taskId] = { ...task, children: [] };
     });
 
     // Second pass: build hierarchy
-    filteredTasks.forEach((task) => {
+    allTasksForTree.forEach((task) => {
+      const currentTaskInMap = taskMap[task.taskId];
       if (task.rootTaskId && taskMap[task.rootTaskId]) {
-        taskMap[task.rootTaskId].children?.push(taskMap[task.taskId]);
+        // Attach as child if parent exists in our map
+        taskMap[task.rootTaskId].children?.push(currentTaskInMap);
       } else {
-        // If no parent or parent not in filtered list, it's a root
-        roots.push(taskMap[task.taskId]);
+        // If it's a root, only include it if it matches the selected action
+        if (!selectedAction || (task.action || "OTHER") === selectedAction) {
+          roots.push(currentTaskInMap);
+        }
       }
     });
 
     return roots;
-  }, [filteredTasks]);
+  }, [tasks, selectedAction]);
 
   const saveTaskMutation = useMutation({
     mutationFn: async ({
@@ -1151,6 +1349,8 @@ export function TaskList({ sprintId }: TaskListProps) {
                   updateStatusMutation.isPending &&
                   updateStatusMutation.variables?.taskId === task.taskId
                 }
+                onOpenTaskModal={onOpenTaskModal}
+                validatingTaskId={validatingTaskId}
                 children={task.children}
               />
             );
@@ -1165,6 +1365,49 @@ export function TaskList({ sprintId }: TaskListProps) {
           setIsSourcesModalOpen(false);
           setSelectedSyllabusIdForSources("");
         }}
+      />
+
+      <CreateSyllabusTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => {
+          setIsTaskModalOpen(false);
+          setTaskModalParentTask(null);
+        }}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["assignments"] });
+        }}
+        mode={taskModalMode}
+        sprintId={sprintId}
+        rootTaskId={taskModalParentTask?.taskId || null}
+        subjectId={taskModalParentTask?.subjectId}
+        subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
+        targetId={taskModalParentTask?.targetId || taskModalParentTask?.syllabusId}
+        accounts={departmentAccounts}
+        currentUserEmail={user?.email || ""}
+        sprintDeadline={sprint?.endDate}
+        initialData={
+          taskModalMode === "UPDATE"
+            ? {
+                taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                description: (document.getElementById(`comment-${taskModalParentTask?.taskId}`) as HTMLTextAreaElement)?.value || "",
+                priority: taskModalParentTask?.priority,
+                dueDate: taskModalParentTask?.deadline,
+                assignTo: taskModalParentTask?.account?.accountId,
+              }
+            : taskModalMode === "REVIEW"
+            ? {
+                taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                priority: "MEDIUM",
+                dueDate: taskModalParentTask?.deadline,
+                excludeAccountId: taskModalParentTask?.account?.accountId,
+              }
+            : {
+                taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                priority: "MEDIUM",
+              }
+        }
       />
     </div>
   );

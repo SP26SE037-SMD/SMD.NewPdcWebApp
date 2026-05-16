@@ -101,7 +101,8 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
 
   const { data: plosRes, isLoading: isLoadingPlos } = useQuery({
     queryKey: ["plos-curriculum", curriculumId],
-    queryFn: () => CurriculumService.getPloByCurriculumId(curriculumId!, "ACTIVE", 100),
+    queryFn: () =>
+      CurriculumService.getPloByCurriculumId(curriculumId!, "ACTIVE", 100),
     enabled: !!curriculumId,
   });
 
@@ -216,21 +217,30 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
         await CurriculumService.syncStatus(curriculumId!);
 
         // 4. Create review task (request)
-        const curriculumName = curriculum?.curriculumNameEn || curriculum?.curriculumName || "Untitled Curriculum";
+        const curriculumName =
+          curriculum?.curriculumNameEn ||
+          curriculum?.curriculumName ||
+          "Untitled Curriculum";
         const majorName = major?.majorName || "Unknown Major";
-        
+
         await RequestService.createRequest({
-          title: `Structure Finalized: ${curriculum?.curriculumCode || curriculumName}`.substring(0, 50),
+          title:
+            `Structure Finalized: ${curriculum?.curriculumCode || curriculumName}`.substring(
+              0,
+              50,
+            ),
           content: `Finalized curriculum structure for ${curriculumName} of major ${majorName}`,
           status: "DONE",
           createdById: user?.accountId || "",
           curriculumId: curriculumId!,
           majorId: majorId as string,
         });
-        
+
         toast.success("Curriculum submitted successfully!", { id: toastId });
       } catch (error: any) {
-        toast.error(error?.response?.data?.message || "Submission failed", { id: toastId });
+        toast.error(error?.response?.data?.message || "Submission failed", {
+          id: toastId,
+        });
         throw error;
       }
     },
@@ -643,7 +653,7 @@ export default function ReviewPublishStep({ onNext, onBack }: StepProps) {
           onNext={() => finalizeMutation.mutate()}
           onBack={onBack}
           nextLabel={
-            finalizeMutation.isPending ? "Submitting..." : "Finalize & Submit"
+            finalizeMutation.isPending ? "Preparing..." : "Finalize & Develop"
           }
           nextIcon={finalizeMutation.isPending ? "sync" : "send"}
         />

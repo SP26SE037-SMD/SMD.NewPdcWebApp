@@ -34,127 +34,8 @@ import { SYLLABUS_STATUS } from "@/services/syllabus.service";
 import { ManageSyllabusSourcesModal } from "./syllabus/ManageSyllabusSourcesModal";
 import { SyllabusWorkspaceView } from "@/components/common/syllabus/SyllabusWorkspaceView";
 
-const StatusStepper = ({ currentStatus }: { currentStatus: string }) => {
-  // Normalize DB status strings to handle "in progress" -> "IN_PROGRESS" mismatches
-  const normalizedStatus = (currentStatus || "DRAFT")
-    .toUpperCase()
-    .replace(/\s+/g, "_");
-
-  // Determine dynamic branch state
-  const isRevision = normalizedStatus === SYLLABUS_STATUS.REVISION_REQUESTED;
-  const isApproved =
-    normalizedStatus === SYLLABUS_STATUS.APPROVED ||
-    normalizedStatus === SYLLABUS_STATUS.PUBLISHED;
-  const isPastDecision = isRevision || isApproved;
-
-  // Dynamically build the 4 steps representing the logical lifecycle
-  // Flow: Draft -> In Progress -> Pending Review -> [Decision] -> Published
-  const steps = [
-    {
-      id: SYLLABUS_STATUS.DRAFT,
-      label: "Draft",
-      icon: FileText,
-      color: "#94a3b8",
-    },
-    {
-      id: SYLLABUS_STATUS.IN_PROGRESS,
-      label: "In Progress",
-      icon: Settings,
-      color: "#3b82f6",
-    },
-    {
-      id: SYLLABUS_STATUS.PENDING_REVIEW,
-      label: "Pending Review",
-      icon: Search,
-      color: "#f59e0b",
-    },
-    {
-      id: "DECISION_NODE",
-      label: isRevision
-        ? "Revision Req"
-        : isApproved
-          ? "Approved"
-          : "Reviewing...",
-      icon: isRevision ? AlertCircleIcon : isApproved ? CheckCircle2 : Clock,
-      color: isRevision ? "#f43f5e" : isApproved ? "#10b981" : "#a1a1aa",
-    },
-    {
-      id: SYLLABUS_STATUS.PUBLISHED,
-      label: "Published",
-      icon: Rocket,
-      color: "#06b6d4",
-    },
-  ];
-
-  // Determine the active index based on current status
-  let activeIdx = 0; // Default is Draft
-  if (normalizedStatus === SYLLABUS_STATUS.IN_PROGRESS) {
-    activeIdx = 1;
-  } else if (
-    normalizedStatus === SYLLABUS_STATUS.PENDING_REVIEW ||
-    normalizedStatus === "REVIEWING"
-  ) {
-    activeIdx = 2;
-  } else if (isRevision || normalizedStatus === SYLLABUS_STATUS.APPROVED) {
-    activeIdx = 3; // Decision Node
-  } else if (normalizedStatus === SYLLABUS_STATUS.PUBLISHED) {
-    activeIdx = 4;
-  }
-
-  return (
-    <div className="flex items-center gap-1 overflow-hidden py-2 px-1">
-      {steps.map((statusItem, idx) => {
-        const isCompleted = idx < activeIdx;
-        const isActive = idx === activeIdx;
-        const Icon = statusItem.icon;
-
-        return (
-          <div key={statusItem.id} className="flex items-center">
-            <div className="flex flex-col items-center relative min-w-[70px]">
-              <motion.div
-                initial={false}
-                animate={{
-                  scale: isActive ? 1.1 : 0.9,
-                  backgroundColor:
-                    isActive || isCompleted
-                      ? statusItem.color
-                      : "rgb(255, 255, 255)",
-                  borderColor:
-                    isActive || isCompleted
-                      ? statusItem.color
-                      : "rgb(244, 244, 245)",
-                  color:
-                    isActive || isCompleted ? "white" : "rgb(161, 161, 170)",
-                }}
-                className="w-8 h-8 rounded-xl border-2 flex items-center justify-center shadow-sm transition-all duration-500 z-10 relative"
-              >
-                <Icon size={14} strokeWidth={2.5} />
-              </motion.div>
-              <span
-                className={`text-[10px] font-bold mt-1.5 whitespace-nowrap ${isActive ? "text-zinc-900" : "text-zinc-400"}`}
-              >
-                {statusItem.label}
-              </span>
-            </div>
-
-            {idx < steps.length - 1 && (
-              <div className="w-8 h-[2px] bg-zinc-100 mx-0.5 rounded-full relative overflow-hidden shrink-0">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: isCompleted ? "100%" : "0%",
-                    backgroundColor: statusItem.color,
-                  }}
-                  className="h-full"
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+import { StatusStepper } from "./syllabus/StatusStepper";
+import { SyllabusTabContent } from "./syllabus/SyllabusTabContent";
 
 export default function NewSubjectContent() {
   const {
@@ -210,6 +91,7 @@ export default function NewSubjectContent() {
     handleImportClos,
     isCloStructureReadOnly,
     isMappingReadOnly,
+    isSyllabusMode,
   } = useNewSubjectLogic();
 
   const router = useRouter();
@@ -243,12 +125,6 @@ export default function NewSubjectContent() {
       label: "Pending Review",
       icon: Search,
       color: "#f59e0b",
-    },
-    {
-      id: SYLLABUS_STATUS.REVISION_REQUESTED,
-      label: "Revision Requested",
-      icon: AlertCircleIcon,
-      color: "#f43f5e",
     },
     {
       id: SYLLABUS_STATUS.APPROVED,
@@ -322,38 +198,30 @@ export default function NewSubjectContent() {
           Back to Assign Tasks
         </button>
 
-        <div className="flex items-center p-1 bg-zinc-100 rounded-2xl w-fit self-center md:self-auto">
-          <button
-            onClick={() => setActiveTab("subject")}
-            className={`px-6 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === "subject"
-                ? "bg-white text-[#0b7a47] shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
-          >
-            Subject Detail
-          </button>
-          <button
-            onClick={() => setActiveTab("mapping")}
-            className={`px-6 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === "mapping"
-                ? "bg-white text-[#0b7a47] shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
-          >
-            Subject Mapping
-          </button>
-          <button
-            onClick={() => setActiveTab("syllabus")}
-            className={`px-6 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === "syllabus"
-                ? "bg-white text-[#0b7a47] shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
-          >
-            Syllabus
-          </button>
-        </div>
+        {!isSyllabusMode && (
+          <div className="flex items-center p-1 bg-zinc-100 rounded-2xl w-fit self-center md:self-auto">
+            <button
+              onClick={() => setActiveTab("subject")}
+              className={`px-6 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                activeTab === "subject"
+                  ? "bg-white text-[#0b7a47] shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              Subject Detail
+            </button>
+            <button
+              onClick={() => setActiveTab("mapping")}
+              className={`px-6 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                activeTab === "mapping"
+                  ? "bg-white text-[#0b7a47] shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              Subject Mapping
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -476,22 +344,6 @@ export default function NewSubjectContent() {
         {activeTab === "syllabus" && (
           <div className="animate-in fade-in duration-300">
             <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm p-6 md:p-7 space-y-6">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                    <BookPlus size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-zinc-900">
-                      Syllabus
-                    </h2>
-                    <p className="text-sm text-zinc-500">
-                      Manage and track syllabus lifecycles for the current
-                      curriculum deliverables.
-                    </p>
-                  </div>
-                </div>
-              </div>
 
               {(isTaskLoading || isPublishedSyllabusLoading) && (
                 <div className="flex items-center justify-center py-10">
@@ -499,171 +351,28 @@ export default function NewSubjectContent() {
                 </div>
               )}
 
-              {!isTaskLoading && !isPublishedSyllabusLoading && sprintId && (
-                <div className="animate-in fade-in duration-500">
-                  {associatedTask?.type === "REUSED_SUBJECT" ? (
-                    publishedSyllabus ? (
-                      <>
-                        <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0">
-                              <Rocket size={20} />
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-black text-cyan-700 uppercase tracking-widest leading-none mb-1">
-                                Reused Subject (Published)
-                              </p>
-                              <p className="text-base font-black text-cyan-900">
-                                {publishedSyllabus.syllabusName}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex-1 max-w-md bg-white/60 rounded-2xl p-2 border border-cyan-100/50">
-                            <StatusStepper
-                              currentStatus={SYLLABUS_STATUS.PUBLISHED}
-                            />
-                          </div>
-
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => {
-                                setSelectedSyllabusIdForSources(
-                                  publishedSyllabus.syllabusId,
-                                );
-                                setSelectedSyllabusNameForSources(
-                                  publishedSyllabus.syllabusName,
-                                );
-                                setIsSourcesModalOpen(true);
-                              }}
-                              className="flex items-center gap-2 rounded-xl bg-cyan-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700 hover:bg-cyan-200 transition-all border border-cyan-200 shadow-sm shadow-cyan-50"
-                            >
-                              <BookText size={14} />
-                              Manage Sources
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Syllabus Monitor Section for Reused Subject */}
-                        <div className="pt-8 border-t border-zinc-100 mt-6">
-                          <div className="flex items-center gap-2 mb-6">
-                            <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-600">
-                              Published Syllabus Monitor
-                            </h3>
-                          </div>
-                          <div className="bg-cyan-50/10 rounded-3xl p-6 border border-cyan-100/30 shadow-inner">
-                            <SyllabusWorkspaceView
-                              syllabusId={publishedSyllabus.syllabusId}
-                              mode="MONITOR"
-                              onOpenMaterial={(m) => {
-                                router.push(
-                                  `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${publishedSyllabus.syllabusId}`,
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="rounded-2xl border border-zinc-100 bg-zinc-50/40 p-5 flex items-center gap-4 shadow-sm">
-                        <div className="h-10 w-10 rounded-xl bg-zinc-100 text-zinc-400 flex items-center justify-center shrink-0">
-                          <Archive size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">
-                            Status
-                          </p>
-                          <p className="text-sm font-bold text-zinc-600">
-                            No published syllabus found for this reused subject.
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  ) : associatedTask?.syllabus?.syllabusId ? (
-                    <>
-                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                            <CheckCircle size={20} />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none mb-1">
-                              Current Assignment
-                            </p>
-                            <p className="text-base font-black text-emerald-900">
-                              {associatedTask.syllabus.syllabusName}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 max-w-md bg-white/60 rounded-2xl p-2 border border-emerald-100/50">
-                          <StatusStepper
-                            currentStatus={
-                              currentSyllabus?.status || associatedTask.syllabus.status || "DRAFT"
-                            }
-                          />
-                        </div>
-
-                        {!isReadOnly && (
-                          <button
-                            onClick={() => {
-                              if (associatedTask.syllabus) {
-                                setSelectedSyllabusIdForSources(
-                                  associatedTask.syllabus.syllabusId,
-                                );
-                                setSelectedSyllabusNameForSources(
-                                  associatedTask.syllabus.syllabusName,
-                                );
-                                setIsSourcesModalOpen(true);
-                              }
-                            }}
-                            className="flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-200 transition-all border border-emerald-200 shadow-sm shadow-emerald-50"
-                          >
-                            <BookText size={14} />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Syllabus Monitor Section */}
-                      <div className="pt-8 border-t border-zinc-100">
-                        <div className="flex items-center gap-2 mb-6">
-                          <div className="h-2 w-2 rounded-full bg-[#0b7a47] animate-pulse" />
-                          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0b7a47]">
-                            Syllabus Real-time Monitor
-                          </h3>
-                        </div>
-                        <div className="bg-[#f8faf2]/50 rounded-3xl p-6 border border-[#dee1d8]/30">
-                          <SyllabusWorkspaceView
-                            syllabusId={associatedTask.syllabus.syllabusId}
-                            mode="MONITOR"
-                            onOpenMaterial={(m) => {
-                              router.push(
-                                `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${associatedTask.syllabus?.syllabusId}`,
-                              );
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-5 flex items-center gap-4 shadow-sm">
-                      <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                        <AlertTriangle size={20} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest leading-none mb-1">
-                          Assignment Status
-                        </p>
-                        <p className="text-sm font-bold text-amber-900">
-                          This subject has not been assigned a syllabus for the
-                          current curriculum deliverables yet.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+              <div className="mb-6 flex items-start gap-4">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+                  <BookText size={20} />
                 </div>
-              )}
+                <div>
+                  <h2 className="text-xl font-black text-zinc-900">Syllabus Detail</h2>
+                  <p className="text-sm font-medium text-zinc-500">Manage and track syllabus lifecycles for the current curriculum deliverables.</p>
+                </div>
+              </div>
+
+              <SyllabusTabContent 
+                associatedTask={associatedTask}
+                publishedSyllabus={publishedSyllabus}
+                currentSyllabus={currentSyllabus}
+                isTaskLoading={isTaskLoading}
+                isPublishedSyllabusLoading={isPublishedSyllabusLoading}
+                isReadOnly={isReadOnly}
+                sprintId={sprintId}
+                setSelectedSyllabusIdForSources={setSelectedSyllabusIdForSources}
+                setSelectedSyllabusNameForSources={setSelectedSyllabusNameForSources}
+                setIsSourcesModalOpen={setIsSourcesModalOpen}
+              />
 
               {syllabusNotice && (
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 px-4 py-3 flex items-center gap-3">

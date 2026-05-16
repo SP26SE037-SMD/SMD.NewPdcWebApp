@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -9,6 +9,7 @@ import { TaskService } from "@/services/task.service";
 import { RootState } from "@/store";
 import { useSubjectMappingLogic } from "@/components/hopdc/hook/CloPloMappingLogic";
 import { SubjectClo } from "@/services/cloplo.service";
+import { SubjectDetail } from "@/services/subject.service";
 
 interface CreatedSyllabusItem {
   syllabusId: string;
@@ -28,29 +29,32 @@ export function useNewSubjectLogic() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const sprintId = searchParams.get("sprintId");
+  const taskId = searchParams.get("taskId");
+  const syllabusIdParam = searchParams.get("syllabusId");
 
   const mappingLogic = useSubjectMappingLogic();
   const { subjectId, subject, curriculumId } = mappingLogic;
 
+  // Fetch the specific task directly using taskId from URL
   const { data: associatedTask, isLoading: isTaskLoading } = useQuery({
-    queryKey: ["associated-task", sprintId, subjectId],
+    queryKey: ["associated-task", taskId],
     queryFn: async () => {
-      if (!sprintId || !subjectId || !user?.departmentId) return null;
-      const res = await TaskService.getTasksBySprintIdAndDepartmentId(
-        sprintId,
-        user.departmentId,
-      );
-      const tasks = res?.content || [];
-      return (
-        tasks.find((t) => t.subjectId === subjectId) || null
-      );
+      if (!taskId) return null;
+      const res = await TaskService.getTaskById(taskId);
+      return res?.data || null;
     },
-    enabled: !!sprintId && !!subjectId && !!user?.departmentId,
+    enabled: !!taskId,
   });
 
-  const [activeTab, setActiveTab] = useState<
-    "subject" | "mapping" | "syllabus"
-  >("subject");
+  const tabParam = searchParams.get("tab") as "subject" | "mapping" | "syllabus" | null;
+  const activeTab = tabParam || "subject";
+  const isSyllabusMode = activeTab === "syllabus";
+
+  const setActiveTab = (tab: "subject" | "mapping" | "syllabus") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.push(`?${params.toString()}`);
+  };
   const [isCreateCloModalOpen, setIsCreateCloModalOpen] = useState(false);
   const [isUpdateCloModalOpen, setIsUpdateCloModalOpen] = useState(false);
   const [isImportClosModalOpen, setIsImportClosModalOpen] = useState(false);
@@ -88,7 +92,7 @@ export function useNewSubjectLogic() {
     enabled: !!subjectId && associatedTask?.type === "REUSED_SUBJECT",
   });
 
-  const currentSyllabusId = associatedTask?.syllabus?.syllabusId;
+  const currentSyllabusId = syllabusIdParam || associatedTask?.syllabus?.syllabusId || associatedTask?.targetId;
   const { data: currentSyllabusRes, isLoading: isCurrentSyllabusLoading } = useQuery({
     queryKey: ["syllabus", currentSyllabusId],
     queryFn: () => SyllabusService.getSyllabusById(currentSyllabusId!),
@@ -240,10 +244,19 @@ export function useNewSubjectLogic() {
     });
   };
 
-  const isCloStructureReadOnly = associatedTask?.type === "SUBJECT" && associatedTask?.action === "UPDATE";
+  const { clos } = mappingLogic;
+  const hasDraftClos = clos.some(
+    (clo: any) => (clo.status || "").toUpperCase() === "DRAFT",
+  );
+
+  const isCloStructureReadOnly =
+    (associatedTask?.type === "SUBJECT" && associatedTask?.action === "UPDATE") ||
+    (clos.length > 0 && !hasDraftClos);
   const isMappingReadOnly = false; // Always allow mapping for now as per user request
 
-  return {
+  const isMockMode = searchParams.get("mock") === "true";
+
+  const result = {
     ...mappingLogic,
     user,
     activeTab,
@@ -278,5 +291,41 @@ export function useNewSubjectLogic() {
     currentSyllabus,
     isCloStructureReadOnly,
     isMappingReadOnly,
+    isSyllabusMode,
   };
+
+  if (isMockMode) {
+    return {
+      ...result,
+      isTaskLoading: false,
+      isSyllabusLoading: false,
+      isPublishedSyllabusLoading: false,
+      associatedTask: {
+        taskId: "mock-task-1",
+        taskName: "CREATE SYLLABUS: Graphic Design Advanced",
+        status: "IN_PROGRESS",
+        type: "NEW_SUBJECT",
+        syllabus: {
+          syllabusId: "mock-id",
+          syllabusName: "Thiết kế đồ họa nâng cao - 2024",
+          status: "PENDING_REVIEW"
+        }
+      },
+      currentSyllabus: {
+        syllabusId: "mock-id",
+        status: "PENDING_REVIEW",
+        syllabusName: "Thiết kế đồ họa nâng cao - 2024",
+      },
+      publishedSyllabus: null,
+      sprintId: sprintId || "mock-sprint-id",
+      subject: {
+        subjectId: subjectId || "mock-subject-id",
+        subjectCode: "GRD301",
+        subjectName: "Graphic Design Advanced",
+        minBloomLevel: 0,
+      } as any as SubjectDetail
+    };
+  }
+
+  return result;
 }

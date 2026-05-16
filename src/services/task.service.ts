@@ -378,7 +378,7 @@ export const TaskService = {
     taskId: task.taskId,
     sprintId: task.sprintId,
     subjectId: task.subjectId || task.subject?.subjectId || task.syllabus?.subjectId,
-    subjectStatus: task.subjectStatus,
+    subjectStatus: task.subjectStatus || task.subject?.status || (task as any).statusSubject,
     account: {
       accountId: task.assignTo?.accountId || task.account?.accountId || task.accountId || "",
       email: task.assignTo?.email || task.account?.email || task.email || "",
