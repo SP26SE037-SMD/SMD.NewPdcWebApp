@@ -480,7 +480,7 @@ function TaskRow({
                     </span>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus).bg} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus).text} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus).border}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).bg} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).text} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).border}`}
                       >
                         {task.syllabus?.status || task.syllabusStatus || "DRAFT"}
                       </span>

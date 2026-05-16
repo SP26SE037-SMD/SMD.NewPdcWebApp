@@ -57,7 +57,8 @@ export function useSyllabusWorkspace(syllabusId: string | undefined) {
                 minBloomLevel: 4,
                 createdAt: "2024-05-12",
                 subjectCode: "GRD301",
-                subjectName: "Graphic Design Advanced"
+                subjectName: "Graphic Design Advanced",
+                subjectId: "mock-subject-id"
             },
             subject: {
                 subjectCode: "GRD301",

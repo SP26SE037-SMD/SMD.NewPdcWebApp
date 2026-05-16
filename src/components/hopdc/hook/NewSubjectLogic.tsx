@@ -9,6 +9,7 @@ import { TaskService } from "@/services/task.service";
 import { RootState } from "@/store";
 import { useSubjectMappingLogic } from "@/components/hopdc/hook/CloPloMappingLogic";
 import { SubjectClo } from "@/services/cloplo.service";
+import { SubjectDetail } from "@/services/subject.service";
 
 interface CreatedSyllabusItem {
   syllabusId: string;
@@ -318,9 +319,11 @@ export function useNewSubjectLogic() {
       publishedSyllabus: null,
       sprintId: sprintId || "mock-sprint-id",
       subject: {
+        subjectId: subjectId || "mock-subject-id",
         subjectCode: "GRD301",
         subjectName: "Graphic Design Advanced",
-      }
+        minBloomLevel: 0,
+      } as any as SubjectDetail
     };
   }
 

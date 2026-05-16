@@ -40,7 +40,7 @@ export default function ReviewWorkflowContent() {
     (s.syllabusName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.subjectCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.subjectName?.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    s.status !== 'REVISION_REQUESTED'
+    (s.status as string) !== 'REVISION_REQUESTED'
   );
 
   if (isLoading) {
