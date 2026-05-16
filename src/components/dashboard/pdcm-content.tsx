@@ -158,7 +158,7 @@ const DevelopCard = ({
                     ? "REVISION REQ"
                     : "DONE"}
           </span>
-          <DaysLeftBadge daysLeft={daysLeft} />
+          {status !== "DONE" && <DaysLeftBadge daysLeft={daysLeft} />}
         </div>
       </div>
 
@@ -192,6 +192,19 @@ const DevelopCard = ({
             </span>
             Pending Review
           </span>
+        ) : status === "DONE" ? (
+          <button
+            onClick={() => {
+              router.push(`/dashboard/pdcm/tasks/${task.taskId}/information`);
+            }}
+            className="btn-pdcm-ghost px-5 py-2 rounded-xl text-sm w-full md:w-auto flex items-center justify-center gap-2 transition-all hover:bg-zinc-100"
+            style={{ border: `1px solid ${C.outline}30` }}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              visibility
+            </span>
+            View
+          </button>
         ) : (
           <button
             onClick={() => {
