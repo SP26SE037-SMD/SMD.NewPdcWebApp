@@ -672,7 +672,6 @@ function TaskRow({
               <TaskRow
                 key={child.taskId}
                 task={child}
-                children={child.children}
                 level={level + 1}
                 pdcmAccounts={pdcmAccounts}
                 syllabusOptions={syllabusOptions}
@@ -693,7 +692,9 @@ function TaskRow({
                 isUpdatingStatus={isUpdatingStatus}
                 onOpenTaskModal={onOpenTaskModal}
                 validatingTaskId={validatingTaskId}
-              />
+              >
+                {child.children}
+              </TaskRow>
             ))}
           </motion.div>
         )}
@@ -1351,8 +1352,9 @@ export function TaskList({ sprintId }: TaskListProps) {
                 }
                 onOpenTaskModal={onOpenTaskModal}
                 validatingTaskId={validatingTaskId}
-                children={task.children}
-              />
+              >
+                {task.children}
+              </TaskRow>
             );
           })
         )}
