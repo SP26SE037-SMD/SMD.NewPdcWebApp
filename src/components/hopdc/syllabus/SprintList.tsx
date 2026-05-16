@@ -164,7 +164,7 @@ export const SprintsReceive = ({
             <>
               <Link
                 href={getAssignHref(sprint)}
-                className="flex items-center gap-2 bg-zinc-900 text-white px-5 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md active:scale-95 rounded-xl"
+                className="flex items-center gap-2 bg-primary text-white px-5 py-3 text-[10px] font-black uppercase tracking-widest hover:brightness-95 transition-all shadow-md shadow-primary/10 active:scale-95 rounded-xl"
               >
                 MANAGE TASK
               </Link>

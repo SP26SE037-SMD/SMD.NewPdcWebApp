@@ -293,6 +293,11 @@ export default function DashboardLayout({
               icon: "event_available",
               label: "Curriculum Deliverables",
             },
+            {
+              href: "/dashboard/hopdc/requests",
+              icon: ClipboardList,
+              label: "Requests",
+            },
           ],
         },
         {
