@@ -97,7 +97,9 @@ export default function TasksPage() {
     fetchTasks();
   }, [user?.accountId, activeTab, search, page]);
 
-  const { refreshTaskTrigger } = useSelector((state: RootState) => state.notification);
+  const { refreshTaskTrigger } = useSelector(
+    (state: RootState) => state.notification,
+  );
 
   useEffect(() => {
     if (refreshTaskTrigger > 0) {
@@ -146,13 +148,13 @@ export default function TasksPage() {
 
   const handleOpenTask = async (e: React.MouseEvent, task: TaskItem) => {
     e.stopPropagation();
-    
+
     if (task.type === "MAJOR" && task.targetId) {
       setCheckingPhaseId(task.taskId);
       try {
         const docDetail = await DocumentService.getDocument(task.targetId);
         const effectiveMajorId = docDetail.majorId;
-        
+
         const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${task.targetId}&type=${task.type}&action=${task.action || ""}${effectiveMajorId ? `&majorId=${effectiveMajorId}` : ""}`;
         router.push(url);
       } catch (err) {
@@ -180,10 +182,10 @@ export default function TasksPage() {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5"
         >
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent pb-1">
               My Tasks
             </h1>
-            <p className="text-on-surface-variant mt-2 text-base max-w-xl">
+            <p className="text-on-surface-variant text-base max-w-xl">
               Streamline your workflow. Manage and track all curriculum and
               syllabus evaluations seamlessly.
             </p>
@@ -410,7 +412,7 @@ export default function TasksPage() {
                             )}
                             {task.status.replace(/_/g, " ")}
                           </span>
-                           {task.type === "MAJOR" &&
+                          {task.type === "MAJOR" &&
                             task.action === "CREATE" && (
                               <span
                                 className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border shadow-xs bg-primary/5 text-primary/60 border-primary/10 flex items-center gap-1"
@@ -464,9 +466,9 @@ export default function TasksPage() {
                             className="inline-flex items-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-5 py-2.5 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all active:scale-95 disabled:opacity-50"
                           >
                             {checkingPhaseId === task.taskId ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                                "OPEN"
+                              "OPEN"
                             )}
                           </button>
                         ) : (

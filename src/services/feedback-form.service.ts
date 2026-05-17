@@ -101,6 +101,32 @@ export interface FeedbackCreateQuestionPayload {
   }>;
 }
 
+export interface FeedbackSubmissionRecord {
+  id: string;
+  formId: string;
+  submittedAt: string;
+  answers: Array<{
+    questionId: string;
+    questionText: string;
+    answerText?: string;
+    selectedOptionId?: string;
+    selectedOptionText?: string;
+  }>;
+}
+
+export interface FeedbackReportData {
+  formId: string;
+  totalSubmissions: number;
+  questions: Array<{
+    questionId: string;
+    questionText: string;
+    type: string;
+    optionCounts?: Record<string, number>;
+    averageRating?: number;
+    textAnswers?: string[];
+  }>;
+}
+
 export const FeedbackFormService = {
   getFormsByCurriculumId: async (curriculumId: string) => {
     const query = new URLSearchParams({ curriculumId });
@@ -185,5 +211,15 @@ export const FeedbackFormService = {
       {},
       { credentials: "include" },
     );
+  },
+
+  getSubmissions: async (formId: string) => {
+    return apiClient.get<FeedbackSubmissionRecord[]>(
+      `/api/v1/forms/${formId}/submissions`,
+    );
+  },
+
+  getReport: async (formId: string) => {
+    return apiClient.get<FeedbackReportData>(`/api/v1/forms/${formId}/report`);
   },
 };
