@@ -319,130 +319,148 @@ export default function RequestsPage() {
 
   const getStatusClass = (status: string) => {
     if (status === "PENDING")
-      return "bg-secondary-container text-on-secondary-container";
-    if (status === "APPROVED") return "bg-primary/10 text-primary";
-    return "bg-error/10 text-error";
+      return "bg-amber-500/10 text-amber-500 border border-amber-500/20";
+    if (status === "APPROVED")
+      return "bg-primary/10 text-primary border border-primary/20";
+    return "bg-error/10 text-error border border-error/20";
   };
 
   return (
     <>
-      <div className="max-w-6xl mx-auto pt-12 pb-12 px-6">
-        <div className="space-y-8 p-4">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Requests
-              </h1>
-              <p className="text-on-surface-variant mt-2 text-base max-w-xl">
-                Monitor, approve, and manage all change requests submitted
-                across your departments seamlessly.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={fetchRequests}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCcw
-                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </button>
+      <div className="space-y-8 p-4">
+        <div className="max-w-6xl mx-auto pt-12 pb-12 px-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5"
+        >
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent pb-1">
+              Requests
+            </h1>
+            <p className="text-on-surface-variant mt-2 text-base max-w-xl">
+              Monitor, approve, and manage all change requests submitted
+              across your departments seamlessly.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchRequests}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
 
-              <button
-                onClick={openCreateModal}
-                className="group relative flex items-center gap-2 overflow-hidden rounded-2xl bg-linear-to-r from-primary to-primary/80 px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-105 active:scale-95"
-              >
-                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-                <ClipboardList className="h-4 w-4" />
-                <span>New Request</span>
-              </button>
-            </div>
-          </motion.div>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+            >
+              <ClipboardList className="h-4 w-4" />
+              <span>NEW REQUEST</span>
+            </button>
+          </div>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative max-w-xl"
-          >
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/70" />
-            <input
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search by request title"
-              className="w-full rounded-2xl border border-outline/20 bg-surface px-11 py-3 text-sm text-on-surface outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-            />
-          </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative max-w-xl mb-6"
+        >
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/70" />
+          <input
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Search by request title"
+            className="w-full rounded-2xl border border-outline/20 bg-white/60 px-11 py-3 text-sm text-on-surface outline-none transition focus:bg-white focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+          />
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="flex gap-2 overflow-x-auto pb-2 scrollbar-none"
-          >
-            {tabs.map((tab) => (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex gap-3 overflow-x-auto pb-4 scrollbar-none mb-6"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap
-               ${
-                 activeTab === tab.id
-                   ? "bg-primary text-on-primary shadow-md shadow-primary/20"
-                   : "bg-surface hover:bg-surface-container border border-outline/20 text-on-surface-variant"
-               }`}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setPage(0);
+                }}
+                className={`relative group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-base font-bold transition-all duration-300 whitespace-nowrap
+                ${
+                  isActive
+                    ? "text-white"
+                    : "bg-white/50 hover:bg-white border border-outline/10 text-on-surface-variant hover:border-primary/20"
+                }`}
               >
-                {tab.label}
-                <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-black/10 text-inherit">
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <ClipboardList
+                  className={`relative z-10 h-4 w-4 ${isActive ? "text-white" : "text-primary/60 group-hover:text-primary"}`}
+                />
+                <span className="relative z-10">{tab.label}</span>
+                <span
+                  className={`relative z-10 py-0.5 px-2 rounded-lg text-[10px] font-black ${isActive ? "bg-white/20 text-white" : "bg-primary/5 text-primary"}`}
+                >
                   {statusCounts[tab.id] ?? 0}
                 </span>
               </button>
-            ))}
-          </motion.div>
+            );
+          })}
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
-          >
-            {error && (
-              <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
-                {error}
-              </div>
-            )}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
+        >
+          {error && (
+            <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+              {error}
+            </div>
+          )}
 
-            <div className="overflow-x-auto rounded-2xl">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-surface-container-lowest/50">
-                  <tr className="border-b border-outline/20">
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                      No.
-                    </th>
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                      Title
-                    </th>
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                      Major
-                    </th>
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                      Curriculum
-                    </th>
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs">
-                      Status
-                    </th>
-                    <th className="p-5 font-semibold text-on-surface-variant uppercase tracking-wider text-xs whitespace-nowrap">
-                      Date Submitted
-                    </th>
-                    <th className="p-5 font-semibold text-center text-on-surface-variant uppercase tracking-wider text-xs">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+          <div className="overflow-x-auto rounded-2xl">
+            <table className="w-full text-left text-sm border-separate border-spacing-y-3 px-3">
+              <thead>
+                <tr>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    No.
+                  </th>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    Title
+                  </th>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    Major
+                  </th>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    Curriculum
+                  </th>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    Status
+                  </th>
+                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px] whitespace-nowrap">
+                    Date Submitted
+                  </th>
+                  <th className="px-5 py-2 font-bold text-center text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
                 <tbody>
                   {loading ? (
                     <tr>
@@ -465,30 +483,32 @@ export default function RequestsPage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.04 }}
-                        className="group border-b border-outline/10 transition-all hover:bg-surface-container-lowest/80"
+                        className="group bg-white/60 hover:bg-white border border-outline/10 transition-all duration-300 shadow-sm hover:shadow-md"
                       >
-                        <td className="p-5 font-bold text-on-surface/80">
+                        <td className="px-5 py-6 rounded-l-2xl font-bold text-on-surface/80">
                           {page * 10 + idx + 1}
                         </td>
-                        <td className="p-5">
-                          <span className="font-semibold text-on-surface text-base group-hover:text-primary transition-colors">
-                            {req.title}
-                          </span>
-                          <p className="mt-1 line-clamp-2 text-xs text-on-surface-variant">
-                            {req.content}
-                          </p>
+                        <td className="px-5 py-6">
+                          <div className="flex flex-col gap-1 max-w-sm">
+                            <span className="font-bold text-[#2d3335] text-base group-hover:text-primary transition-colors duration-300">
+                              {req.title}
+                            </span>
+                            <p className="line-clamp-2 text-xs text-on-surface-variant/70 leading-relaxed font-medium">
+                              {req.content}
+                            </p>
+                          </div>
                         </td>
-                        <td className="p-5 text-on-surface-variant">
+                        <td className="px-5 py-6 font-bold text-on-surface-variant/80 text-sm">
                           {req.major?.majorName ||
                             req.curriculum?.major?.majorName ||
                             "-"}
                         </td>
-                        <td className="p-5 text-on-surface-variant">
+                        <td className="px-5 py-6 font-bold text-on-surface-variant/80 text-sm">
                           {req.curriculum?.curriculumCode || "-"}
                         </td>
-                        <td className="p-5 whitespace-nowrap">
+                        <td className="px-5 py-6 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getStatusClass(req.status)}`}
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusClass(req.status)}`}
                           >
                             {req.status === "PENDING" && (
                               <Clock className="h-3 w-3" />
@@ -502,17 +522,17 @@ export default function RequestsPage() {
                             {req.status}
                           </span>
                         </td>
-                        <td className="p-5 text-on-surface-variant">
-                          <div className="flex w-max items-center gap-2 rounded-lg bg-surface-container-lowest px-2.5 py-1 border border-outline/10">
-                            <CalendarDays className="w-4 h-4 text-primary/70" />
-                            <span className="font-medium whitespace-nowrap">{formatDate(req.createdAt)}</span>
+                        <td className="px-5 py-6 text-on-surface-variant">
+                          <div className="flex w-max items-center gap-2 rounded-lg bg-surface-container-lowest px-2.5 py-1 border border-outline/10 font-bold">
+                            <CalendarDays className="w-4 h-4 text-primary/40" />
+                            <span className="text-sm font-bold whitespace-nowrap">{formatDate(req.createdAt)}</span>
                          </div>
                       </td>
-                      <td className="p-5">
-                        <div className="flex justify-center gap-2">
+                      <td className="px-5 py-6 rounded-r-2xl text-right">
+                        <div className="flex justify-end gap-2">
                           <button
                             onClick={() => handleOpenDetail(req.requestId)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-outline/20 px-3 py-1.5 text-xs font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             View Detail
@@ -521,7 +541,7 @@ export default function RequestsPage() {
                           {req.status === "APPROVED" && (
                             <button
                               onClick={() => handleContinueToSprint(req)}
-                              className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/20"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-primary/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-primary/10 transition duration-300 hover:scale-105 active:scale-95"
                             >
                               <FastForward className="h-3.5 w-3.5" />
                               Continue
@@ -534,7 +554,7 @@ export default function RequestsPage() {
                                 e.stopPropagation();
                                 handleFixCurriculum(req);
                               }}
-                              className="inline-flex items-center gap-2 rounded-xl bg-error/10 px-4 py-1.5 text-xs font-bold text-error transition hover:bg-error/20 active:scale-95"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-error to-error/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-error/10 transition duration-300 hover:scale-105 active:scale-95"
                             >
                               <Wrench className="h-3.5 w-3.5" />
                               Update Curriculum
