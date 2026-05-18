@@ -107,18 +107,86 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
 
                     {/* Feedback Area - Only show on Reject or if note exists */}
                     {(status === 'FAIL' || !!note) && (
-                        <div id="assessment-note-field" className="relative animate-in slide-in-from-top-2 duration-300">
-                            <label className="text-[10px] font-black text-gray-500 uppercase block mb-1.5 tracking-wider">
-                                {status === 'PASS' ? 'AI Review Commendations & Notes' : 'Reviewer Comments or Reason for Rejection'}
-                            </label>
-                            <textarea
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                placeholder="Reviewer Comments or Reason for Rejection..."
-                                className={`w-full min-h-[160px] p-4 rounded-lg border outline-none text-sm font-normal transition-all resize-none ${
-                                    status === 'FAIL' && !note.trim() ? 'border-rose-300 focus:border-rose-500' : 'border-gray-200 focus:border-gray-400'
-                                }`}
-                            />
+                        <div id="assessment-note-field" className="relative animate-in slide-in-from-top-2 duration-300 space-y-3">
+                            {/* AI Result Panel */}
+                            {note && (
+                                <div className={`rounded-xl border overflow-hidden ${status === 'FAIL' ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-200 bg-emerald-50/40'}`}>
+                                    {/* Panel Header */}
+                                    <div className={`px-4 py-3 flex items-center gap-2 border-b ${status === 'FAIL' ? 'border-rose-200 bg-rose-100/60' : 'border-emerald-200 bg-emerald-100/60'}`}>
+                                        <span className="text-base">{status === 'FAIL' ? '❌' : '✅'}</span>
+                                        <span className={`text-xs font-black uppercase tracking-widest ${status === 'FAIL' ? 'text-rose-700' : 'text-emerald-700'}`}>
+                                            AI Audit Result — {status === 'FAIL' ? 'REJECT RECOMMENDED' : 'ACCEPT RECOMMENDED'}
+                                        </span>
+                                    </div>
+
+                                    {/* Parse and render note lines */}
+                                    <div className="px-4 py-3 space-y-1 max-h-[220px] overflow-y-auto">
+                                        {note.split('\n').map((line, i) => {
+                                            if (!line.trim()) return <div key={i} className="h-2" />;
+
+                                            if (line.startsWith('===') || (line.startsWith('[') && line.endsWith(']'))) {
+                                                return (
+                                                    <p key={i} className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-3 mb-1 pt-2 border-t border-gray-200 first:border-0 first:pt-0 first:mt-0">
+                                                        {line.replace(/=+/g, '').replace(/[\[\]]/g, '').trim()}
+                                                    </p>
+                                                );
+                                            }
+
+                                            if (line.startsWith('⚠️')) {
+                                                return (
+                                                    <div key={i} className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                                        <span className="text-amber-500 text-xs shrink-0 mt-0.5">⚠️</span>
+                                                        <p className="text-xs text-amber-800 leading-relaxed">{line.replace('⚠️', '').trim()}</p>
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (line.startsWith('✓')) {
+                                                return (
+                                                    <div key={i} className="flex items-start gap-2">
+                                                        <span className="text-emerald-500 text-xs shrink-0 mt-0.5">✓</span>
+                                                        <p className="text-xs text-gray-700 leading-relaxed">{line.replace('✓', '').trim()}</p>
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (line.startsWith('  •') || line.startsWith('- ') || line.startsWith('• ')) {
+                                                return (
+                                                    <div key={i} className="flex items-start gap-1.5 pl-2">
+                                                        <span className="text-gray-400 text-[10px] shrink-0 mt-1">•</span>
+                                                        <p className="text-xs text-gray-600 leading-relaxed">{line.replace(/^(\s*•\s*|-\s*|•\s*)/, '').trim()}</p>
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (line.startsWith('ACCEPT') || line.startsWith('REJECT')) {
+                                                return (
+                                                    <div key={i} className={`mt-2 px-3 py-2 rounded-lg font-bold text-xs ${line.startsWith('ACCEPT') ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'}`}>
+                                                        {line}
+                                                    </div>
+                                                );
+                                            }
+
+                                            return <p key={i} className="text-xs text-gray-600 leading-relaxed">{line}</p>;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Reviewer own comment textarea */}
+                            {status === 'FAIL' && (
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase block mb-1.5 tracking-wider">
+                                        Additional Reviewer Comments
+                                    </label>
+                                    <textarea
+                                        value={note.startsWith('===') ? '' : note}
+                                        onChange={(e) => setNote(e.target.value)}
+                                        placeholder="Add your reviewer comments here..."
+                                        className="w-full min-h-[80px] p-3 rounded-lg border outline-none text-sm font-normal transition-all resize-none border-gray-200 focus:border-gray-400"
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
