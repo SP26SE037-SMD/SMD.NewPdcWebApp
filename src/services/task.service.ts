@@ -61,6 +61,25 @@ export interface TaskItem {
   sprintId: string;
   subjectId?: string;
   subjectStatus?: SubjectStatus;
+  subject?: {
+    subjectId: string;
+    subjectCode: string;
+    subjectName: string;
+    credits: number;
+    status: string;
+    sources?: Array<{
+      sourceId: string;
+      sourceCode: string;
+      sourceName: string;
+      type: string;
+      author: string;
+      publisher: string;
+      publishedYear: number;
+      url: string;
+    }>;
+    departmentCode?: string;
+    departmentName?: string;
+  };
   account: {
     accountId: string;
     email?: string;
@@ -108,6 +127,25 @@ export interface TaskApiItem {
   sprintId: string;
   subjectId?: string;
   subjectStatus?: SubjectStatus;
+  subject?: {
+    subjectId: string;
+    subjectCode: string;
+    subjectName: string;
+    credits: number;
+    status: string;
+    sources?: Array<{
+      sourceId: string;
+      sourceCode: string;
+      sourceName: string;
+      type: string;
+      author: string;
+      publisher: string;
+      publishedYear: number;
+      url: string;
+    }>;
+    departmentCode?: string;
+    departmentName?: string;
+  };
   accountId?: string;
   account?: {
     accountId?: string;
@@ -379,6 +417,7 @@ export const TaskService = {
     sprintId: task.sprintId,
     subjectId: task.subjectId || task.subject?.subjectId || task.syllabus?.subjectId,
     subjectStatus: task.subjectStatus || task.subject?.status || (task as any).statusSubject,
+    subject: task.subject,
     account: {
       accountId: task.assignTo?.accountId || task.account?.accountId || task.accountId || "",
       email: task.assignTo?.email || task.account?.email || task.email || "",

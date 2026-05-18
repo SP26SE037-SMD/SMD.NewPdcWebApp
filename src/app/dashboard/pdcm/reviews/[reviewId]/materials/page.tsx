@@ -18,14 +18,7 @@ export default function PDCMReviewMaterialsPage({ params }: { params: Promise<{ 
     const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-    const { data: reviewTaskRes, isLoading: isReviewTaskLoading } = useQuery({
-        queryKey: ['pdcm-review-detail', reviewId],
-        queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
-        enabled: !!reviewId,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
+    const taskId = reviewId;
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -44,8 +37,10 @@ export default function PDCMReviewMaterialsPage({ params }: { params: Promise<{ 
     });
 
     const materials = Array.isArray((materialsRes as any)?.data) ? (materialsRes as any).data : [];
+    
+    console.log("=== MATERIALS DATA ===", materialsRes, materials);
 
-    if (isReviewTaskLoading || isTaskLoading || (!!syllabusId && isMaterialsLoading)) {
+    if (isTaskLoading || (!!syllabusId && isMaterialsLoading)) {
         return (
             <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>

@@ -32,14 +32,7 @@ export default function PDCMReviewAssessmentsPage({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  const { data: reviewTaskRes, isLoading: isReviewTaskLoading } = useQuery({
-    queryKey: ["pdcm-review-detail", reviewId],
-    queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
-    enabled: !!reviewId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
+  const taskId = reviewId;
 
   const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
     queryKey: ["pdcm-task-detail", taskId],
@@ -73,6 +66,8 @@ export default function PDCMReviewAssessmentsPage({
   const assessments: any[] = Array.isArray((assessmentDataRes as any)?.data)
     ? (assessmentDataRes as any).data
     : [];
+  
+  console.log("=== ASSESSMENTS DATA ===", assessmentDataRes, assessments);
   const totalWeight = assessments.reduce(
     (sum: number, a: any) => sum + (+a.weight || 0),
     0,
@@ -103,7 +98,6 @@ export default function PDCMReviewAssessmentsPage({
   };
 
   if (
-    isReviewTaskLoading ||
     isTaskLoading ||
     (!!syllabusId && isAssessmentLoading)
   ) {

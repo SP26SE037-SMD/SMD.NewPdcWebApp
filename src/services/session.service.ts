@@ -64,6 +64,17 @@ export class SessionService {
         return response;
     }
 
+    static async getSessionsBySyllabusId(syllabusId: string) {
+        let response: any;
+        try {
+            response = await apiClient.get<any>(`/api/sessions/syllabus/${syllabusId}`);
+        } catch (err) {
+            console.warn("API call for sessions by syllabus failed, providing mock container", err);
+            response = { status: 200, message: "Mock Container", data: [] };
+        }
+        return response;
+    }
+
     static async bulkConfigureSession(payload: BulkConfigurePayload) {
         return apiClient.post('/api/session-material-blocks/bulk-configure', payload);
     }

@@ -19,14 +19,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
-    const { data: reviewTaskRes, isLoading: isReviewTaskLoading } = useQuery({
-        queryKey: ['pdcm-review-detail', reviewId],
-        queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
-        enabled: !!reviewId,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
+    const taskId = reviewId;
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -39,12 +32,12 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
 
     const { data: sessionsRes, isLoading: isSessionsLoading } = useQuery({
         queryKey: ['pdcm-sessions', syllabusId],
-        queryFn: () => SessionService.getDetailedSessions(syllabusId || "", 0, 100),
+        queryFn: () => SessionService.getSessionsBySyllabusId(syllabusId || ""),
         enabled: !!syllabusId,
         staleTime: 5 * 60 * 1000,
     });
 
-    if (isReviewTaskLoading || isTaskLoading || (!!syllabusId && isSessionsLoading)) {
+    if (isTaskLoading || (!!syllabusId && isSessionsLoading)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
                 <Loader2 size={32} className="animate-spin mb-4" style={{ color: '#41683f' }} />
@@ -53,11 +46,12 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         );
     }
 
-    const sessions: any[] = (sessionsRes as any)?.data?.content || [];
+    const sessions: any[] = Array.isArray((sessionsRes as any)?.data) ? (sessionsRes as any).data : [];
+    console.log("=== SESSIONS DATA ===", sessionsRes, sessions);
     const sortedSessions = [...sessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
     const evaluatedCount = sessions.filter(s => {
-        const ev = sessionEvaluations[s.session];
+        const ev = sessionEvaluations[s.sessionId];
         return ev && ev.status !== 'PENDING';
     }).length;
 
@@ -112,16 +106,15 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                         <div className="col-span-3">Session Title</div>
                         <div className="col-span-4">Content Summary</div>
                         <div className="col-span-2">Teaching Method</div>
-                        <div className="col-span-1">Status</div>
-                        <div className="col-span-1 text-right">View</div>
+                        <div className="col-span-2 text-right">View</div>
                     </div>
 
                     {/* Scrollable Sessions List Container */}
                     <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-2 custom-scrollbar space-y-2">
                         {sortedSessions.map((session: any) => {
-                            const badge = getEvalBadge(session.session);
+                            const badge = getEvalBadge(session.sessionId);
 
-                            // Parse content summary from material and block arrays
+                            // Parse content summary from content field
                             let contentParts: Array<{ heading: string; detail: string }> = [];
 
                             if (Array.isArray(session.material) && session.material.length > 0) {
@@ -156,14 +149,14 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                             }
 
                             return (
-                                <div key={session.session}
+                                <div key={session.sessionId}
                                     className={`grid grid-cols-12 items-center px-6 py-3 rounded-xl transition-all group border ${badge
                                         ? `${badge.bg} ${badge.border}`
                                         : 'bg-surface-container-lowest border-transparent hover:shadow-lg hover:shadow-on-surface/5 hover:border-primary/10'
                                         }`}
                                 >
-                                    <div className="col-span-1 font-mono text-[10px]" style={{ color: '#5a6157' }}>
-                                        #{String(session.sessionNumber).padStart(3, '0')}
+                                    <div className="col-span-1 font-mono text-sm font-bold" style={{ color: '#5a6157' }}>
+                                        {session.sessionNumber}
                                     </div>
                                     <div className="col-span-3">
                                         <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
@@ -196,18 +189,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                                             {session.teachingMethods || 'Lecture'}
                                         </span>
                                     </div>
-                                    <div className="col-span-1">
-                                        {badge ? (
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${badge.color} ${badge.bg} border ${badge.border}`}>
-                                                {badge.label}
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-surface-variant text-on-surface-variant">
-                                                PENDING
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="col-span-1 flex items-center justify-end">
+                                    <div className="col-span-2 flex items-center justify-end">
                                         <button
                                             onClick={() => {
                                                 setSelectedSession(session);

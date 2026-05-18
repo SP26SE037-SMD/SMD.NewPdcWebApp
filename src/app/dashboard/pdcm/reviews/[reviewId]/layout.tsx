@@ -200,23 +200,15 @@ export default function PDCMReviewLayout({
     const queryClient = useQueryClient();
 
     const { data: routeTaskData, isLoading } = useQuery({
-        queryKey: ['pdcm-review-detail', reviewId],
-        queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
+        queryKey: ['pdcm-task-detail', reviewId], // reviewId is actually taskId now
+        queryFn: () => TaskService.getTaskById(reviewId),
         enabled: !!reviewId,
         staleTime: 5 * 60 * 1000,
     });
 
     const task = routeTaskData?.data;
 
-    // Fetch Parent Task to get the actual syllabusId (ReviewTask only contains taskId)
-    const { data: parentTaskRes } = useQuery({
-        queryKey: ['parent-task-detail', task?.task?.taskId],
-        queryFn: () => task?.task?.taskId ? TaskService.getTaskById(task.task.taskId) : null,
-        enabled: !!task?.task?.taskId
-    });
-
-    const parentTask = parentTaskRes?.data;
-    const sid = parentTask?.syllabus?.syllabusId || (task as any)?.syllabusId || task?.task?.taskId;
+    const sid = task?.syllabus?.syllabusId || (task as any)?.syllabusId || task?.targetId || (task as any)?.target_id;
 
     React.useEffect(() => {
         if (sid) {

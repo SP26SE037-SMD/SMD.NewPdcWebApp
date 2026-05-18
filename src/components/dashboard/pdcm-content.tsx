@@ -175,7 +175,7 @@ const DevelopCard = ({
             ) : (
               <>
                 <span className="material-symbols-outlined text-[18px]">
-                  edit
+                  Do Task
                 </span>
                 Accept
               </>
@@ -304,24 +304,7 @@ const ReviewCard = ({
           {task.description || "No details provided."}
         </p>
 
-        {/* Reviewer info */}
-        <div className="flex items-center gap-2 mt-2 bg-zinc-50 px-3 py-1.5 rounded-lg w-max max-w-full">
-          <div
-            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold border shrink-0 bg-white"
-            style={{ color: C.onSurface, borderColor: C.surfaceVariant }}
-          >
-            {(task.taskName || "R").charAt(0).toUpperCase()}
-          </div>
-          <div className="text-xs flex gap-1 items-center truncate">
-            <span className="font-semibold" style={{ color: C.onSurface }}>
-              {task.reviewer?.fullName || task.assignTo?.fullName || "Assigned Reviewer"}
-            </span>
-            <span className="text-zinc-400">&bull;</span>
-            <span className="text-zinc-500 truncate">
-              {task.reviewer?.email || task.assignTo?.email || "reviewer@university.edu"}
-            </span>
-          </div>
-        </div>
+
       </div>
 
       <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-48 gap-3 shrink-0">
@@ -359,7 +342,7 @@ const ReviewCard = ({
                 <span className="material-symbols-outlined text-[18px]">
                   fact_check
                 </span>
-                Accept
+                Accept Task
               </>
             )}
           </button>
@@ -552,9 +535,9 @@ export default function PDCMDashboardContent({
         }
         return result;
       } else {
-        return ReviewTaskService.updateReviewTaskAcceptance(
-          task.reviewId || task.taskId,
-          true,
+        return TaskService.updateTaskStatus(
+          task.taskId,
+          TASK_STATUS.IN_PROGRESS,
         );
       }
     },
