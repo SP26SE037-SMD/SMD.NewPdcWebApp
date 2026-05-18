@@ -11,6 +11,7 @@ import { SessionDetailModal } from '@/components/dashboard/SessionDetailModal';
 import { SyllabusInfoModal } from '@/components/dashboard/SyllabusInfoModal';
 import { ReviewTaskService } from '@/services/review-task.service';
 import { useToast } from '@/components/ui/Toast';
+import { MappingService } from '@/services/mapping.service';
 
 export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ reviewId: string }> }) {
     const { reviewId } = use(params);
@@ -65,7 +66,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         return { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' };
     };
 
-    const handleAiAudit = () => {
+    const handleAiAudit = async () => {
         if (sortedSessions.length === 0) {
             showToast("No sessions available to review.", "error");
             return;
@@ -74,15 +75,145 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         setIsAiAuditing(true);
         showToast("AI is analyzing session configurations and pedagogical methods...", "info");
 
-        setTimeout(() => {
+        try {
+            // 1. Prepare sessions payload
+            const sessionsPayload = sortedSessions.map(s => ({
+                syllabusId: s.syllabusId || syllabusId || "",
+                sessionNumber: s.sessionNumber,
+                sessionTitle: s.sessionTitle || "",
+                teachingMethods: s.teachingMethods || "",
+                sessionTopic: s.sessionTopic || "",
+                sessionType: s.sessionType || "",
+                duration: s.duration || 0
+            }));
+
+            // 2. Call Session validate API
+            console.log("Calling Session validation API...");
+            const sessionValidateRes = await SessionService.validateSessionsSyllabus(syllabusId || "", sessionsPayload);
+            const sessionValidData = sessionValidateRes?.data;
+            const isSessionsValid = sessionValidData?.valid !== false; // default true if not specified
+            const sessionErrors = sessionValidData?.errors || [];
+            const quotas = sessionValidData?.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 };
+
+            // 3. Call CLO-Session Mapping GET API
+            console.log("Calling CLO-Session Mapping GET API...");
+            const mappingsRes = await MappingService.getSyllabusSessionMappings(syllabusId || "");
+            const mappings = Array.isArray(mappingsRes?.data) ? mappingsRes.data : [];
+
+            // 4. Map the fetched mappings to required payload pairs { cloId, sessionId }
+            // Note: Since a session can be linked to multiple CLOs and a CLO can be linked to multiple sessions,
+            // the response array contains multiple items representing this many-to-many relationship.
+            const mappingsPayload = mappings.map((m: any) => ({
+                cloId: m.cloId || m.clo_id || "",
+                sessionId: m.sessionId || m.session_id || ""
+            })).filter(pair => pair.cloId && pair.sessionId);
+
+            // 5. Call Mapping validate API
+            console.log("Calling Mapping validation API with payload:", mappingsPayload);
+            const mappingsValidateRes = await MappingService.validateSyllabusSessionMappings(syllabusId || "", mappingsPayload);
+            const mappingValidData = mappingsValidateRes?.data;
+            const isMappingsValid = mappingValidData?.is_valid !== false; // default true if not specified
+            const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
+            const isAllSessionsMapped = mappingValidData?.is_all_sessions_mapped !== false;
+            const unmappedClos = mappingValidData?.unmapped_clos || [];
+            const unmappedSessions = mappingValidData?.unmapped_sessions || [];
+            const mappingsList = mappingValidData?.data || [];
+
+            // 6. Build Feedback Markdown
+            let status = (isSessionsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+            let feedback = `=== AI SESSIONS & MAPPINGS AUDIT RESULT ===\n\n`;
+
+            feedback += `[1. Sessions Allocation Review]\n`;
+            feedback += `✓ Status: ${isSessionsValid ? 'VALID' : 'INVALID'}\n`;
+            feedback += `- Total Sessions: ${sortedSessions.length} configured.\n`;
+            feedback += `- Session Pacing Quotas:\n`;
+            feedback += `  • Theory (Lý thuyết): ${quotas.theory || 0} hours remaining.\n`;
+            feedback += `  • Practice (Thực hành): ${quotas.practice || 0} hours remaining.\n`;
+            feedback += `  • Self-Study (Tự học): ${quotas.selfStudy || 0} hours remaining.\n\n`;
+
+            if (sessionErrors.length > 0) {
+                feedback += `⚠️ SESSION VALIDATION WARNINGS/ERRORS:\n`;
+                sessionErrors.forEach((err: any) => {
+                    feedback += `  • [Week ${err.week || 'N/A'}] (Code: ${err.code || 'ERR'}): ${err.message || 'Validation error'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            feedback += `[2. CLO-Session Mappings Review]\n`;
+            feedback += `✓ Status: ${isMappingsValid ? 'VALID' : 'INVALID'}\n`;
+            feedback += `- All CLOs Mapped: ${isAllClosMapped ? 'Yes' : 'No'}\n`;
+            feedback += `- All Sessions Mapped: ${isAllSessionsMapped ? 'Yes' : 'No'}\n\n`;
+
+            if (unmappedClos.length > 0) {
+                feedback += `⚠️ UNMAPPED CLOs DETECTED:\n`;
+                unmappedClos.forEach((clo: any) => {
+                    feedback += `  • CLO [${clo.clo_code || clo.cloCode || 'N/A'}]: ${clo.suggestion || 'Please map to appropriate sessions.'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            if (unmappedSessions.length > 0) {
+                feedback += `⚠️ UNMAPPED SESSIONS DETECTED:\n`;
+                unmappedSessions.forEach((s: any) => {
+                    feedback += `  • Session [${s.chapter_title || s.chapterTitle || s.sessionTitle || 'N/A'}]: ${s.suggestion || 'Please map to corresponding CLOs.'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            if (mappingsList.length > 0) {
+                feedback += `[3. AI Alignment Analysis]\n`;
+                mappingsList.slice(0, 5).forEach((m: any) => {
+                    feedback += `  • Link [Session ↔ CLO]: Confidence Score = ${m.confidence_score || m.confidenceScore || 0}%\n`;
+                    if (m.reasoning) {
+                        feedback += `    Reasoning: ${m.reasoning}\n`;
+                    }
+                });
+                if (mappingsList.length > 5) {
+                    feedback += `  • And ${mappingsList.length - 5} other mapping links successfully evaluated.\n`;
+                }
+                feedback += `\n`;
+            }
+
+            feedback += `[AI Recommendation]\n`;
+            if (status === 'PASS') {
+                feedback += `ACCEPT this section. All structural session pacing and CLO-session mapping constraints are fully satisfied.`;
+            } else {
+                feedback += `REJECT this section. Remediation required for the items listed above.`;
+            }
+
+            // Save to review state
+            setSessionsReview({
+                status: status as any,
+                note: feedback
+            });
+
+            // Set all individual session evaluations to ACCEPTED if status is PASS
+            if (status === 'PASS') {
+                sortedSessions.forEach(s => {
+                    setSessionEvaluation(s.sessionId, {
+                        sessionId: s.sessionId,
+                        sessionTitle: s.sessionTitle || 'Session',
+                        status: 'ACCEPTED',
+                        note: ''
+                    });
+                });
+            }
+
+            setIsAiAuditing(false);
+            showToast("AI Review suggest complete! Opening form...", "success");
+            setIsEvalModalOpen(true);
+
+        } catch (error) {
+            console.error("AI API validation failed, falling back to client-side smart analysis:", error);
+            
+            // Client-side fallback check
             const totalSessions = sortedSessions.length;
             const totalMinutes = sortedSessions.reduce((acc, s) => acc + (s.duration || 50), 0);
-            const isShort = sortedSessions.some(s => (s.duration || 50) < 45);
             const uniqueMethods = Array.from(new Set(sortedSessions.filter(s => s.teachingMethods).map(s => s.teachingMethods)));
             const uniqueTopics = Array.from(new Set(sortedSessions.filter(s => s.sessionTopic).map(s => s.sessionTopic)));
 
             let status = 'PASS';
-            let feedback = `=== AI SESSIONS AUDIT RESULT ===\n\n`;
+            let feedback = `=== AI SESSIONS AUDIT RESULT (FALLBACK ANALYSIS) ===\n\n`;
             feedback += `[Analysis Snapshot]\n`;
             feedback += `- Total Sessions: ${totalSessions} components configured.\n`;
             feedback += `- Total Distribution Time: ${totalMinutes} minutes (~${(totalMinutes/60).toFixed(1)} hours).\n`;
@@ -110,13 +241,11 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                 feedback += `ACCEPT this section. The current session layout meets excellent standard practices.`;
             }
 
-            // Save to review state
             setSessionsReview({
                 status: status as any,
                 note: feedback
             });
 
-            // Set all individual session evaluations to ACCEPTED if status is PASS
             if (status === 'PASS') {
                 sortedSessions.forEach(s => {
                     setSessionEvaluation(s.sessionId, {
@@ -129,9 +258,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
             }
 
             setIsAiAuditing(false);
-            showToast("AI Review suggest complete! Opening form...", "success");
+            showToast("AI suggestion ready (smart local audit)!", "success");
             setIsEvalModalOpen(true);
-        }, 1800);
+        }
     };
 
     return (

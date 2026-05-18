@@ -93,7 +93,11 @@ export class SessionService {
     }
 
     static async validateSessions(syllabusId: string, payload: any[]) {
-        return apiClient.post(`/api/sessions/validate?syllabusId=${syllabusId}`, payload);
+        return apiClient.post<any>(`/api/sessions/validate?syllabusId=${syllabusId}`, payload);
+    }
+
+    static async validateSessionsSyllabus(syllabusId: string, payload: any[]) {
+        return apiClient.post<any>(`/api/sessions/syllabus/${syllabusId}/validate`, payload);
     }
 
     static async bulkCreateSessions(payload: any[]) {
