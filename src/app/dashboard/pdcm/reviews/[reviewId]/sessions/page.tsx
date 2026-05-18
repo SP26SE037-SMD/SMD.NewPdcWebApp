@@ -204,65 +204,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
             setIsEvalModalOpen(true);
 
         } catch (error: any) {
-            console.error("AI API validation failed, falling back to client-side smart analysis:", error);
-            showToast(`API Error: ${error.message || error}`, "error");
-            
-            // Client-side fallback check
-            const totalSessions = sortedSessions.length;
-            const totalMinutes = sortedSessions.reduce((acc, s) => acc + (s.duration || 50), 0);
-            const uniqueMethods = Array.from(new Set(sortedSessions.filter(s => s.teachingMethods).map(s => s.teachingMethods)));
-            const uniqueTopics = Array.from(new Set(sortedSessions.filter(s => s.sessionTopic).map(s => s.sessionTopic)));
-
-            let status = 'PASS';
-            let feedback = `⚠️ BACKEND API CALL FAILED: ${error.message || error}\n`;
-            feedback += `(Falling back to local smart auditing to prevent UI crash)\n\n`;
-            feedback += `=== AI SESSIONS AUDIT RESULT (FALLBACK ANALYSIS) ===\n\n`;
-            feedback += `[Analysis Snapshot]\n`;
-            feedback += `- Total Sessions: ${totalSessions} components configured.\n`;
-            feedback += `- Total Distribution Time: ${totalMinutes} minutes (~${(totalMinutes/60).toFixed(1)} hours).\n`;
-            feedback += `- Unique Teaching Methods: ${uniqueMethods.length > 0 ? uniqueMethods.join(', ') : 'Lecture, Practical'}.\n`;
-            feedback += `- Unique Session Topics: ${uniqueTopics.length > 0 ? `${uniqueTopics.slice(0, 3).join(', ')}${uniqueTopics.length > 3 ? '...' : ''}` : 'Basic theory, intermediate applications'}.\n\n`;
-
-            feedback += `[Standard Evaluation Checkpoint]\n`;
-            if (totalSessions < 5) {
-                status = 'FAIL';
-                feedback += `⚠️ WARNING: Critically low session count (${totalSessions} sessions). A standard college-level syllabus requires at least 10 sessions for fully adequate instructional content.\n`;
-                feedback += `⚠️ WARNING: Content density may not satisfy accreditation requirements.\n\n`;
-                feedback += `[Pedagogical Quality Review]\n`;
-                feedback += `- Structure: Needs improvement.\n`;
-                feedback += `- Suggestion: Provide more granular session outlines and increase overall duration.\n\n`;
-                feedback += `[AI Recommendation]\n`;
-                feedback += `REJECT this section. Request owner to populate and restructure curriculum sessions.`;
-            } else {
-                feedback += `✓ Duration Pacing: Excellent structure with balanced active minutes.\n`;
-                feedback += `✓ Pedagogy: Dynamic learning model aligning with modern instructional criteria.\n`;
-                feedback += `✓ Topic Coverage: Comprehensive topic structure mapping to course syllabus.\n\n`;
-                feedback += `[Pedagogical Quality Review]\n`;
-                feedback += `- Structure: Balanced pacing.\n`;
-                feedback += `- Interactive methods like workshops or projects are properly placed.\n\n`;
-                feedback += `[AI Recommendation]\n`;
-                feedback += `ACCEPT this section. The current session layout meets excellent standard practices.`;
-            }
-
-            setSessionsReview({
-                status: status as any,
-                note: feedback
-            });
-
-            if (status === 'PASS') {
-                sortedSessions.forEach(s => {
-                    setSessionEvaluation(s.sessionId, {
-                        sessionId: s.sessionId,
-                        sessionTitle: s.sessionTitle || 'Session',
-                        status: 'ACCEPTED',
-                        note: ''
-                    });
-                });
-            }
-
+            console.error("AI API validation failed:", error);
+            showToast(`Gợi ý AI thất bại: ${error.message || error}`, "error");
             setIsAiAuditing(false);
-            showToast("AI suggestion ready (smart local audit)!", "success");
-            setIsEvalModalOpen(true);
         }
     };
 
