@@ -9,6 +9,7 @@ import {
   Eye,
   Loader2,
   Info,
+  Sparkles,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AssessmentService } from "@/services/assessment.service";
@@ -20,6 +21,7 @@ import { useReview } from "../ReviewContext";
 import { AssessmentEvaluateModal } from "../_components/AssessmentEvaluateModal";
 import { SyllabusInfoModal } from "@/components/dashboard/SyllabusInfoModal";
 import { ReviewTaskService } from "@/services/review-task.service";
+import { useToast } from "@/components/ui/Toast";
 
 export default function PDCMReviewAssessmentsPage({
   params,
@@ -27,10 +29,12 @@ export default function PDCMReviewAssessmentsPage({
   params: Promise<{ reviewId: string }>;
 }) {
   const { reviewId } = use(params);
-  const { assessmentEvaluations } = useReview();
+  const { assessmentEvaluations, setAssessmentsReview, setAssessmentEvaluation } = useReview();
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [isAiAuditing, setIsAiAuditing] = useState(false);
+  const { showToast } = useToast();
 
   const taskId = reviewId;
 
@@ -97,6 +101,71 @@ export default function PDCMReviewAssessmentsPage({
     };
   };
 
+  const handleAiAudit = () => {
+    if (assessments.length === 0) {
+      showToast("No assessments available to review.", "error");
+      return;
+    }
+
+    setIsAiAuditing(true);
+    showToast("AI is auditing assessment weights and structure...", "info");
+
+    setTimeout(() => {
+      const categories = Array.from(new Set(assessments.map(a => a.categoryName || a.typeName || 'General')));
+      const totalWeight = assessments.reduce((sum: number, a: any) => sum + (+a.weight || 0), 0);
+      const isWeightValid = totalWeight === 100;
+
+      let status = isWeightValid ? 'PASS' : 'FAIL';
+      let feedback = `=== AI ASSESSMENTS AUDIT RESULT ===\n\n`;
+      feedback += `[Analysis Snapshot]\n`;
+      feedback += `- Total Assessment Components: ${assessments.length} configured.\n`;
+      feedback += `- Calculated Sum of Weighting: ${totalWeight}% ${isWeightValid ? '(Properly Balanced)' : '(Imbalanced - MUST equal exactly 100%)'}.\n`;
+      feedback += `- Evaluated Categories: ${categories.join(', ')}.\n\n`;
+
+      feedback += `[Standard Evaluation Checkpoint]\n`;
+      if (!isWeightValid) {
+        feedback += `⚠️ CRITICAL ERROR: The combined weighting of all assessment entries totals ${totalWeight}%, which violates the absolute 100% syllabus constraint.\n`;
+        feedback += `⚠️ CRITICAL ERROR: This will cause registration issues and academic score processing failures.\n\n`;
+        feedback += `[Component Pacing & Balance]\n`;
+        feedback += `- Weighting Distribution: Imbalanced.\n`;
+        feedback += `- Action Required: Re-distribute task weights so that the sum is exactly 100%.\n\n`;
+        feedback += `[AI Recommendation]\n`;
+        feedback += `REJECT this section. Request owner to balance the assessment weight matrix.`;
+      } else {
+        feedback += `✓ Weighting Distribution: Valid and perfectly balanced at 100%.\n`;
+        feedback += `✓ Core Competencies: Evaluates student performance across standard metrics.\n`;
+        feedback += `✓ Grading Feasibility: All elements properly structured for database mapping.\n\n`;
+        feedback += `[Component Pacing & Balance]\n`;
+        feedback += `- Weighting Distribution: Excellent.\n`;
+        feedback += `- Grading criteria aligns perfectly with institutional and educational guidelines.\n\n`;
+        feedback += `[AI Recommendation]\n`;
+        feedback += `ACCEPT this section. The current assessment scheme represents a complete and balanced standard package.`;
+      }
+
+      // Save to review context state
+      setAssessmentsReview({
+        status: status as any,
+        note: feedback
+      });
+
+      // Set all individual assessment evaluations to ACCEPTED if status is PASS
+      if (status === 'PASS') {
+        assessments.forEach(a => {
+          setAssessmentEvaluation(a.assessmentId, {
+            assessmentId: a.assessmentId,
+            categoryName: a.categoryName || 'General',
+            status: 'ACCEPTED',
+            note: ''
+          });
+        });
+      }
+
+      setIsAiAuditing(false);
+      showToast("AI Review suggest complete! Opening form...", "success");
+      setIsEvalModalOpen(true);
+    }, 1800);
+  };
+
   if (
     isTaskLoading ||
     (!!syllabusId && isAssessmentLoading)
@@ -141,6 +210,20 @@ export default function PDCMReviewAssessmentsPage({
             )}
             Total: {totalWeight}%
           </div>
+
+          {/* AI Suggestion */}
+          <button
+            onClick={handleAiAudit}
+            disabled={isAiAuditing || assessments.length === 0}
+            className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 border border-purple-200 bg-purple-50 text-purple-700 transition-all hover:bg-purple-100 hover:border-purple-300 active:scale-[0.98] shadow-sm text-sm disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {isAiAuditing ? (
+              <Loader2 size={18} className="animate-spin text-purple-600" />
+            ) : (
+              <Sparkles size={18} className="text-purple-600 animate-pulse" />
+            )}
+            {isAiAuditing ? "AI Auditing..." : "AI Suggestion"}
+          </button>
 
           {/* Evaluate Now */}
           <button

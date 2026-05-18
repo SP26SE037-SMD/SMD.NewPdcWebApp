@@ -22,13 +22,10 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
 
     useEffect(() => {
         if (isOpen) {
-            const newStatus = sessionsReview.status as any;
-            const newNote = sessionsReview.note || '';
-            
-            if (status !== newStatus) setStatus(newStatus);
-            if (note !== newNote) setNote(newNote);
+            setStatus(sessionsReview.status as any);
+            setNote(sessionsReview.note || '');
         }
-    }, [isOpen, sessionsReview, status, note]);
+    }, [isOpen, sessionsReview]);
 
     if (!isOpen) return null;
 
@@ -41,7 +38,7 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
         }
 
         setIsSaving(true);
-        const reviewData = { status: status as any, note: status === 'PASS' ? 'All sessions accepted.' : note };
+        const reviewData = { status: status as any, note: status === 'PASS' ? (note || 'All sessions accepted.') : note };
 
         setSessionsReview(reviewData);
         localStorage.setItem(`pdcm-review-sessions-summary-${taskId}`, JSON.stringify(reviewData));
@@ -108,15 +105,18 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                         </button>
                     </div>
 
-                    {/* Feedback Area - Only show on Reject */}
-                    {status === 'FAIL' && (
+                    {/* Feedback Area - Only show on Reject or if note exists */}
+                    {(status === 'FAIL' || !!note) && (
                         <div id="rejection-note-field" className="relative animate-in slide-in-from-top-2 duration-300">
+                            <label className="text-[10px] font-black text-gray-500 uppercase block mb-1.5 tracking-wider">
+                                {status === 'PASS' ? 'AI Review Commendations & Notes' : 'Reviewer Comments or Reason for Rejection'}
+                            </label>
                             <textarea
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                                 placeholder="Reviewer Comments or Reason for Rejection..."
                                 className={`w-full min-h-[160px] p-4 rounded-lg border outline-none text-sm font-normal transition-all resize-none ${
-                                    !note.trim() ? 'border-rose-300 focus:border-rose-500' : 'border-gray-200 focus:border-gray-400'
+                                    status === 'FAIL' && !note.trim() ? 'border-rose-300 focus:border-rose-500' : 'border-gray-200 focus:border-gray-400'
                                 }`}
                             />
                         </div>

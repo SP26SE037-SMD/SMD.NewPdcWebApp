@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useState } from 'react';
-import { CalendarDays, Clock, Target, ShieldCheck, Eye, Loader2, Info } from 'lucide-react';
+import { CalendarDays, Clock, Target, ShieldCheck, Eye, Loader2, Info, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { SessionService } from '@/services/session.service';
 import { TaskService } from '@/services/task.service';
@@ -10,14 +10,18 @@ import { SessionEvaluateModal } from '../_components/SessionEvaluateModal';
 import { SessionDetailModal } from '@/components/dashboard/SessionDetailModal';
 import { SyllabusInfoModal } from '@/components/dashboard/SyllabusInfoModal';
 import { ReviewTaskService } from '@/services/review-task.service';
+import { useToast } from '@/components/ui/Toast';
+import { MappingService } from '@/services/mapping.service';
 
 export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ reviewId: string }> }) {
     const { reviewId } = use(params);
-    const { sessionEvaluations } = useReview();
+    const { sessionEvaluations, setSessionsReview, setSessionEvaluation } = useReview();
     const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
+    const [isAiAuditing, setIsAiAuditing] = useState(false);
+    const { showToast } = useToast();
 
     const taskId = reviewId;
 
@@ -62,6 +66,150 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         return { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' };
     };
 
+    const handleAiAudit = async () => {
+        if (sortedSessions.length === 0) {
+            showToast("No sessions available to review.", "error");
+            return;
+        }
+
+        setIsAiAuditing(true);
+        showToast("AI is analyzing session configurations and pedagogical methods...", "info");
+
+        try {
+            // 1. Prepare sessions payload
+            const sessionsPayload = sortedSessions.map(s => ({
+                syllabusId: s.syllabusId || syllabusId || "",
+                sessionNumber: s.sessionNumber,
+                sessionTitle: s.sessionTitle || "",
+                teachingMethods: s.teachingMethods || "",
+                sessionTopic: s.sessionTopic || "",
+                sessionType: s.sessionType || "",
+                duration: s.duration || 0
+            }));
+
+            // 2. Call Session validate API
+            console.log("Calling Session validation API...");
+            const sessionValidateRes = await SessionService.validateSessionsSyllabus(syllabusId || "", sessionsPayload);
+            const sessionValidData = sessionValidateRes?.data;
+            const isSessionsValid = sessionValidData?.valid !== false; // default true if not specified
+            const sessionErrors = sessionValidData?.errors || [];
+            const quotas = sessionValidData?.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 };
+
+            // 3. Call CLO-Session Mapping GET API
+            console.log("Calling CLO-Session Mapping GET API...");
+            const mappingsRes = await MappingService.getSyllabusSessionMappings(syllabusId || "");
+            const mappings = Array.isArray(mappingsRes?.data) ? mappingsRes.data : [];
+
+            // 4. Map the fetched mappings to required payload pairs { cloId, sessionId }
+            // Note: Since a session can be linked to multiple CLOs and a CLO can be linked to multiple sessions,
+            // the response array contains multiple items representing this many-to-many relationship.
+            const mappingsPayload = mappings.map((m: any) => ({
+                cloId: m.cloId || m.clo_id || "",
+                sessionId: m.sessionId || m.session_id || ""
+            })).filter(pair => pair.cloId && pair.sessionId);
+
+            // 5. Call Mapping validate API
+            console.log("Calling Mapping validation API with payload:", mappingsPayload);
+            const mappingsValidateRes = await MappingService.validateSyllabusSessionMappings(syllabusId || "", mappingsPayload);
+            const mappingValidData = mappingsValidateRes?.data;
+            const isMappingsValid = mappingValidData?.is_valid !== false; // default true if not specified
+            const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
+            const isAllSessionsMapped = mappingValidData?.is_all_sessions_mapped !== false;
+            const unmappedClos = mappingValidData?.unmapped_clos || [];
+            const unmappedSessions = mappingValidData?.unmapped_sessions || [];
+            const mappingsList = mappingValidData?.data || [];
+
+            // 6. Build Feedback Markdown
+            let status = (isSessionsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+            let feedback = `=== AI SESSIONS & MAPPINGS AUDIT RESULT ===\n\n`;
+
+            feedback += `[1. Sessions Allocation Review]\n`;
+            feedback += `✓ Status: ${isSessionsValid ? 'VALID' : 'INVALID'}\n`;
+            feedback += `- Total Sessions: ${sortedSessions.length} configured.\n`;
+            feedback += `- Session Pacing Quotas:\n`;
+            feedback += `  • Theory (Lý thuyết): ${quotas.theory || 0} hours remaining.\n`;
+            feedback += `  • Practice (Thực hành): ${quotas.practice || 0} hours remaining.\n`;
+            feedback += `  • Self-Study (Tự học): ${quotas.selfStudy || 0} hours remaining.\n\n`;
+
+            if (sessionErrors.length > 0) {
+                feedback += `⚠️ SESSION VALIDATION WARNINGS/ERRORS:\n`;
+                sessionErrors.forEach((err: any) => {
+                    feedback += `  • [Week ${err.week || 'N/A'}] (Code: ${err.code || 'ERR'}): ${err.message || 'Validation error'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            feedback += `[2. CLO-Session Mappings Review]\n`;
+            feedback += `✓ Status: ${isMappingsValid ? 'VALID' : 'INVALID'}\n`;
+            feedback += `- All CLOs Mapped: ${isAllClosMapped ? 'Yes' : 'No'}\n`;
+            feedback += `- All Sessions Mapped: ${isAllSessionsMapped ? 'Yes' : 'No'}\n\n`;
+
+            if (unmappedClos.length > 0) {
+                feedback += `⚠️ UNMAPPED CLOs DETECTED:\n`;
+                unmappedClos.forEach((clo: any) => {
+                    feedback += `  • CLO [${clo.clo_code || clo.cloCode || 'N/A'}]: ${clo.suggestion || 'Please map to appropriate sessions.'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            if (unmappedSessions.length > 0) {
+                feedback += `⚠️ UNMAPPED SESSIONS DETECTED:\n`;
+                unmappedSessions.forEach((s: any) => {
+                    feedback += `  • Session [${s.chapter_title || s.chapterTitle || s.sessionTitle || 'N/A'}]: ${s.suggestion || 'Please map to corresponding CLOs.'}\n`;
+                });
+                feedback += `\n`;
+            }
+
+            if (mappingsList.length > 0) {
+                feedback += `[3. AI Alignment Analysis]\n`;
+                mappingsList.slice(0, 5).forEach((m: any) => {
+                    feedback += `  • Link [Session ↔ CLO]: Confidence Score = ${m.confidence_score || m.confidenceScore || 0}%\n`;
+                    if (m.reasoning) {
+                        feedback += `    Reasoning: ${m.reasoning}\n`;
+                    }
+                });
+                if (mappingsList.length > 5) {
+                    feedback += `  • And ${mappingsList.length - 5} other mapping links successfully evaluated.\n`;
+                }
+                feedback += `\n`;
+            }
+
+            feedback += `[AI Recommendation]\n`;
+            if (status === 'PASS') {
+                feedback += `ACCEPT this section. All structural session pacing and CLO-session mapping constraints are fully satisfied.`;
+            } else {
+                feedback += `REJECT this section. Remediation required for the items listed above.`;
+            }
+
+            // Save to review state
+            setSessionsReview({
+                status: status as any,
+                note: feedback
+            });
+
+            // Set all individual session evaluations to ACCEPTED if status is PASS
+            if (status === 'PASS') {
+                sortedSessions.forEach(s => {
+                    setSessionEvaluation(s.sessionId, {
+                        sessionId: s.sessionId,
+                        sessionTitle: s.sessionTitle || 'Session',
+                        status: 'ACCEPTED',
+                        note: ''
+                    });
+                });
+            }
+
+            setIsAiAuditing(false);
+            showToast("AI Review suggest complete! Opening form...", "success");
+            setIsEvalModalOpen(true);
+
+        } catch (error: any) {
+            console.error("AI API validation failed:", error);
+            showToast(`Gợi ý AI thất bại: ${error.message || error}`, "error");
+            setIsAiAuditing(false);
+        }
+    };
+
     return (
         <div className="space-y-0 animate-in fade-in duration-500">
             <div className="flex items-center justify-between mb-6 mt-2">
@@ -69,19 +217,34 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                     Sessions
                 </h1>
 
-                <button
-                    onClick={() => setIsEvalModalOpen(true)}
-                    className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] shadow-md text-sm text-white"
-                    style={{ backgroundColor: '#4caf50' }}
-                >
-                    <ShieldCheck size={18} />
-                    Evaluate Now
-                    {evaluatedCount > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[9px]">
-                            {evaluatedCount}/{sortedSessions.length}
-                        </span>
-                    )}
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleAiAudit}
+                        disabled={isAiAuditing || sortedSessions.length === 0}
+                        className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 border border-purple-200 bg-purple-50 text-purple-700 transition-all hover:bg-purple-100 hover:border-purple-300 active:scale-[0.98] shadow-sm text-sm disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        {isAiAuditing ? (
+                            <Loader2 size={18} className="animate-spin text-purple-600" />
+                        ) : (
+                            <Sparkles size={18} className="text-purple-600 animate-pulse" />
+                        )}
+                        {isAiAuditing ? 'AI Auditing...' : 'AI Suggestion'}
+                    </button>
+
+                    <button
+                        onClick={() => setIsEvalModalOpen(true)}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] shadow-md text-sm text-white"
+                        style={{ backgroundColor: '#4caf50' }}
+                    >
+                        <ShieldCheck size={18} />
+                        Evaluate Now
+                        {evaluatedCount > 0 && (
+                            <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[9px]">
+                                {evaluatedCount}/{sortedSessions.length}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </div>
 
             {/* ── Empty State ── */}
