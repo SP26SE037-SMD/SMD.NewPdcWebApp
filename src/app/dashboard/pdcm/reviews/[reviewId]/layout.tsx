@@ -73,7 +73,7 @@ function PDCMReviewContent({
             };
 
             const payload = {
-                titleTask: task.titleTask || "Syllabus Review",
+                titleTask: task.taskName || (task as any).titleTask || "Syllabus Review",
                 commentMaterial: notes.material || "No comments",
                 commentSession: notes.session || "No comments",
                 commentAssessment: notes.assessment || "No comments",
@@ -156,7 +156,7 @@ function PDCMReviewContent({
                             <div className="flex items-center gap-2 mt-0.5">
                                 <p className="text-[9px] font-black text-primary-500 uppercase tracking-[0.1em]">verification workflow active</p>
                                 <span className="text-[#dee1d8]">•</span>
-                                <p className="text-[9px] font-bold text-[#5a6157] uppercase tracking-[0.1em]">{task?.titleTask || "Syllabus Audit"}</p>
+                                <p className="text-[9px] font-bold text-[#5a6157] uppercase tracking-[0.1em]">{task?.taskName || (task as any)?.titleTask || "Syllabus Audit"}</p>
                             </div>
                         </div>
                     </div>
@@ -170,7 +170,7 @@ function PDCMReviewContent({
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={handleSendReview}
                 isSubmitting={isSubmitting}
-                taskTitle={task?.titleTask || "Syllabus Audit"}
+                taskTitle={task?.taskName || (task as any)?.titleTask || "Syllabus Audit"}
                 reviews={{
                     syllabus: syllabusReview,
                     materials: materialsReview,
@@ -236,7 +236,7 @@ export default function PDCMReviewLayout({
         <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Reviewing Task</p>
             <p className="text-sm font-bold text-on-surface leading-tight line-clamp-2">
-                {task?.titleTask || "Syllabus Audit"}
+                {task?.taskName || (task as any)?.titleTask || "Syllabus Audit"}
             </p>
         </div>
     );
