@@ -1383,7 +1383,7 @@ export function TaskList({ sprintId }: TaskListProps) {
         rootTaskId={taskModalParentTask?.taskId || null}
         subjectId={taskModalParentTask?.subjectId}
         subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
-        targetId={taskModalParentTask?.targetId || taskModalParentTask?.syllabusId}
+        targetId={taskModalParentTask?.targetId || taskModalParentTask?.syllabus?.syllabusId || taskModalParentTask?.syllabusId}
         accounts={departmentAccounts}
         currentUserEmail={user?.email || ""}
         sprintDeadline={sprint?.endDate}
