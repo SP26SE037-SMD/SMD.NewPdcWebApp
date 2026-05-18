@@ -50,14 +50,7 @@ export default function PDCMReviewInformationPage({
   const { reviewId } = use(params);
   const dispatch = useDispatch<AppDispatch>();
 
-  const { data: reviewTaskRes, isLoading: isReviewTaskLoading } = useQuery({
-    queryKey: ["pdcm-review-detail", reviewId],
-    queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
-    enabled: !!reviewId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const taskId = reviewTaskRes?.data?.task?.taskId || (reviewTaskRes?.data as any)?.taskId;
+  const taskId = reviewId;
 
   const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
     queryKey: ["pdcm-task-detail", taskId],
@@ -106,14 +99,31 @@ export default function PDCMReviewInformationPage({
 
         if (!subjectId) return;
 
-        const [sourcesResult, closResult] = await Promise.allSettled([
-          SourceService.getSubjectSources(subjectId),
-          CloPloService.getSubjectClos(subjectId, 0, 100),
-        ]);
-
+        // Use sources from routeTaskData if available
         let sourcesReference: string[] = [];
+        const taskSubjectSources = routeTaskData?.data?.subject?.sources;
+        if (taskSubjectSources && taskSubjectSources.length > 0) {
+          sourcesReference = taskSubjectSources.map(
+            (s) =>
+              `${s.author ? s.author + ". " : ""}${s.sourceName}${s.publisher ? " - " + s.publisher : ""}${s.publishedYear ? " (" + s.publishedYear + ")" : ""}`,
+          );
+        }
+
+        // Fetch CLOs and (fallback) sources if needed
+        const promises: Promise<any>[] = [
+          CloPloService.getSubjectClos(subjectId, 0, 100),
+        ];
+
+        if (sourcesReference.length === 0) {
+          promises.push(SourceService.getSubjectSources(subjectId));
+        }
+
+        const results = await Promise.allSettled(promises);
+        const closResult = results[0];
+        const sourcesResult = sourcesReference.length === 0 ? results[1] : null;
+
         if (
-          sourcesResult.status === "fulfilled" &&
+          sourcesResult?.status === "fulfilled" &&
           (sourcesResult.value as any)?.data
         ) {
           const sourcesData = (sourcesResult.value as any).data as Array<{
@@ -168,7 +178,7 @@ export default function PDCMReviewInformationPage({
     };
 
     fetchInfo();
-  }, [syllabusId, dispatch, syllabusInfo]);
+  }, [syllabusId, dispatch, syllabusInfo, routeTaskData]);
 
   const displayInfo = syllabusInfo || {
     bloomTaxonomy: "Loading...",
@@ -201,7 +211,6 @@ export default function PDCMReviewInformationPage({
   ];
 
   if (
-    isReviewTaskLoading ||
     isTaskLoading ||
     (!!syllabusId && isSyllabusLoading) ||
     (!!subjectId && isSubjectLoading)
