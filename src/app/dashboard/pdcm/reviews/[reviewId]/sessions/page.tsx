@@ -203,8 +203,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
             showToast("AI Review suggest complete! Opening form...", "success");
             setIsEvalModalOpen(true);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("AI API validation failed, falling back to client-side smart analysis:", error);
+            showToast(`API Error: ${error.message || error}`, "error");
             
             // Client-side fallback check
             const totalSessions = sortedSessions.length;
@@ -213,7 +214,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
             const uniqueTopics = Array.from(new Set(sortedSessions.filter(s => s.sessionTopic).map(s => s.sessionTopic)));
 
             let status = 'PASS';
-            let feedback = `=== AI SESSIONS AUDIT RESULT (FALLBACK ANALYSIS) ===\n\n`;
+            let feedback = `⚠️ BACKEND API CALL FAILED: ${error.message || error}\n`;
+            feedback += `(Falling back to local smart auditing to prevent UI crash)\n\n`;
+            feedback += `=== AI SESSIONS AUDIT RESULT (FALLBACK ANALYSIS) ===\n\n`;
             feedback += `[Analysis Snapshot]\n`;
             feedback += `- Total Sessions: ${totalSessions} components configured.\n`;
             feedback += `- Total Distribution Time: ${totalMinutes} minutes (~${(totalMinutes/60).toFixed(1)} hours).\n`;
