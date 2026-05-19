@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type ReviewStatus = 'PENDING' | 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT';
 
@@ -92,6 +92,39 @@ export function ReviewProvider({ children, reviewId }: { children: ReactNode; re
         loadSaved(`pdcm-review-sessions-${reviewId}`) || {});
     const [assessmentEvaluations, setAssessmentEvaluations] = useState<Record<string, AssessmentEvaluation>>(() =>
         loadSaved(`pdcm-review-assessments-${reviewId}`) || {});
+
+    // ── Persist to localStorage whenever state changes ──────────────────────
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-materials-${reviewId}`, JSON.stringify(materialEvaluations)); } catch { /**/ }
+    }, [materialEvaluations, reviewId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-sessions-${reviewId}`, JSON.stringify(sessionEvaluations)); } catch { /**/ }
+    }, [sessionEvaluations, reviewId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-assessments-${reviewId}`, JSON.stringify(assessmentEvaluations)); } catch { /**/ }
+    }, [assessmentEvaluations, reviewId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-sessions-summary-${reviewId}`, JSON.stringify(sessionsReview)); } catch { /**/ }
+    }, [sessionsReview, reviewId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-assessments-summary-${reviewId}`, JSON.stringify(assessmentsReview)); } catch { /**/ }
+    }, [assessmentsReview, reviewId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try { localStorage.setItem(`pdcm-review-materials-summary-${reviewId}`, JSON.stringify(materialsReview)); } catch { /**/ }
+    }, [materialsReview, reviewId]);
+
+
 
     const setItemFeedback = (id: string, feedback: string) => {
         setItemFeedbacks(prev => ({ ...prev, [id]: feedback }));

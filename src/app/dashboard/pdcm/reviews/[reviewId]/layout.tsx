@@ -53,56 +53,126 @@ function PDCMReviewContent({
     // Detect if we are in Material Detail view
     const isMaterialDetail = pathname.includes('/materials/') && pathname.split('/').length > 6;
 
-    const handleSendReview = async (status: 'APPROVED' | 'REVISION_REQUESTED', notes: { material: string; session: string; assessment: string }) => {
+    const handleSendReview = async (_status: 'APPROVED' | 'REVISION_REQUESTED', _notes: { material: string; session: string; assessment: string }) => {
         if (!task) return;
         setIsSubmitting(true);
         try {
-            // Format date correctly to ISO string to prevent backend 9999 parsing error
-            const formatToISO = (dateStr?: string) => {
-                if (!dateStr) return new Date().toISOString();
-                try {
-                    // Convert "YYYY-MM-DD HH:mm:ss" to "YYYY-MM-DDTHH:mm:ss"
-                    const sanitized = dateStr.includes(' ') && !dateStr.includes('T') 
-                        ? dateStr.replace(' ', 'T') 
-                        : dateStr;
-                    const d = new Date(sanitized);
-                    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
-                } catch (e) {
-                    return new Date().toISOString();
+            // 1. Get current user's accountId
+            let reviewerId = '';
+            try {
+                const meRes = await fetch('/api/auth/me');
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    reviewerId = meData?.user?.accountId || meData?.user?.id || '';
                 }
+            } catch {
+                console.warn('Could not fetch current user, reviewerId will be empty');
+            }
+
+            const taskId: string = task?.taskId || task?.task?.taskId || (task as any)?.taskId || reviewId;
+
+            // Helper: build a section comment in consistent format
+            const buildSectionComment = (evals: Record<string, any>, idKey: string): string => {
+                const entries = Object.entries(evals);
+                if (entries.length === 0) return 'No items evaluated.';
+                const hasRejections = entries.some(([, ev]) => ev.status !== 'ACCEPTED');
+                if (!hasRejections) return 'All are accepted.';
+                return entries.map(([, ev]) => {
+                    const id = ev[idKey] || Object.keys(ev).find(k => k.endsWith('Id')) && ev[Object.keys(ev).find(k => k.endsWith('Id'))!] || 'unknown';
+                    if (ev.status === 'ACCEPTED') return `+ ${id}: accepted`;
+                    return `+ ${id}: ${ev.note || 'rejected'}`;
+                }).join('\n');
             };
 
-            const payload = {
-                titleTask: task.taskName || (task as any).titleTask || "Syllabus Review",
-                commentMaterial: notes.material || "No comments",
-                commentSession: notes.session || "No comments",
-                commentAssessment: notes.assessment || "No comments",
-                reviewDate: new Date().toISOString(),
-                dueDate: formatToISO(task.dueDate),
-                status: status,
-                taskId: task.task?.taskId || (task as any).taskId || (task as any).syllabusId,
-                reviewerId: task.reviewer?.reviewerId || (task as any).reviewerId
-            };
+            // 2. Material comment
+            const matEvals: Record<string, any> = (() => {
+                try {
+                    const saved = localStorage.getItem(`pdcm-review-materials-${reviewId}`);
+                    return saved ? JSON.parse(saved) : {};
+                } catch { return {}; }
+            })();
+            const materialComment = buildSectionComment(matEvals, 'materialId');
 
-            console.log('[API DEBUG] Submitting Review Payload:', payload);
+            // 3. Session comment — overall verdict
+            const sessionReviewData = (() => {
+                try {
+                    const saved = localStorage.getItem(`pdcm-review-sessions-summary-${reviewId}`);
+                    return saved ? JSON.parse(saved) : sessionsReview;
+                } catch { return sessionsReview; }
+            })();
+            const sessionComment = (sessionReviewData?.status === 'PASS' || sessionReviewData?.status === 'ACCEPTED')
+                ? 'accepted'
+                : (sessionReviewData?.note ? (() => {
+                    try {
+                        const inner = JSON.parse(sessionReviewData.note);
+                        return inner?.reviewerComment || inner?.aiResult?.conclusion || sessionReviewData.note;
+                    } catch { return sessionReviewData.note; }
+                })() : (sessionReviewData?.status || 'No session review.'));
 
-            await ReviewTaskService.updateReviewTask(reviewId, payload);
+            // 4. Assessment comment — overall verdict
+            const assessReviewData = (() => {
+                try {
+                    const saved = localStorage.getItem(`pdcm-review-assessments-summary-${reviewId}`);
+                    return saved ? JSON.parse(saved) : assessmentsReview;
+                } catch { return assessmentsReview; }
+            })();
+            const assessmentComment = (assessReviewData?.status === 'PASS' || assessReviewData?.status === 'ACCEPTED')
+                ? 'accepted'
+                : (assessReviewData?.note ? (() => {
+                    try {
+                        const inner = JSON.parse(assessReviewData.note);
+                        return inner?.reviewerComment || inner?.aiResult?.conclusion || assessReviewData.note;
+                    } catch { return assessReviewData.note; }
+                })() : (assessReviewData?.status || 'No assessment review.'));
 
-            // Invalidate queries to refresh dashboard
+
+            const fullComment = [
+                `Review for material:\n${materialComment}`,
+                `Review for session:\n${sessionComment}`,
+                `Review for assessment:\n${assessmentComment}`,
+            ].join('\n\n');
+
+
+            // 5. Call POST /api/v1/reviews-v2
+            console.log('[Submit Review] Payload:', { taskId, reviewerId, comment: fullComment });
+            const reviewRes = await fetch('/api/v1/reviews-v2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId, reviewerId, comment: fullComment }),
+            });
+
+            if (!reviewRes.ok) {
+                const errData = await reviewRes.json().catch(() => ({}));
+                throw new Error(errData?.message || `Review submission failed (${reviewRes.status})`);
+            }
+
+            // 6. Update task status → DONE
+            try {
+                await fetch(`/api/v1/tasks-v2/${taskId}/status?status=DONE`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            } catch (statusErr) {
+                console.warn('[Submit Review] Could not update task status to DONE:', statusErr);
+            }
+
+            // 7. Invalidate queries & navigate
             queryClient.invalidateQueries({ queryKey: ['pdcm-tasks'] });
             queryClient.invalidateQueries({ queryKey: ['pdcm-review-tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['pdcm-task-detail', reviewId] });
 
-            showToast(status === 'APPROVED' ? "Syllabus approved and submitted to supervisor!" : "Revision requests submitted to supervisor.", 'success');
-            // Redirect back to dashboard
+            showToast('Review submitted successfully! Task marked as done.', 'success');
             router.push('/dashboard/pdcm');
+
         } catch (err: any) {
-            console.error(err);
-            showToast(err.message || "Failed to submit evaluation. Please try again.", 'error');
+            console.error('[Submit Review] Error:', err);
+            showToast(err.message || 'Failed to submit review. Please try again.', 'error');
         } finally {
             setIsSubmitting(false);
             setIsConfirmModalOpen(false);
         }
     };
+
 
     if (isLoading) {
         return (
