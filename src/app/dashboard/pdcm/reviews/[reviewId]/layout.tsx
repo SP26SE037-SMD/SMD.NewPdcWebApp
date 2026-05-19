@@ -76,10 +76,10 @@ function PDCMReviewContent({
                 const entries = Object.entries(evals);
                 if (entries.length === 0) return 'No items evaluated.';
                 const hasRejections = entries.some(([, ev]) => ev.status !== 'ACCEPTED');
-                if (!hasRejections) return 'All are accepted.';
+                if (!hasRejections) return 'All are accept';
                 return entries.map(([, ev]) => {
                     const id = ev[idKey] || Object.keys(ev).find(k => k.endsWith('Id')) && ev[Object.keys(ev).find(k => k.endsWith('Id'))!] || 'unknown';
-                    if (ev.status === 'ACCEPTED') return `+ ${id}: accepted`;
+                    if (ev.status === 'ACCEPTED') return `+ ${id}: accept`;
                     return `+ ${id}: ${ev.note || 'rejected'}`;
                 }).join('\n');
             };
@@ -101,7 +101,7 @@ function PDCMReviewContent({
                 } catch { return sessionsReview; }
             })();
             const sessionComment = (sessionReviewData?.status === 'PASS' || sessionReviewData?.status === 'ACCEPTED')
-                ? 'accepted'
+                ? 'accept'
                 : (sessionReviewData?.note ? (() => {
                     try {
                         const inner = JSON.parse(sessionReviewData.note);
@@ -117,7 +117,7 @@ function PDCMReviewContent({
                 } catch { return assessmentsReview; }
             })();
             const assessmentComment = (assessReviewData?.status === 'PASS' || assessReviewData?.status === 'ACCEPTED')
-                ? 'accepted'
+                ? 'accept'
                 : (assessReviewData?.note ? (() => {
                     try {
                         const inner = JSON.parse(assessReviewData.note);
