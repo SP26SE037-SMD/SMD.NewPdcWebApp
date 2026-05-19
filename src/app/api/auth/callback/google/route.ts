@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AUTH_TOKEN_COOKIE, AUTH_USER_COOKIE, accountToUser } from '@/lib/auth';
+import { AUTH_TOKEN_COOKIE, AUTH_USER_COOKIE, accountToUser, isSupportedRole, SUPPORTED_ROLES, ROLE_PATHS } from '@/lib/auth';
 import type { LoginResponse } from '@/lib/auth';
 
 const BACKEND_URL = process.env.BACKEND_URL;
@@ -66,15 +66,16 @@ export async function GET(request: Request) {
         const user = accountToUser(account);
         console.log(user);
 
-        // Map role to correct dashboard path
-        const ROLE_PATHS: Record<string, string> = {
-            'PDCM': 'pdcm',
-            'HoPDC': 'hopdc',
-            'HoCFDC': 'hocfdc',
-            'VP': 'vice-principal',
-            'COLLABORATOR': 'collaborator',
-        };
-        const dashboardPath = `/dashboard/${ROLE_PATHS[user.role] || 'pdcm'}`;
+        // Validate role — only supported roles can access the application
+        if (!user.role || !isSupportedRole(user.role)) {
+            console.warn(`[Google Callback] Unsupported role "${user.role}" for user ${user.email}. Access denied.`);
+            return NextResponse.redirect(
+                new URL(`/login?error=${encodeURIComponent(`Your account role "${user.role || 'Unknown'}" is not supported. Allowed roles: ${SUPPORTED_ROLES.join(', ')}. Please contact the administrator.`)}`, request.url)
+            );
+        }
+
+        // Map role to correct dashboard path (uses centralized ROLE_PATHS from auth.ts)
+        const dashboardPath = `/dashboard/${ROLE_PATHS[user.role]}`;
         console.log(dashboardPath);
 
         const response = NextResponse.redirect(new URL(dashboardPath, request.url));
