@@ -19,6 +19,7 @@ import { CloPloService } from "@/services/cloplo.service";
 import { MappingService } from "@/services/mapping.service";
 import { useReview } from "../ReviewContext";
 import { AssessmentEvaluateModal } from "../_components/AssessmentEvaluateModal";
+import { AssessmentAISuggestionModal } from "../_components/AssessmentAISuggestionModal";
 import { SyllabusInfoModal } from "@/components/dashboard/SyllabusInfoModal";
 import { ReviewTaskService } from "@/services/review-task.service";
 import { useToast } from "@/components/ui/Toast";
@@ -29,8 +30,10 @@ export default function PDCMReviewAssessmentsPage({
   params: Promise<{ reviewId: string }>;
 }) {
   const { reviewId } = use(params);
-  const { assessmentEvaluations, setAssessmentsReview, setAssessmentEvaluation } = useReview();
+  const { assessmentEvaluations, assessmentsReview, setAssessmentsReview, setAssessmentEvaluation } = useReview();
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
+  const [isAiSuggestionModalOpen, setIsAiSuggestionModalOpen] = useState(false);
+  const [cachedAiResult, setCachedAiResult] = useState<any>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isAiAuditing, setIsAiAuditing] = useState(false);
@@ -70,7 +73,7 @@ export default function PDCMReviewAssessmentsPage({
   const assessments: any[] = Array.isArray((assessmentDataRes as any)?.data)
     ? (assessmentDataRes as any).data
     : [];
-  
+
   console.log("=== ASSESSMENTS DATA ===", assessmentDataRes, assessments);
   const totalWeight = assessments.reduce(
     (sum: number, a: any) => sum + (+a.weight || 0),
@@ -101,55 +104,128 @@ export default function PDCMReviewAssessmentsPage({
     };
   };
 
-  const handleAiAudit = () => {
+  const handleAiAudit = async () => {
     if (assessments.length === 0) {
       showToast("No assessments available to review.", "error");
       return;
     }
 
-    setIsAiAuditing(true);
-    showToast("AI is auditing assessment weights and structure...", "info");
-
-    setTimeout(() => {
-      const categories = Array.from(new Set(assessments.map(a => a.categoryName || a.typeName || 'General')));
-      const totalWeight = assessments.reduce((sum: number, a: any) => sum + (+a.weight || 0), 0);
-      const isWeightValid = totalWeight === 100;
-
-      let status = isWeightValid ? 'PASS' : 'FAIL';
-      let feedback = `=== AI ASSESSMENTS AUDIT RESULT ===\n\n`;
-      feedback += `[Analysis Snapshot]\n`;
-      feedback += `- Total Assessment Components: ${assessments.length} configured.\n`;
-      feedback += `- Calculated Sum of Weighting: ${totalWeight}% ${isWeightValid ? '(Properly Balanced)' : '(Imbalanced - MUST equal exactly 100%)'}.\n`;
-      feedback += `- Evaluated Categories: ${categories.join(', ')}.\n\n`;
-
-      feedback += `[Standard Evaluation Checkpoint]\n`;
-      if (!isWeightValid) {
-        feedback += `⚠️ CRITICAL ERROR: The combined weighting of all assessment entries totals ${totalWeight}%, which violates the absolute 100% syllabus constraint.\n`;
-        feedback += `⚠️ CRITICAL ERROR: This will cause registration issues and academic score processing failures.\n\n`;
-        feedback += `[Component Pacing & Balance]\n`;
-        feedback += `- Weighting Distribution: Imbalanced.\n`;
-        feedback += `- Action Required: Re-distribute task weights so that the sum is exactly 100%.\n\n`;
-        feedback += `[AI Recommendation]\n`;
-        feedback += `REJECT this section. Request owner to balance the assessment weight matrix.`;
-      } else {
-        feedback += `✓ Weighting Distribution: Valid and perfectly balanced at 100%.\n`;
-        feedback += `✓ Core Competencies: Evaluates student performance across standard metrics.\n`;
-        feedback += `✓ Grading Feasibility: All elements properly structured for database mapping.\n\n`;
-        feedback += `[Component Pacing & Balance]\n`;
-        feedback += `- Weighting Distribution: Excellent.\n`;
-        feedback += `- Grading criteria aligns perfectly with institutional and educational guidelines.\n\n`;
-        feedback += `[AI Recommendation]\n`;
-        feedback += `ACCEPT this section. The current assessment scheme represents a complete and balanced standard package.`;
+    // If AI result already cached → open the suggestion modal immediately
+    try {
+      const existing = assessmentsReview.note ? JSON.parse(assessmentsReview.note) : null;
+      if (existing?.aiResult) {
+        setCachedAiResult(existing.aiResult);
+        setIsAiSuggestionModalOpen(true);
+        return;
       }
+    } catch { /* not JSON, continue */ }
 
-      // Save to review context state
-      setAssessmentsReview({
-        status: status as any,
-        note: feedback
-      });
+    setIsAiAuditing(true);
+    showToast("AI is analyzing assessments and CLO mappings...", "info");
 
-      // Set all individual assessment evaluations to ACCEPTED if status is PASS
-      if (status === 'PASS') {
+    try {
+      // 1. Build assessment validate payload
+      const assessmentsPayload = assessments.map(a => ({
+        categoryId: a.categoryId,
+        typeId: a.typeId,
+        syllabusId: a.syllabusId || syllabusId || "",
+        part: a.part,
+        weight: a.weight,
+        completionCriteria: a.completionCriteria || "",
+        duration: a.duration || 0,
+        questionType: a.questionType || "",
+        knowledgeSkill: a.knowledgeSkill || "",
+        gradingGuide: a.gradingGuide || "",
+        note: a.note || "",
+      }));
+
+      // 2. Call assessment validate API (graceful fallback)
+      let assessmentValidData: any = null;
+      try {
+        const res = await AssessmentService.validateAssessments(syllabusId || "", assessmentsPayload);
+        assessmentValidData = (res as any)?.data;
+      } catch (err: any) {
+        console.warn("[Assessments] Validate API failed, using defaults:", err?.message);
+      }
+      const isAssessmentsValid = assessmentValidData?.valid !== false;
+      const assessmentErrors: any[] = assessmentValidData?.errors || [];
+      const summary = assessmentValidData?.summary || {};
+
+      // 3. Build CLO-Assessment mapping payload
+      const existingMappings = await MappingService.getSyllabusAssessmentMappings(syllabusId || "").catch(() => null);
+      const mappingsList: any[] = (existingMappings as any)?.data || [];
+      const mappingsPayload = mappingsList
+        .map((m: any) => ({ cloId: m.cloId, assessmentId: m.assessmentId }))
+        .filter((p: any) => p.cloId && p.assessmentId);
+
+      // 4. Call CLO-Assessment mapping validate API (graceful fallback)
+      let mappingValidData: any = null;
+      try {
+        const mappingRes = await MappingService.validateAssessmentMappings(syllabusId || "", mappingsPayload);
+        mappingValidData = (mappingRes as any)?.data;
+      } catch (err: any) {
+        console.warn("[Mapping] CLO-Assessment Validate API failed, using defaults:", err?.message);
+      }
+      const isMappingsValid = mappingValidData?.is_valid !== false;
+      const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
+      const isAllAssessmentsMapped = mappingValidData?.is_all_assessments_mapped !== false;
+      const unmappedClos: any[] = mappingValidData?.unmapped_clos || [];
+      const unmappedAssessments: any[] = mappingValidData?.unmapped_assessments || [];
+      const totalLinks: number = (mappingValidData?.data || []).length;
+
+      // 5. Error code map
+      const errorCodeMap: Record<string, string> = {
+        'WEIGHT_SHORTAGE': 'Total assessment weight is below 100%',
+        'WEIGHT_SURPLUS': 'Total assessment weight exceeds 100%',
+        'MISSING_FINAL_ASSESSMENT': 'No final (summative) assessment found',
+        'MISSING_FORMATIVE_ASSESSMENT': 'No formative assessment found',
+        'ASSESSMENT_COUNT_EXCEEDED': 'Too many assessment components (max 8)',
+      };
+
+      // 6. Build structured audit result
+      const overallStatus = (isAssessmentsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+
+      const auditResult = {
+        conclusion: overallStatus === 'PASS'
+          ? 'Assessments meet all weight and CLO-mapping standards. This section looks good.'
+          : 'Assessments have issues that should be reviewed before approval.',
+        sections: [
+          {
+            id: 'assessments',
+            title: 'Assessment Weight & Structure',
+            status: isAssessmentsValid ? 'PASS' : 'FAIL',
+            stats: [
+              { label: 'Total Components', value: `${assessments.length}`, type: 'info' },
+              { label: 'Total Weight', value: `${summary.currentTotalWeight ?? totalWeight}%`, type: (summary.currentTotalWeight ?? totalWeight) === 100 ? 'ok' : 'error' },
+              { label: 'Has Final Exam', value: summary.hasFinalAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFinalAssessment !== false ? 'ok' : 'error' },
+              { label: 'Has Formative', value: summary.hasFormativeAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFormativeAssessment !== false ? 'ok' : 'error' },
+            ],
+            warnings: assessmentErrors.map((err: any) => ({
+              label: errorCodeMap[err.code] || err.code,
+              detail: err.message,
+            })),
+          },
+          {
+            id: 'mapping',
+            title: 'CLO — Assessment Mapping',
+            status: isMappingsValid ? 'PASS' : 'FAIL',
+            stats: [
+              { label: 'CLOs Covered', value: isAllClosMapped ? 'All covered' : `${unmappedClos.length} missing`, type: isAllClosMapped ? 'ok' : 'error' },
+              { label: 'Assessments Linked', value: isAllAssessmentsMapped ? 'All linked' : `${unmappedAssessments.length} missing`, type: isAllAssessmentsMapped ? 'ok' : 'error' },
+              { label: 'Total Links', value: `${totalLinks}`, type: 'info' },
+            ],
+            warnings: [],
+            unmappedClos: unmappedClos.map((c: any) => ({ code: c.clo_code, suggestion: c.suggestion })),
+            unmappedAssessments: unmappedAssessments.map((a: any) => ({ questionType: a.question_type, suggestion: a.suggestion })),
+          },
+        ],
+      };
+
+      const noteJson = JSON.stringify({ aiResult: auditResult, reviewerComment: '' });
+      setAssessmentsReview({ status: overallStatus as any, note: noteJson });
+      setCachedAiResult(auditResult);
+
+      if (overallStatus === 'PASS') {
         assessments.forEach(a => {
           setAssessmentEvaluation(a.assessmentId, {
             assessmentId: a.assessmentId,
@@ -161,9 +237,14 @@ export default function PDCMReviewAssessmentsPage({
       }
 
       setIsAiAuditing(false);
-      showToast("AI Review suggest complete! Opening form...", "success");
-      setIsEvalModalOpen(true);
-    }, 1800);
+      showToast("AI analysis complete!", "success");
+      setIsAiSuggestionModalOpen(true);
+
+    } catch (error: any) {
+      console.error("AI assessment audit failed:", error);
+      showToast(`AI suggestion failed: ${error.message || 'Please try again.'}`, "error");
+      setIsAiAuditing(false);
+    }
   };
 
   if (
@@ -197,11 +278,10 @@ export default function PDCMReviewAssessmentsPage({
         <div className="flex flex-wrap gap-4 self-start md:self-center">
           {/* Weight Badge */}
           <div
-            className={`px-4 py-2.5 rounded-xl border flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
-              isWeightValid
+            className={`px-4 py-2.5 rounded-xl border flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isWeightValid
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-amber-50 text-amber-600 border-amber-100"
-            }`}
+              }`}
           >
             {isWeightValid ? (
               <CheckCircle2 size={14} />
@@ -273,20 +353,18 @@ export default function PDCMReviewAssessmentsPage({
               return (
                 <div
                   key={ass.assessmentId || `local-${index}`}
-                  className={`group relative bg-surface-container-lowest p-0.5 rounded-xl transition-all duration-300 hover:shadow-lg border ${
-                    badge
+                  className={`group relative bg-surface-container-lowest p-0.5 rounded-xl transition-all duration-300 hover:shadow-lg border ${badge
                       ? `${badge.border}`
                       : "border-transparent hover:border-primary/10"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between p-3">
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${
-                          ass.typeName?.toLowerCase().includes("formative")
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${ass.typeName?.toLowerCase().includes("formative")
                             ? "bg-secondary-container text-on-secondary-container"
                             : "bg-primary-container text-on-primary-container"
-                        }`}
+                          }`}
                       >
                         <span className="material-symbols-outlined text-xl">
                           {ass.typeName?.toLowerCase().includes("formative")
@@ -313,11 +391,10 @@ export default function PDCMReviewAssessmentsPage({
                         </h3>
                         <div className="flex items-center space-x-2 mt-0.5">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                              ass.typeName?.toLowerCase().includes("formative")
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${ass.typeName?.toLowerCase().includes("formative")
                                 ? "bg-secondary-container text-on-secondary-container"
                                 : "bg-primary-container text-on-primary-container"
-                            }`}
+                              }`}
                           >
                             {ass.typeName}
                           </span>
@@ -404,7 +481,14 @@ export default function PDCMReviewAssessmentsPage({
         />
       )}
 
-      {/* Assessment Evaluate Modal */}
+      {/* AI Suggestion Modal (read-only) */}
+      <AssessmentAISuggestionModal
+        isOpen={isAiSuggestionModalOpen}
+        onClose={() => setIsAiSuggestionModalOpen(false)}
+        aiResult={cachedAiResult}
+      />
+
+      {/* Assessment Evaluate Modal (reviewer decision) */}
       <AssessmentEvaluateModal
         isOpen={isEvalModalOpen}
         onClose={() => setIsEvalModalOpen(false)}

@@ -53,6 +53,18 @@ export function ConfirmReviewModal({ isOpen, onClose, onConfirm, isSubmitting, t
         return reviews?.[type]?.note || `All ${type} items were reviewed and accepted.`;
     };
 
+    const parseNote = (note: string): string => {
+        if (!note) return '';
+        try {
+            const parsed = JSON.parse(note);
+            // AI audit result format
+            if (parsed?.aiResult?.conclusion) return parsed.aiResult.conclusion;
+            // Plain note
+            if (typeof parsed === 'string') return parsed;
+        } catch { /**/ }
+        return note;
+    };
+
     const handleConfirm = () => {
         onConfirm(status, {
             material: getAggregatedNotes('materials'),
@@ -60,6 +72,7 @@ export function ConfirmReviewModal({ isOpen, onClose, onConfirm, isSubmitting, t
             assessment: getAggregatedNotes('assessments')
         });
     };
+
 
     if (!isOpen) return null;
 
@@ -169,9 +182,9 @@ export function ConfirmReviewModal({ isOpen, onClose, onConfirm, isSubmitting, t
                                     <p className="text-[11px] font-black text-[#2d342b] uppercase tracking-tight">Full Session Set</p>
                                 </div>
                                 {reviews?.sessions?.status !== 'PASS' && reviews?.sessions?.note ? (
-                                    <p className="text-[11px] text-red-700 font-medium leading-tight">{reviews.sessions.note}</p>
+                                    <p className="text-[11px] text-red-700 font-medium leading-tight">{parseNote(reviews.sessions.note)}</p>
                                 ) : reviews?.sessions?.status === 'PASS' ? (
-                                    <p className="text-[11px] text-green-700 font-medium">All sessions are accurately scheduled and distributed.</p>
+                                    <p className="text-[11px] text-green-700 font-medium">{parseNote(reviews.sessions.note) || 'All sessions are accurately scheduled and distributed.'}</p>
                                 ) : (
                                     <p className="text-[11px] text-gray-400 italic">No summary provided.</p>
                                 )}
@@ -193,9 +206,9 @@ export function ConfirmReviewModal({ isOpen, onClose, onConfirm, isSubmitting, t
                                     <p className="text-[11px] font-black text-[#2d342b] uppercase tracking-tight">Full Assessment Set</p>
                                 </div>
                                 {reviews?.assessments?.status !== 'PASS' && reviews?.assessments?.note ? (
-                                    <p className="text-[11px] text-red-700 font-medium leading-tight">{reviews.assessments.note}</p>
+                                    <p className="text-[11px] text-red-700 font-medium leading-tight">{parseNote(reviews.assessments.note)}</p>
                                 ) : reviews?.assessments?.status === 'PASS' ? (
-                                    <p className="text-[11px] text-green-700 font-medium">Assessment types and weights are correctly configured.</p>
+                                    <p className="text-[11px] text-green-700 font-medium">{parseNote(reviews.assessments.note) || 'Assessment types and weights are correctly configured.'}</p>
                                 ) : (
                                     <p className="text-[11px] text-gray-400 italic">No summary provided.</p>
                                 )}
