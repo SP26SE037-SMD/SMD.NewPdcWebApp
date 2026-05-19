@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AUTH_TOKEN_COOKIE, AUTH_USER_COOKIE, accountToUser } from '@/lib/auth';
+import { AUTH_TOKEN_COOKIE, AUTH_USER_COOKIE, accountToUser, isSupportedRole, SUPPORTED_ROLES } from '@/lib/auth';
 import type { LoginResponse } from '@/lib/auth';
 
 const BACKEND_URL = process.env.BACKEND_URL;
@@ -29,8 +29,14 @@ export async function POST(request: Request) {
         const { token, account } = data.data;
         const user = accountToUser(account);
 
-        // In trực tiếp dữ liệu gốc bạn đã định đưa vào response
-        // console.log("Dữ liệu chuẩn bị trả về User:", { user });
+        // Validate role — only supported roles can access the application
+        if (!user.role || !isSupportedRole(user.role)) {
+            console.warn(`[API /auth/login] Unsupported role "${user.role}" for user ${user.email}. Access denied.`);
+            return NextResponse.json(
+                { error: `Your account is not authorized to access this application. Please try again or contact the administrator.` },
+                { status: 403 }
+            );
+        }
 
         // Build the response
         const response = NextResponse.json({ user });

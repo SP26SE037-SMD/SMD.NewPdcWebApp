@@ -69,6 +69,16 @@ export const ROLE_PATHS: Record<string, string> = {
   COLLABORATOR: "collaborator",
 };
 
+// Supported roles — only these roles are allowed to access the application
+export const SUPPORTED_ROLES = Object.keys(ROLE_PATHS);
+
+/**
+ * Check whether a role string is supported by the application.
+ */
+export function isSupportedRole(role: string): boolean {
+  return SUPPORTED_ROLES.includes(role);
+}
+
 /**
  * Helper: Convert full Account from Backend into a lightweight User for the cookie.
  * Handles role as either a string or an object with roleName property.
