@@ -415,6 +415,22 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                 taskId={reviewId}
             />
 
+            {/* Floating Syllabus Info Button */}
+            <button
+                onClick={() => setIsInfoModalOpen(true)}
+                className="fixed bottom-10 right-10 z-[100] flex items-center gap-2 px-5 py-3 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-white"
+                style={{ background: '#4caf50', color: '#ffffff' }}
+            >
+                <Info size={16} />
+                Syllabus Info
+            </button>
+
+            <SyllabusInfoModal 
+                isOpen={isInfoModalOpen} 
+                onClose={() => setIsInfoModalOpen(false)} 
+                syllabusId={routeTaskData?.data?.syllabus?.syllabusId || (routeTaskData?.data as any)?.syllabusId || ''} 
+            />
+
         </div>
     );
 }
