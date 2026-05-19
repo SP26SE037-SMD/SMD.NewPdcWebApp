@@ -128,9 +128,9 @@ function PDCMReviewContent({
 
             const fullComment = [
                 `Review for material:\n${materialComment}`,
-                `Review for session:\n${sessionComment}`,
-                `Review for assessment:\n${assessmentComment}`,
-            ].join('\n\n');
+                `Review for session: ${sessionComment}`,
+                `Review for assessment: ${assessmentComment}`,
+            ].join('\n');
 
 
             // 5. Call POST /api/v1/reviews-v2
