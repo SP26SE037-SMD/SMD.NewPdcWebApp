@@ -521,34 +521,8 @@ export default function PDCMReviewInformationPage({
         </div>
       </section>
 
-      {/* ── Floating Status Indicator ── */}
-      <div className="fixed bottom-10 right-10 flex items-center gap-4 z-50">
-        <div
-          className="shadow-lg rounded-full px-6 py-3 flex items-center gap-3 border"
-          style={{
-            background: C.surfaceContainerLowest,
-            borderColor: `${C.outlineVariant}33`,
-          }}
-        >
-          <span className="relative flex h-3 w-3">
-            <span
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              style={{ background: C.primary }}
-            ></span>
-            <span
-              className="relative inline-flex rounded-full h-3 w-3"
-              style={{ background: C.primary }}
-            ></span>
-          </span>
-          <span
-            className="text-sm font-semibold"
-            style={{ color: C.onSurface }}
-          >
-            Syllabus Info Status:{" "}
-            <span style={{ color: C.primary }}>Optimized</span>
-          </span>
-        </div>
-      </div>
+
+
     </div>
   );
 }
