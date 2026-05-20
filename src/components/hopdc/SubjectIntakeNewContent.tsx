@@ -88,6 +88,7 @@ export default function NewSubjectContent() {
     publishedSyllabus,
     isPublishedSyllabusLoading,
     currentSyllabus,
+    currentSyllabusId,
     handleImportClos,
     isCloStructureReadOnly,
     isMappingReadOnly,
@@ -351,20 +352,34 @@ export default function NewSubjectContent() {
                 </div>
               )}
 
-              <div className="mb-6 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
-                  <BookText size={20} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-zinc-900">Syllabus Detail</h2>
-                  <p className="text-sm font-medium text-zinc-500">Manage and track syllabus lifecycles for the current curriculum deliverables.</p>
-                </div>
-              </div>
+              {(() => {
+                const isReviewTask =
+                  associatedTask?.taskName?.toUpperCase().includes("REVIEW SYLLABUS") ||
+                  (associatedTask as any)?.action === "REVIEW";
+                return (
+                  <div className="mb-6 flex items-start gap-4">
+                    <div className="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+                      <BookText size={20} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-zinc-900">
+                        {isReviewTask ? "Review Detail" : "Syllabus Detail"}
+                      </h2>
+                      <p className="text-sm font-medium text-zinc-500">
+                        {isReviewTask
+                          ? "Manage and track syllabus review feedbacks and details for this curriculum deliverable."
+                          : "Manage and track syllabus lifecycles for the current curriculum deliverables."}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <SyllabusTabContent 
                 associatedTask={associatedTask}
                 publishedSyllabus={publishedSyllabus}
                 currentSyllabus={currentSyllabus}
+                currentSyllabusId={currentSyllabusId || undefined}
                 isTaskLoading={isTaskLoading}
                 isPublishedSyllabusLoading={isPublishedSyllabusLoading}
                 isReadOnly={isReadOnly}

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   FileText,
   ExternalLink,
@@ -6,6 +9,7 @@ import {
   RotateCcw,
   MessageSquare,
   AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 interface MaterialItem {
@@ -13,6 +17,8 @@ interface MaterialItem {
   title: string;
   materialType: string;
   status: string;
+  evalStatus?: string;
+  evalComment?: string;
 }
 
 interface SyllabusMaterialsTabProps {
@@ -33,6 +39,22 @@ export function SyllabusMaterialsTab({
   onOpenMaterial,
   onUpdateStatus,
 }: SyllabusMaterialsTabProps) {
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
+
+  const toggleComment = (materialId: string) => {
+    setExpandedComments((prev) => ({
+      ...prev,
+      [materialId]: !prev[materialId],
+    }));
+  };
+
+  const hasEvaluations = evaluations && Object.keys(evaluations).length > 0;
+  const hasRevisions = Object.values(evaluations || {}).some(
+    (ev: any) => ev.status === "REVISION_REQUIRED"
+  );
+  const evalStatus = hasEvaluations ? (hasRevisions ? "REVISION_REQUIRED" : "APPROVED") : null;
+
   if (!materials || materials.length === 0) {
     return (
       <div className="space-y-6">
@@ -55,14 +77,14 @@ export function SyllabusMaterialsTab({
     if (s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE") {
       return {
         label: "Approved",
-        color: "#4caf50",
-        bg: "#e8f5e9",
-        border: "#4caf5033",
+        color: "#10b981",
+        bg: "#ecfdf5",
+        border: "#10b98133",
       };
     }
-    if (s === "REVISION_REQUESTED" || s === "REJECTED") {
+    if (s === "REVISION_REQUIRED" || s === "REJECTED" || s === "REVISION_REQUESTED") {
       return {
-        label: "Revision Requested",
+        label: "Rejected",
         color: "#ef4444",
         bg: "#fef2f2",
         border: "#ef444433",
@@ -70,14 +92,14 @@ export function SyllabusMaterialsTab({
     }
     if (s === "PENDING_REVIEW") {
       return {
-        label: "Pending Review",
+        label: "Pending",
         color: "#5a6157",
         bg: "#f1f5eb",
         border: "#dee1d8",
       };
     }
     return {
-      label: status || "Pending",
+      label: (status || "Pending").replace(/_/g, " "),
       color: "#5a6157",
       bg: "#f1f5eb",
       border: "#dee1d8",
@@ -97,7 +119,7 @@ export function SyllabusMaterialsTab({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 text-left">
-      {overallFeedback && <ReviewerFeedbackCard feedback={overallFeedback} />}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {materials.map((material) => {
@@ -106,6 +128,13 @@ export function SyllabusMaterialsTab({
           const currentEvalStatus =
             evaluations?.[material.materialId]?.status ||
             evaluations?.materials?.[material.materialId]?.status;
+          const evaluationComment =
+            evaluations?.[material.materialId]?.comment ||
+            evaluations?.materials?.[material.materialId]?.comment ||
+            evaluations?.[material.materialId]?.note ||
+            evaluations?.materials?.[material.materialId]?.note;
+
+          const isExpanded = !!expandedComments[material.materialId];
 
           return (
             <div
@@ -124,23 +153,43 @@ export function SyllabusMaterialsTab({
                         {material.title}
                       </h3>
                       {badge ? (
-                        <span
-                          className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border shrink-0"
-                          style={{
-                            background: badge.bg,
-                            color: badge.color,
-                            borderColor: badge.border,
-                          }}
-                        >
-                          {badge.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className="px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-wide border"
+                            style={{
+                              background: badge.bg,
+                              color: badge.color,
+                              borderColor: badge.border,
+                              wordSpacing: "0.2em",
+                            }}
+                          >
+                            {badge.label}
+                          </span>
+                          {currentEvalStatus === "REVISION_REQUIRED" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleComment(material.materialId);
+                              }}
+                              className={`h-6 w-6 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                                isExpanded
+                                  ? "bg-rose-100 text-rose-700 border-rose-300"
+                                  : "bg-rose-50 text-rose-500 border-rose-200 hover:bg-rose-100"
+                              }`}
+                              title="Click to view feedback comment"
+                            >
+                              <AlertCircle size={12} strokeWidth={2.5} />
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <span
-                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border shrink-0 transition-colors"
+                          className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide border shrink-0 transition-colors"
                           style={{
                             background: baseStatusStyle.bg,
                             color: baseStatusStyle.color,
                             borderColor: baseStatusStyle.border,
+                            wordSpacing: "0.2em",
                           }}
                         >
                           {baseStatusStyle.label}
@@ -148,7 +197,7 @@ export function SyllabusMaterialsTab({
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 bg-zinc-50 text-zinc-500 rounded text-[10px] font-bold uppercase tracking-wide border border-zinc-200">
+                      <span className="px-2 py-0.5 bg-zinc-50 text-zinc-500 rounded text-[11px] font-bold uppercase tracking-wide border border-zinc-200">
                         {material.materialType || "GENERAL"}
                       </span>
                     </div>
@@ -156,7 +205,13 @@ export function SyllabusMaterialsTab({
 
                   {onOpenMaterial && (
                     <button
-                      onClick={() => onOpenMaterial(material)}
+                      onClick={() =>
+                        onOpenMaterial({
+                          ...material,
+                          evalStatus: currentEvalStatus || "",
+                          evalComment: evaluationComment || "",
+                        })
+                      }
                       className="shrink-0 h-7 w-7 bg-zinc-50 text-zinc-400 rounded-lg border border-zinc-200 hover:bg-zinc-100 hover:text-zinc-600 transition-all flex items-center justify-center"
                       title="Open Material"
                     >
@@ -165,6 +220,16 @@ export function SyllabusMaterialsTab({
                   )}
                 </div>
               </div>
+
+              {/* Collapsible comment */}
+              {(currentEvalStatus === "REVISION_REQUIRED" || currentEvalStatus === "REJECTED" || currentEvalStatus === "REVISION_REQUESTED") && isExpanded && evaluationComment && (
+                <div className="mt-1 flex items-start gap-2 p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 animate-in slide-in-from-top-1 duration-200">
+                  <MessageSquare size={12} className="text-rose-400 shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-rose-700 leading-normal">
+                    {evaluationComment}
+                  </p>
+                </div>
+              )}
 
               {/* Synthesis Actions (HoPDC Only) */}
               {onUpdateStatus && (
@@ -228,16 +293,13 @@ export const ReviewerFeedbackCard = ({
 }: {
   feedback: { status: string; note: string };
 }) => {
-  // Kiểm tra xem có note hay không
   const hasNote =
     feedback.note &&
     feedback.note !== "Approved" &&
     feedback.note !== "No comments";
 
-  // Split sequentially by newline first. If no newlines exist, try splitting by the hyphen format historically used in mock material data.
   const rawLines = hasNote ? feedback.note.split('\n') : [];
   
-  // Further sanitize the lines to handle mixed formatting
   const lines = rawLines
     .flatMap(line => line.includes('- ') && rawLines.length === 1 ? line.split('- ') : line)
     .map(line => line.trim())
@@ -262,7 +324,6 @@ export const ReviewerFeedbackCard = ({
                   key={idx}
                   className="text-xs font-semibold leading-relaxed text-[#2d342b] flex items-start gap-2"
                 >
-                  {/* Dấu chấm tròn thay cho dấu gạch ngang */}
                   <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary-500/40" />
                   <span>{line}</span>
                 </p>

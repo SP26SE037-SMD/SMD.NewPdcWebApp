@@ -37,11 +37,13 @@ import {
   BookText,
   Layers,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreateSyllabusModal } from "../subject/CreateSyllabusModal";
 import { CreateSyllabusTaskModal } from "./CreateSyllabusTaskModal";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
+import { ViewReviewDetailsModal } from "./ViewReviewDetailsModal";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -233,7 +235,10 @@ interface TaskRowProps {
   sprintDeadline?: string;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   isUpdatingStatus: boolean;
-  onOpenTaskModal: (mode: "CREATE" | "UPDATE" | "REVIEW", parentTask: TaskItem) => void;
+  onOpenTaskModal: (
+    mode: "CREATE" | "UPDATE" | "REVIEW",
+    parentTask: TaskItem,
+  ) => void;
   validatingTaskId?: string | null;
   children?: (TaskItem & { children?: TaskItem[] })[];
   level?: number;
@@ -265,13 +270,45 @@ function TaskRow({
   level = 0,
 }: TaskRowProps) {
   const isThisValidating = validatingTaskId === task.taskId;
+
+  // Helper to find subject information from the task itself or from any of its children recursively
+  const getResolvedSubjectInfo = (): { subjectId?: string; subjectStatus?: string } => {
+    if (task.subjectId || task.subject?.subjectId) {
+      return {
+        subjectId: task.subjectId || task.subject?.subjectId,
+        subjectStatus: task.subjectStatus || task.subject?.status,
+      };
+    }
+    const findInChildren = (list: any[]): { subjectId?: string; subjectStatus?: string } | null => {
+      for (const child of list) {
+        if (child.subjectId || child.subject?.subjectId) {
+          return {
+            subjectId: child.subjectId || child.subject?.subjectId,
+            subjectStatus: child.subjectStatus || child.subject?.status,
+          };
+        }
+        if (child.children && child.children.length > 0) {
+          const res = findInChildren(child.children);
+          if (res) return res;
+        }
+      }
+      return null;
+    };
+    return findInChildren(children) || {};
+  };
+
+  const resolvedSubject = getResolvedSubjectInfo();
+  const subjectId = resolvedSubject.subjectId || "";
+  const subjectStatus = resolvedSubject.subjectStatus || "DRAFT";
+
   const [isExpanded, setIsExpanded] = useState(level === 0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
+  const [isReviewDetailsOpen, setIsReviewDetailsOpen] = useState(false);
   const { data: subjectRes } = useQuery({
-    queryKey: ["subject", task.subjectId],
-    queryFn: () => SubjectService.getSubjectById(task.subjectId!),
-    enabled: !!task.subjectId && isCreateSyllabusOpen,
+    queryKey: ["subject", subjectId],
+    queryFn: () => SubjectService.getSubjectById(subjectId),
+    enabled: !!subjectId && isCreateSyllabusOpen,
   });
   const subjectDetail = subjectRes?.data;
 
@@ -279,6 +316,7 @@ function TaskRow({
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
   const { showToast } = useToast();
+
 
   const goToSubjectDetail = async () => {
     if (task.status === TASK_STATUS.TO_DO) {
@@ -295,7 +333,7 @@ function TaskRow({
 
     const isReadOnly = task.status === TASK_STATUS.DONE;
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
+      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
     );
   };
 
@@ -314,7 +352,7 @@ function TaskRow({
 
     const isReadOnly = task.status === TASK_STATUS.DONE;
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${task.subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${task.targetId}&tab=syllabus${isReadOnly ? "&readOnly=true" : ""}`,
+      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${task.targetId}&tab=syllabus${isReadOnly ? "&readOnly=true" : ""}`,
     );
   };
 
@@ -358,6 +396,12 @@ function TaskRow({
     ? `${task.account?.fullName} (${selectedAccountId})`
     : selectedAccountId;
 
+  const isSyllabusTask = level === 1;
+  const hasDecisionBlock =
+    isSyllabusTask &&
+    children.length > 0 &&
+    children.some((c) => c.status === TASK_STATUS.DONE);
+
   return (
     <div
       className={`group relative transition-all ${level > 0 ? "ml-8 mt-4" : ""}`}
@@ -370,16 +414,16 @@ function TaskRow({
       )}
 
       <div
-        className={`bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow ${
+        className={`transition-all duration-300 ${
           level === 0
-            ? "border-zinc-200"
+            ? "bg-gradient-to-br from-slate-50 via-white to-zinc-50/30 border-zinc-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 rounded-2xl border overflow-hidden"
             : level === 1
-              ? "border-emerald-200 bg-emerald-50/5"
-              : "border-indigo-100 bg-indigo-50/5"
+              ? "bg-emerald-50/5 border-emerald-200 hover:shadow-md rounded-2xl border overflow-hidden"
+              : "bg-indigo-50/5 border-indigo-100 hover:shadow-md rounded-2xl border overflow-hidden"
         }`}
       >
         <div className="flex flex-col lg:flex-row items-stretch">
-          <div className={`w-2 ${statusConfig.color}`} />
+          <div className={`${level === 0 ? "w-3" : "w-2"} ${statusConfig.color} transition-all`} />
 
           <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             <div className="lg:col-span-1 flex items-center justify-center">
@@ -397,6 +441,11 @@ function TaskRow({
 
             <div className="lg:col-span-4 space-y-2">
               <div className="flex items-center gap-3">
+                {level === 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[9px] font-black uppercase tracking-widest leading-none shadow-sm">
+                    Subject
+                  </span>
+                )}
                 {level === 0 ? (
                   <div className="relative flex items-center gap-2 group/status">
                     <div className="relative">
@@ -428,24 +477,29 @@ function TaskRow({
                 ) : (
                   <span
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md`}
+                    style={{ wordSpacing: "0.2em" }}
                   >
                     <StatusIcon size={12} />
-                    {task.status || "UNKNOWN"}
+                    {(task.status || "UNKNOWN").replace(/_/g, " ")}
                   </span>
                 )}
               </div>
 
               <h3
-                className={`font-black tracking-tight ${level === 0 ? "text-xl text-zinc-900" : "text-base text-zinc-800"}`}
+                className={`font-black tracking-tight flex items-center gap-2 ${level === 0 ? "text-xl text-zinc-900" : "text-base text-zinc-800"}`}
               >
-                {task.taskName || "N/A"}
+                {level === 0 && <BookText size={18} className="text-zinc-600 shrink-0" />}
+                <span>{task.taskName || "N/A"}</span>
               </h3>
 
               <p className="text-sm font-medium text-zinc-500 line-clamp-2 italic">
                 {task.description || "N/A"}
               </p>
 
-              {(level === 0 || task.type === "SUBJECT" || task.type === TASK_TYPE.NEW_SUBJECT) && (
+              {(level === 0 ||
+                task.type === "SUBJECT" ||
+                task.type === TASK_TYPE.NEW_SUBJECT) &&
+                !(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && (
                 <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
@@ -453,9 +507,10 @@ function TaskRow({
                     </span>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(task.subjectStatus).bg} ${getSubjectStatusConfig(task.subjectStatus).text} ${getSubjectStatusConfig(task.subjectStatus).border}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(subjectStatus).bg} ${getSubjectStatusConfig(subjectStatus).text} ${getSubjectStatusConfig(subjectStatus).border}`}
+                        style={{ wordSpacing: "0.2em" }}
                       >
-                        {task.subjectStatus || "DRAFT"}
+                        {(subjectStatus || "DRAFT").replace(/_/g, " ")}
                       </span>
                       <button
                         onClick={goToSubjectDetail}
@@ -481,8 +536,11 @@ function TaskRow({
                     <div className="flex items-center gap-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).bg} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).text} ${getSyllabusStatusConfig(task.syllabus?.status || task.syllabusStatus || undefined).border}`}
+                        style={{ wordSpacing: "0.2em" }}
                       >
-                        {task.syllabus?.status || task.syllabusStatus || "DRAFT"}
+                        {(task.syllabus?.status ||
+                          task.syllabusStatus ||
+                          "DRAFT").replace(/_/g, " ")}
                       </span>
                       <button
                         onClick={goToSyllabusDetail}
@@ -499,67 +557,12 @@ function TaskRow({
                 </div>
               )}
 
-              {/* Accept/Reject Loop for Level 1 tasks (Syllabus Creation/Update) */}
-              {level === 1 && children.length > 0 && (
-                children.some((c) => c.status === TASK_STATUS.DONE) ? (
-                  <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3 animate-in fade-in slide-in-from-top-1 duration-300">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-md bg-amber-200/50 text-amber-700">
-                        <AlertCircle size={14} />
-                      </div>
-                      <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">
-                        HoPDC Decision Required
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => onUpdateStatus(task.taskId, TASK_STATUS.DONE)}
-                        className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-emerald-200"
-                      >
-                        Accept Syllabus
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const comment = (document.getElementById(`comment-${task.taskId}`) as HTMLTextAreaElement)?.value;
-                          if (!comment) {
-                             showToast("Please add a comment for rejection", "error");
-                             return;
-                          }
-                          onOpenTaskModal("UPDATE", task);
-                        }}
-                        className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-all shadow-sm hover:shadow-rose-200"
-                      >
-                        Reject & Request Update
-                      </button>
-                    </div>
-                    <textarea
-                      id={`comment-${task.taskId}`}
-                      placeholder="Add comments for the creator..."
-                      className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
-                    />
-                  </div>
-                ) : (
-                  <div className="mt-4 p-4 rounded-xl border border-zinc-200 border-dashed bg-zinc-50/50 flex items-start gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                    <div className="mt-0.5 p-2 rounded-[10px] bg-white border border-zinc-200 text-zinc-400 shadow-sm">
-                      <Clock size={16} className="animate-pulse" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
-                            In Peer Review Workflow
-                         </span>
-                         <span className="px-1.5 py-0.5 rounded-full bg-zinc-200 text-[8px] font-black text-zinc-500 uppercase tracking-tight">Pending</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-zinc-400 leading-relaxed max-w-[320px]">
-                        This syllabus is currently being reviewed. Once the peer review is completed, you will be required to perform a <span className="text-zinc-600">Final Review</span> here to approve it for institutional use.
-                      </p>
-                    </div>
-                  </div>
-                )
-              )}
+              {/* Accept/Reject decision box was moved to Column 4 */}
             </div>
 
-            <div className="lg:col-span-4 grid grid-cols-1 gap-3 border-l border-zinc-100 pl-6">
+            <div
+              className={`${isSyllabusTask ? "lg:col-span-3" : "lg:col-span-4"} grid grid-cols-1 gap-3 border-l border-zinc-100 pl-6`}
+            >
               <div className="space-y-1">
                 <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                   Assignee
@@ -579,13 +582,51 @@ function TaskRow({
                 </div>
               </div>
 
-              {level < 2 && (
+              {(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && (
+                <div className="space-y-1.5 mt-2 pt-2 border-t border-zinc-100/50">
+                  <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                    {task.status !== TASK_STATUS.DONE ? "Syllabus Review Unavailable" : "Syllabus Review Available"}
+                  </p>
+                  <div className="mt-1">
+                    {task.status !== TASK_STATUS.DONE ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-400 select-none cursor-not-allowed uppercase tracking-wider">
+                        <Lock size={12} className="shrink-0 text-zinc-400" />
+                        Waiting Reviewer
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const targetSyllabusId = task.syllabus?.syllabusId || task.targetId || "null";
+                          router.push(
+                            `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${targetSyllabusId}&tab=syllabus&readOnly=true`
+                          );
+                        }}
+                        className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        Review Detail
+                        <ExternalLink
+                          size={12}
+                          className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                        />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {level < 2 && !(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && (
                 <div className="space-y-1">
                   <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                     Workflow Actions
                   </p>
                   <button
-                    onClick={() => onOpenTaskModal(level === 0 ? "CREATE" : "REVIEW", task)}
+                    onClick={() =>
+                      onOpenTaskModal(level === 0 ? "CREATE" : "REVIEW", {
+                        ...task,
+                        subjectId: subjectId || task.subjectId,
+                        subjectStatus: (subjectStatus as any) || task.subjectStatus,
+                      })
+                    }
                     disabled={isThisValidating}
                     className="w-full flex items-center justify-center gap-2 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg hover:brightness-95 transition-all shadow-md shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -598,11 +639,10 @@ function TaskRow({
                   </button>
                 </div>
               )}
-            </div>
 
-            <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center">
-              {children.length > 0 ? (
-                <div className="w-full max-w-[180px] space-y-2">
+              {/* Subtasks Progress under Assignee & Actions (Syllabus Task Only) */}
+              {isSyllabusTask && children.length > 0 && (
+                <div className="w-full space-y-2 mt-2 pt-2 border-t border-zinc-100/50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <div className="p-1 rounded-md bg-zinc-100 text-zinc-500">
@@ -613,8 +653,10 @@ function TaskRow({
                       </span>
                     </div>
                     <span className="text-[10px] font-bold text-zinc-900 bg-zinc-50 px-1.5 py-0.5 rounded-md border border-zinc-100">
-                      {children.filter((c) => c.status === TASK_STATUS.DONE)
-                        .length}
+                      {
+                        children.filter((c) => c.status === TASK_STATUS.DONE)
+                          .length
+                      }
                       /{children.length} Done
                     </span>
                   </div>
@@ -636,7 +678,15 @@ function TaskRow({
                   </div>
 
                   <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-tighter text-zinc-400">
-                    <span>{Math.round((children.filter(c => c.status === TASK_STATUS.DONE).length / children.length) * 100)}% Progress</span>
+                    <span>
+                      {Math.round(
+                        (children.filter((c) => c.status === TASK_STATUS.DONE)
+                          .length /
+                          children.length) *
+                          100,
+                      )}
+                      % Progress
+                    </span>
                     <div className="flex gap-2">
                       <div className="flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -649,13 +699,176 @@ function TaskRow({
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center lg:items-end gap-1 opacity-40">
-                   <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">No Subtasks</span>
-                   <div className="h-1 w-24 bg-zinc-100 rounded-full" />
-                </div>
               )}
             </div>
+
+            {/* Column 4: HoPDC Decision Required/Reminder for Syllabus Tasks, or Subtasks block for other tasks */}
+            {isSyllabusTask ? (
+              <div className="lg:col-span-4 border-l border-zinc-100 pl-6 flex flex-col justify-center">
+                {hasDecisionBlock ? (
+                  <div className="w-full p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-amber-200/50 text-amber-700">
+                        <AlertCircle size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">
+                        HoPDC Decision Required
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          onUpdateStatus(task.taskId, TASK_STATUS.DONE)
+                        }
+                        className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-emerald-200"
+                      >
+                        Accept Syllabus
+                      </button>
+                      <button
+                        onClick={() => {
+                          const comment = (
+                            document.getElementById(
+                              `comment-${task.taskId}`,
+                            ) as HTMLTextAreaElement
+                          )?.value;
+                          if (!comment) {
+                            showToast(
+                              "Please add a comment for rejection",
+                              "error",
+                            );
+                            return;
+                          }
+                          onOpenTaskModal("UPDATE", task);
+                        }}
+                        className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-all shadow-sm hover:shadow-rose-200"
+                      >
+                        Reject & Request Update
+                      </button>
+                    </div>
+                    <textarea
+                      id={`comment-${task.taskId}`}
+                      placeholder="Add comments for the creator..."
+                      className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
+                    />
+                  </div>
+                ) : task.status === TASK_STATUS.TO_DO ||
+                  task.status === TASK_STATUS.IN_PROGRESS ? (
+                  <div className="w-full p-4 rounded-xl border border-amber-200/60 border-dashed bg-amber-50/10 flex items-start gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="mt-0.5 p-2 rounded-[10px] bg-white border border-amber-200 text-amber-500 shadow-sm">
+                      <BookText
+                        size={16}
+                        className="text-amber-500 animate-pulse"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-widest">
+                          Review Task Status
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-[8px] font-black text-amber-600 uppercase tracking-tight border border-amber-100">
+                          Not Found
+                        </span>
+                      </div>
+                      <p className="text-[12px] font-bold text-amber-600/70 leading-relaxed">
+                        This Create Syllabus task does not have a Review
+                        Syllabus task for peer review yet.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 rounded-xl border border-zinc-200 border-dashed bg-zinc-50/50 flex items-start gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="mt-0.5 p-2 rounded-[10px] bg-white border border-zinc-200 text-zinc-400 shadow-sm">
+                      <Clock size={16} className="animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
+                          In Peer Review Workflow
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-zinc-200 text-[8px] font-black text-zinc-500 uppercase tracking-tight">
+                          Pending
+                        </span>
+                      </div>
+                      <p className="text-[12px] font-bold text-zinc-400 leading-relaxed">
+                        This syllabus is currently being reviewed. Once the peer
+                        review is completed, you will be required to perform a{" "}
+                        <span className="text-zinc-600">Final Review</span> here
+                        to approve it for institutional use.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="lg:col-span-3 flex flex-col items-center lg:items-end justify-center">
+                {children.length > 0 ? (
+                  <div className="w-full max-w-[180px] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-1 rounded-md bg-zinc-100 text-zinc-500">
+                          <Layers size={10} />
+                        </div>
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                          Subtasks
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-zinc-900 bg-zinc-50 px-1.5 py-0.5 rounded-md border border-zinc-100">
+                        {
+                          children.filter((c) => c.status === TASK_STATUS.DONE)
+                            .length
+                        }
+                        /{children.length} Done
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1 h-1.5 w-full">
+                      {children.map((child) => (
+                        <div
+                          key={child.taskId}
+                          title={`${child.taskName}: ${child.status}`}
+                          className={`flex-1 rounded-full transition-all duration-300 ${
+                            child.status === TASK_STATUS.DONE
+                              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                              : child.status === TASK_STATUS.IN_PROGRESS
+                                ? "bg-amber-500"
+                                : "bg-zinc-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-tighter text-zinc-400">
+                      <span>
+                        {Math.round(
+                          (children.filter((c) => c.status === TASK_STATUS.DONE)
+                            .length /
+                            children.length) *
+                            100,
+                        )}
+                        % Progress
+                      </span>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>Done</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span>IP</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center lg:items-end gap-1 opacity-40">
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                      No Subtasks
+                    </span>
+                    <div className="h-1 w-24 bg-zinc-100 rounded-full" />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -717,6 +930,13 @@ function TaskRow({
           }
         }}
       />
+      <ViewReviewDetailsModal
+        isOpen={isReviewDetailsOpen}
+        onClose={() => setIsReviewDetailsOpen(false)}
+        taskName={task.taskName}
+        taskId={task.taskId}
+        syllabusId={task.syllabus?.syllabusId || task.targetId || undefined}
+      />
     </div>
   );
 }
@@ -752,8 +972,11 @@ export function TaskList({ sprintId }: TaskListProps) {
   };
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [taskModalMode, setTaskModalMode] = useState<"CREATE" | "UPDATE" | "REVIEW">("CREATE");
-  const [taskModalParentTask, setTaskModalParentTask] = useState<TaskItem | null>(null);
+  const [taskModalMode, setTaskModalMode] = useState<
+    "CREATE" | "UPDATE" | "REVIEW"
+  >("CREATE");
+  const [taskModalParentTask, setTaskModalParentTask] =
+    useState<TaskItem | null>(null);
   const [validatingTaskId, setValidatingTaskId] = useState<string | null>(null);
 
   const onOpenTaskModal = async (
@@ -854,8 +1077,9 @@ export function TaskList({ sprintId }: TaskListProps) {
     useState("");
 
   const taskActions = useMemo(() => {
-    const actions = Array.from(new Set(tasks.map((t) => t.action || "OTHER")))
-      .filter(action => action !== "REVIEW");
+    const actions = Array.from(
+      new Set(tasks.map((t) => t.action || "OTHER")),
+    ).filter((action) => action !== "REVIEW");
     return actions.sort();
   }, [tasks]);
 
@@ -1382,8 +1606,15 @@ export function TaskList({ sprintId }: TaskListProps) {
         sprintId={sprintId}
         rootTaskId={taskModalParentTask?.taskId || null}
         subjectId={taskModalParentTask?.subjectId}
-        subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
-        targetId={taskModalParentTask?.targetId || taskModalParentTask?.syllabus?.syllabusId || taskModalParentTask?.syllabusId}
+        subjectName={taskModalParentTask?.taskName?.replace(
+          "CREATE SUBJECT: ",
+          "",
+        )}
+        targetId={
+          taskModalParentTask?.targetId ||
+          taskModalParentTask?.syllabus?.syllabusId ||
+          taskModalParentTask?.syllabusId
+        }
         accounts={departmentAccounts}
         currentUserEmail={user?.email || ""}
         sprintDeadline={sprint?.endDate}
@@ -1391,24 +1622,29 @@ export function TaskList({ sprintId }: TaskListProps) {
           taskModalMode === "UPDATE"
             ? {
                 taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description: (document.getElementById(`comment-${taskModalParentTask?.taskId}`) as HTMLTextAreaElement)?.value || "",
+                description:
+                  (
+                    document.getElementById(
+                      `comment-${taskModalParentTask?.taskId}`,
+                    ) as HTMLTextAreaElement
+                  )?.value || "",
                 priority: taskModalParentTask?.priority,
                 dueDate: taskModalParentTask?.deadline,
                 assignTo: taskModalParentTask?.account?.accountId,
               }
             : taskModalMode === "REVIEW"
-            ? {
-                taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                priority: "MEDIUM",
-                dueDate: taskModalParentTask?.deadline,
-                excludeAccountId: taskModalParentTask?.account?.accountId,
-              }
-            : {
-                taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                priority: "MEDIUM",
-              }
+              ? {
+                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  priority: "MEDIUM",
+                  dueDate: taskModalParentTask?.deadline,
+                  excludeAccountId: taskModalParentTask?.account?.accountId,
+                }
+              : {
+                  taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                  description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                  priority: "MEDIUM",
+                }
         }
       />
     </div>

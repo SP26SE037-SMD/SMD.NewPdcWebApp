@@ -92,7 +92,9 @@ export function useNewSubjectLogic() {
     enabled: !!subjectId && associatedTask?.type === "REUSED_SUBJECT",
   });
 
-  const currentSyllabusId = syllabusIdParam || associatedTask?.syllabus?.syllabusId || associatedTask?.targetId;
+  const currentSyllabusId = (syllabusIdParam && syllabusIdParam !== "null")
+    ? syllabusIdParam
+    : (associatedTask?.syllabus?.syllabusId || associatedTask?.targetId);
   const { data: currentSyllabusRes, isLoading: isCurrentSyllabusLoading } = useQuery({
     queryKey: ["syllabus", currentSyllabusId],
     queryFn: () => SyllabusService.getSyllabusById(currentSyllabusId!),
@@ -289,6 +291,7 @@ export function useNewSubjectLogic() {
     isTaskLoading,
     sprintId,
     currentSyllabus,
+    currentSyllabusId,
     isCloStructureReadOnly,
     isMappingReadOnly,
     isSyllabusMode,
@@ -311,6 +314,7 @@ export function useNewSubjectLogic() {
           status: "PENDING_REVIEW"
         }
       },
+      currentSyllabusId: "mock-id",
       currentSyllabus: {
         syllabusId: "mock-id",
         status: "PENDING_REVIEW",

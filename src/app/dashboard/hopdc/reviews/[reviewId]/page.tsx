@@ -426,9 +426,11 @@ export default function HoPDCReviewSynthesisPage({
                     evaluations={hopdcEvaluations}
                     overallFeedback={reviewerComments}
                     onUpdateStatus={isReadOnly ? undefined : handleUpdateComponentStatus}
-                    onOpenMaterial={(m) => {
+                    onOpenMaterial={(m: any) => {
+                      const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
+                      const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
                       router.push(
-                        `/dashboard/hopdc/reviews/${reviewId}/materials/${m.materialId}?title=${encodeURIComponent(m.title)}`,
+                        `/dashboard/hopdc/reviews/${reviewId}/materials/${m.materialId}?title=${encodeURIComponent(m.title)}${commentParam}${statusParam}`,
                       );
                     }}
                   />

@@ -36,7 +36,7 @@ export function useSyllabusWorkspace(syllabusId: string | undefined) {
 
     const sessionsQuery = useQuery({
         queryKey: ['syllabus-workspace-sessions', syllabusId],
-        queryFn: () => SessionService.getDetailedSessions(syllabusId!),
+        queryFn: () => SessionService.getSessionsBySyllabusId(syllabusId!),
         enabled: isEnabled,
         staleTime: 5 * 60 * 1000,
     });
@@ -100,11 +100,24 @@ export function useSyllabusWorkspace(syllabusId: string | undefined) {
         sessionsQuery.isError || 
         assessmentsQuery.isError;
 
+    const rawSessions = sessionsQuery.data?.data || sessionsQuery.data;
+    const sessionsArray = Array.isArray(rawSessions)
+        ? rawSessions
+        : (Array.isArray(rawSessions?.content)
+            ? rawSessions.content
+            : (Array.isArray(rawSessions?.data)
+                ? rawSessions.data
+                : []));
+
     return {
         syllabus: syllabusQuery.data?.data,
         subject: (subjectQuery.data as any)?.data || subjectQuery.data,
         materials: materialsQuery.data?.data || [],
-        sessions: sessionsQuery.data?.data?.content || [],
+        sessions: sessionsArray.map((s: any) => ({
+            ...s,
+            session: s.session || s.sessionId || "",
+            sessionId: s.sessionId || s.session || "",
+        })),
         assessments: Array.isArray(assessmentsQuery.data?.data) 
             ? assessmentsQuery.data.data 
             : (assessmentsQuery.data?.data?.content || []),
