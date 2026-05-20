@@ -65,19 +65,31 @@ export default function HoPDCReviewSynthesisPage({
 
   const taskDetails = routeTaskData?.data;
 
-  const { data: parentTaskRes, isLoading: isParentTaskLoading } = useQuery({
+  // reviewTask = the REVIEW SYLLABUS task object
+  const { data: reviewTaskRes } = useQuery({
     queryKey: ["task-detail", taskDetails?.task?.taskId],
     queryFn: () => TaskService.getTaskById(taskDetails?.task?.taskId!),
     enabled: !!taskDetails?.task?.taskId,
     staleTime: 0,
     refetchOnMount: "always",
   });
+  const reviewTaskData = reviewTaskRes?.data;
+
+  // createSyllabusTask = the parent CREATE SYLLABUS task (rootTaskId of reviewTask)
+  const createSyllabusTaskId = (reviewTaskData as any)?.rootTaskId || null;
+  const { data: createSyllabusTaskRes } = useQuery({
+    queryKey: ["create-syllabus-task", createSyllabusTaskId],
+    queryFn: () => TaskService.getTaskById(createSyllabusTaskId!),
+    enabled: !!createSyllabusTaskId,
+    staleTime: 0,
+  });
+  const createSyllabusTask = createSyllabusTaskRes?.data;
 
   const task = taskDetails;
-  const parentTask = parentTaskRes?.data;
+  const parentTask = reviewTaskData;
   
   // Extract real task data from the response wrapper
-  const actualParentTask = (parentTask as any)?.data || parentTask;
+  const actualParentTask = (createSyllabusTask as any)?.data || createSyllabusTask || (reviewTaskData as any)?.data || reviewTaskData;
 
   const actualSyllabusId =
     actualParentTask?.syllabus?.syllabusId ||
@@ -85,11 +97,19 @@ export default function HoPDCReviewSynthesisPage({
     (task as any)?.syllabusId ||
     (task?.task as any)?.syllabusId;
 
+  // Sync finalComment with localStorage (key = CREATE SYLLABUS task id)
+  useEffect(() => {
+    if (createSyllabusTaskId && typeof window !== "undefined") {
+      const saved = localStorage.getItem(`final_decision_comment_${createSyllabusTaskId}`);
+      if (saved) setFinalComment(saved);
+    }
+  }, [createSyllabusTaskId]);
+
   useEffect(() => {
     if (task) {
       if (task.isAccepted !== undefined) setIsAccepted(task.isAccepted);
-      if (task.content) setFinalComment(task.content);
-      else if (task.content) setFinalComment(task.content);
+      // Only set comment from server if no localStorage value
+      if (task.content && !createSyllabusTaskId) setFinalComment(task.content);
 
       // Map reviewer comments to initial HoPDC state
       setHopdcEvaluations({
@@ -325,7 +345,7 @@ export default function HoPDCReviewSynthesisPage({
     }
   };
 
-  if (isLoading || isParentTaskLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
@@ -413,10 +433,8 @@ export default function HoPDCReviewSynthesisPage({
           </div>
         </div>
 
-        {/* Main Split Layout */}
-        <div className="grid grid-cols-12 gap-6 items-stretch">
-          {/* Left: Content Review (8 columns) */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
+        {/* Main Content: full width, padded right to leave room for fixed panel */}
+        <div className="pr-[26rem] space-y-6">
             <div className="bg-white rounded-[2.5rem] border border-[#dee1d8] shadow-sm overflow-hidden flex flex-col min-h-[750px] max-h-[750px]">
               <div className="flex-1 overflow-hidden p-8">
                 {actualSyllabusId ? (
@@ -447,11 +465,11 @@ export default function HoPDCReviewSynthesisPage({
                 )}
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Right: Synthesis Decision & Comment Panel (4 columns) */}
-          <div className="col-span-12 lg:col-span-4">
-            <div className="bg-white rounded-[2.5rem] border border-[#dee1d8] shadow-xl p-8 flex flex-col min-h-[750px] max-h-[750px] sticky top-6">
+        {/* Fixed Right Panel: Final Decision */}
+        <div className="fixed top-24 right-8 z-[100] w-[22rem] flex flex-col" style={{maxHeight: 'calc(100vh - 7rem)'}}>
+          <div className="bg-white rounded-[2.5rem] border border-[#dee1d8] shadow-xl p-8 flex flex-col overflow-y-auto" style={{maxHeight: 'calc(100vh - 7rem)'}}>
               <div className="mb-8">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-600 block mb-2">
                   Synthesis Decision
@@ -541,7 +559,12 @@ export default function HoPDCReviewSynthesisPage({
                   <div className="flex-1">
                     <textarea
                       value={finalComment}
-                      onChange={(e) => setFinalComment(e.target.value)}
+                      onChange={(e) => {
+                        setFinalComment(e.target.value);
+                        if (createSyllabusTaskId && typeof window !== "undefined") {
+                          localStorage.setItem(`final_decision_comment_${createSyllabusTaskId}`, e.target.value);
+                        }
+                      }}
                       readOnly={isReadOnly}
                       placeholder={isReadOnly ? "" : "Summarize the final decision and provide guidance for the curriculum creator..."}
                       className={`w-full h-full min-h-[180px] p-6 rounded-[2rem] bg-[#f8faf7] border border-[#dee1d8] focus:ring-4 focus:ring-[var(--primary)]/10 focus:border-[var(--primary)] transition-all resize-none text-sm text-[#454d43] leading-relaxed placeholder:text-[#adb4a8] custom-scrollbar ${
@@ -585,7 +608,6 @@ export default function HoPDCReviewSynthesisPage({
                   </button>
                 )}
               </div>
-            </div>
           </div>
         </div>
       </div>

@@ -305,6 +305,16 @@ function TaskRow({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
   const [isReviewDetailsOpen, setIsReviewDetailsOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`final_decision_comment_${task.taskId}`);
+      if (saved) {
+        setCommentText(saved);
+      }
+    }
+  }, [task.taskId]);
   const { data: subjectRes } = useQuery({
     queryKey: ["subject", subjectId],
     queryFn: () => SubjectService.getSubjectById(subjectId),
@@ -384,9 +394,9 @@ function TaskRow({
     syllabusOptions.find((s) => s.syllabusId === selectedSyllabusId) ||
     (task.syllabus?.syllabusId && task.syllabus?.syllabusName
       ? {
-          syllabusId: task.syllabus?.syllabusId,
-          syllabusName: task.syllabus?.syllabusName,
-        }
+        syllabusId: task.syllabus?.syllabusId,
+        syllabusName: task.syllabus?.syllabusName,
+      }
       : null);
 
   const hasSelectedAccountInOptions = pdcmAccounts.some(
@@ -414,13 +424,12 @@ function TaskRow({
       )}
 
       <div
-        className={`transition-all duration-300 ${
-          level === 0
+        className={`transition-all duration-300 ${level === 0
             ? "bg-gradient-to-br from-slate-50 via-white to-zinc-50/30 border-zinc-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 rounded-2xl border overflow-hidden"
             : level === 1
               ? "bg-emerald-50/5 border-emerald-200 hover:shadow-md rounded-2xl border overflow-hidden"
               : "bg-indigo-50/5 border-indigo-100 hover:shadow-md rounded-2xl border overflow-hidden"
-        }`}
+          }`}
       >
         <div className="flex flex-col lg:flex-row items-stretch">
           <div className={`${level === 0 ? "w-3" : "w-2"} ${statusConfig.color} transition-all`} />
@@ -430,9 +439,8 @@ function TaskRow({
               {children.length > 0 && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className={`p-2 rounded-xl transition-all bg-zinc-100 text-zinc-500 hover:bg-zinc-200 ${
-                    isExpanded ? "rotate-180" : ""
-                  }`}
+                  className={`p-2 rounded-xl transition-all bg-zinc-100 text-zinc-500 hover:bg-zinc-200 ${isExpanded ? "rotate-180" : ""
+                    }`}
                 >
                   <ArrowLeft size={16} className="-rotate-90" />
                 </button>
@@ -500,32 +508,32 @@ function TaskRow({
                 task.type === "SUBJECT" ||
                 task.type === TASK_TYPE.NEW_SUBJECT) &&
                 !(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && (
-                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
-                      Subject Status
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(subjectStatus).bg} ${getSubjectStatusConfig(subjectStatus).text} ${getSubjectStatusConfig(subjectStatus).border}`}
-                        style={{ wordSpacing: "0.2em" }}
-                      >
-                        {(subjectStatus || "DRAFT").replace(/_/g, " ")}
+                  <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                        Subject Status
                       </span>
-                      <button
-                        onClick={goToSubjectDetail}
-                        className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
-                      >
-                        Subject Detail
-                        <ExternalLink
-                          size={12}
-                          className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
-                        />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${getSubjectStatusConfig(subjectStatus).bg} ${getSubjectStatusConfig(subjectStatus).text} ${getSubjectStatusConfig(subjectStatus).border}`}
+                          style={{ wordSpacing: "0.2em" }}
+                        >
+                          {(subjectStatus || "DRAFT").replace(/_/g, " ")}
+                        </span>
+                        <button
+                          onClick={goToSubjectDetail}
+                          className="group/link inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                        >
+                          Subject Detail
+                          <ExternalLink
+                            size={12}
+                            className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {level === 1 && (
                 <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center gap-3">
@@ -666,13 +674,12 @@ function TaskRow({
                       <div
                         key={child.taskId}
                         title={`${child.taskName}: ${child.status}`}
-                        className={`flex-1 rounded-full transition-all duration-300 ${
-                          child.status === TASK_STATUS.DONE
+                        className={`flex-1 rounded-full transition-all duration-300 ${child.status === TASK_STATUS.DONE
                             ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                             : child.status === TASK_STATUS.IN_PROGRESS
                               ? "bg-amber-500"
                               : "bg-zinc-200"
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -683,7 +690,7 @@ function TaskRow({
                         (children.filter((c) => c.status === TASK_STATUS.DONE)
                           .length /
                           children.length) *
-                          100,
+                        100,
                       )}
                       % Progress
                     </span>
@@ -712,7 +719,7 @@ function TaskRow({
                         <AlertCircle size={14} />
                       </div>
                       <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">
-                        HoPDC Decision Required
+                        Final Decision Required
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -747,6 +754,14 @@ function TaskRow({
                     </div>
                     <textarea
                       id={`comment-${task.taskId}`}
+                      value={commentText}
+                      onChange={(e) => {
+                        setCommentText(e.target.value);
+                        localStorage.setItem(
+                          `final_decision_comment_${task.taskId}`,
+                          e.target.value,
+                        );
+                      }}
                       placeholder="Add comments for the creator..."
                       className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
                     />
@@ -826,13 +841,12 @@ function TaskRow({
                         <div
                           key={child.taskId}
                           title={`${child.taskName}: ${child.status}`}
-                          className={`flex-1 rounded-full transition-all duration-300 ${
-                            child.status === TASK_STATUS.DONE
+                          className={`flex-1 rounded-full transition-all duration-300 ${child.status === TASK_STATUS.DONE
                               ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                               : child.status === TASK_STATUS.IN_PROGRESS
                                 ? "bg-amber-500"
                                 : "bg-zinc-200"
-                          }`}
+                            }`}
                         />
                       ))}
                     </div>
@@ -843,7 +857,7 @@ function TaskRow({
                           (children.filter((c) => c.status === TASK_STATUS.DONE)
                             .length /
                             children.length) *
-                            100,
+                          100,
                         )}
                         % Progress
                       </span>
@@ -1330,7 +1344,10 @@ export function TaskList({ sprintId }: TaskListProps) {
     }) => {
       return TaskService.updateTaskStatus(taskId, status);
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+      }
       showToast("Status updated successfully", "success");
       await queryClient.invalidateQueries({
         queryKey: ["assignments", sprintId],
@@ -1502,19 +1519,17 @@ export function TaskList({ sprintId }: TaskListProps) {
             <button
               key={action}
               onClick={() => setSelectedAction(action)}
-              className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
-                selectedAction === action
+              className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${selectedAction === action
                   ? "bg-white text-[var(--primary)] shadow-sm shadow-zinc-200 border border-zinc-200"
                   : "text-zinc-500 hover:text-zinc-700 hover:bg-white/50"
-              }`}
+                }`}
             >
               {action.replace(/_/g, " ")}
               <span
-                className={`px-1.5 py-0.5 rounded-md text-[9px] ${
-                  selectedAction === action
+                className={`px-1.5 py-0.5 rounded-md text-[9px] ${selectedAction === action
                     ? "bg-[var(--primary)] text-white"
                     : "bg-zinc-200 text-zinc-600"
-                }`}
+                  }`}
               >
                 {tasks.filter((t) => (t.action || "OTHER") === action).length}
               </span>
@@ -1621,30 +1636,30 @@ export function TaskList({ sprintId }: TaskListProps) {
         initialData={
           taskModalMode === "UPDATE"
             ? {
-                taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description:
-                  (
-                    document.getElementById(
-                      `comment-${taskModalParentTask?.taskId}`,
-                    ) as HTMLTextAreaElement
-                  )?.value || "",
-                priority: taskModalParentTask?.priority,
-                dueDate: taskModalParentTask?.deadline,
-                assignTo: taskModalParentTask?.account?.accountId,
-              }
+              taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+              description:
+                (
+                  document.getElementById(
+                    `comment-${taskModalParentTask?.taskId}`,
+                  ) as HTMLTextAreaElement
+                )?.value || "",
+              priority: taskModalParentTask?.priority,
+              dueDate: taskModalParentTask?.deadline,
+              assignTo: taskModalParentTask?.account?.accountId,
+            }
             : taskModalMode === "REVIEW"
               ? {
-                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                  priority: "MEDIUM",
-                  dueDate: taskModalParentTask?.deadline,
-                  excludeAccountId: taskModalParentTask?.account?.accountId,
-                }
+                taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                priority: "MEDIUM",
+                dueDate: taskModalParentTask?.deadline,
+                excludeAccountId: taskModalParentTask?.account?.accountId,
+              }
               : {
-                  taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                  description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                  priority: "MEDIUM",
-                }
+                taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                priority: "MEDIUM",
+              }
         }
       />
     </div>
