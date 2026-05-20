@@ -46,6 +46,17 @@ export function useNewSubjectLogic() {
     enabled: !!taskId,
   });
 
+  const parentTaskId = associatedTask?.rootTaskId;
+  const { data: parentTask, isLoading: isParentTaskLoading } = useQuery({
+    queryKey: ["parent-task", parentTaskId],
+    queryFn: async () => {
+      if (!parentTaskId) return null;
+      const res = await TaskService.getTaskById(parentTaskId);
+      return res?.data || null;
+    },
+    enabled: !!parentTaskId,
+  });
+
   const tabParam = searchParams.get("tab") as "subject" | "mapping" | "syllabus" | null;
   const activeTab = tabParam || "subject";
   const isSyllabusMode = activeTab === "syllabus";
@@ -92,7 +103,9 @@ export function useNewSubjectLogic() {
     enabled: !!subjectId && associatedTask?.type === "REUSED_SUBJECT",
   });
 
-  const currentSyllabusId = syllabusIdParam || associatedTask?.syllabus?.syllabusId || associatedTask?.targetId;
+  const currentSyllabusId = (syllabusIdParam && syllabusIdParam !== "null")
+    ? syllabusIdParam
+    : (associatedTask?.syllabus?.syllabusId || associatedTask?.targetId);
   const { data: currentSyllabusRes, isLoading: isCurrentSyllabusLoading } = useQuery({
     queryKey: ["syllabus", currentSyllabusId],
     queryFn: () => SyllabusService.getSyllabusById(currentSyllabusId!),
@@ -287,8 +300,11 @@ export function useNewSubjectLogic() {
     handleSyllabusModalSuccess,
     associatedTask,
     isTaskLoading,
+    parentTask,
+    isParentTaskLoading,
     sprintId,
     currentSyllabus,
+    currentSyllabusId,
     isCloStructureReadOnly,
     isMappingReadOnly,
     isSyllabusMode,
@@ -302,15 +318,30 @@ export function useNewSubjectLogic() {
       isPublishedSyllabusLoading: false,
       associatedTask: {
         taskId: "mock-task-1",
-        taskName: "CREATE SYLLABUS: Graphic Design Advanced",
-        status: "IN_PROGRESS",
-        type: "NEW_SUBJECT",
+        taskName: "REVIEW SYLLABUS: Graphic Design Advanced",
+        status: "DONE",
+        type: "SYLLABUS",
+        action: "REVIEW",
+        rootTaskId: "mock-parent-task-1",
         syllabus: {
           syllabusId: "mock-id",
           syllabusName: "Thiết kế đồ họa nâng cao - 2024",
           status: "PENDING_REVIEW"
         }
       },
+      parentTask: {
+        taskId: "mock-parent-task-1",
+        taskName: "CREATE SYLLABUS: Graphic Design Advanced",
+        status: "IN_PROGRESS",
+        type: "SYLLABUS",
+        priority: "HIGH",
+        account: {
+          accountId: "mock-acc-1",
+          fullName: "Collaborator User"
+        }
+      },
+      isParentTaskLoading: false,
+      currentSyllabusId: "mock-id",
       currentSyllabus: {
         syllabusId: "mock-id",
         status: "PENDING_REVIEW",

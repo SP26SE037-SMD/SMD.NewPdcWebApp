@@ -2,7 +2,7 @@
 
 import React, { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, FileText, Info, Eye } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Info, Eye, AlertCircle, X } from 'lucide-react';
 import { BlockService, BlockItem } from "@/services/block.service";
 import { MaterialService } from "@/services/material.service";
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -70,7 +70,10 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
     const searchParams = useSearchParams();
     const initialTitle = searchParams.get('title');
     const syllabusId = searchParams.get('syllabusId');
+    const rejectComment = searchParams.get('comment');
+    const evalStatus = searchParams.get('status');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [showRejectBanner, setShowRejectBanner] = useState(true);
 
     const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
 
@@ -327,6 +330,23 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                     syllabusId={syllabusId} 
                 />
             </>
+        )}
+
+        {/* Floating Rejection Comment Banner */}
+        {rejectComment && (
+            <div id="rejected-feedback-banner" className="fixed top-32 right-12 z-[150] w-96 p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <AlertCircle size={20} />
+                </div>
+                <div className="space-y-1 relative w-full">
+                    <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none mb-1">
+                        Rejected Feedback
+                    </p>
+                    <p className="text-xs font-bold text-rose-950 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
+                        {rejectComment}
+                    </p>
+                </div>
+            </div>
         )}
         </>
     );

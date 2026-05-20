@@ -41,7 +41,7 @@ export function SyllabusWorkspaceView({
     const [selectedSession, setSelectedSession] = useState<any>(null);
     const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
-    if (isLoading) {
+    if (isLoading || !syllabusId) {
         return (
             <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
                 <Loader2 className="animate-spin mb-4 text-primary-500" size={40} />
@@ -50,7 +50,7 @@ export function SyllabusWorkspaceView({
         );
     }
 
-    if (isError || (!syllabus && !isLoading)) {
+    if (isError || !syllabus) {
         return (
             <div className="py-20 text-center text-rose-500 bg-rose-50 rounded-2xl border border-rose-100 mx-6">
                 <p className="font-bold">Failed to load syllabus data.</p>

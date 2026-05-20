@@ -114,7 +114,8 @@ export const StandardInputContent = () => {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const subjectId = searchParams.get("subjectId") || "";
-  const syllabusId = searchParams.get("syllabusId") || "";
+  const rawSyllabusId = searchParams.get("syllabusId") || "";
+  const syllabusId = rawSyllabusId === "null" ? "" : rawSyllabusId;
 
   const [isCreateSourceModalOpen, setIsCreateSourceModalOpen] = useState(false);
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =

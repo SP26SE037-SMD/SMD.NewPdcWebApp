@@ -1,5 +1,7 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { ReviewV2Service } from "@/services/review-v2.service";
 import { useRouter } from "next/navigation";
 import {
   Rocket,
@@ -16,6 +18,7 @@ interface SyllabusTabContentProps {
   associatedTask: any;
   publishedSyllabus: any;
   currentSyllabus: any;
+  currentSyllabusId?: string;
   isTaskLoading: boolean;
   isPublishedSyllabusLoading: boolean;
   isReadOnly: boolean;
@@ -25,10 +28,107 @@ interface SyllabusTabContentProps {
   setIsSourcesModalOpen: (open: boolean) => void;
 }
 
+interface ParsedReview {
+  materials: Array<{ id: string; name: string; status: "APPROVED" | "REVISION_REQUIRED"; comment: string }>;
+  sessions: { status: "APPROVED" | "REVISION_REQUIRED"; comment: string };
+  assessments: { status: "APPROVED" | "REVISION_REQUIRED"; comment: string };
+}
+
+function checkIfApproved(text: string): boolean {
+  const normalized = text.toLowerCase().trim();
+  if (!normalized) return true;
+  return (
+    normalized.includes("accept") ||
+    normalized.includes("pass") ||
+    normalized.includes("approved") ||
+    normalized === "all are accepted." ||
+    normalized === "no items evaluated." ||
+    normalized === "no session review." ||
+    normalized === "no assessment review."
+  );
+}
+
+function parseReviewComment(comment: string | null | undefined): ParsedReview {
+  const defaultResult: ParsedReview = {
+    materials: [],
+    sessions: { status: "APPROVED", comment: "No comments" },
+    assessments: { status: "APPROVED", comment: "No comments" }
+  };
+
+  if (!comment) return defaultResult;
+
+  let materialPart = "";
+  let sessionPart = "";
+  let assessmentPart = "";
+
+  const matHeader = "Review for material:";
+  const sessHeader = "Review for session:";
+  const assessHeader = "Review for assessment:";
+
+  const matIdx = comment.indexOf(matHeader);
+  const sessIdx = comment.indexOf(sessHeader);
+  const assessIdx = comment.indexOf(assessHeader);
+
+  if (matIdx !== -1) {
+    const end = sessIdx !== -1 ? sessIdx : (assessIdx !== -1 ? assessIdx : comment.length);
+    materialPart = comment.substring(matIdx + matHeader.length, end).trim();
+  }
+
+  if (sessIdx !== -1) {
+    const end = assessIdx !== -1 ? assessIdx : comment.length;
+    sessionPart = comment.substring(sessIdx + sessHeader.length, end).trim();
+  }
+
+  if (assessIdx !== -1) {
+    assessmentPart = comment.substring(assessIdx + assessHeader.length).trim();
+  }
+
+  const materialsList: ParsedReview["materials"] = [];
+  if (materialPart) {
+    const lines = materialPart.split("\n").map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (line.startsWith("+")) {
+        const itemStr = line.substring(1).trim();
+        const colonIdx = itemStr.indexOf(":");
+        if (colonIdx !== -1) {
+          const id = itemStr.substring(0, colonIdx).trim();
+          const decision = itemStr.substring(colonIdx + 1).trim();
+          materialsList.push({
+            id,
+            name: `Material ID: ${id}`,
+            status: checkIfApproved(decision) ? "APPROVED" : "REVISION_REQUIRED",
+            comment: decision
+          });
+        }
+      } else {
+        materialsList.push({
+          id: "general",
+          name: "General Material Review",
+          status: checkIfApproved(line) ? "APPROVED" : "REVISION_REQUIRED",
+          comment: line
+        });
+      }
+    }
+  }
+
+  return {
+    materials: materialsList,
+    sessions: {
+      status: checkIfApproved(sessionPart) ? "APPROVED" : "REVISION_REQUIRED",
+      comment: sessionPart || "No comments"
+    },
+    assessments: {
+      status: checkIfApproved(assessmentPart) ? "APPROVED" : "REVISION_REQUIRED",
+      comment: assessmentPart || "No comments"
+    }
+  };
+}
+
 export function SyllabusTabContent({
   associatedTask,
   publishedSyllabus,
   currentSyllabus,
+  currentSyllabusId,
   isTaskLoading,
   isPublishedSyllabusLoading,
   isReadOnly,
@@ -39,6 +139,18 @@ export function SyllabusTabContent({
 }: SyllabusTabContentProps) {
   const router = useRouter();
 
+  const taskId = associatedTask?.taskId;
+  const isReviewTask =
+    associatedTask?.taskName?.toUpperCase().includes("REVIEW SYLLABUS") ||
+    associatedTask?.action === "REVIEW";
+
+  // Fetch reviews using React Query
+  const { data: reviewsRes } = useQuery({
+    queryKey: ["review-details-v2-page", taskId],
+    queryFn: () => ReviewV2Service.getReviewByTaskId(taskId || ""),
+    enabled: !!taskId && isReviewTask,
+  });
+
   if (isTaskLoading || isPublishedSyllabusLoading || !sprintId) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -46,6 +158,28 @@ export function SyllabusTabContent({
       </div>
     );
   }
+
+  const reviews = Array.isArray(reviewsRes) ? reviewsRes : (reviewsRes?.data || []);
+  const latestReview = reviews.length > 0 ? reviews[reviews.length - 1] : null;
+  const rawComment = latestReview?.comment || "";
+
+  const parsedReview = parseReviewComment(rawComment);
+  const hasReviewData = reviews.length > 0 && rawComment.trim().length > 0;
+
+  // Build evaluations object for SyllabusWorkspaceView
+  const materialEvals = parsedReview.materials.reduce((acc, item) => {
+    acc[item.id] = {
+      status: item.status,
+      comment: item.comment,
+    };
+    return acc;
+  }, {} as Record<string, { status: string; comment: string }>);
+
+  const evaluationsObject = (isReviewTask && hasReviewData) ? {
+    materials: materialEvals,
+    sessions: parsedReview.sessions,
+    assessments: parsedReview.assessments,
+  } : undefined;
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6">
@@ -67,7 +201,7 @@ export function SyllabusTabContent({
                 </div>
               </div>
 
-              <div className="flex-1 max-w-md bg-white/60 rounded-2xl p-2 border border-cyan-100/50">
+              <div className="flex-1 max-w-md bg-transparent">
                 <StatusStepper currentStatus={SYLLABUS_STATUS.PUBLISHED} />
               </div>
 
@@ -97,9 +231,11 @@ export function SyllabusTabContent({
                 <SyllabusWorkspaceView
                   syllabusId={publishedSyllabus.syllabusId}
                   mode="MONITOR"
-                  onOpenMaterial={(m) => {
+                  onOpenMaterial={(m: any) => {
+                    const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
+                    const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
                     router.push(
-                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${publishedSyllabus.syllabusId}`,
+                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${publishedSyllabus.syllabusId}${commentParam}${statusParam}`,
                     );
                   }}
                 />
@@ -121,24 +257,24 @@ export function SyllabusTabContent({
             </div>
           </div>
         )
-      ) : associatedTask?.syllabus?.syllabusId ? (
+      ) : associatedTask?.syllabus?.syllabusId || associatedTask?.targetId ? (
         <>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+          <div className="rounded-2xl border border-[#dee1d8]/60 bg-[#f8faf2]/50 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-white border border-[#dee1d8]/50 text-[#0b7a47] flex items-center justify-center shrink-0 shadow-sm">
                 <CheckCircle size={20} />
               </div>
               <div>
-                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none mb-1">
+                <p className="text-[10px] font-black text-[#0b7a47] uppercase tracking-widest leading-none mb-1">
                   Current Assignment
                 </p>
-                <p className="text-base font-black text-emerald-900">
-                  {associatedTask.syllabus.syllabusName}
+                <p className="text-base font-black text-zinc-800">
+                  {associatedTask.syllabus?.syllabusName || currentSyllabus?.syllabusName || "Syllabus Project"}
                 </p>
               </div>
             </div>
 
-            <div className="flex-1 max-w-md bg-white/60 rounded-2xl p-2 border border-emerald-100/50">
+            <div className="flex-1 max-w-md bg-transparent">
               <StatusStepper
                 currentStatus={
                   currentSyllabus?.status || "DRAFT"
@@ -155,7 +291,7 @@ export function SyllabusTabContent({
                     setIsSourcesModalOpen(true);
                   }
                 }}
-                className="flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-200 transition-all border border-emerald-200 shadow-sm shadow-emerald-50"
+                className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#0b7a47] hover:bg-[#f1f5eb] transition-all border border-[#dee1d8]/50 shadow-sm shadow-[#f8faf2]"
               >
                 <BookText size={14} />
               </button>
@@ -163,22 +299,27 @@ export function SyllabusTabContent({
           </div>
 
           <div className="pt-8 border-t border-zinc-100">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-2 w-2 rounded-full bg-[#0b7a47] animate-pulse" />
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0b7a47]">
-                Syllabus Real-time Monitor
-              </h3>
-            </div>
-            <div className="bg-[#f8faf2]/50 rounded-3xl p-6 border border-[#dee1d8]/30">
-              <SyllabusWorkspaceView
-                syllabusId={currentSyllabus?.syllabusId}
-                mode="MONITOR"
-                onOpenMaterial={(m) => {
-                  router.push(
-                    `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${currentSyllabus?.syllabusId}`,
-                  );
-                }}
-              />
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-[#0b7a47] animate-pulse" />
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0b7a47]">
+                  Syllabus Tracking
+                </h3>
+              </div>
+              <div className="bg-[#f8faf2]/50 rounded-3xl p-6 border border-[#dee1d8]/30">
+                <SyllabusWorkspaceView
+                  syllabusId={currentSyllabusId}
+                  mode="MONITOR"
+                  evaluations={evaluationsObject}
+                  onOpenMaterial={(m: any) => {
+                    const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
+                    const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
+                    router.push(
+                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${currentSyllabusId}${commentParam}${statusParam}`,
+                    );
+                  }}
+                />
+              </div>
             </div>
           </div>
         </>

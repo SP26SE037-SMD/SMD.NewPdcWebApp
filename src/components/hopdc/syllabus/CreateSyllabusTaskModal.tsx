@@ -175,6 +175,10 @@ export function CreateSyllabusTaskModal({
 
       showToast(`${mode} SYLLABUS task created successfully`, "success");
 
+      if (rootTaskId && typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${rootTaskId}`);
+      }
+
       // Invalidate relevant queries to refresh CLO status and mappings
       if (subjectId) {
         queryClient.invalidateQueries({ queryKey: ["clos", subjectId] });
