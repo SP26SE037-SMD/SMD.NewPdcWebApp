@@ -1,0 +1,426 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { AlertCircle, Check, Loader2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { useToast } from "@/components/ui/Toast";
+import { TaskService } from "@/services/task.service";
+import { AccountService } from "@/services/account.service";
+import { SprintService } from "@/services/sprint.service";
+import { usePathname } from "next/navigation";
+
+// Helper utilities to sync across components/tabs
+export const dispatchDecisionCommentUpdate = (taskId: string, comment: string) => {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+            detail: { taskId, comment }
+        }));
+    }
+};
+
+interface FinalDecisionCardProps {
+    syllabusId: string | null;
+    taskId?: string | null;
+}
+
+export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps) {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+    const { user } = useSelector((state: RootState) => state.auth);
+
+    // Local states
+    const [commentText, setCommentText] = useState("");
+    const [isRejectMode, setIsRejectMode] = useState(false);
+    const [assignTo, setAssignTo] = useState("");
+    const [dueDate, setDueDate] = useState("");
+    const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
+
+    // Fetch CREATE/UPDATE SYLLABUS task by taskId or syllabusId
+    const { data: createSyllabusTask, error: taskQueryError, isLoading: isTaskQueryLoading } = useQuery({
+        queryKey: ['create-syllabus-task-by-id-or-syllabus', taskId, syllabusId],
+        queryFn: async () => {
+            if (taskId) {
+                console.log("[FinalDecisionCard] Fetching task by taskId:", taskId);
+                try {
+                    const res = await TaskService.getTaskById(taskId);
+                    const task = res?.data || null;
+                    if (task) {
+                        // If this is a REVIEW task, the actual CREATE/UPDATE task is rootTaskId!
+                        if (task.action === 'REVIEW' || task.taskName?.toUpperCase().includes('REVIEW SYLLABUS')) {
+                            if (task.rootTaskId) {
+                                console.log("[FinalDecisionCard] Task is a review task, fetching root task:", task.rootTaskId);
+                                const rootRes = await TaskService.getTaskById(task.rootTaskId);
+                                return rootRes?.data || null;
+                            }
+                        }
+                        return task;
+                    }
+                } catch (err) {
+                    console.error("[FinalDecisionCard] Error fetching task by ID:", err);
+                }
+            }
+
+            console.log("[FinalDecisionCard] Fetching tasks for syllabusId:", syllabusId);
+            if (!syllabusId) return null;
+            try {
+                // Try querying by syllabusId first via getTasks
+                let res = await TaskService.getTasks({
+                    syllabusId: syllabusId,
+                    size: 50,
+                });
+                let list = res?.content || [];
+                
+                // Fallback to targetId if syllabusId returned nothing
+                if (list.length === 0) {
+                    console.log("[FinalDecisionCard] No tasks found by syllabusId, trying targetId...");
+                    res = await TaskService.getTasks({
+                        targetId: syllabusId,
+                        size: 50,
+                    });
+                    list = res?.content || [];
+                }
+                
+                console.log("[FinalDecisionCard] API response tasks list:", list);
+                // Prioritize active (not DONE/CANCELLED) syllabus tasks
+                const activeSyllabusTask = list.find(t => 
+                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+                    t.status !== 'DONE' && t.status !== 'CANCELLED'
+                );
+                
+                const matchedTask = activeSyllabusTask
+                    || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
+                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
+                    || list[0] 
+                    || null;
+                console.log("[FinalDecisionCard] Selected syllabus task:", matchedTask);
+                return matchedTask;
+            } catch (err) {
+                console.error("[FinalDecisionCard] Error fetching tasks:", err);
+                throw err;
+            }
+        },
+        enabled: !!taskId || !!syllabusId,
+    });
+
+    const createSyllabusTaskId = taskId || createSyllabusTask?.taskId || null;
+    const sprintId = createSyllabusTask?.sprintId || null;
+
+    // Fetch Sprint details (for dueDate restriction)
+    const { data: sprintRes } = useQuery({
+        queryKey: ["sprint", sprintId],
+        queryFn: () => SprintService.getSprintById(sprintId || ""),
+        enabled: !!sprintId,
+    });
+    const sprint = sprintRes?.data;
+
+    // Fetch department accounts for assigning update task
+    const departmentId = user?.departmentId || "";
+    const { data: departmentAccounts = [] } = useQuery({
+        queryKey: ["assignments-department-accounts", departmentId],
+        queryFn: () => AccountService.getAccountsByDepartment(departmentId),
+        enabled: !!departmentId,
+    });
+
+    const filteredAccounts = useMemo(() => {
+        return departmentAccounts.filter((acc) => {
+            const role = acc.roleName?.toUpperCase();
+            return role === "PDCM" || role === "COLLABORATOR";
+        });
+    }, [departmentAccounts]);
+
+    const pathname = usePathname();
+
+    // Load finalComment from localStorage & setup sync event listeners
+    useEffect(() => {
+        const keyId = createSyllabusTaskId;
+        if (!keyId) return;
+
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem(`final_decision_comment_${keyId}`);
+            setCommentText(saved || "");
+        }
+
+        const handleStorageUpdate = (e: any) => {
+            if (e.detail && e.detail.taskId === keyId) {
+                setCommentText(e.detail.comment || "");
+            }
+        };
+        window.addEventListener('final-decision-comment-updated', handleStorageUpdate);
+
+        const handleCrossTabUpdate = (e: StorageEvent) => {
+            if (e.key === `final_decision_comment_${keyId}`) {
+                setCommentText(e.newValue || "");
+            }
+        };
+        window.addEventListener('storage', handleCrossTabUpdate);
+
+        return () => {
+            window.removeEventListener('final-decision-comment-updated', handleStorageUpdate);
+            window.removeEventListener('storage', handleCrossTabUpdate);
+        };
+    }, [createSyllabusTaskId, pathname]);
+
+    const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setCommentText(newValue);
+        if (createSyllabusTaskId && typeof window !== "undefined") {
+            localStorage.setItem(`final_decision_comment_${createSyllabusTaskId}`, newValue);
+            dispatchDecisionCommentUpdate(createSyllabusTaskId, newValue);
+        }
+    };
+
+    const handleAcceptSyllabus = async () => {
+        if (!createSyllabusTaskId) {
+            showToast("Cannot find the CREATE SYLLABUS task to update", "error");
+            return;
+        }
+        setIsSubmittingDecision(true);
+        try {
+            await TaskService.updateTaskStatus(createSyllabusTaskId, "DONE");
+            if (typeof window !== "undefined") {
+                localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
+                dispatchDecisionCommentUpdate(createSyllabusTaskId, "");
+            }
+            setCommentText("");
+            showToast("Syllabus accepted successfully", "success");
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
+                queryClient.invalidateQueries({ queryKey: ["assignments"] }),
+                queryClient.invalidateQueries({ queryKey: ["associated-task"] }),
+                queryClient.invalidateQueries({ queryKey: ["parent-task"] }),
+                queryClient.invalidateQueries({ queryKey: ["assignments", sprintId] }),
+            ]);
+        } catch (err: any) {
+            showToast(err.message || "Failed to accept syllabus", "error");
+        } finally {
+            setIsSubmittingDecision(false);
+        }
+    };
+
+    const handleRejectSyllabus = async () => {
+        if (!createSyllabusTaskId) {
+            showToast("Cannot find the CREATE SYLLABUS task", "error");
+            return;
+        }
+        if (!commentText.trim()) {
+            showToast("Please add a comment for rejection", "error");
+            return;
+        }
+        setIsRejectMode(true);
+    };
+
+    const handleConfirmRejection = async () => {
+        if (!createSyllabusTaskId) return;
+        if (!assignTo) {
+            showToast("Please select an assignee", "error");
+            return;
+        }
+        if (!dueDate) {
+            showToast("Please select a due date", "error");
+            return;
+        }
+        setIsSubmittingDecision(true);
+        try {
+            const cleanTaskName = createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+            const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
+            
+            await TaskService.createTask({
+                sprintId: sprintId || "",
+                assignTo,
+                taskName: updateTaskName,
+                description: commentText.trim(),
+                action: "UPDATE",
+                priority: createSyllabusTask?.priority || "MEDIUM",
+                type: "SYLLABUS",
+                targetId: createSyllabusTask?.targetId || syllabusId || undefined,
+                rootTaskId: createSyllabusTaskId,
+                dueDate,
+            });
+
+            await TaskService.updateTaskStatus(createSyllabusTaskId, "REVISION_REQUESTED");
+
+            if (typeof window !== "undefined") {
+                localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
+                dispatchDecisionCommentUpdate(createSyllabusTaskId, "");
+            }
+            setCommentText("");
+            setIsRejectMode(false);
+            setAssignTo("");
+            setDueDate("");
+            showToast("Syllabus rejected and update task assigned", "success");
+            
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
+                queryClient.invalidateQueries({ queryKey: ["assignments"] }),
+                queryClient.invalidateQueries({ queryKey: ["associated-task"] }),
+                queryClient.invalidateQueries({ queryKey: ["parent-task"] }),
+                queryClient.invalidateQueries({ queryKey: ["assignments", sprintId] }),
+            ]);
+        } catch (err: any) {
+            showToast(err.message || "Failed to reject syllabus", "error");
+        } finally {
+            setIsSubmittingDecision(false);
+        }
+    };
+
+    if (isTaskQueryLoading) {
+        return (
+            <div className="pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in duration-300">
+                <div className="flex items-center justify-center py-8 gap-2 text-zinc-500 font-bold uppercase tracking-widest text-[10px]">
+                    <Loader2 className="animate-spin text-amber-600" size={16} />
+                    Loading Decision State...
+                </div>
+            </div>
+        );
+    }
+
+    if (!createSyllabusTask) {
+        return (
+            <div className="pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in duration-300">
+                <div className="py-4 text-center text-zinc-500 font-bold uppercase tracking-widest text-[10px] flex flex-col items-center gap-2">
+                    <AlertCircle className="text-rose-500" size={24} />
+                    <span>No syllabus task found</span>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            id="floating-decision-panel"
+            className="pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300"
+        >
+            {/* Header */}
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
+                <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700 animate-pulse">
+                    <AlertCircle size={16} />
+                </div>
+                <div>
+                    <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest block leading-none">
+                        Final Decision Required
+                    </span>
+                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider mt-0.5 block">
+                        Syllabus Approval
+                    </span>
+                </div>
+            </div>
+
+            {!isRejectMode ? (
+                <>
+                    <div className="space-y-1">
+                        <h4 className="text-sm font-black text-zinc-900 leading-tight">
+                            {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "Syllabus Review"}
+                        </h4>
+                        <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                            Review is complete. You can accept this syllabus, or reject it with comments to assign an update task.
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                            Decision Comment
+                        </label>
+                        <textarea
+                            value={commentText}
+                            onChange={handleCommentChange}
+                            placeholder="Provide comments or notes for rejection..."
+                            className="w-full p-3 text-xs border border-zinc-200 bg-zinc-50/30 rounded-xl outline-none focus:border-[#0b7a47] focus:bg-white transition-all min-h-[90px] font-medium resize-none"
+                        />
+                    </div>
+
+                    <div className="flex gap-2.5 pt-2">
+                        <button
+                            onClick={handleAcceptSyllabus}
+                            disabled={isSubmittingDecision}
+                            className="flex-1 py-3 bg-[#0b7a47] text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-[#096339] disabled:opacity-60 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-1.5"
+                        >
+                            {isSubmittingDecision ? (
+                                <Loader2 className="animate-spin" size={14} />
+                            ) : (
+                                <Check size={14} />
+                            )}
+                            Accept
+                        </button>
+                        <button
+                            onClick={handleRejectSyllabus}
+                            disabled={isSubmittingDecision}
+                            className="flex-1 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100"
+                        >
+                            Reject
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
+                    <div className="space-y-1">
+                        <h4 className="text-sm font-black text-zinc-955">Assign Update Task</h4>
+                        <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                            Provide assignment details to request updates from collaborators.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                                Assign To
+                            </label>
+                            <select
+                                value={assignTo}
+                                onChange={(e) => setAssignTo(e.target.value)}
+                                className="w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50/30 px-3 text-xs font-bold text-zinc-900 outline-none focus:border-[#0b7a47] focus:bg-white transition-all appearance-none"
+                            >
+                                <option value="">Select Assignee</option>
+                                {filteredAccounts.map((acc) => (
+                                    <option key={acc.accountId} value={acc.accountId}>
+                                        {acc.fullName} ({acc.roleName})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                                Due Date
+                            </label>
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                min={new Date().toISOString().slice(0, 10)}
+                                max={sprint?.endDate ? new Date(sprint.endDate).toISOString().slice(0, 10) : undefined}
+                                className="w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50/30 px-3 text-xs font-bold text-zinc-900 outline-none focus:border-[#0b7a47] focus:bg-white transition-all"
+                            />
+                            {sprint?.endDate && (
+                                <span className="text-[9px] font-bold text-amber-600 block mt-0.5">
+                                    Sprint deadline: {new Date(sprint.endDate).toLocaleDateString("en-GB")}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                        <button
+                            onClick={handleConfirmRejection}
+                            disabled={isSubmittingDecision}
+                            className="flex-1 py-2.5 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100 flex items-center justify-center gap-1.5"
+                        >
+                            {isSubmittingDecision ? (
+                                <Loader2 className="animate-spin" size={14} />
+                            ) : null}
+                            Confirm
+                        </button>
+                        <button
+                            onClick={() => setIsRejectMode(false)}
+                            disabled={isSubmittingDecision}
+                            className="flex-1 py-2.5 bg-zinc-100 text-zinc-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-zinc-200 disabled:opacity-60 transition-all"
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

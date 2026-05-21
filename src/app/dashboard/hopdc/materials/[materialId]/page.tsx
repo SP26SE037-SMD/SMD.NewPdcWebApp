@@ -2,13 +2,20 @@
 
 import React, { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, FileText, Info, Eye, AlertCircle, X } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Info, Eye, AlertCircle, X, Check } from 'lucide-react';
 import { BlockService, BlockItem } from "@/services/block.service";
 import { MaterialService } from "@/services/material.service";
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { SyllabusInfoModal } from '@/components/dashboard/SyllabusInfoModal';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { useToast } from "@/components/ui/Toast";
+import { TaskService } from "@/services/task.service";
+import { AccountService } from "@/services/account.service";
+import { SprintService } from "@/services/sprint.service";
 import { HeaderRightActions } from '@/components/layout/HeaderRightActions';
+import { FinalDecisionCard } from '@/components/hopdc/syllabus/FinalDecisionCard';
 
 // ── Pagination Helpers ──
 const PAGE_HEIGHT = 1000;
@@ -72,10 +79,80 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
     const syllabusId = searchParams.get('syllabusId');
     const rejectComment = searchParams.get('comment');
     const evalStatus = searchParams.get('status');
+    const taskIdFromUrl = searchParams.get('taskId');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [showRejectBanner, setShowRejectBanner] = useState(true);
 
     const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+    const { user } = useSelector((state: RootState) => state.auth);
+
+    // Final Decision card state managed internally by FinalDecisionCard component
+
+    // Fetch CREATE/UPDATE SYLLABUS task by syllabusId
+    const { data: createSyllabusTask, error: taskQueryError, isLoading: isTaskQueryLoading } = useQuery({
+        queryKey: ['create-syllabus-task-by-syllabus', syllabusId],
+        queryFn: async () => {
+            console.log("[Material Detail Debug] Fetching tasks for syllabusId:", syllabusId);
+            if (!syllabusId) return null;
+            try {
+                // Try querying by syllabusId first via getTasks (which supports syllabusId query param)
+                let res = await TaskService.getTasks({
+                    syllabusId: syllabusId,
+                    size: 50,
+                });
+                let list = res?.content || [];
+                
+                // Fallback to targetId if syllabusId returned nothing
+                if (list.length === 0) {
+                    console.log("[Material Detail Debug] No tasks found by syllabusId, trying targetId...");
+                    res = await TaskService.getTasks({
+                        targetId: syllabusId,
+                        size: 50,
+                    });
+                    list = res?.content || [];
+                }
+                
+                console.log("[Material Detail Debug] API response tasks list:", list);
+                // Prioritize active (not DONE/CANCELLED) syllabus tasks
+                const activeSyllabusTask = list.find(t => 
+                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+                    t.status !== 'DONE' && t.status !== 'CANCELLED'
+                );
+                
+                const matchedTask = activeSyllabusTask
+                    || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
+                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
+                    || list[0] 
+                    || null;
+                console.log("[Material Detail Debug] Selected syllabus task:", matchedTask);
+                return matchedTask;
+            } catch (err) {
+                console.error("[Material Detail Debug] Error fetching tasks:", err);
+                throw err;
+            }
+        },
+        enabled: !!syllabusId,
+    });
+
+    if (taskQueryError) {
+        console.error("[Material Detail Debug] Query error:", taskQueryError);
+    }
+
+    // Handled internally by FinalDecisionCard component
+
+    const normalizedStatus = evalStatus?.toUpperCase()?.trim();
+    const isRevisionRequested = normalizedStatus === 'REVISION_REQUIRED' || 
+                               normalizedStatus === 'REVISION_REQUESTED' ||
+                               normalizedStatus?.replace(/_/g, ' ') === 'REVISION REQUESTED';
+
+    const showFloatingDecision = !!syllabusId && (
+        isRevisionRequested ||
+        !createSyllabusTask ||
+        createSyllabusTask.status !== "DONE"
+    );
 
     // 1. Fetch Material details
     const { data: materialRes, isLoading: isMaterialLoading } = useQuery({
@@ -332,20 +409,30 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
             </>
         )}
 
-        {/* Floating Rejection Comment Banner */}
-        {rejectComment && (
-            <div id="rejected-feedback-banner" className="fixed top-32 right-12 z-[150] w-96 p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <AlertCircle size={20} />
-                </div>
-                <div className="space-y-1 relative w-full">
-                    <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none mb-1">
-                        Rejected Feedback
-                    </p>
-                    <p className="text-xs font-bold text-rose-950 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
-                        {rejectComment}
-                    </p>
-                </div>
+        {/* Floating Panels Container */}
+        {(rejectComment || showFloatingDecision) && (
+            <div className="fixed top-32 right-12 z-[150] w-96 flex flex-col gap-4 pointer-events-none">
+                {/* Floating Rejection Comment Banner */}
+                {rejectComment && (
+                    <div id="rejected-feedback-banner" className="pointer-events-auto w-full p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                        <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
+                            <AlertCircle size={20} />
+                        </div>
+                        <div className="space-y-1 relative w-full">
+                            <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none mb-1">
+                                Rejected Feedback
+                            </p>
+                            <p className="text-xs font-bold text-rose-950 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
+                                {rejectComment}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Floating Decision Card */}
+                {showFloatingDecision && (
+                    <FinalDecisionCard syllabusId={syllabusId} taskId={taskIdFromUrl || createSyllabusTask?.taskId} />
+                )}
             </div>
         )}
         </>
