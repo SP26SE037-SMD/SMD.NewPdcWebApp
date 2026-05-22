@@ -63,6 +63,7 @@ export interface RequestItem {
     status: string;
     createdBy?: RequestCreatedBy;
     createdById?: string;
+    receivedBy?: RequestCreatedBy;
     curriculum?: RequestCurriculum;
     major?: RequestMajor;
     createdAt?: string;
@@ -85,6 +86,10 @@ export interface RequestQueryParams {
     status?: string;
     curriculumId?: string;
     majorId?: string;
+    createdById?: string;
+    receivedById?: string;
+    targetId?: string;
+    type?: string;
     page?: number;
     size?: number;
     sortBy?: string;
@@ -130,6 +135,10 @@ export const RequestService = {
         if (params?.curriculumId)
             queryParams.append("curriculumId", params.curriculumId);
         if (params?.majorId) queryParams.append("majorId", params.majorId);
+        if (params?.createdById) queryParams.append("createdById", params.createdById);
+        if (params?.receivedById) queryParams.append("receivedById", params.receivedById);
+        if (params?.targetId) queryParams.append("targetId", params.targetId);
+        if (params?.type) queryParams.append("type", params.type);
 
         return apiClient.get<RequestListResponse>(
             `/api/requests?${queryParams.toString()}`,
