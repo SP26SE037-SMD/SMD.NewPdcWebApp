@@ -72,6 +72,12 @@ export function SyllabusMaterialsTab({
     );
   }
 
+  const isStatusPending = (status?: string) => {
+    if (!status) return true;
+    const s = status.toUpperCase();
+    return s.includes("PENDING");
+  };
+
   const getStatusStyle = (status: string) => {
     const s = status?.toUpperCase();
     if (s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE") {
@@ -113,7 +119,7 @@ export function SyllabusMaterialsTab({
       ev = evaluations.materials[materialId];
     }
 
-    if (!ev || ev.status === "PENDING") return null;
+    if (!ev || isStatusPending(ev.status)) return null;
     return getStatusStyle(ev.status);
   };
 
@@ -183,17 +189,19 @@ export function SyllabusMaterialsTab({
                           )}
                         </div>
                       ) : (
-                        <span
-                          className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide border shrink-0 transition-colors"
-                          style={{
-                            background: baseStatusStyle.bg,
-                            color: baseStatusStyle.color,
-                            borderColor: baseStatusStyle.border,
-                            wordSpacing: "0.2em",
-                          }}
-                        >
-                          {baseStatusStyle.label}
-                        </span>
+                        !isStatusPending(material.status) && (
+                          <span
+                            className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide border shrink-0 transition-colors"
+                            style={{
+                              background: baseStatusStyle.bg,
+                              color: baseStatusStyle.color,
+                              borderColor: baseStatusStyle.border,
+                              wordSpacing: "0.2em",
+                            }}
+                          >
+                            {baseStatusStyle.label}
+                          </span>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">

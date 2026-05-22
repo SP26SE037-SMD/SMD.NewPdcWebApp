@@ -143,6 +143,7 @@ export function SyllabusTabContent({
   const isReviewTask =
     associatedTask?.taskName?.toUpperCase().includes("REVIEW SYLLABUS") ||
     associatedTask?.action === "REVIEW";
+  const createSyllabusTaskId = isReviewTask ? associatedTask?.rootTaskId : associatedTask?.taskId;
 
   // Fetch reviews using React Query
   const { data: reviewsRes } = useQuery({
@@ -235,7 +236,7 @@ export function SyllabusTabContent({
                     const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
                     const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
                     router.push(
-                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${publishedSyllabus.syllabusId}${commentParam}${statusParam}`,
+                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${publishedSyllabus.syllabusId}&taskId=${createSyllabusTaskId || ""}${commentParam}${statusParam}`,
                     );
                   }}
                 />
@@ -315,7 +316,7 @@ export function SyllabusTabContent({
                     const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
                     const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
                     router.push(
-                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${currentSyllabusId}${commentParam}${statusParam}`,
+                      `/dashboard/hopdc/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${currentSyllabusId}&taskId=${createSyllabusTaskId || ""}${commentParam}${statusParam}`,
                     );
                   }}
                 />

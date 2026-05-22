@@ -45,7 +45,7 @@ import { CreateSyllabusTaskModal } from "./CreateSyllabusTaskModal";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
 import { ViewReviewDetailsModal } from "./ViewReviewDetailsModal";
 import { useToast } from "@/components/ui/Toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface TaskListProps {
   sprintId: string;
@@ -306,15 +306,36 @@ function TaskRow({
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
   const [isReviewDetailsOpen, setIsReviewDetailsOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const pathname = usePathname();
 
   useEffect(() => {
+    const keyId = task.taskId;
+    if (!keyId) return;
+
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`final_decision_comment_${task.taskId}`);
-      if (saved) {
-        setCommentText(saved);
-      }
+      const saved = localStorage.getItem(`final_decision_comment_${keyId}`);
+      setCommentText(saved || "");
     }
-  }, [task.taskId]);
+
+    const handleStorageUpdate = (e: any) => {
+      if (e.detail && e.detail.taskId === keyId) {
+        setCommentText(e.detail.comment || "");
+      }
+    };
+    window.addEventListener('final-decision-comment-updated', handleStorageUpdate);
+
+    const handleCrossTabUpdate = (e: StorageEvent) => {
+      if (e.key === `final_decision_comment_${keyId}`) {
+        setCommentText(e.newValue || "");
+      }
+    };
+    window.addEventListener('storage', handleCrossTabUpdate);
+
+    return () => {
+      window.removeEventListener('final-decision-comment-updated', handleStorageUpdate);
+      window.removeEventListener('storage', handleCrossTabUpdate);
+    };
+  }, [task.taskId, pathname]);
   const { data: subjectRes } = useQuery({
     queryKey: ["subject", subjectId],
     queryFn: () => SubjectService.getSubjectById(subjectId),
@@ -756,11 +777,15 @@ function TaskRow({
                       id={`comment-${task.taskId}`}
                       value={commentText}
                       onChange={(e) => {
-                        setCommentText(e.target.value);
+                        const val = e.target.value;
+                        setCommentText(val);
                         localStorage.setItem(
                           `final_decision_comment_${task.taskId}`,
-                          e.target.value,
+                          val,
                         );
+                        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+                          detail: { taskId: task.taskId, comment: val }
+                        }));
                       }}
                       placeholder="Add comments for the creator..."
                       className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
@@ -1347,6 +1372,9 @@ export function TaskList({ sprintId }: TaskListProps) {
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
         localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+          detail: { taskId: variables.taskId, comment: "" }
+        }));
       }
       showToast("Status updated successfully", "success");
       await queryClient.invalidateQueries({

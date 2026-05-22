@@ -110,10 +110,16 @@ export function SyllabusSessionsTab({
     };
   };
 
+  const isStatusPending = (status?: string) => {
+    if (!status) return true;
+    const s = status.toUpperCase();
+    return s.includes("PENDING");
+  };
+
   // Use the dynamic evaluations state (updated on action click) before falling back to initial static reviewer feedback
   const groupStatus = evaluations?.status || overallFeedback?.status;
   const badge =
-    groupStatus && groupStatus !== "PENDING"
+    groupStatus && !isStatusPending(groupStatus)
       ? getStatusStyle(groupStatus)
       : null;
 
@@ -309,18 +315,21 @@ export function SyllabusSessionsTab({
                 <div className="col-span-2">
                   {(() => {
                     const effectiveStatus =
-                      groupStatus && groupStatus !== "PENDING"
+                      groupStatus && !isStatusPending(groupStatus)
                         ? groupStatus
                         : session.status;
-                    const style = getIndividualStatusStyle(effectiveStatus);
-                    return (
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black tracking-wider uppercase ${style.color} ${style.bg} border ${style.border}`}
-                        style={{ wordSpacing: "0.2em" }}
-                      >
-                        {style.label}
-                      </span>
-                    );
+                    if (!isStatusPending(effectiveStatus)) {
+                      const style = getIndividualStatusStyle(effectiveStatus);
+                      return (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black tracking-wider uppercase ${style.color} ${style.bg} border ${style.border}`}
+                          style={{ wordSpacing: "0.2em" }}
+                        >
+                          {style.label}
+                        </span>
+                      );
+                    }
+                    return null;
                   })()}
                 </div>
                 <div className="col-span-1 flex items-center justify-end">

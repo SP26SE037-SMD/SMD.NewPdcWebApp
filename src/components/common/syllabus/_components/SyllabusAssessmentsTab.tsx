@@ -81,10 +81,16 @@ export function SyllabusAssessmentsTab({
     };
   };
 
+  const isStatusPending = (status?: string) => {
+    if (!status) return true;
+    const s = status.toUpperCase();
+    return s.includes("PENDING");
+  };
+
   // Use the dynamic evaluations state (updated on action click) before falling back to initial static reviewer feedback
   const groupStatus = evaluations?.status || overallFeedback?.status;
   const status =
-    groupStatus && groupStatus !== "PENDING"
+    groupStatus && !isStatusPending(groupStatus)
       ? getStatusStyle(groupStatus)
       : null;
 
@@ -245,18 +251,21 @@ export function SyllabusAssessmentsTab({
                 </div>
                 {(() => {
                   const effectiveStatus =
-                    groupStatus && groupStatus !== "PENDING"
+                    groupStatus && !isStatusPending(groupStatus)
                       ? groupStatus
                       : "PENDING_REVIEW";
-                  const style = getIndividualStatusStyle(effectiveStatus);
-                  return (
-                    <span
-                      className={`mr-10 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${style.color} ${style.border} ${style.bg}`}
-                      style={{ wordSpacing: "0.2em" }}
-                    >
-                      {style.label}
-                    </span>
-                  );
+                  if (!isStatusPending(effectiveStatus)) {
+                    const style = getIndividualStatusStyle(effectiveStatus);
+                    return (
+                      <span
+                        className={`mr-10 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${style.color} ${style.border} ${style.bg}`}
+                        style={{ wordSpacing: "0.2em" }}
+                      >
+                        {style.label}
+                      </span>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">

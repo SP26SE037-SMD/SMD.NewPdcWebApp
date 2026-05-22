@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ReviewTaskService,
@@ -36,6 +36,7 @@ export default function HoPDCReviewSynthesisPage({
 }) {
   const { reviewId } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -74,9 +75,61 @@ export default function HoPDCReviewSynthesisPage({
     refetchOnMount: "always",
   });
   const reviewTaskData = reviewTaskRes?.data;
+  const reviewTask = (reviewTaskData as any)?.data || reviewTaskData;
 
-  // createSyllabusTask = the parent CREATE SYLLABUS task (rootTaskId of reviewTask)
-  const createSyllabusTaskId = (reviewTaskData as any)?.rootTaskId || null;
+  // Extract parent task & syllabus information
+  const actualSyllabusId =
+    reviewTask?.syllabus?.syllabusId ||
+    reviewTask?.targetId ||
+    reviewTask?.syllabusId ||
+    (taskDetails as any)?.syllabusId ||
+    (taskDetails?.task as any)?.syllabusId ||
+    null;
+
+  // Fetch CREATE/UPDATE SYLLABUS task by syllabusId as fallback/source of truth
+  const { data: createSyllabusTaskBySyllabus } = useQuery({
+    queryKey: ['create-syllabus-task-by-syllabus', actualSyllabusId],
+    queryFn: async () => {
+      if (!actualSyllabusId) return null;
+      try {
+        let res = await TaskService.getTasks({
+          syllabusId: actualSyllabusId,
+          size: 50,
+        });
+        let list = res?.content || [];
+        
+        if (list.length === 0) {
+          res = await TaskService.getTasks({
+            targetId: actualSyllabusId,
+            size: 50,
+          });
+          list = res?.content || [];
+        }
+        
+        const activeSyllabusTask = list.find(t => 
+          (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+          t.status !== 'DONE' && t.status !== 'CANCELLED'
+        );
+        
+        return activeSyllabusTask
+          || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
+          || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
+          || list[0] 
+          || null;
+      } catch (err) {
+        console.error("[Review Detail] Error fetching tasks:", err);
+        return null;
+      }
+    },
+    enabled: !!actualSyllabusId,
+  });
+
+  // createSyllabusTaskId = the parent CREATE SYLLABUS task (rootTaskId of reviewTask or fallback)
+  const createSyllabusTaskId =
+    reviewTask?.rootTaskId ||
+    createSyllabusTaskBySyllabus?.taskId ||
+    null;
+
   const { data: createSyllabusTaskRes } = useQuery({
     queryKey: ["create-syllabus-task", createSyllabusTaskId],
     queryFn: () => TaskService.getTaskById(createSyllabusTaskId!),
@@ -91,25 +144,53 @@ export default function HoPDCReviewSynthesisPage({
   // Extract real task data from the response wrapper
   const actualParentTask = (createSyllabusTask as any)?.data || createSyllabusTask || (reviewTaskData as any)?.data || reviewTaskData;
 
-  const actualSyllabusId =
-    actualParentTask?.syllabus?.syllabusId ||
-    actualParentTask?.syllabusId ||
-    (task as any)?.syllabusId ||
-    (task?.task as any)?.syllabusId;
-
   // Sync finalComment with localStorage (key = CREATE SYLLABUS task id)
   useEffect(() => {
-    if (createSyllabusTaskId && typeof window !== "undefined") {
-      const saved = localStorage.getItem(`final_decision_comment_${createSyllabusTaskId}`);
-      if (saved) setFinalComment(saved);
+    const keyId = createSyllabusTaskId;
+    if (!keyId) return;
+
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`final_decision_comment_${keyId}`);
+      if (saved !== null) {
+        setFinalComment(saved);
+      } else if (task?.content) {
+        setFinalComment(task.content);
+      }
     }
-  }, [createSyllabusTaskId]);
+
+    const handleStorageUpdate = (e: any) => {
+      if (e.detail && e.detail.taskId === keyId) {
+        setFinalComment(e.detail.comment || "");
+      }
+    };
+    window.addEventListener('final-decision-comment-updated', handleStorageUpdate);
+
+    const handleCrossTabUpdate = (e: StorageEvent) => {
+      if (e.key === `final_decision_comment_${keyId}`) {
+        setFinalComment(e.newValue || "");
+      }
+    };
+    window.addEventListener('storage', handleCrossTabUpdate);
+
+    return () => {
+      window.removeEventListener('final-decision-comment-updated', handleStorageUpdate);
+      window.removeEventListener('storage', handleCrossTabUpdate);
+    };
+  }, [createSyllabusTaskId, task?.content, pathname]);
 
   useEffect(() => {
     if (task) {
       if (task.isAccepted !== undefined) setIsAccepted(task.isAccepted);
-      // Only set comment from server if no localStorage value
-      if (task.content && !createSyllabusTaskId) setFinalComment(task.content);
+      
+      // Only set comment from server if no localStorage value exists or is resolved
+      const keyId = createSyllabusTaskId;
+      let hasLocalValue = false;
+      if (keyId && typeof window !== "undefined") {
+        hasLocalValue = localStorage.getItem(`final_decision_comment_${keyId}`) !== null;
+      }
+      if (task.content && !hasLocalValue) {
+        setFinalComment(task.content);
+      }
 
       // Map reviewer comments to initial HoPDC state
       setHopdcEvaluations({
@@ -121,7 +202,7 @@ export default function HoPDCReviewSynthesisPage({
         },
       });
     }
-  }, [task]);
+  }, [task, createSyllabusTaskId]);
 
   const handleUpdateComponentStatus = async (
     type: "material" | "sessions" | "assessments",
@@ -448,7 +529,7 @@ export default function HoPDCReviewSynthesisPage({
                       const commentParam = m.evalComment ? `&comment=${encodeURIComponent(m.evalComment)}` : "";
                       const statusParam = m.evalStatus ? `&status=${encodeURIComponent(m.evalStatus)}` : "";
                       router.push(
-                        `/dashboard/hopdc/reviews/${reviewId}/materials/${m.materialId}?title=${encodeURIComponent(m.title)}${commentParam}${statusParam}`,
+                        `/dashboard/hopdc/reviews/${reviewId}/materials/${m.materialId}?title=${encodeURIComponent(m.title)}&syllabusId=${actualSyllabusId || ""}&taskId=${createSyllabusTaskId || ""}${commentParam}${statusParam}`,
                       );
                     }}
                   />
@@ -560,9 +641,13 @@ export default function HoPDCReviewSynthesisPage({
                     <textarea
                       value={finalComment}
                       onChange={(e) => {
-                        setFinalComment(e.target.value);
+                        const val = e.target.value;
+                        setFinalComment(val);
                         if (createSyllabusTaskId && typeof window !== "undefined") {
-                          localStorage.setItem(`final_decision_comment_${createSyllabusTaskId}`, e.target.value);
+                          localStorage.setItem(`final_decision_comment_${createSyllabusTaskId}`, val);
+                          window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+                            detail: { taskId: createSyllabusTaskId, comment: val }
+                          }));
                         }
                       }}
                       readOnly={isReadOnly}
