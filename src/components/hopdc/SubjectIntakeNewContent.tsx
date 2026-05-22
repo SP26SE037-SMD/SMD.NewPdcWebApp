@@ -410,6 +410,8 @@ export default function NewSubjectContent() {
                 setSelectedSyllabusIdForSources={setSelectedSyllabusIdForSources}
                 setSelectedSyllabusNameForSources={setSelectedSyllabusNameForSources}
                 setIsSourcesModalOpen={setIsSourcesModalOpen}
+                viewType={isReviewTask ? "REVIEW" : "DETAIL"}
+                assigneeName={associatedTask?.account?.fullName || undefined}
               />
 
               {syllabusNotice && (

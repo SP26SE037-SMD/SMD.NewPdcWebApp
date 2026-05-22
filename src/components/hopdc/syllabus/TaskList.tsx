@@ -678,7 +678,7 @@ function TaskRow({
                         <Layers size={10} />
                       </div>
                       <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                        Subtasks
+                        Review
                       </span>
                     </div>
                     <span className="text-[10px] font-bold text-zinc-900 bg-zinc-50 px-1.5 py-0.5 rounded-md border border-zinc-100">
@@ -788,7 +788,7 @@ function TaskRow({
                         }));
                       }}
                       placeholder="Add comments for the creator..."
-                      className="w-full p-3 text-xs border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
+                      className="w-full p-3 text-sm border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
                     />
                   </div>
                 ) : task.status === TASK_STATUS.TO_DO ||
@@ -1131,77 +1131,12 @@ export function TaskList({ sprintId }: TaskListProps) {
     }
   }, [taskActions, selectedAction]);
 
-  const getMockTasks = (): TaskItem[] => {
-    return [
-      {
-        taskId: "mock-root-1",
-        taskName: "CREATE SUBJECT: SOFTWARE ARCHITECTURE (SE301)",
-        description:
-          "Develop full syllabus including CLOs, PLO mapping, and course content.",
-        action: "CREATE",
-        status: TASK_STATUS.IN_PROGRESS,
-        priority: "HIGH",
-        type: TASK_TYPE.NEW_SUBJECT,
-        deadline: new Date(Date.now() + 86400000 * 7).toISOString(),
-        createdAt: new Date().toISOString(),
-        subjectStatus: "DRAFT",
-        subjectId: "sub-mock-1",
-        account: { accountId: "hopdc-1", fullName: "HoPDC Manager" },
-      } as any,
-      {
-        taskId: "mock-child-1.1",
-        rootTaskId: "mock-root-1",
-        taskName: "CREATE SYLLABUS",
-        description: "Draft the initial syllabus structure and CLO mappings.",
-        action: "CREATE",
-        status: TASK_STATUS.DONE,
-        priority: "MEDIUM",
-        type: "SYLLABUS_DEVELOP",
-        deadline: new Date(Date.now() + 86400000 * 2).toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-        account: { accountId: "creator-1", fullName: "Nguyen Van A (Creator)" },
-        targetId: "syl-mock-1",
-        syllabus: { syllabusId: "syl-mock-1", syllabusName: "Syllabus V1.0" },
-      } as any,
-      {
-        taskId: "mock-subchild-1.1.1",
-        rootTaskId: "mock-child-1.1",
-        taskName: "REVIEW SYLLABUS",
-        description:
-          "Peer review of the initial draft for Software Architecture.",
-        action: "CREATE",
-        status: TASK_STATUS.DONE,
-        priority: "MEDIUM",
-        type: "REVIEW",
-        deadline: new Date(Date.now() + 86400000 * 4).toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-        account: { accountId: "reviewer-1", fullName: "Tran Thi B (Reviewer)" },
-      } as any,
-      {
-        taskId: "mock-child-1.2",
-        rootTaskId: "mock-root-1",
-        taskName: "UPDATE SYLLABUS (RE-WORK)",
-        description:
-          "Fix the CLO mappings as per the review comments in Task 1.1.1. Please detail the Software Design Pattern section.",
-        action: "CREATE",
-        status: TASK_STATUS.IN_PROGRESS,
-        priority: "HIGH",
-        type: "SYLLABUS_UPDATE",
-        deadline: new Date(Date.now() + 86400000 * 6).toISOString(),
-        createdAt: new Date().toISOString(),
-        account: { accountId: "creator-1", fullName: "Nguyen Van A (Creator)" },
-        targetId: "syl-mock-1",
-      } as any,
-    ];
-  };
-
   const groupedTasks = useMemo(() => {
     const taskMap: Record<string, TaskItem & { children?: TaskItem[] }> = {};
     const roots: (TaskItem & { children?: TaskItem[] })[] = [];
 
-    // Combine mock and real tasks to build the full tree structure
+    // Combine tasks to build the full tree structure
     const allTasksForTree = [
-      ...(selectedAction === "CREATE" ? getMockTasks() : []),
       ...tasks,
     ];
 

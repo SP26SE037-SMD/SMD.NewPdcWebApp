@@ -26,6 +26,8 @@ interface SyllabusTabContentProps {
   setSelectedSyllabusIdForSources: (id: string) => void;
   setSelectedSyllabusNameForSources: (name: string) => void;
   setIsSourcesModalOpen: (open: boolean) => void;
+  viewType?: "REVIEW" | "DETAIL";
+  assigneeName?: string;
 }
 
 interface ParsedReview {
@@ -136,6 +138,8 @@ export function SyllabusTabContent({
   setSelectedSyllabusIdForSources,
   setSelectedSyllabusNameForSources,
   setIsSourcesModalOpen,
+  viewType,
+  assigneeName,
 }: SyllabusTabContentProps) {
   const router = useRouter();
 
@@ -260,51 +264,60 @@ export function SyllabusTabContent({
         )
       ) : associatedTask?.syllabus?.syllabusId || associatedTask?.targetId ? (
         <>
-          <div className="rounded-2xl border border-[#dee1d8]/60 bg-[#f8faf2]/50 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-xl bg-white border border-[#dee1d8]/50 text-[#0b7a47] flex items-center justify-center shrink-0 shadow-sm">
-                <CheckCircle size={20} />
+          {viewType !== "REVIEW" && (
+            <div className="rounded-2xl border border-[#dee1d8]/60 bg-[#f8faf2]/50 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-white border border-[#dee1d8]/50 text-[#0b7a47] flex items-center justify-center shrink-0 shadow-sm">
+                  <CheckCircle size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-[#0b7a47] uppercase tracking-widest leading-none mb-1">
+                    Current Assignment
+                  </p>
+                  <p className="text-base font-black text-zinc-800">
+                    {associatedTask.syllabus?.syllabusName || currentSyllabus?.syllabusName || "Syllabus Project"}
+                  </p>
+                  {assigneeName && (
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Responsible: <span className="font-semibold text-zinc-700">{assigneeName}</span>
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-black text-[#0b7a47] uppercase tracking-widest leading-none mb-1">
-                  Current Assignment
-                </p>
-                <p className="text-base font-black text-zinc-800">
-                  {associatedTask.syllabus?.syllabusName || currentSyllabus?.syllabusName || "Syllabus Project"}
-                </p>
-              </div>
-            </div>
 
-            <div className="flex-1 max-w-md bg-transparent">
-              <StatusStepper
-                currentStatus={
-                  currentSyllabus?.status || "DRAFT"
-                }
-              />
-            </div>
-
-            {!isReadOnly && (
-              <button
-                onClick={() => {
-                  if (currentSyllabus) {
-                    setSelectedSyllabusIdForSources(currentSyllabus.syllabusId);
-                    setSelectedSyllabusNameForSources(currentSyllabus.syllabusName);
-                    setIsSourcesModalOpen(true);
+              <div className="flex-1 max-w-md bg-transparent">
+                <StatusStepper
+                  currentStatus={
+                    currentSyllabus?.status || "DRAFT"
                   }
-                }}
-                className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#0b7a47] hover:bg-[#f1f5eb] transition-all border border-[#dee1d8]/50 shadow-sm shadow-[#f8faf2]"
-              >
-                <BookText size={14} />
-              </button>
-            )}
-          </div>
+                />
+              </div>
 
-          <div className="pt-8 border-t border-zinc-100">
+              {!isReadOnly && (
+                <button
+                  onClick={() => {
+                    if (currentSyllabus) {
+                      setSelectedSyllabusIdForSources(currentSyllabus.syllabusId);
+                      setSelectedSyllabusNameForSources(currentSyllabus.syllabusName);
+                      setIsSourcesModalOpen(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#0b7a47] hover:bg-[#f1f5eb] transition-all border border-[#dee1d8]/50 shadow-sm shadow-[#f8faf2]"
+                >
+                  <BookText size={14} />
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className={viewType === "REVIEW" ? "" : "pt-8 border-t border-zinc-100"}>
             <div className="space-y-6">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-[#0b7a47] animate-pulse" />
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0b7a47]">
-                  Syllabus Tracking
+                <h3 className="text-xs font-black tracking-[0.2em] text-[#0b7a47]">
+                  {viewType === "REVIEW"
+                    ? `SYLLABUS REVIEW from ${assigneeName || "Unassigned"}`
+                    : "SYLLABUS TRACKING"}
                 </h3>
               </div>
               <div className="bg-[#f8faf2]/50 rounded-3xl p-6 border border-[#dee1d8]/30">
