@@ -314,10 +314,10 @@ export function SyllabusTabContent({
             <div className="space-y-6">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-[#0b7a47] animate-pulse" />
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0b7a47]">
+                <h3 className="text-xs font-black tracking-[0.2em] text-[#0b7a47]">
                   {viewType === "REVIEW"
-                    ? `Syllabus Review from ${assigneeName || "Unassigned"}`
-                    : "Syllabus Tracking"}
+                    ? `SYLLABUS REVIEW from ${assigneeName || "Unassigned"}`
+                    : "SYLLABUS TRACKING"}
                 </h3>
               </div>
               <div className="bg-[#f8faf2]/50 rounded-3xl p-6 border border-[#dee1d8]/30">

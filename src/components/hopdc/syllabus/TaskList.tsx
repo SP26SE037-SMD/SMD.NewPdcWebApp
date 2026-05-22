@@ -678,7 +678,7 @@ function TaskRow({
                         <Layers size={10} />
                       </div>
                       <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                        Subtasks
+                        Review
                       </span>
                     </div>
                     <span className="text-[10px] font-bold text-zinc-900 bg-zinc-50 px-1.5 py-0.5 rounded-md border border-zinc-100">
