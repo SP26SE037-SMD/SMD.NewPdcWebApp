@@ -58,10 +58,11 @@ export default function DigitalEnactmentContent() {
   const [processing, setProcessing] = useState<string[]>([]);
 
   const fetchRequests = async () => {
+    if (!user?.accountId) return;
     setLoading(true);
     try {
-      // Thêm filter status=PENDING
-      const response = await fetch("/api/requests?status=PENDING");
+      // Thêm filter status=PENDING và receivedById của VP
+      const response = await fetch(`/api/requests?status=PENDING&receivedById=${user.accountId}`);
       const data = await response.json();
       if (data?.data?.content) {
         setItems(data.data.content);
@@ -76,7 +77,7 @@ export default function DigitalEnactmentContent() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [user?.accountId]);
 
   const handleRequestClick = async (request: RequestItem) => {
     setProcessing((prev) => [...prev, request.requestId]);
