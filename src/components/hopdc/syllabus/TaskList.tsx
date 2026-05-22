@@ -308,6 +308,11 @@ function TaskRow({
   const [commentText, setCommentText] = useState("");
   const pathname = usePathname();
 
+  const resolvedEmail =
+    task.account?.email ||
+    pdcmAccounts?.find((a) => a.accountId === task.account?.accountId)?.email ||
+    "";
+
   useEffect(() => {
     const keyId = task.taskId;
     if (!keyId) return;
@@ -597,7 +602,7 @@ function TaskRow({
                   Assignee
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200">
+                  <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200 shrink-0">
                     {task.account?.fullName
                       ?.split(" ")
                       .map((n) => n[0])
@@ -605,9 +610,16 @@ function TaskRow({
                       .slice(0, 2)
                       .toUpperCase()}
                   </div>
-                  <span className="text-sm font-bold text-zinc-700">
-                    {task.account?.fullName || "Unassigned"}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-bold text-zinc-700 line-clamp-1">
+                      {task.account?.fullName || "Unassigned"}
+                    </span>
+                    {resolvedEmail && (
+                      <span className="text-xs text-zinc-500 font-medium line-clamp-1">
+                        {resolvedEmail}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

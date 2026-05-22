@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/Toast";
 import { TaskService } from "@/services/task.service";
 import { AccountService } from "@/services/account.service";
 import { SprintService } from "@/services/sprint.service";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Helper utilities to sync across components/tabs
 export const dispatchDecisionCommentUpdate = (taskId: string, comment: string) => {
@@ -29,6 +29,8 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     const { user } = useSelector((state: RootState) => state.auth);
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
     // Local states
     const [commentText, setCommentText] = useState("");
@@ -104,8 +106,23 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
         enabled: !!taskId || !!syllabusId,
     });
 
-    const createSyllabusTaskId = taskId || createSyllabusTask?.taskId || null;
-    const sprintId = createSyllabusTask?.sprintId || null;
+    const { data: rawTask } = useQuery({
+        queryKey: ['raw-task-by-id', taskId],
+        queryFn: async () => {
+            if (!taskId) return null;
+            try {
+                const res = await TaskService.getTaskById(taskId);
+                return res?.data || null;
+            } catch (err) {
+                console.error("[FinalDecisionCard] Error fetching raw task:", err);
+                return null;
+            }
+        },
+        enabled: !!taskId,
+    });
+
+    const createSyllabusTaskId = createSyllabusTask?.taskId || rawTask?.rootTaskId || taskId || null;
+    const sprintId = createSyllabusTask?.sprintId || rawTask?.sprintId || null;
 
     // Fetch Sprint details (for dueDate restriction)
     const { data: sprintRes } = useQuery({
@@ -172,19 +189,31 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
     };
 
     const handleAcceptSyllabus = async () => {
-        if (!createSyllabusTaskId) {
-            showToast("Cannot find the CREATE SYLLABUS task to update", "error");
+        const targetTaskId = createSyllabusTaskId || "";
+        if (!targetTaskId) {
+            showToast("Cannot find the task ID to accept", "error");
             return;
         }
         setIsSubmittingDecision(true);
         try {
-            await TaskService.updateTaskStatus(createSyllabusTaskId, "DONE");
+            await TaskService.acceptTask(targetTaskId, true);
             if (typeof window !== "undefined") {
                 localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
                 dispatchDecisionCommentUpdate(createSyllabusTaskId, "");
             }
             setCommentText("");
             showToast("Syllabus accepted successfully", "success");
+
+            // Redirect back to assignments page
+            const redirectSprintId = searchParams.get("sprintId") || sprintId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_sprint_id") : "") || "";
+            const redirectCurriculumId = searchParams.get("curriculumId") || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
+            
+            if (redirectSprintId && redirectCurriculumId) {
+                router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+            } else {
+                router.push("/dashboard/hopdc/sprint-management");
+            }
+
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
                 queryClient.invalidateQueries({ queryKey: ["assignments"] }),
@@ -341,14 +370,14 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                             ) : (
                                 <Check size={14} />
                             )}
-                            Accept
+                            Accept Syllabus
                         </button>
                         <button
                             onClick={handleRejectSyllabus}
                             disabled={isSubmittingDecision}
                             className="flex-1 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100"
                         >
-                            Reject
+                            Reject & Request Update
                         </button>
                     </div>
                 </>
