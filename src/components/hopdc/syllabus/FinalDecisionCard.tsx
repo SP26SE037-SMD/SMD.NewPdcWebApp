@@ -71,7 +71,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                     size: 50,
                 });
                 let list = res?.content || [];
-                
+
                 // Fallback to targetId if syllabusId returned nothing
                 if (list.length === 0) {
                     console.log("[FinalDecisionCard] No tasks found by syllabusId, trying targetId...");
@@ -81,18 +81,18 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                     });
                     list = res?.content || [];
                 }
-                
+
                 console.log("[FinalDecisionCard] API response tasks list:", list);
                 // Prioritize active (not DONE/CANCELLED) syllabus tasks
-                const activeSyllabusTask = list.find(t => 
+                const activeSyllabusTask = list.find(t =>
                     (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
                     t.status !== 'DONE' && t.status !== 'CANCELLED'
                 );
-                
+
                 const matchedTask = activeSyllabusTask
-                    || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
-                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
-                    || list[0] 
+                    || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE')
+                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP')
+                    || list[0]
                     || null;
                 console.log("[FinalDecisionCard] Selected syllabus task:", matchedTask);
                 return matchedTask;
@@ -225,7 +225,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
         try {
             const cleanTaskName = createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
             const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
-            
+
             await TaskService.createTask({
                 sprintId: sprintId || "",
                 assignTo,
@@ -250,7 +250,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
             setAssignTo("");
             setDueDate("");
             showToast("Syllabus rejected and update task assigned", "success");
-            
+
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
                 queryClient.invalidateQueries({ queryKey: ["assignments"] }),
@@ -326,7 +326,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                             value={commentText}
                             onChange={handleCommentChange}
                             placeholder="Provide comments or notes for rejection..."
-                            className="w-full p-3 text-xs border border-zinc-200 bg-zinc-50/30 rounded-xl outline-none focus:border-[#0b7a47] focus:bg-white transition-all min-h-[90px] font-medium resize-none"
+                            className="w-full p-3 text-sm border border-zinc-200 bg-zinc-50/30 rounded-xl outline-none focus:border-[#0b7a47] focus:bg-white transition-all min-h-[90px] font-medium resize-y"
                         />
                     </div>
 

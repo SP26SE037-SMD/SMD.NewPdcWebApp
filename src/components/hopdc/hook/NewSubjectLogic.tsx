@@ -267,8 +267,6 @@ export function useNewSubjectLogic() {
     (clos.length > 0 && !hasDraftClos);
   const isMappingReadOnly = false; // Always allow mapping for now as per user request
 
-  const isMockMode = searchParams.get("mock") === "true";
-
   const result = {
     ...mappingLogic,
     user,
@@ -309,54 +307,6 @@ export function useNewSubjectLogic() {
     isMappingReadOnly,
     isSyllabusMode,
   };
-
-  if (isMockMode) {
-    return {
-      ...result,
-      isTaskLoading: false,
-      isSyllabusLoading: false,
-      isPublishedSyllabusLoading: false,
-      associatedTask: {
-        taskId: "mock-task-1",
-        taskName: "REVIEW SYLLABUS: Graphic Design Advanced",
-        status: "DONE",
-        type: "SYLLABUS",
-        action: "REVIEW",
-        rootTaskId: "mock-parent-task-1",
-        syllabus: {
-          syllabusId: "mock-id",
-          syllabusName: "Thiết kế đồ họa nâng cao - 2024",
-          status: "PENDING_REVIEW"
-        }
-      },
-      parentTask: {
-        taskId: "mock-parent-task-1",
-        taskName: "CREATE SYLLABUS: Graphic Design Advanced",
-        status: "IN_PROGRESS",
-        type: "SYLLABUS",
-        priority: "HIGH",
-        account: {
-          accountId: "mock-acc-1",
-          fullName: "Collaborator User"
-        }
-      },
-      isParentTaskLoading: false,
-      currentSyllabusId: "mock-id",
-      currentSyllabus: {
-        syllabusId: "mock-id",
-        status: "PENDING_REVIEW",
-        syllabusName: "Thiết kế đồ họa nâng cao - 2024",
-      },
-      publishedSyllabus: null,
-      sprintId: sprintId || "mock-sprint-id",
-      subject: {
-        subjectId: subjectId || "mock-subject-id",
-        subjectCode: "GRD301",
-        subjectName: "Graphic Design Advanced",
-        minBloomLevel: 0,
-      } as any as SubjectDetail
-    };
-  }
 
   return result;
 }
