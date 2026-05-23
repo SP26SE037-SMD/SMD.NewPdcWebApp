@@ -216,11 +216,6 @@ export default function DashboardLayout({
               label: "Requests",
             },
             {
-              href: "/dashboard/hocfdc/feedback",
-              icon: Signature,
-              label: "Feedback",
-            },
-            {
               href: "/dashboard/hocfdc/subjects",
               icon: Box,
               label: "Subjects",
@@ -297,6 +292,11 @@ export default function DashboardLayout({
               href: "/dashboard/hopdc/requests",
               icon: ClipboardList,
               label: "Requests",
+            },
+            {
+              href: "/dashboard/hopdc/feedback",
+              icon: Signature,
+              label: "Feedback",
             },
           ],
         },
