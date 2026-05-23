@@ -426,7 +426,7 @@ const NavItem = ({
 export default function PDCMDashboardContent({
   defaultTab = "develop",
 }: {
-  defaultTab?: "develop" | "peer-review";
+  defaultTab?: "develop" | "peer-review" | "requests";
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -566,13 +566,15 @@ export default function PDCMDashboardContent({
     },
   ];
 
+  const role = user?.role?.toUpperCase() || "";
+
   return (
     <PDCMBaseLayout
       activeSidebarId={navTab === "develop" ? "tasks" : "reviews"}
       headerTabs={[
         { id: 'develop', label: 'My Task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
-        { id: 'requests', label: 'Requests', isActive: false, onClick: () => router.push('/dashboard/pdcm/requests') },
+        ...(role !== 'COLLABORATOR' ? [{ id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') }] : []),
+        { id: 'requests', label: 'Requests', isActive: navTab === 'requests', onClick: () => router.push('/dashboard/pdcm/requests') },
       ]}
       sidebarItems={sidebarItems}
     >

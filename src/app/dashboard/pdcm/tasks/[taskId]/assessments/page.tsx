@@ -25,10 +25,33 @@ const COMMON_QUESTION_TYPES = [
     "Project-based", "Presentation", "Portfolio", "Assignment", "Case Study"
 ];
 
-const COMMON_KNOWLEDGE_SKILLS = [
-    "Remembering", "Understanding", "Applying", "Analyzing",
-    "Evaluating", "Creating", "Technical Skill", "Soft Skill", "Problem Solving"
-];
+const VALID_QUESTION_TYPES: Record<string, Record<string, string[]>> = {
+    "Formative": {
+        "Quiz": ["Multiple Choice", "Essay"],
+        "Lab": ["Practical Exam", "Assignment"],
+        "Presentation": ["Presentation"]
+    },
+    "Summative": {
+        "Midterm": ["Multiple Choice", "Essay", "Case Study"],
+        "Project": ["Project-based"],
+        "Final": ["Practical Exam", "Essay", "Case Study", "Multiple Choice"]
+    }
+};
+
+// Helper to get valid types map case-insensitively
+const getValidTypesMap = (catName: string) => {
+    if (!catName) return {};
+    const key = Object.keys(VALID_QUESTION_TYPES).find(k => k.toLowerCase() === catName.toLowerCase());
+    return key ? VALID_QUESTION_TYPES[key] : {};
+};
+
+// Helper to determine available question types based on selected category and type
+const getAvailableQTypes = (catName: string, typeName: string) => {
+    if (!catName || !typeName) return null;
+    const map = getValidTypesMap(catName);
+    const typeKey = Object.keys(map).find(k => k.toLowerCase() === typeName.toLowerCase());
+    return typeKey ? map[typeKey] : null;
+};
 
 export default function AssessmentsPage({ params }: { params: Promise<{ taskId: string }> }) {
     const { taskId } = use(params);
@@ -734,18 +757,50 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     if (!matchedCategory) console.warn(`⚠️ Row ${index + 1}: Category "${rawCategory}" not found in API`);
                                                     if (!matchedType) console.warn(`⚠️ Row ${index + 1}: Type "${rawType}" not found in API`);
 
+                                                    const finalCategoryName = matchedCategory?.categoryName || rawCategory || ASSESSMENT_CATEGORIES[0]?.categoryName || "";
+                                                    const finalTypeName = matchedType?.typeName || rawType || ASSESSMENT_TYPES[0]?.typeName || "";
+
+                                                    const rowErrors: string[] = [];
+                                                    if (!matchedCategory && rawCategory) rowErrors.push(`Category "${rawCategory}" not found.`);
+                                                    if (!matchedType && rawType) rowErrors.push(`Type "${rawType}" not found.`);
+
+                                                    // Validate Type based on Category
+                                                    const validTypesMap = getValidTypesMap(finalCategoryName);
+                                                    const validTypesForCategory = Object.keys(validTypesMap);
+                                                    if (validTypesForCategory.length > 0 && !validTypesForCategory.some(v => v.toLowerCase() === finalTypeName.toLowerCase())) {
+                                                        rowErrors.push(`Type "${finalTypeName}" is invalid for Category "${finalCategoryName}". Must be: ${validTypesForCategory.join(" or ")}`);
+                                                    }
+
+                                                    // Validate Question Type based on mapped rules
+                                                    let validQuestionType = rawQuestionType;
+                                                    const validQuestionTypesForCombo = getAvailableQTypes(finalCategoryName, finalTypeName);
+                                                    
+                                                    if (validQuestionTypesForCombo) {
+                                                        const isValid = validQuestionTypesForCombo.some((v: string) => v.toLowerCase() === rawQuestionType.toLowerCase());
+                                                        if (!isValid && rawQuestionType) {
+                                                            rowErrors.push(`Question Type "${rawQuestionType}" is invalid for ${finalCategoryName}/${finalTypeName}. Must be: ${validQuestionTypesForCombo.join(" or ")}`);
+                                                            validQuestionType = ""; // fallback to empty so user must select
+                                                        } else if (!rawQuestionType && validQuestionTypesForCombo.length > 0) {
+                                                            validQuestionType = validQuestionTypesForCombo[0];
+                                                        }
+                                                    } else if (rawQuestionType && !COMMON_QUESTION_TYPES.some((v: string) => v.toLowerCase() === rawQuestionType.toLowerCase())) {
+                                                        rowErrors.push(`Question Type "${rawQuestionType}" is unrecognized.`);
+                                                        validQuestionType = "";
+                                                    }
+
                                                     return {
                                                         _rowNum: index + 1,
+                                                        _importErrors: rowErrors,
                                                         syllabusId,
                                                         categoryId: matchedCategory?.categoryId || ASSESSMENT_CATEGORIES[0]?.categoryId || "",
-                                                        categoryName: matchedCategory?.categoryName || rawCategory || ASSESSMENT_CATEGORIES[0]?.categoryName || "",
+                                                        categoryName: finalCategoryName,
                                                         typeId: matchedType?.typeId || ASSESSMENT_TYPES[0]?.typeId || "",
-                                                        typeName: matchedType?.typeName || rawType || ASSESSMENT_TYPES[0]?.typeName || "",
+                                                        typeName: finalTypeName,
                                                         part: rawPart,
                                                         weight: rawWeight,
                                                         completionCriteria: rawCriteria,
                                                         duration: rawDuration,
-                                                        questionType: rawQuestionType,
+                                                        questionType: validQuestionType,
                                                         knowledgeSkill: rawKnowledge,
                                                         gradingGuide: rawGuide,
                                                         note: rawNote,
@@ -886,7 +941,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
                                                     const realIdx = (previewPage - 1) * 10 + idx;
                                                     return (
-                                                    <tr key={idx} className="hover:bg-primary/5 transition-colors">
+                                                    <React.Fragment key={idx}>
+                                                    <tr className="hover:bg-primary/5 transition-colors">
                                                         <td className="px-3 py-2 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">{realIdx + 1}</span></td>
                                                         <td className="px-3 py-2 text-xs">
                                                             <select 
@@ -897,6 +953,10 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                                     const cat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryId === e.target.value);
                                                                     d[realIdx].categoryId = e.target.value;
                                                                     d[realIdx].categoryName = cat?.categoryName || "";
+                                                                    d[realIdx].typeId = "";
+                                                                    d[realIdx].typeName = "";
+                                                                    d[realIdx].questionType = "";
+                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
                                                                     setPreviewData(d);
                                                                 }}
                                                             >
@@ -914,20 +974,57 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                                     const type = ASSESSMENT_TYPES.find((t: any) => t.typeId === e.target.value);
                                                                     d[realIdx].typeId = e.target.value;
                                                                     d[realIdx].typeName = type?.typeName || "";
+                                                                    d[realIdx].questionType = "";
+                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
                                                                     setPreviewData(d);
                                                                 }}
                                                             >
-                                                                {ASSESSMENT_TYPES.map((t: any) => (
-                                                                    <option key={t.typeId} value={t.typeId}>{t.typeName}</option>
-                                                                ))}
+                                                                {(() => {
+                                                                    const validMap = getValidTypesMap(item.categoryName || "");
+                                                                    const validNames = Object.keys(validMap);
+                                                                    const availTypes = validNames.length > 0 
+                                                                        ? ASSESSMENT_TYPES.filter((t: any) => validNames.some(v => t.typeName.toLowerCase() === v.toLowerCase()))
+                                                                        : ASSESSMENT_TYPES;
+                                                                    return availTypes.map((t: any) => (
+                                                                        <option key={t.typeId} value={t.typeId}>{t.typeName}</option>
+                                                                    ));
+                                                                })()}
                                                             </select>
                                                         </td>
                                                         <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.part} onChange={e => { const d = [...previewData]; d[realIdx].part = Number(e.target.value); setPreviewData(d); }} /></td>
                                                         <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.weight} onChange={e => { const d = [...previewData]; d[realIdx].weight = Number(e.target.value); setPreviewData(d); }} /></td>
                                                         <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.duration} onChange={e => { const d = [...previewData]; d[realIdx].duration = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                        <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.questionType || ''} onChange={e => { const d = [...previewData]; d[realIdx].questionType = e.target.value; setPreviewData(d); }} /></td>
+                                                        <td className="px-3 py-2">
+                                                            <select 
+                                                                className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
+                                                                value={item.questionType || ''}
+                                                                onChange={e => {
+                                                                    const d = [...previewData];
+                                                                    d[realIdx].questionType = e.target.value;
+                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
+                                                                    setPreviewData(d);
+                                                                }}
+                                                            >
+                                                                <option value="" disabled>Select</option>
+                                                                {(() => {
+                                                                    const availQTypes = getAvailableQTypes(item.categoryName, item.typeName) || COMMON_QUESTION_TYPES;
+                                                                    return availQTypes.map((t: string) => <option key={t} value={t}>{t}</option>);
+                                                                })()}
+                                                            </select>
+                                                        </td>
                                                         <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.note || ''} onChange={e => { const d = [...previewData]; d[realIdx].note = e.target.value; setPreviewData(d); }} /></td>
                                                     </tr>
+                                                    {item._importErrors && item._importErrors.length > 0 && (
+                                                        <tr key={`err-${idx}`} className="bg-red-50/50">
+                                                            <td colSpan={8} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="material-symbols-outlined text-[14px]">error</span>
+                                                                    {item._importErrors.join(" | ")}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    </React.Fragment>
                                                 );})}
                                             </tbody>
                                         </table>
@@ -1031,6 +1128,19 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
     const weightValue = assessment.weight || 0;
     const currentTotalWeight = otherAssessmentsWeight + weightValue;
     const isOverWeight = currentTotalWeight > 100;
+
+    const currentCategory = categories.find(c => c.categoryId === assessment.categoryId);
+    const currentType = types.find(t => t.typeId === assessment.typeId);
+    
+    // Determine available types based on selected category
+    const validTypesMap = getValidTypesMap(currentCategory?.categoryName || "");
+    const validTypeNames = Object.keys(validTypesMap);
+    const availableTypes = validTypeNames.length > 0 
+        ? types.filter(t => validTypeNames.some(vtn => t.typeName.toLowerCase() === vtn.toLowerCase()))
+        : types;
+
+    const availableQuestionTypes = getAvailableQTypes(currentCategory?.categoryName || "", currentType?.typeName || "")
+        || COMMON_QUESTION_TYPES;
 
     // Fetch existing mappings when editing
     useEffect(() => {
@@ -1136,7 +1246,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 value={assessment.categoryId}
                                 onChange={(e) => {
                                     const cat = categories.find(c => c.categoryId === e.target.value);
-                                    onUpdate({ categoryId: e.target.value, categoryName: cat?.categoryName });
+                                    onUpdate({ 
+                                        categoryId: e.target.value, 
+                                        categoryName: cat?.categoryName,
+                                        typeId: "", typeName: "", questionType: ""
+                                    });
                                 }}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
                             >
@@ -1150,12 +1264,16 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 value={assessment.typeId}
                                 onChange={(e) => {
                                     const type = types.find(t => t.typeId === e.target.value);
-                                    onUpdate({ typeId: e.target.value, typeName: type?.typeName });
+                                    onUpdate({ 
+                                        typeId: e.target.value, 
+                                        typeName: type?.typeName,
+                                        questionType: ""
+                                    });
                                 }}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
                             >
                                 <option value="" disabled>Select Type</option>
-                                {types.map(t => <option key={t.typeId} value={t.typeId}>{t.typeName}</option>)}
+                                {availableTypes.map(t => <option key={t.typeId} value={t.typeId}>{t.typeName}</option>)}
                             </select>
                         </div>
                         <div className="col-span-1 space-y-2">
@@ -1211,77 +1329,20 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                             >
                                 <option value="" disabled>Select Methodology</option>
-                                {COMMON_QUESTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                {availableQuestionTypes.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
                         <div className="col-span-2 space-y-2 relative">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Knowledge / Skill</label>
 
-                            {/* Custom Multi-select Dropdown */}
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsSkillOpen(!isSkillOpen)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm flex justify-between items-center hover:border-primary/50 transition-all focus:ring-2 focus:ring-primary/20 focus:bg-white"
-                                >
-                                    <span className={`truncate mr-2 ${!assessment.knowledgeSkill ? 'text-slate-400' : 'text-slate-700 font-medium'}`}>
-                                        {assessment.knowledgeSkill || 'Select Knowledge Skills'}
-                                    </span>
-                                    <span className={`material-symbols-outlined text-slate-400 transition-transform duration-200 ${isSkillOpen ? 'rotate-180' : ''}`}>
-                                        expand_more
-                                    </span>
-                                </button>
-
-                                {isSkillOpen && (
-                                    <>
-                                        {/* Overlay to close when clicking outside */}
-                                        <div className="fixed inset-0 z-40" onClick={() => setIsSkillOpen(false)}></div>
-
-                                        {/* Dropdown Menu */}
-                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-2 max-h-[280px] overflow-y-auto custom-scrollbar animate-in slide-in-from-top-2 duration-200">
-                                            <div className="px-4 py-2 border-b border-slate-50 mb-1 flex justify-between items-center">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Blooms Taxonomy</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsSkillOpen(false)}
-                                                    className="text-[10px] font-bold text-primary hover:underline"
-                                                >
-                                                    Done
-                                                </button>
-                                            </div>
-                                            {COMMON_KNOWLEDGE_SKILLS.map(skill => {
-                                                const currentSkills = assessment.knowledgeSkill ? assessment.knowledgeSkill.split(', ').filter(Boolean) : [];
-                                                const isSelected = currentSkills.includes(skill);
-
-                                                return (
-                                                    <button
-                                                        key={skill}
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            const newSkills = isSelected
-                                                                ? currentSkills.filter(s => s !== skill)
-                                                                : [...currentSkills, skill];
-                                                            onUpdate({ knowledgeSkill: newSkills.join(', ') });
-                                                        }}
-                                                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group"
-                                                    >
-                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isSelected
-                                                                ? 'bg-emerald-500 border-emerald-600 text-white'
-                                                                : 'bg-white border-slate-200 group-hover:border-emerald-300'
-                                                            }`}>
-                                                            {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
-                                                        </div>
-                                                        <span className={`text-sm ${isSelected ? 'font-bold text-slate-900' : 'text-slate-600 font-medium'}`}>
-                                                            {skill}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            {/* Knowledge Skill Text Input */}
+                            <input
+                                value={assessment.knowledgeSkill || ""}
+                                onChange={(e) => onUpdate({ knowledgeSkill: e.target.value })}
+                                placeholder="Enter knowledge or skills"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                type="text"
+                            />
                         </div>
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grading Guide</label>

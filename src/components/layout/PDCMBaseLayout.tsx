@@ -4,6 +4,8 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface PDCMBaseLayoutProps {
     children: React.ReactNode;
@@ -39,11 +41,7 @@ export function PDCMBaseLayout({
     children,
     activeSidebarId,
     headerTitle,
-    headerTabs = [
-        { id: 'develop', label: 'My Task', isActive: true, onClick: () => {} },
-        { id: 'peer-review', label: 'My Review Task', isActive: false, onClick: () => {} },
-        { id: 'requests', label: 'Requests', isActive: false, onClick: () => {} },
-    ],
+    headerTabs,
     onBack,
     actionButton,
     sidebarItems,
@@ -54,13 +52,24 @@ export function PDCMBaseLayout({
     fullPage = false
 }: PDCMBaseLayoutProps) {
     const router = useRouter();
+    const user = useSelector((state: RootState) => state.auth.user);
+    const role = user?.role?.toUpperCase() || "";
+
+    const defaultTabs = [
+        { id: 'develop', label: 'My Task', isActive: true, onClick: () => {} },
+        ...(role !== 'COLLABORATOR' ? [{ id: 'peer-review', label: 'My Review Task', isActive: false, onClick: () => {} }] : []),
+        { id: 'requests', label: 'Requests', isActive: false, onClick: () => {} },
+    ];
+
+    const finalTabs = headerTabs || defaultTabs;
 
     return (
         <div className="h-screen flex flex-col bg-white text-[#2d342b] font-sans selection:bg-[#c1eeba] selection:text-[#345a32] overflow-hidden">
             {!hideHeader && (
                 <Header 
-                    title={headerTitle}
-                    tabs={headerTabs}
+                    title={headerTitle} 
+                    tabs={finalTabs}
+
                     // Removed actionButton from Header to move to Sidebar
                 />
             )}
