@@ -675,14 +675,62 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                             <div className="flex items-center gap-4">
                                 {!isPreviewOpen && (
                                     <button 
-                                        onClick={() => {
-                                            const wb = XLSX.utils.book_new();
-                                            const ws = XLSX.utils.json_to_sheet([
-                                                { 'Category': 'Formative', 'Type': 'Quiz', 'Part': 1, 'Weight': 10, 'Completion Criteria': 'Pass 50%', 'Duration': 15, 'Question Type': 'Multiple Choice', 'Knowledge Skill': 'Remembering', 'Grading Guide': '1 point/question', 'Note': 'Optional' },
-                                                { 'Category': 'Summative', 'Type': 'Final', 'Part': 1, 'Weight': 40, 'Completion Criteria': '', 'Duration': 90, 'Question Type': 'Essay', 'Knowledge Skill': 'Applying', 'Grading Guide': 'Rubric A', 'Note': 'Mandatory' }
-                                            ]);
-                                            XLSX.utils.book_append_sheet(wb, ws, "Template");
-                                            XLSX.writeFile(wb, "Assessments_Template.xlsx");
+                                        onClick={async () => {
+                                            const ExcelJS = (await import('exceljs')).default;
+                                            const fs = await import('file-saver');
+                                            const saveAs = fs.saveAs || fs.default?.saveAs || fs.default;
+
+                                            const workbook = new ExcelJS.Workbook();
+                                            const worksheet = workbook.addWorksheet('Template');
+
+                                            worksheet.columns = [
+                                                { header: 'Category', key: 'category', width: 16 },
+                                                { header: 'Type', key: 'type', width: 16 },
+                                                { header: 'Part', key: 'part', width: 10 },
+                                                { header: 'Weight', key: 'weight', width: 10 },
+                                                { header: 'Completion Criteria', key: 'completionCriteria', width: 22 },
+                                                { header: 'Duration', key: 'duration', width: 12 },
+                                                { header: 'Question Type', key: 'questionType', width: 20 },
+                                                { header: 'Knowledge Skill', key: 'knowledgeSkill', width: 20 },
+                                                { header: 'Grading Guide', key: 'gradingGuide', width: 20 },
+                                                { header: 'Note', key: 'note', width: 20 },
+                                            ];
+
+                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 10, completionCriteria: 'Pass 50%', duration: 15, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: '1 point/question', note: 'Optional' });
+                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 40, completionCriteria: '', duration: 90, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: 'Rubric A', note: 'Mandatory' });
+
+                                            worksheet.getRow(1).font = { bold: true };
+                                            worksheet.getRow(1).fill = {
+                                                type: 'pattern',
+                                                pattern: 'solid',
+                                                fgColor: { argb: 'FFD9D2E9' }
+                                            };
+                                            worksheet.getRow(1).alignment = { horizontal: 'center' };
+
+                                            for (let i = 2; i <= 200; i++) {
+                                                worksheet.getCell(`A${i}`).dataValidation = {
+                                                    type: 'list',
+                                                    allowBlank: true,
+                                                    formulae: ['"Formative,Summative"']
+                                                };
+                                                worksheet.getCell(`B${i}`).dataValidation = {
+                                                    type: 'list',
+                                                    allowBlank: true,
+                                                    formulae: ['"Quiz,Lab,Project,Midterm,Presentation,Final"']
+                                                };
+                                                worksheet.getCell(`G${i}`).dataValidation = {
+                                                    type: 'list',
+                                                    allowBlank: true,
+                                                    formulae: ['"Multiple Choice,Essay,Practical Exam,Project-based,Presentation,Assignment,Case Study"']
+                                                };
+                                                worksheet.getCell(`C${i}`).alignment = { horizontal: 'right' };
+                                                worksheet.getCell(`D${i}`).alignment = { horizontal: 'right' };
+                                                worksheet.getCell(`F${i}`).alignment = { horizontal: 'right' };
+                                            }
+
+                                            const buffer = await workbook.xlsx.writeBuffer();
+                                            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                            saveAs(blob, 'Assessments_Template.xlsx');
                                         }}
                                         className="px-4 py-2 font-bold text-xs bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all flex items-center gap-2"
                                     >

@@ -942,15 +942,53 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             <div className="flex items-center gap-4">
                                 {!isPreviewOpen && (
                                     <button 
-                                        onClick={() => {
-                                            const wb = XLSX.utils.book_new();
-                                            const ws = XLSX.utils.json_to_sheet([
-                                                { 'Session Number': 1, 'Title': 'Introduction to Computer Science', 'Duration': 50, 'Teaching Methods': 'Lecture', 'Topic': 'Intro', 'Type': 'THEORY' },
-                                                { 'Session Number': 2, 'Title': 'Data Structures', 'Duration': 50, 'Teaching Methods': 'Lab', 'Topic': 'Arrays', 'Type': 'PRACTICE' },
-                                                { 'Session Number': 3, 'Title': 'Assignment Review', 'Duration': 50, 'Teaching Methods': 'Self-study', 'Topic': 'Review', 'Type': 'SELF_STUDY' }
-                                            ]);
-                                            XLSX.utils.book_append_sheet(wb, ws, "Template");
-                                            XLSX.writeFile(wb, "Sessions_Template.xlsx");
+                                        onClick={async () => {
+                                            const ExcelJS = (await import('exceljs')).default;
+                                            const fs = await import('file-saver');
+                                            const saveAs = fs.saveAs || fs.default?.saveAs || fs.default;
+
+                                            const workbook = new ExcelJS.Workbook();
+                                            const worksheet = workbook.addWorksheet('Template');
+
+                                            worksheet.columns = [
+                                                { header: 'Session Number', key: 'sessionNumber', width: 16 },
+                                                { header: 'Title', key: 'title', width: 35 },
+                                                { header: 'Duration', key: 'duration', width: 12 },
+                                                { header: 'Teaching Methods', key: 'teachingMethods', width: 22 },
+                                                { header: 'Topic', key: 'topic', width: 25 },
+                                                { header: 'Type', key: 'type', width: 15 },
+                                            ];
+
+                                            worksheet.addRow({ sessionNumber: 1, title: 'Introduction to Computer Science', duration: 50, teachingMethods: 'Lecture', topic: 'Intro', type: 'THEORY' });
+                                            worksheet.addRow({ sessionNumber: 2, title: 'Data Structures', duration: 50, teachingMethods: 'Laboratory', topic: 'Arrays', type: 'PRACTICE' });
+                                            worksheet.addRow({ sessionNumber: 3, title: 'Assignment Review', duration: 50, teachingMethods: 'Self-study', topic: 'Review', type: 'SELF_STUDY' });
+
+                                            worksheet.getRow(1).font = { bold: true };
+                                            worksheet.getRow(1).fill = {
+                                                type: 'pattern',
+                                                pattern: 'solid',
+                                                fgColor: { argb: 'FFD9D2E9' }
+                                            };
+                                            worksheet.getRow(1).alignment = { horizontal: 'center' };
+
+                                            for (let i = 2; i <= 200; i++) {
+                                                worksheet.getCell(`D${i}`).dataValidation = {
+                                                    type: 'list',
+                                                    allowBlank: true,
+                                                    formulae: ['"Lecture,Laboratory,Seminar,Workshop,Case Study,Project-based,Self-study"']
+                                                };
+                                                worksheet.getCell(`F${i}`).dataValidation = {
+                                                    type: 'list',
+                                                    allowBlank: true,
+                                                    formulae: ['"THEORY,PRACTICE,SELF_STUDY"']
+                                                };
+                                                worksheet.getCell(`A${i}`).alignment = { horizontal: 'center' };
+                                                worksheet.getCell(`C${i}`).alignment = { horizontal: 'center' };
+                                            }
+
+                                            const buffer = await workbook.xlsx.writeBuffer();
+                                            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                            saveAs(blob, 'Sessions_Template.xlsx');
                                         }}
                                         className="px-4 py-2 font-bold text-xs bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all flex items-center gap-2"
                                     >
