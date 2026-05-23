@@ -159,29 +159,22 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
           {/* Body */}
           <div className="px-8 py-6 space-y-5 max-h-[65vh] overflow-y-auto">
 
-            {/* Type Toggle */}
+            {/* Type Dropdown */}
             <div>
               <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
                 Loại Request
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { val: "TASK", icon: ClipboardList, label: "Task" },
-                  { val: "SYLLABUS", icon: BookOpen, label: "Syllabus" },
-                ] as const).map(({ val, icon: Icon, label }) => (
-                  <button
-                    key={val}
-                    onClick={() => setType(val)}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm border-2 transition-all ${
-                      type === val
-                        ? "border-[#41683f] bg-[#41683f]/5 text-[#41683f]"
-                        : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {label}
-                  </button>
-                ))}
+              <div className="relative">
+                <select
+                  value={type}
+                  onChange={e => setType(e.target.value as RequestType)}
+                  className="w-full px-4 py-3 pr-10 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#41683f26] focus:border-[#41683f80] transition-all appearance-none cursor-pointer"
+                  style={{ color: C.onSurface }}
+                >
+                  <option value="TASK">Task</option>
+                  <option value="SYLLABUS">Syllabus</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400" />
               </div>
             </div>
 
