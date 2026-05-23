@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable pnpm
+RUN npm install -g pnpm@9
 
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml* ./
@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile
 # --- Stage 2: Build the application ---
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN corepack enable pnpm
+RUN npm install -g pnpm@9
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
