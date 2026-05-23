@@ -548,6 +548,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                         else if (rawType.includes('CODE')) finalType = 'CODE_BLOCK';
                         else if (rawType.includes('IMAGE') || rawType === 'IMG') finalType = 'IMAGE';
                         else if (rawType.includes('DIVIDER') || rawType.includes('HR')) finalType = 'DIVIDER';
+                        else if (rawType.includes('TABLE')) finalType = 'TABLE';
                         else if (rawType.includes('TEXT') || rawType === 'P' || rawType === 'PARAGRAPH') finalType = 'PARAGRAPH';
                         else finalType = 'PARAGRAPH'; // Default to paragraph for any unknown type
 
@@ -662,6 +663,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     else if (rawType.includes('CODE')) finalType = 'CODE_BLOCK';
                     else if (rawType.includes('IMAGE') || rawType === 'IMG') finalType = 'IMAGE';
                     else if (rawType.includes('DIVIDER') || rawType.includes('HR')) finalType = 'DIVIDER';
+                    else if (rawType.includes('TABLE')) finalType = 'TABLE';
                     else finalType = 'PARAGRAPH';
 
                     const cleanContent = sanitizeBlockContent(b.contentText || '');
