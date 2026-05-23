@@ -3,13 +3,17 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm
+RUN corepack enable pnpm
+
 # Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm install
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
 
 # --- Stage 2: Build the application ---
 FROM node:20-alpine AS builder
 WORKDIR /app
+RUN corepack enable pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -29,7 +33,7 @@ RUN echo "GOOGLE_REDIRECT_URI=$NEXT_PUBLIC_GOOGLE_REDIRECT_URI"
 RUN echo "BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL"
 RUN echo "WS_URL=$NEXT_PUBLIC_WS_URL"
 
-RUN npm run build
+RUN pnpm run build
 
 # --- Stage 3: Production runner ---
 FROM node:20-alpine AS runner
