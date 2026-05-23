@@ -160,6 +160,7 @@ export const SprintsReceive = ({
           departmentId={departmentId}
           formatDate={formatDate}
           detailHref={getSprintHref(sprint)}
+          type="SUBJECT"
           actions={
             <>
               <Link

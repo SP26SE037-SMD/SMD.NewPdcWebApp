@@ -44,6 +44,7 @@ import { CreateSyllabusModal } from "../subject/CreateSyllabusModal";
 import { CreateSyllabusTaskModal } from "./CreateSyllabusTaskModal";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
 import { ViewReviewDetailsModal } from "./ViewReviewDetailsModal";
+import { RejectDecisionModal } from "./RejectDecisionModal";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
@@ -239,6 +240,14 @@ interface TaskRowProps {
     mode: "CREATE" | "UPDATE" | "REVIEW",
     parentTask: TaskItem,
   ) => void;
+  onAcceptSyllabus: (task: TaskItem, comment: string) => Promise<void>;
+  onRejectSyllabus: (
+    task: TaskItem,
+    assignTo: string,
+    dueDate: string,
+    comment: string,
+  ) => Promise<void>;
+  onResetDecision: (task: TaskItem) => Promise<void>;
   validatingTaskId?: string | null;
   children?: (TaskItem & { children?: TaskItem[] })[];
   level?: number;
@@ -265,6 +274,9 @@ function TaskRow({
   onUpdateStatus,
   isUpdatingStatus,
   onOpenTaskModal,
+  onAcceptSyllabus,
+  onRejectSyllabus,
+  onResetDecision,
   validatingTaskId = null,
   children = [],
   level = 0,
@@ -305,8 +317,14 @@ function TaskRow({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateSyllabusOpen, setIsCreateSyllabusOpen] = useState(false);
   const [isReviewDetailsOpen, setIsReviewDetailsOpen] = useState(false);
+  const [isRowRejectModalOpen, setIsRowRejectModalOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const pathname = usePathname();
+
+  const resolvedEmail =
+    task.account?.email ||
+    pdcmAccounts?.find((a) => a.accountId === task.account?.accountId)?.email ||
+    "";
 
   useEffect(() => {
     const keyId = task.taskId;
@@ -398,6 +416,14 @@ function TaskRow({
     task.type === "SUBJECT";
   const isDone = task.status === TASK_STATUS.DONE;
 
+  const hasReviewSubtask = useMemo(() => {
+    return children?.some(
+      (child) =>
+        child.action === "REVIEW" ||
+        child.taskName?.toUpperCase().includes("REVIEW SYLLABUS")
+    );
+  }, [children]);
+
   const statusConfig = getTaskStatusConfig(task.status);
   const StatusIcon = statusConfig.icon;
 
@@ -430,6 +456,7 @@ function TaskRow({
   const isSyllabusTask = level === 1;
   const hasDecisionBlock =
     isSyllabusTask &&
+    (task.isAccepted === null || task.isAccepted === undefined) &&
     children.length > 0 &&
     children.some((c) => c.status === TASK_STATUS.DONE);
 
@@ -504,13 +531,25 @@ function TaskRow({
                     )}
                   </div>
                 ) : (
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md`}
-                    style={{ wordSpacing: "0.2em" }}
-                  >
-                    <StatusIcon size={12} />
-                    {(task.status || "UNKNOWN").replace(/_/g, " ")}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text} border border-current/20 rounded-md`}
+                      style={{ wordSpacing: "0.2em" }}
+                    >
+                      <StatusIcon size={12} />
+                      {(task.status || "UNKNOWN").replace(/_/g, " ")}
+                    </span>
+                    {task.isAccepted === true && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-200 animate-in fade-in duration-300">
+                        APPROVED
+                      </span>
+                    )}
+                    {task.isAccepted === false && (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider border border-rose-200 animate-in fade-in duration-300">
+                        REJECTED
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -521,7 +560,7 @@ function TaskRow({
                 <span>{task.taskName || "N/A"}</span>
               </h3>
 
-              <p className="text-sm font-medium text-zinc-500 line-clamp-2 italic">
+              <p className="text-sm font-medium text-zinc-500 italic whitespace-pre-wrap">
                 {task.description || "N/A"}
               </p>
 
@@ -597,7 +636,7 @@ function TaskRow({
                   Assignee
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200">
+                  <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200 shrink-0">
                     {task.account?.fullName
                       ?.split(" ")
                       .map((n) => n[0])
@@ -605,9 +644,16 @@ function TaskRow({
                       .slice(0, 2)
                       .toUpperCase()}
                   </div>
-                  <span className="text-sm font-bold text-zinc-700">
-                    {task.account?.fullName || "Unassigned"}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-bold text-zinc-700 line-clamp-1">
+                      {task.account?.fullName || "Unassigned"}
+                    </span>
+                    {resolvedEmail && (
+                      <span className="text-xs text-zinc-500 font-medium line-clamp-1">
+                        {resolvedEmail}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -643,7 +689,7 @@ function TaskRow({
                 </div>
               )}
 
-              {level < 2 && !(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && (
+              {level < 2 && !(task.taskName?.toUpperCase().includes("REVIEW SYLLABUS") || task.action === "REVIEW") && !(level === 0 && task.action === "UPDATE") && (
                 <div className="space-y-1">
                   <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                     Workflow Actions
@@ -656,7 +702,12 @@ function TaskRow({
                         subjectStatus: (subjectStatus as any) || task.subjectStatus,
                       })
                     }
-                    disabled={isThisValidating}
+                    disabled={
+                      isThisValidating ||
+                      (task.isAccepted !== null && task.isAccepted !== undefined) ||
+                      (level === 1 && hasReviewSubtask) ||
+                      (level === 0 && isDone)
+                    }
                     className="w-full flex items-center justify-center gap-2 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg hover:brightness-95 transition-all shadow-md shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isThisValidating && level === 0 ? (
@@ -745,28 +796,25 @@ function TaskRow({
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() =>
-                          onUpdateStatus(task.taskId, TASK_STATUS.DONE)
-                        }
+                        onClick={async () => {
+                          try {
+                            await onAcceptSyllabus(task, commentText.trim() || "Approved");
+                          } catch (err) {}
+                        }}
                         className="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-emerald-200"
                       >
                         Accept Syllabus
                       </button>
                       <button
                         onClick={() => {
-                          const comment = (
-                            document.getElementById(
-                              `comment-${task.taskId}`,
-                            ) as HTMLTextAreaElement
-                          )?.value;
-                          if (!comment) {
+                          if (!commentText.trim()) {
                             showToast(
                               "Please add a comment for rejection",
                               "error",
                             );
                             return;
                           }
-                          onOpenTaskModal("UPDATE", task);
+                          setIsRowRejectModalOpen(true);
                         }}
                         className="flex-1 py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-700 transition-all shadow-sm hover:shadow-rose-200"
                       >
@@ -790,6 +838,41 @@ function TaskRow({
                       placeholder="Add comments for the creator..."
                       className="w-full p-3 text-sm border border-amber-200 rounded-lg outline-none focus:border-amber-400 bg-white/50 focus:bg-white transition-all min-h-[60px] font-medium"
                     />
+                  </div>
+                ) : task.isAccepted !== null && task.isAccepted !== undefined ? (
+                  <div className={`w-full p-4 rounded-xl border ${task.isAccepted ? 'border-emerald-200 bg-emerald-50/20' : 'border-rose-200 bg-rose-50/20'} flex items-start gap-4 animate-in fade-in slide-in-from-top-1 duration-300`}>
+                    <div className={`mt-0.5 p-2 rounded-[10px] bg-white border ${task.isAccepted ? 'border-emerald-200 text-emerald-500' : 'border-rose-200 text-rose-500'} shadow-sm`}>
+                      <CheckCircle2 size={16} />
+                    </div>
+                    <div className="space-y-1 w-full">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-black ${task.isAccepted ? 'text-emerald-700' : 'text-rose-700'} uppercase tracking-wider`}>
+                          Final Decision
+                        </span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tight ${task.isAccepted ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                          {task.isAccepted ? 'Approved' : 'Revision Requested'}
+                        </span>
+                      </div>
+                      <div className="text-[12px] font-semibold text-zinc-500 leading-relaxed">
+                        <span className="font-bold text-zinc-700 block mt-1">Decision Comment:</span>
+                        <p className="italic text-zinc-600 bg-white/50 p-2.5 rounded-lg border border-zinc-100 mt-1 whitespace-pre-wrap">
+                          {task.comment || "No comment provided."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (window.confirm("WARNING: Are you sure you want to reset this decision? This will clear the final approval/rejection state, revert the status back to IN PROGRESS, and unlock the Peer Review workflow Actions.")) {
+                            try {
+                              await onResetDecision(task);
+                            } catch (err) {}
+                          }
+                        }}
+                        className="mt-3 w-full py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-800 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1 border border-zinc-200"
+                      >
+                        Reset Decision
+                      </button>
+                    </div>
                   </div>
                 ) : task.status === TASK_STATUS.TO_DO ||
                   task.status === TASK_STATUS.IN_PROGRESS ? (
@@ -940,9 +1023,13 @@ function TaskRow({
                 isCompleting={isCompleting}
                 currentUser={currentUser}
                 onManageSources={onManageSources}
+                sprintDeadline={sprintDeadline}
                 onUpdateStatus={onUpdateStatus}
                 isUpdatingStatus={isUpdatingStatus}
                 onOpenTaskModal={onOpenTaskModal}
+                onAcceptSyllabus={onAcceptSyllabus}
+                onRejectSyllabus={onRejectSyllabus}
+                onResetDecision={onResetDecision}
                 validatingTaskId={validatingTaskId}
               >
                 {child.children}
@@ -976,6 +1063,17 @@ function TaskRow({
         taskId={task.taskId}
         syllabusId={task.syllabus?.syllabusId || task.targetId || undefined}
       />
+      <RejectDecisionModal
+        isOpen={isRowRejectModalOpen}
+        onClose={() => setIsRowRejectModalOpen(false)}
+        onConfirm={async (assignTo, dueDate, comment) => {
+          await onRejectSyllabus(task, assignTo, dueDate, comment);
+        }}
+        originalTask={task}
+        departmentAccounts={pdcmAccounts}
+        sprintDeadline={sprintDeadline}
+        initialComment={commentText}
+      />
     </div>
   );
 }
@@ -999,6 +1097,7 @@ export function TaskList({ sprintId }: TaskListProps) {
     // Aggressive revalidation of all dashboard data
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["sprints"] }),
+      queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       queryClient.invalidateQueries({
         queryKey: ["hopdc-receive-task-curriculum-detail"],
       }),
@@ -1321,6 +1420,114 @@ export function TaskList({ sprintId }: TaskListProps) {
     },
   });
 
+  const acceptSyllabusMutation = useMutation({
+    mutationFn: async ({ taskId, comment }: { taskId: string; comment: string }) => {
+      await TaskService.acceptTask(taskId, true, comment);
+      return TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+          detail: { taskId: variables.taskId, comment: "" }
+        }));
+      }
+      showToast("Syllabus accepted successfully", "success");
+      await queryClient.invalidateQueries({
+        queryKey: ["assignments", sprintId],
+      });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to accept syllabus", "error");
+    },
+  });
+
+  const rejectSyllabusMutation = useMutation({
+    mutationFn: async ({
+      task,
+      assignTo,
+      dueDate,
+      comment,
+    }: {
+      task: TaskItem;
+      assignTo: string;
+      dueDate: string;
+      comment: string;
+    }) => {
+      const cleanTaskName = task.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+      const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
+
+      await TaskService.createTask({
+        sprintId: sprintId || "",
+        assignTo,
+        taskName: updateTaskName,
+        description: comment,
+        action: "UPDATE",
+        priority: task.priority || "MEDIUM",
+        type: "SYLLABUS",
+        targetId: task.targetId || task.syllabusId || undefined,
+        rootTaskId: task.rootTaskId || undefined,
+        dueDate,
+      });
+
+      // Transition the active syllabus to DRAFT upon rejection
+      const syllabusId = task.targetId || task.syllabusId || task.syllabus?.syllabusId;
+      if (syllabusId && user?.accountId) {
+        try {
+          await SyllabusService.updateSyllabusStatus(
+            syllabusId,
+            user.accountId,
+            "DRAFT"
+          );
+        } catch (error) {
+          console.warn(
+            "Soft fail: Unable to update syllabus status to DRAFT",
+            error
+          );
+        }
+      }
+
+      return TaskService.acceptTask(task.taskId, false, comment);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.task.taskId}`);
+        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+          detail: { taskId: variables.task.taskId, comment: "" }
+        }));
+      }
+      showToast("Syllabus rejected and update task assigned", "success");
+      await queryClient.invalidateQueries({
+        queryKey: ["assignments", sprintId],
+      });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to reject syllabus", "error");
+    },
+  });
+
+  const resetDecisionMutation = useMutation({
+    mutationFn: async (task: TaskItem) => {
+      await TaskService.acceptTask(task.taskId, null, "");
+      return TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(new CustomEvent('final-decision-comment-updated', {
+          detail: { taskId: variables.taskId, comment: "" }
+        }));
+      }
+      showToast("Decision reset successfully", "success");
+      await queryClient.invalidateQueries({
+        queryKey: ["assignments", sprintId],
+      });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to reset decision", "error");
+    },
+  });
+
   const handleSelectionChange = (
     taskId: string,
     field: keyof TaskSelectionState,
@@ -1553,6 +1760,15 @@ export function TaskList({ sprintId }: TaskListProps) {
                   updateStatusMutation.variables?.taskId === task.taskId
                 }
                 onOpenTaskModal={onOpenTaskModal}
+                onAcceptSyllabus={async (t, comment) => {
+                  await acceptSyllabusMutation.mutateAsync({ taskId: t.taskId, comment });
+                }}
+                onRejectSyllabus={async (t, assignTo, dueDate, comment) => {
+                  await rejectSyllabusMutation.mutateAsync({ task: t, assignTo, dueDate, comment });
+                }}
+                onResetDecision={async (t) => {
+                  await resetDecisionMutation.mutateAsync(t);
+                }}
                 validatingTaskId={validatingTaskId}
               >
                 {task.children}

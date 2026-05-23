@@ -9,7 +9,9 @@ import { useToast } from "@/components/ui/Toast";
 import { TaskService } from "@/services/task.service";
 import { AccountService } from "@/services/account.service";
 import { SprintService } from "@/services/sprint.service";
-import { usePathname } from "next/navigation";
+import { SyllabusService } from "@/services/syllabus.service";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { RejectDecisionModal } from "./RejectDecisionModal";
 
 // Helper utilities to sync across components/tabs
 export const dispatchDecisionCommentUpdate = (taskId: string, comment: string) => {
@@ -29,12 +31,12 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     const { user } = useSelector((state: RootState) => state.auth);
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
     // Local states
     const [commentText, setCommentText] = useState("");
     const [isRejectMode, setIsRejectMode] = useState(false);
-    const [assignTo, setAssignTo] = useState("");
-    const [dueDate, setDueDate] = useState("");
     const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
 
     // Fetch CREATE/UPDATE SYLLABUS task by taskId or syllabusId
@@ -104,8 +106,23 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
         enabled: !!taskId || !!syllabusId,
     });
 
-    const createSyllabusTaskId = taskId || createSyllabusTask?.taskId || null;
-    const sprintId = createSyllabusTask?.sprintId || null;
+    const { data: rawTask } = useQuery({
+        queryKey: ['raw-task-by-id', taskId],
+        queryFn: async () => {
+            if (!taskId) return null;
+            try {
+                const res = await TaskService.getTaskById(taskId);
+                return res?.data || null;
+            } catch (err) {
+                console.error("[FinalDecisionCard] Error fetching raw task:", err);
+                return null;
+            }
+        },
+        enabled: !!taskId,
+    });
+
+    const createSyllabusTaskId = createSyllabusTask?.taskId || rawTask?.rootTaskId || taskId || null;
+    const sprintId = createSyllabusTask?.sprintId || rawTask?.sprintId || null;
 
     // Fetch Sprint details (for dueDate restriction)
     const { data: sprintRes } = useQuery({
@@ -172,19 +189,31 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
     };
 
     const handleAcceptSyllabus = async () => {
-        if (!createSyllabusTaskId) {
-            showToast("Cannot find the CREATE SYLLABUS task to update", "error");
+        const targetTaskId = createSyllabusTaskId || "";
+        if (!targetTaskId) {
+            showToast("Cannot find the task ID to accept", "error");
             return;
         }
         setIsSubmittingDecision(true);
         try {
-            await TaskService.updateTaskStatus(createSyllabusTaskId, "DONE");
+            await TaskService.acceptTask(targetTaskId, true, commentText.trim() || "Approved");
             if (typeof window !== "undefined") {
-                localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
-                dispatchDecisionCommentUpdate(createSyllabusTaskId, "");
+                localStorage.removeItem(`final_decision_comment_${targetTaskId}`);
+                dispatchDecisionCommentUpdate(targetTaskId, "");
             }
             setCommentText("");
             showToast("Syllabus accepted successfully", "success");
+
+            // Redirect back to assignments page
+            const redirectSprintId = searchParams.get("sprintId") || sprintId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_sprint_id") : "") || "";
+            const redirectCurriculumId = searchParams.get("curriculumId") || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
+            
+            if (redirectSprintId && redirectCurriculumId) {
+                router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+            } else {
+                router.push("/dashboard/hopdc/sprint-management");
+            }
+
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
                 queryClient.invalidateQueries({ queryKey: ["assignments"] }),
@@ -204,42 +233,42 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
             showToast("Cannot find the CREATE SYLLABUS task", "error");
             return;
         }
-        if (!commentText.trim()) {
-            showToast("Please add a comment for rejection", "error");
-            return;
-        }
         setIsRejectMode(true);
     };
 
-    const handleConfirmRejection = async () => {
+    const handleConfirmRejection = async (chosenAssignee: string, chosenDueDate: string, chosenComment: string) => {
         if (!createSyllabusTaskId) return;
-        if (!assignTo) {
-            showToast("Please select an assignee", "error");
-            return;
-        }
-        if (!dueDate) {
-            showToast("Please select a due date", "error");
-            return;
-        }
         setIsSubmittingDecision(true);
         try {
             const cleanTaskName = createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
             const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
 
+            // 1. Create the new UPDATE SYLLABUS task
             await TaskService.createTask({
                 sprintId: sprintId || "",
-                assignTo,
+                assignTo: chosenAssignee,
                 taskName: updateTaskName,
-                description: commentText.trim(),
+                description: chosenComment,
                 action: "UPDATE",
                 priority: createSyllabusTask?.priority || "MEDIUM",
                 type: "SYLLABUS",
                 targetId: createSyllabusTask?.targetId || syllabusId || undefined,
-                rootTaskId: createSyllabusTaskId,
-                dueDate,
+                rootTaskId: createSyllabusTask?.rootTaskId || undefined,
+                dueDate: chosenDueDate,
             });
 
-            await TaskService.updateTaskStatus(createSyllabusTaskId, "REVISION_REQUESTED");
+            // Transition the syllabus to DRAFT status
+            const targetSyllabusId = createSyllabusTask?.targetId || syllabusId;
+            if (targetSyllabusId && user?.accountId) {
+                try {
+                    await SyllabusService.updateSyllabusStatus(targetSyllabusId, user.accountId, "DRAFT");
+                } catch (error) {
+                    console.warn("Soft fail: Unable to update syllabus status to DRAFT", error);
+                }
+            }
+
+            // 2. Reject task via acceptTask(false) proxy API
+            await TaskService.acceptTask(createSyllabusTaskId, false, chosenComment);
 
             if (typeof window !== "undefined") {
                 localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
@@ -247,9 +276,17 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
             }
             setCommentText("");
             setIsRejectMode(false);
-            setAssignTo("");
-            setDueDate("");
             showToast("Syllabus rejected and update task assigned", "success");
+
+            // Redirect back to assignments page
+            const redirectSprintId = searchParams.get("sprintId") || sprintId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_sprint_id") : "") || "";
+            const redirectCurriculumId = searchParams.get("curriculumId") || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
+            
+            if (redirectSprintId && redirectCurriculumId) {
+                router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+            } else {
+                router.push("/dashboard/hopdc/sprint-management");
+            }
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['create-syllabus-task-by-syllabus', syllabusId] }),
@@ -260,6 +297,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
             ]);
         } catch (err: any) {
             showToast(err.message || "Failed to reject syllabus", "error");
+            throw err;
         } finally {
             setIsSubmittingDecision(false);
         }
@@ -287,10 +325,15 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
         );
     }
 
+    if (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined) {
+        console.log("[FinalDecisionCard] Hiding card because final decision has already been made (isAccepted !== null)", createSyllabusTask.isAccepted);
+        return null;
+    }
+
     return (
         <div
             id="floating-decision-panel"
-            className="pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300"
+            className="relative pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300"
         >
             {/* Header */}
             <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
@@ -307,120 +350,59 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                 </div>
             </div>
 
-            {!isRejectMode ? (
-                <>
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-black text-zinc-900 leading-tight">
-                            {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "Syllabus Review"}
-                        </h4>
-                        <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                            Review is complete. You can accept this syllabus, or reject it with comments to assign an update task.
-                        </p>
-                    </div>
+            <div className="space-y-1">
+                <h4 className="text-sm font-black text-zinc-900 leading-tight">
+                    {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "Syllabus Review"}
+                </h4>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                    Review is complete. You can accept this syllabus, or reject it with comments to assign an update task.
+                </p>
+            </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                            Decision Comment
-                        </label>
-                        <textarea
-                            value={commentText}
-                            onChange={handleCommentChange}
-                            placeholder="Provide comments or notes for rejection..."
-                            className="w-full p-3 text-sm border border-zinc-200 bg-zinc-50/30 rounded-xl outline-none focus:border-[#0b7a47] focus:bg-white transition-all min-h-[90px] font-medium resize-y"
-                        />
-                    </div>
+            <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                    Decision Comment
+                </label>
+                <textarea
+                    value={commentText}
+                    onChange={handleCommentChange}
+                    placeholder="Provide comments or notes for rejection..."
+                    className="w-full p-3 text-sm border border-zinc-200 bg-zinc-50/30 rounded-xl outline-none focus:border-[#0b7a47] focus:bg-white transition-all min-h-[90px] font-medium resize-y"
+                />
+            </div>
 
-                    <div className="flex gap-2.5 pt-2">
-                        <button
-                            onClick={handleAcceptSyllabus}
-                            disabled={isSubmittingDecision}
-                            className="flex-1 py-3 bg-[#0b7a47] text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-[#096339] disabled:opacity-60 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-1.5"
-                        >
-                            {isSubmittingDecision ? (
-                                <Loader2 className="animate-spin" size={14} />
-                            ) : (
-                                <Check size={14} />
-                            )}
-                            Accept
-                        </button>
-                        <button
-                            onClick={handleRejectSyllabus}
-                            disabled={isSubmittingDecision}
-                            className="flex-1 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100"
-                        >
-                            Reject
-                        </button>
-                    </div>
-                </>
-            ) : (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-black text-zinc-955">Assign Update Task</h4>
-                        <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                            Provide assignment details to request updates from collaborators.
-                        </p>
-                    </div>
+            <div className="flex gap-2.5 pt-2">
+                <button
+                    onClick={handleAcceptSyllabus}
+                    disabled={isSubmittingDecision}
+                    className="flex-1 py-3 bg-[#0b7a47] text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-[#096339] disabled:opacity-60 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-1.5"
+                >
+                    {isSubmittingDecision ? (
+                        <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                        <Check size={14} />
+                    )}
+                    Accept Syllabus
+                </button>
+                <button
+                    onClick={handleRejectSyllabus}
+                    disabled={isSubmittingDecision}
+                    className="flex-1 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100"
+                >
+                    Reject & Request Update
+                </button>
+            </div>
 
-                    <div className="space-y-3">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
-                                Assign To
-                            </label>
-                            <select
-                                value={assignTo}
-                                onChange={(e) => setAssignTo(e.target.value)}
-                                className="w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50/30 px-3 text-xs font-bold text-zinc-900 outline-none focus:border-[#0b7a47] focus:bg-white transition-all appearance-none"
-                            >
-                                <option value="">Select Assignee</option>
-                                {filteredAccounts.map((acc) => (
-                                    <option key={acc.accountId} value={acc.accountId}>
-                                        {acc.fullName} ({acc.roleName})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
-                                Due Date
-                            </label>
-                            <input
-                                type="date"
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                min={new Date().toISOString().slice(0, 10)}
-                                max={sprint?.endDate ? new Date(sprint.endDate).toISOString().slice(0, 10) : undefined}
-                                className="w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50/30 px-3 text-xs font-bold text-zinc-900 outline-none focus:border-[#0b7a47] focus:bg-white transition-all"
-                            />
-                            {sprint?.endDate && (
-                                <span className="text-[9px] font-bold text-amber-600 block mt-0.5">
-                                    Sprint deadline: {new Date(sprint.endDate).toLocaleDateString("en-GB")}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                        <button
-                            onClick={handleConfirmRejection}
-                            disabled={isSubmittingDecision}
-                            className="flex-1 py-2.5 bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-all shadow-lg shadow-rose-100 flex items-center justify-center gap-1.5"
-                        >
-                            {isSubmittingDecision ? (
-                                <Loader2 className="animate-spin" size={14} />
-                            ) : null}
-                            Confirm
-                        </button>
-                        <button
-                            onClick={() => setIsRejectMode(false)}
-                            disabled={isSubmittingDecision}
-                            className="flex-1 py-2.5 bg-zinc-100 text-zinc-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-zinc-200 disabled:opacity-60 transition-all"
-                        >
-                            Back
-                        </button>
-                    </div>
-                </div>
-            )}
+            <RejectDecisionModal
+                isOpen={isRejectMode}
+                onClose={() => setIsRejectMode(false)}
+                onConfirm={handleConfirmRejection}
+                originalTask={createSyllabusTask}
+                departmentAccounts={departmentAccounts}
+                sprintDeadline={sprint?.endDate}
+                initialComment={commentText}
+                isFloating={true}
+            />
         </div>
-    );
+  );
 }

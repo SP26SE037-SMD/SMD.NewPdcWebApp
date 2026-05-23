@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Mail, Lock, Loader2, LogIn, AlertCircle, Clock } from "lucide-react";
+import { Mail, Lock, Loader2, LogIn, AlertCircle, Clock, Eye, EyeOff } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { loginAction, clearError } from "@/store/slices/authSlice";
@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 export default function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
@@ -132,14 +133,21 @@ export default function LoginForm() {
                         <div className="relative group">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={18} />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 required
                                 disabled={isLoading}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-12 pr-4 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all text-sm disabled:opacity-50"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-12 pr-12 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all text-sm disabled:opacity-50"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
                     </div>
                 </div>

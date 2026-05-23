@@ -78,6 +78,7 @@ export default function SprintManagementContent() {
   // Force revalidation of all management data on mount
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["sprints"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
     if (selectedCurriculumId) {
       queryClient.invalidateQueries({ 
         queryKey: ["hopdc-receive-task-curriculum-detail", selectedCurriculumId] 

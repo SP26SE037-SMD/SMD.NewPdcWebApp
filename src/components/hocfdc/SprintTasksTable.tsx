@@ -40,8 +40,8 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
   const { showToast } = useToast();
 
   const { data: tasksRes, isLoading } = useQuery({
-    queryKey: ["tasks", sprintId],
-    queryFn: () => TaskService.getTasksBySprintId(sprintId),
+    queryKey: ["tasks", sprintId, "SUBJECT"],
+    queryFn: () => TaskService.getTasksBySprintId(sprintId, undefined, "SUBJECT"),
   });
 
   const tasksFromApi = tasksRes?.content || [];
@@ -274,7 +274,6 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
             <th className="px-6 py-5 font-black">Task Name</th>
             <th className="px-6 py-5 font-black">Description</th>
             <th className="px-6 py-5 font-black">Assignee</th>
-            <th className="px-6 py-5 font-black">Deadline</th>
             <th className="px-6 py-5 font-black">Status</th>
             <th className="px-6 py-5 font-black text-right">Actions</th>
           </tr>
@@ -325,44 +324,18 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                         Unassigned
                       </span>
                     ) : (
-                      <span className="text-xs font-black text-zinc-900 tracking-tight">
-                        {task.account.fullName}
-                      </span>
-                    )}
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                      HoPDC Lead
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-
-              {/* Deadline */}
-              <td className="px-6 py-5">
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2 text-xs font-black">
-                    <Clock size={14} className="text-zinc-300" />
-                    {isValidDeadline(task.deadline) ? (
-                      <span className="text-zinc-900">
-                        {new Date(task.deadline).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 italic font-medium">
-                        Pending Schedule
-                      </span>
+                      <>
+                        <span className="text-xs font-black text-zinc-900 tracking-tight">
+                          {task.account.fullName}
+                        </span>
+                        {task.account.email && (
+                          <span className="text-[10px] text-zinc-500 font-semibold leading-none mt-0.5">
+                            {task.account.email}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
-                  {!isValidDeadline(task.deadline) && sprintEndDate && (
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-5">
-                      Cycle Target:{" "}
-                      {new Date(sprintEndDate).toLocaleDateString()}
-                    </span>
-                  )}
-                  {isValidDeadline(task.deadline) && (
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest pl-5">
-                      Established
-                    </span>
-                  )}
                 </div>
               </td>
 
