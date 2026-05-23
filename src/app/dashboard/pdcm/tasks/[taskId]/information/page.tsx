@@ -233,10 +233,10 @@ info: {
         <div className="space-y-7">
             {realTask && (realTask.description || realTask.comment) && (
                 <ReviewerFeedback 
-                    reviewer={realTask.createdBy}
+                    reviewer={realTask.createdBy as any}
                     comments={[
-                        { title: 'Task Requirement / Description', content: realTask.description },
-                        { title: 'Additional Comments', content: realTask.comment }
+                        { title: 'Task Requirement / Description', content: realTask.description ?? undefined },
+                        { title: 'Additional Comments', content: realTask.comment ?? undefined }
                     ]}
                 />
             )}
