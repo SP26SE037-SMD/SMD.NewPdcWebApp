@@ -120,6 +120,8 @@ export interface TaskItem {
   subjectsDetail?: SubjectTaskDetail[];
   progress?: number;
   syllabusStatus?: string | null;
+  isAccepted?: boolean | null;
+  comment?: string | null;
 }
 
 export interface TaskApiItem {
@@ -202,6 +204,8 @@ export interface TaskApiItem {
   root_task_id?: string | null;
   rootTaskId?: string | null;
   createdAt: string;
+  isAccepted?: boolean | null;
+  comment?: string | null;
 }
 
 export interface TasksPaginatedResponse {
@@ -456,6 +460,8 @@ export const TaskService = {
     rootTaskId: task.rootTaskId ?? task.root_task_id ?? null,
     createdAt: task.createdAt,
     syllabusStatus: task.syllabus?.status || null,
+    isAccepted: task.isAccepted ?? null,
+    comment: task.comment ?? null,
   }),
 
   getTaskById: async (taskId: string, options?: { signal?: AbortSignal }) => {
@@ -502,21 +508,28 @@ export const TaskService = {
     sprintId: string,
     departmentId: string,
     accountId?: string,
+    type?: string,
   ): Promise<TasksPaginatedResponse> => {
     return await TaskService.getTasks({
       sprintId,
       departmentId,
       accountId,
+      type,
       size: 100,
       sortBy: "deadline",
       direction: "asc",
     });
   },
 
-  getTasksBySprintId: async (sprintId: string, accountId?: string): Promise<TasksPaginatedResponse> => {
+  getTasksBySprintId: async (
+    sprintId: string,
+    accountId?: string,
+    type?: string,
+  ): Promise<TasksPaginatedResponse> => {
     return await TaskService.getTasks({
       sprintId,
       accountId,
+      type,
       size: 100,
       sortBy: "deadline",
       direction: "asc",
@@ -531,11 +544,17 @@ export const TaskService = {
     );
   },
 
-  acceptTask: async (taskId: string, isAccepted: boolean) => {
+  acceptTask: async (
+    taskId: string,
+    isAccepted: boolean | null,
+    comment: string | null,
+  ) => {
+    const isAcceptedVal = isAccepted === null ? "null" : String(isAccepted);
+    const commentVal = comment === null ? "" : encodeURIComponent(comment);
     return apiClient.patch<{ status: number; message: string; data?: unknown }>(
-      `/api/v1/tasks-v2/${taskId}/isAccepted?isAccepted=${isAccepted}`,
+      `/api/v1/tasks-v2/${taskId}/isAccepted?isAccepted=${isAcceptedVal}&comment=${commentVal}`,
       {},
-      { credentials: "include" }
+      { credentials: "include" },
     );
   },
 

@@ -199,6 +199,7 @@ export const SprintsManagement = ({
             sprint={sprint}
             index={idx}
             formatDate={formatDate}
+            type="SUBJECT"
             detailHref={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
             actions={(total, closed, tasksLoading) => (
               <>

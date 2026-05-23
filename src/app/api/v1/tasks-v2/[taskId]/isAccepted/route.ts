@@ -14,13 +14,14 @@ export async function PATCH(
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
     const isAccepted = searchParams.get('isAccepted');
+    const comment = searchParams.get('comment') || '';
     
     if (!isAccepted) {
       return NextResponse.json({ error: "isAccepted query parameter is required" }, { status: 400 });
     }
 
     const backendResponse = await fetch(
-      `${BACKEND_URL}/api/v1/tasks-v2/${taskId}/isAccepted?isAccepted=${isAccepted}`, 
+      `${BACKEND_URL}/api/v1/tasks-v2/${taskId}/isAccepted?isAccepted=${isAccepted}&comment=${encodeURIComponent(comment)}`, 
       {
         method: "PATCH",
         headers: {

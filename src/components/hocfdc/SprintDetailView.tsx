@@ -53,8 +53,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   });
 
   const { data: tasksRes, isLoading: tasksLoading } = useQuery({
-    queryKey: ["tasks", sprintId],
-    queryFn: () => TaskService.getTasksBySprintId(sprintId),
+    queryKey: ["tasks", sprintId, "SUBJECT"],
+    queryFn: () => TaskService.getTasksBySprintId(sprintId, undefined, "SUBJECT"),
   });
 
   const tasks = tasksRes?.content || [];

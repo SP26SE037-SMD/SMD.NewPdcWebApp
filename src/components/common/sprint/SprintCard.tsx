@@ -73,6 +73,7 @@ interface SprintCardProps {
   formatDate: (d: string) => string;
   detailHref: string;
   actions?: React.ReactNode | ((totalTasks: number, closedTasks: number, isLoading: boolean) => React.ReactNode);
+  type?: string;
 }
 
 export const SprintCard = ({
@@ -82,20 +83,25 @@ export const SprintCard = ({
   formatDate,
   detailHref,
   actions,
+  type,
 }: SprintCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch tasks for this sprint to get counts and short list
   const { data: tasksRes, isLoading: isTasksLoading } = useQuery({
-    queryKey: ["tasks", sprint.sprintId, departmentId],
+    queryKey: ["tasks", sprint.sprintId, departmentId, type],
     queryFn: () =>
       departmentId
         ? TaskService.getTasksBySprintIdAndDepartmentId(
             sprint.sprintId,
             departmentId,
+            undefined,
+            type,
           )
-        : TaskService.getTasksBySprintId(sprint.sprintId),
+        : TaskService.getTasksBySprintId(sprint.sprintId, undefined, type),
     enabled: true,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const tasks = (tasksRes?.content || []) as TaskItem[];
@@ -235,7 +241,7 @@ export const SprintCard = ({
                 </div>
               ) : tasks.length > 0 ? (
                 <div className="grid grid-cols-1 gap-1">
-                  {tasks.slice(0, 5).map((task) => (
+                  {tasks.map((task) => (
                     <div
                       key={task.taskId}
                       className="flex items-center justify-between p-3 bg-white border border-zinc-100 group/task hover:border-zinc-300 transition-all hover:translate-x-1 rounded-xl"
