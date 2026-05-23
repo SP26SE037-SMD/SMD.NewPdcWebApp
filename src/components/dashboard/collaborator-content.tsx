@@ -29,12 +29,20 @@ export default function CollaboratorDashboardContent() {
                                 </p>
                             </div>
                         </div>
-                        <Link
-                            href="/dashboard/collaborator/profile"
-                            className="bg-[#21262D] hover:bg-[#30363D] border border-[#363B42] hover:border-[#8B949E] transition-all px-4 py-2 rounded-md text-sm font-medium text-[#C9D1D9] flex items-center gap-2"
-                        >
-                            <ShieldCheck size={16} className="text-[#8B949E]" /> sudo su profile
-                        </Link>
+                        <div className="flex gap-3">
+                            <Link
+                                href="/dashboard/pdcm/requests"
+                                className="bg-[#21262D] hover:bg-[#30363D] border border-[#363B42] hover:border-[#8B949E] transition-all px-4 py-2 rounded-md text-sm font-medium text-[#C9D1D9] flex items-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-[16px] text-[#8B949E]">inbox</span> requests
+                            </Link>
+                            <Link
+                                href="/dashboard/collaborator/profile"
+                                className="bg-[#21262D] hover:bg-[#30363D] border border-[#363B42] hover:border-[#8B949E] transition-all px-4 py-2 rounded-md text-sm font-medium text-[#C9D1D9] flex items-center gap-2"
+                            >
+                                <ShieldCheck size={16} className="text-[#8B949E]" /> sudo su profile
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
