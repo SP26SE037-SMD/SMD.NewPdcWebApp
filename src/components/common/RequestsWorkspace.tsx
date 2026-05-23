@@ -22,16 +22,16 @@ import {
   FastForward,
 } from "lucide-react";
 import { toast } from "sonner";
-import { TaskService } from "@/services/task.service";
-import {
-  RequestItem,
-  RequestService,
-} from "@/services/request.service";
+import { TaskItem, TaskService } from "@/services/task.service";
+import { RequestItem, RequestService } from "@/services/request.service";
 import { Major, MajorService } from "@/services/major.service";
 import {
   CurriculumFramework,
   CurriculumService,
 } from "@/services/curriculum.service";
+import { Subject, SubjectService } from "@/services/subject.service";
+import { SprintItem, SprintService } from "@/services/sprint.service";
+import { AccountService, DepartmentAccount } from "@/services/account.service";
 
 const getInitials = (name?: string) => {
   if (!name) return "??";
@@ -61,7 +61,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
   const [totalElements, setTotalElements] = useState(0);
 
   // Split tabs for createdBy (CREATED) and receiveBy (RECEIVED)
-  const [requestSource, setRequestSource] = useState<"CREATED" | "RECEIVED">("CREATED");
+  const [requestSource, setRequestSource] = useState<"CREATED" | "RECEIVED">(
+    "CREATED",
+  );
   const [sortBy, setSortBy] = useState<string>("date-desc");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -73,16 +75,29 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
   const [detailLoading, setDetailLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(
+    null,
+  );
 
   const [createForm, setCreateForm] = useState({
     title: "",
     content: "",
     comment: "",
     status: "PENDING",
+    type: role === "HoPDC" ? "TASK" : "MAJOR",
+    targetId: "",
+    receivedById: "",
     majorId: "",
     curriculumId: "",
   });
+
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [sprints, setSprints] = useState<SprintItem[]>([]);
+
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [loadingSprints, setLoadingSprints] = useState(false);
 
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
     ALL: 0,
@@ -110,14 +125,43 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
   const fetchStatusCounts = async () => {
     if (!user?.accountId) return;
     try {
-      const createdById = requestSource === "CREATED" ? user.accountId : undefined;
-      const receivedById = requestSource === "RECEIVED" ? user.accountId : undefined;
+      const createdById =
+        requestSource === "CREATED" ? user.accountId : undefined;
+      const receivedById =
+        requestSource === "RECEIVED" ? user.accountId : undefined;
 
       const [allRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
-        RequestService.getRequests({ page: 0, size: 3, search: search || undefined, createdById, receivedById }),
-        RequestService.getRequests({ page: 0, size: 3, search: search || undefined, createdById, receivedById, status: "PENDING" }),
-        RequestService.getRequests({ page: 0, size: 3, search: search || undefined, createdById, receivedById, status: "APPROVED" }),
-        RequestService.getRequests({ page: 0, size: 3, search: search || undefined, createdById, receivedById, status: "REJECTED" }),
+        RequestService.getRequests({
+          page: 0,
+          size: 3,
+          search: search || undefined,
+          createdById,
+          receivedById,
+        }),
+        RequestService.getRequests({
+          page: 0,
+          size: 3,
+          search: search || undefined,
+          createdById,
+          receivedById,
+          status: "PENDING",
+        }),
+        RequestService.getRequests({
+          page: 0,
+          size: 3,
+          search: search || undefined,
+          createdById,
+          receivedById,
+          status: "APPROVED",
+        }),
+        RequestService.getRequests({
+          page: 0,
+          size: 3,
+          search: search || undefined,
+          createdById,
+          receivedById,
+          status: "REJECTED",
+        }),
       ]);
 
       setStatusCounts({
@@ -136,8 +180,10 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     setLoading(true);
     setError(null);
     try {
-      const createdById = requestSource === "CREATED" ? user.accountId : undefined;
-      const receivedById = requestSource === "RECEIVED" ? user.accountId : undefined;
+      const createdById =
+        requestSource === "CREATED" ? user.accountId : undefined;
+      const receivedById =
+        requestSource === "RECEIVED" ? user.accountId : undefined;
 
       let sortByParam = "createdAt";
       let directionParam: "asc" | "desc" = "desc";
@@ -254,9 +300,130 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     }
   };
 
-  const openCreateModal = async () => {
+  const fetchTasksOptions = async () => {
+    if (!user?.accountId) return;
+    setLoadingTasks(true);
+    try {
+      const response = await TaskService.getTasks({
+        assignTo: user.accountId,
+        size: 100,
+      });
+      setTasks(response.content || []);
+    } catch (err) {
+      setTasks([]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const fetchSubjectsOptions = async () => {
+    if (!user?.departmentId) return;
+    setLoadingSubjects(true);
+    try {
+      const response = await SubjectService.getSubjects({
+        departmentId: user.departmentId,
+        size: 100,
+      });
+      setSubjects(response.data?.content || []);
+    } catch (err) {
+      setSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
+
+  const fetchSprintsOptions = async () => {
+    if (!user?.accountId) return;
+    setLoadingSprints(true);
+    try {
+      const response = await SprintService.getSprintsByAccount(user.accountId, {
+        size: 100,
+      });
+      setSprints(response.data?.content || []);
+    } catch (err) {
+      setSprints([]);
+    } finally {
+      setLoadingSprints(false);
+    }
+  };
+
+  const resolveReceiver = async () => {
+    if (!user) return;
+    if (role === "HoPDC") {
+      if (!user.departmentId) return;
+      try {
+        const accounts = await AccountService.getAccountsByDepartment(
+          user.departmentId,
+        );
+        const hocfdc = accounts.find(
+          (a) => a.roleName?.toUpperCase() === "HOCFDC",
+        );
+        if (hocfdc) {
+          setCreateForm((prev) => ({
+            ...prev,
+            receivedById: hocfdc.accountId,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch department accounts", err);
+      }
+    } else if (role === "HoCFDC") {
+      const foundVp = requests.find(
+        (r) =>
+          r.receivedBy?.role === "VP" ||
+          (r.receivedBy?.role as any)?.roleName === "VP",
+      );
+      if (foundVp?.receivedBy?.accountId) {
+        setCreateForm((prev) => ({
+          ...prev,
+          receivedById: foundVp.receivedBy!.accountId,
+        }));
+        return;
+      }
+
+      try {
+        const deptsRes = await SubjectService.getDepartments({ size: 100 });
+        const depts = deptsRes.data?.content || [];
+        for (const dept of depts) {
+          const accounts = await AccountService.getAccountsByDepartment(
+            dept.departmentId,
+          );
+          const vp = accounts.find((a) => a.roleName?.toUpperCase() === "VP");
+          if (vp) {
+            setCreateForm((prev) => ({ ...prev, receivedById: vp.accountId }));
+            break;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to scan departments for VP account", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!showCreateModal) return;
+    resolveReceiver();
+  }, [showCreateModal]);
+
+  useEffect(() => {
+    if (!showCreateModal) return;
+
+    if (createForm.type === "TASK") {
+      fetchTasksOptions();
+    } else if (createForm.type === "SUBJECT") {
+      fetchSubjectsOptions();
+    } else if (createForm.type === "SPRINT") {
+      fetchSprintsOptions();
+    } else if (
+      createForm.type === "MAJOR" ||
+      createForm.type === "CURRICULUM"
+    ) {
+      fetchMajors();
+    }
+  }, [createForm.type, showCreateModal]);
+
+  const openCreateModal = () => {
     setShowCreateModal(true);
-    await fetchMajors();
   };
 
   const closeCreateModal = () => {
@@ -266,6 +433,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
       content: "",
       comment: "",
       status: "PENDING",
+      type: role === "HoPDC" ? "TASK" : "MAJOR",
+      targetId: "",
+      receivedById: "",
       majorId: "",
       curriculumId: "",
     });
@@ -273,7 +443,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
   };
 
   const handleMajorChange = async (majorId: string) => {
-    setCreateForm((prev) => ({ ...prev, majorId, curriculumId: "" }));
+    setCreateForm((prev) => ({
+      ...prev,
+      majorId,
+      curriculumId: "",
+      targetId: "",
+    }));
     await fetchCurriculumsByMajor(majorId);
   };
 
@@ -282,8 +457,8 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
       setError("Title and content are required");
       return;
     }
-    if (!createForm.majorId || !createForm.curriculumId) {
-      setError("Please choose major and curriculum");
+    if (!createForm.targetId) {
+      setError("Please select a target");
       return;
     }
     if (!user?.accountId) {
@@ -294,14 +469,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     setSubmitting(true);
     setError(null);
     try {
-      await RequestService.createRequest({
+      await RequestService.createRequestV2({
         title: createForm.title.trim(),
         content: createForm.content.trim(),
-        comment: createForm.comment.trim() || undefined,
-        status: createForm.status,
-        createdById: user.accountId,
-        curriculumId: createForm.curriculumId,
-        majorId: createForm.majorId,
+        type: createForm.type,
+        targetId: createForm.targetId,
+        receivedById: createForm.receivedById || null,
       });
 
       closeCreateModal();
@@ -336,7 +509,8 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
   };
 
   const handleFixCurriculum = async (request: RequestItem) => {
-    const majorId = request.major?.majorId || request.curriculum?.major?.majorId;
+    const majorId =
+      request.major?.majorId || request.curriculum?.major?.majorId;
     const curriculumId = request.curriculum?.curriculumId;
 
     if (!curriculumId || !majorId) {
@@ -363,7 +537,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
           if (task) {
             toast.success("Navigating to task builder...", { id: toastId });
-            router.push(`/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`);
+            router.push(
+              `/dashboard/hocfdc/tasks/${task.taskId}?majorId=${majorId}`,
+            );
           } else {
             toast.error("Original task not found. Please use the Tasks menu.", {
               id: toastId,
@@ -392,7 +568,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
           );
 
           if (task) {
-            toast.success("Navigating to assignment workspace...", { id: toastId });
+            toast.success("Navigating to assignment workspace...", {
+              id: toastId,
+            });
             router.push(
               `/dashboard/hopdc/assignments?sprintId=${task.sprintId}&curriculumId=${curriculumId}`,
             );
@@ -400,7 +578,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
             toast.error("Original task not found.", { id: toastId });
           }
         } else {
-          toast.success("Navigating to curriculum deliverables...", { id: toastId });
+          toast.success("Navigating to curriculum deliverables...", {
+            id: toastId,
+          });
           router.push(`/dashboard/hopdc/sprint-management`);
         }
       }
@@ -510,7 +690,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               <button
                 onClick={() => handleSourceTabChange("CREATED")}
                 className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-                  requestSource === "CREATED" ? "text-white" : "text-zinc-500 hover:text-zinc-800"
+                  requestSource === "CREATED"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-800"
                 }`}
               >
                 {requestSource === "CREATED" && (
@@ -525,7 +707,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               <button
                 onClick={() => handleSourceTabChange("RECEIVED")}
                 className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-                  requestSource === "RECEIVED" ? "text-white" : "text-zinc-500 hover:text-zinc-800"
+                  requestSource === "RECEIVED"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-800"
                 }`}
               >
                 {requestSource === "RECEIVED" && (
@@ -567,18 +751,26 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                       <motion.div
                         layoutId="activeTab"
                         className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
                       />
                     )}
                     <ClipboardList
                       className={`relative z-10 h-4 w-4 ${
-                        isActive ? "text-white" : "text-primary/60 group-hover:text-primary"
+                        isActive
+                          ? "text-white"
+                          : "text-primary/60 group-hover:text-primary"
                       }`}
                     />
                     <span className="relative z-10">{tab.label}</span>
                     <span
                       className={`relative z-10 py-0.5 px-2 rounded-lg text-[10px] font-black ${
-                        isActive ? "bg-white/20 text-white" : "bg-primary/5 text-primary"
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-primary/5 text-primary"
                       }`}
                     >
                       {statusCounts[tab.id] ?? 0}
@@ -634,7 +826,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
             <div className="overflow-x-auto rounded-2xl">
               <table className="w-full text-left text-sm border-separate border-spacing-y-3 px-3">
-                 <thead>
+                <thead>
                   <tr>
                     <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-[10px]">
                       No.
@@ -665,7 +857,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                       >
                         <div className="flex flex-col items-center justify-center gap-3">
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                          <p className="text-sm font-medium">Loading requests...</p>
+                          <p className="text-sm font-medium">
+                            Loading requests...
+                          </p>
                         </div>
                       </td>
                     </tr>
@@ -692,7 +886,10 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                           </div>
                         </td>
                         {(() => {
-                          const targetUser = requestSource === "CREATED" ? req.receivedBy : req.createdBy;
+                          const targetUser =
+                            requestSource === "CREATED"
+                              ? req.receivedBy
+                              : req.createdBy;
                           return (
                             <td className="px-5 py-6">
                               <div className="flex items-center gap-3">
@@ -717,9 +914,15 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                               req.status,
                             )}`}
                           >
-                            {req.status === "PENDING" && <Clock className="h-3 w-3" />}
-                            {req.status === "APPROVED" && <CheckCircle2 className="h-3 w-3" />}
-                            {req.status === "REJECTED" && <XCircle className="h-3 w-3" />}
+                            {req.status === "PENDING" && (
+                              <Clock className="h-3 w-3" />
+                            )}
+                            {req.status === "APPROVED" && (
+                              <CheckCircle2 className="h-3 w-3" />
+                            )}
+                            {req.status === "REJECTED" && (
+                              <XCircle className="h-3 w-3" />
+                            )}
                             {req.status}
                           </span>
                         </td>
@@ -775,7 +978,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                       >
                         <div className="flex flex-col items-center justify-center gap-3">
                           <ClipboardList className="h-10 w-10 text-outline" />
-                          <p className="text-lg font-medium">No requests found</p>
+                          <p className="text-lg font-medium">
+                            No requests found
+                          </p>
                           <p className="text-sm opacity-70">
                             Try changing filter or search keyword.
                           </p>
@@ -806,7 +1011,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                 </span>
 
                 <button
-                  onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+                  onClick={() =>
+                    setPage((prev) => Math.min(totalPages - 1, prev + 1))
+                  }
                   disabled={loading || page >= totalPages - 1}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-outline/20 bg-surface text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -832,13 +1039,15 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
+              className="relative w-full max-w-2xl overflow-hidden rounded-[10px] border border-zinc-200 bg-white shadow-2xl"
             >
               {/* Header */}
               <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-900">Create New Request</h2>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
+                  <h2 className="text-2xl font-bold text-zinc-900">
+                    Create New Request
+                  </h2>
+                  <p className="text-sm text-zinc-500 font-semibold uppercase tracking-widest mt-1">
                     System Change Governance
                   </p>
                 </div>
@@ -852,15 +1061,24 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
               {/* Content */}
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                      Target Major
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                      Request Type
                     </label>
                     <select
-                      value={createForm.majorId}
-                      onChange={(e) => handleMajorChange(e.target.value)}
-                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                      value={createForm.type}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          type: newType,
+                          targetId: "",
+                          majorId: "",
+                          curriculumId: "",
+                        }));
+                      }}
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                         backgroundRepeat: "no-repeat",
@@ -868,84 +1086,265 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                         backgroundSize: "1.25rem",
                       }}
                     >
-                      <option value="">{loadingMajors ? "Loading majors..." : "Select major"}</option>
-                      {majors.map((major) => (
-                        <option key={major.majorId} value={major.majorId}>
-                          {major.majorCode} - {major.majorName}
-                        </option>
-                      ))}
+                      {role === "HoPDC" ? (
+                        <>
+                          <option value="TASK">Task</option>
+                          <option value="SUBJECT">Subject</option>
+                          <option value="SPRINT">Sprint</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="MAJOR">Major</option>
+                          <option value="CURRICULUM">Curriculum</option>
+                        </>
+                      )}
                     </select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                      Curriculum Framework
-                    </label>
-                    <select
-                      value={createForm.curriculumId}
-                      onChange={(e) =>
-                        setCreateForm((prev) => ({ ...prev, curriculumId: e.target.value }))
-                      }
-                      disabled={!createForm.majorId || loadingCurriculums}
-                      className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none disabled:opacity-50"
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                        backgroundRepeat: "no-repeat",
-                        backgroundPosition: "right 1rem center",
-                        backgroundSize: "1.25rem",
-                      }}
-                    >
-                      <option value="">
-                        {loadingCurriculums ? "Loading curriculums..." : "Select curriculum"}
-                      </option>
-                      {curriculums.map((curriculum) => (
-                        <option key={curriculum.curriculumId} value={curriculum.curriculumId}>
-                          {curriculum.curriculumCode} - {curriculum.curriculumName}
+                  {createForm.type === "TASK" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                        Target Task
+                      </label>
+                      <select
+                        value={createForm.targetId}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            targetId: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                          backgroundSize: "1.25rem",
+                        }}
+                      >
+                        <option value="">
+                          {loadingTasks ? "Loading tasks..." : "Select task"}
                         </option>
-                      ))}
-                    </select>
-                  </div>
+                        {tasks.map((task) => (
+                          <option key={task.taskId} value={task.taskId}>
+                            {task.taskName} ({task.type})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {createForm.type === "SUBJECT" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                        Target Subject
+                      </label>
+                      <select
+                        value={createForm.targetId}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            targetId: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                          backgroundSize: "1.25rem",
+                        }}
+                      >
+                        <option value="">
+                          {loadingSubjects
+                            ? "Loading subjects..."
+                            : "Select subject"}
+                        </option>
+                        {subjects.map((subject) => (
+                          <option
+                            key={subject.subjectId}
+                            value={subject.subjectId}
+                          >
+                            {subject.subjectCode} - {subject.subjectName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {createForm.type === "SPRINT" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                        Target Sprint
+                      </label>
+                      <select
+                        value={createForm.targetId}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            targetId: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                          backgroundSize: "1.25rem",
+                        }}
+                      >
+                        <option value="">
+                          {loadingSprints
+                            ? "Loading sprints..."
+                            : "Select sprint"}
+                        </option>
+                        {sprints.map((sprint) => (
+                          <option key={sprint.sprintId} value={sprint.sprintId}>
+                            {sprint.sprintName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {createForm.type === "MAJOR" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                        Target Major
+                      </label>
+                      <select
+                        value={createForm.targetId}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            targetId: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                          backgroundSize: "1.25rem",
+                        }}
+                      >
+                        <option value="">
+                          {loadingMajors ? "Loading majors..." : "Select major"}
+                        </option>
+                        {majors.map((major) => (
+                          <option key={major.majorId} value={major.majorId}>
+                            {major.majorCode} - {major.majorName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {createForm.type === "CURRICULUM" && (
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-300 w-full">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                          Target Major
+                        </label>
+                        <select
+                          value={createForm.majorId}
+                          onChange={(e) => handleMajorChange(e.target.value)}
+                          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                            backgroundRepeat: "no-repeat",
+                            backgroundPosition: "right 1rem center",
+                            backgroundSize: "1.25rem",
+                          }}
+                        >
+                          <option value="">
+                            {loadingMajors
+                              ? "Loading majors..."
+                              : "Select major"}
+                          </option>
+                          {majors.map((major) => (
+                            <option key={major.majorId} value={major.majorId}>
+                              {major.majorCode} - {major.majorName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                          Curriculum Framework
+                        </label>
+                        <select
+                          value={createForm.curriculumId}
+                          onChange={(e) => {
+                            const currId = e.target.value;
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              curriculumId: currId,
+                              targetId: currId,
+                            }));
+                          }}
+                          disabled={!createForm.majorId || loadingCurriculums}
+                          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none disabled:opacity-50"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                            backgroundRepeat: "no-repeat",
+                            backgroundPosition: "right 1rem center",
+                            backgroundSize: "1.25rem",
+                          }}
+                        >
+                          <option value="">
+                            {loadingCurriculums
+                              ? "Loading curriculums..."
+                              : "Select curriculum"}
+                          </option>
+                          {curriculums.map((curriculum) => (
+                            <option
+                              key={curriculum.curriculumId}
+                              value={curriculum.curriculumId}
+                            >
+                              {curriculum.curriculumCode} -{" "}
+                              {curriculum.curriculumName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
                     Request Title
                   </label>
                   <input
                     value={createForm.title}
-                    onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
                     placeholder="Enter a descriptive title for this request"
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
                     Detailed Content
                   </label>
                   <textarea
                     value={createForm.content}
                     onChange={(e) =>
-                      setCreateForm((prev) => ({ ...prev, content: e.target.value }))
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }))
                     }
                     placeholder="Provide a detailed description of the proposed changes..."
                     rows={4}
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Additional Justification (Optional)
-                  </label>
-                  <textarea
-                    value={createForm.comment}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({ ...prev, comment: e.target.value }))
-                    }
-                    placeholder="Any additional notes or justification for this request..."
-                    rows={3}
-                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
                   />
                 </div>
               </div>
@@ -986,15 +1385,14 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white shadow-2xl"
+              className="relative w-full max-w-3xl overflow-hidden rounded-[10px] border border-zinc-200 bg-white shadow-2xl"
             >
               {/* Header */}
               <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-900">Request Specification</h2>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-1">
-                    Detailed Governance Review
-                  </p>
+                  <h2 className="text-2xl font-bold text-zinc-900">
+                    Request Detail
+                  </h2>
                 </div>
                 <button
                   onClick={() => setShowDetailModal(false)}
@@ -1017,7 +1415,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                   <div className="space-y-8">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
                           Current Status
                         </label>
                         <span
@@ -1025,81 +1423,195 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                             selectedRequest.status,
                           )}`}
                         >
-                          {selectedRequest.status === "PENDING" && <Clock size={12} />}
-                          {selectedRequest.status === "APPROVED" && <CheckCircle2 size={12} />}
-                          {selectedRequest.status === "REJECTED" && <XCircle size={12} />}
+                          {selectedRequest.status === "PENDING" && (
+                            <Clock size={12} />
+                          )}
+                          {selectedRequest.status === "APPROVED" && (
+                            <CheckCircle2 size={12} />
+                          )}
+                          {selectedRequest.status === "REJECTED" && (
+                            <XCircle size={12} />
+                          )}
                           {selectedRequest.status}
                         </span>
                       </div>
                       <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
                           Submission Timeline
                         </label>
-                        <p className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                        <p className="text-base font-bold text-zinc-900 flex items-center gap-2">
                           <CalendarDays size={16} className="text-primary" />
                           {formatDate(selectedRequest.createdAt)}
                         </p>
+                        {selectedRequest.updatedAt && (
+                          <div className="text-[10px] text-zinc-400 font-semibold mt-1 pl-6 uppercase tracking-wider">
+                            Last Modified:{" "}
+                            {formatDate(selectedRequest.updatedAt)}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="bg-zinc-50 rounded-3xl p-6 border border-zinc-100">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-3">
+                    <div className="bg-zinc-50 rounded-[10px] p-6 border border-zinc-100">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-3">
                         Request Overview
                       </label>
-                      <h4 className="text-lg font-bold text-zinc-900 mb-3">{selectedRequest.title}</h4>
-                      <p className="text-zinc-600 leading-relaxed text-sm font-medium">
+                      <h4 className="text-xl font-bold text-zinc-900 mb-3">
+                        {selectedRequest.title}
+                      </h4>
+                      <p className="text-zinc-600 leading-relaxed text-base font-medium whitespace-pre-line">
                         {selectedRequest.content}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
                           Originating Authority
                         </label>
-                        <p className="text-sm font-bold text-zinc-900">
-                          {selectedRequest.createdBy?.fullName ||
-                            selectedRequest.createdBy?.email ||
-                            "-"}
+                        <p className="text-base font-bold text-zinc-900">
+                          {selectedRequest.createdBy?.fullName || "-"}
                         </p>
+                        {selectedRequest.createdBy?.email && (
+                          <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                            {selectedRequest.createdBy.email}
+                          </p>
+                        )}
                       </div>
                       <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Target Framework
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                          Reviewing Authority
                         </label>
-                        <p className="text-sm font-bold text-zinc-900">
-                          {selectedRequest.curriculum?.curriculumCode || "-"}
+                        <p className="text-base font-bold text-zinc-900">
+                          {selectedRequest.receivedBy?.fullName || "-"}
                         </p>
+                        {selectedRequest.receivedBy?.email && (
+                          <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                            {selectedRequest.receivedBy.email}
+                          </p>
+                        )}
                       </div>
                     </div>
 
+                    {/* Target Context */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Academic Major
-                        </label>
-                        <p className="text-sm font-bold text-zinc-900">
-                          {selectedRequest.major?.majorName ||
-                            selectedRequest.curriculum?.major?.majorName ||
-                            "-"}
-                        </p>
-                      </div>
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Last Modified
-                        </label>
-                        <p className="text-sm font-bold text-zinc-900">
-                          {formatDate(selectedRequest.updatedAt)}
-                        </p>
-                      </div>
+                      {(() => {
+                        const type = selectedRequest.type;
+                        if (type === "CURRICULUM") {
+                          const majorText = selectedRequest.curriculum?.major
+                            ? `${selectedRequest.curriculum.major.majorCode} - ${selectedRequest.curriculum.major.majorName}`
+                            : selectedRequest.major?.majorName || "-";
+                          return (
+                            <>
+                              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                  Academic Major
+                                </label>
+                                <p className="text-base font-bold text-zinc-900">
+                                  {majorText}
+                                </p>
+                              </div>
+                              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                  Target Curriculum
+                                </label>
+                                <p className="text-base font-bold text-zinc-900">
+                                  {selectedRequest.curriculum
+                                    ? `${selectedRequest.curriculum.curriculumCode} - ${selectedRequest.curriculum.curriculumName}`
+                                    : "-"}
+                                </p>
+                              </div>
+                            </>
+                          );
+                        }
+
+                        if (type === "MAJOR") {
+                          return (
+                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                Target Major
+                              </label>
+                              <p className="text-base font-bold text-zinc-900">
+                                {selectedRequest.major
+                                  ? `${selectedRequest.major.majorCode} - ${selectedRequest.major.majorName}`
+                                  : "-"}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (type === "TASK") {
+                          return (
+                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                Target Task
+                              </label>
+                              <p className="text-base font-bold text-zinc-900">
+                                {selectedRequest.task?.taskName || "-"}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (type === "SUBJECT") {
+                          return (
+                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                Target Subject
+                              </label>
+                              <p className="text-base font-bold text-zinc-900">
+                                {selectedRequest.subject
+                                  ? `${selectedRequest.subject.subjectCode} - ${selectedRequest.subject.subjectName}`
+                                  : "-"}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (type === "SPRINT") {
+                          return (
+                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                                Target Sprint
+                              </label>
+                              <p className="text-base font-bold text-zinc-900">
+                                {selectedRequest.sprint?.sprintName || "-"}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        // Fallback logic for old requests
+                        const defaultTargetText =
+                          selectedRequest.curriculum?.curriculumCode ||
+                          selectedRequest.major?.majorName ||
+                          "-";
+                        const defaultLabel = selectedRequest.curriculum
+                          ?.curriculumCode
+                          ? "Target Framework"
+                          : selectedRequest.major?.majorName
+                            ? "Academic Major"
+                            : "Target Entity";
+
+                        return (
+                          <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
+                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
+                              {defaultLabel}
+                            </label>
+                            <p className="text-base font-bold text-zinc-900">
+                              {defaultTargetText}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {selectedRequest.comment && (
-                      <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10 italic">
-                        <label className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-3">
+                      <div className="bg-primary/5 rounded-[10px] p-6 border border-primary/10 italic">
+                        <label className="text-xs font-bold text-primary uppercase tracking-widest block mb-3">
                           Decision Comment
                         </label>
-                        <p className="text-zinc-700 text-sm font-medium leading-relaxed">
+                        <p className="text-zinc-700 text-base font-medium leading-relaxed">
                           "{selectedRequest.comment}"
                         </p>
                       </div>
@@ -1109,7 +1621,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                       <div className="mt-8 flex justify-end gap-3 border-t border-zinc-100 pt-6">
                         {selectedRequest.status === "APPROVED" && (
                           <button
-                            onClick={() => handleContinueToSprint(selectedRequest)}
+                            onClick={() =>
+                              handleContinueToSprint(selectedRequest)
+                            }
                             className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
                           >
                             <FastForward className="h-4 w-4" />
