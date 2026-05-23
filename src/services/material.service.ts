@@ -54,5 +54,12 @@ export const MaterialService = {
     console.log(`[API DEBUG] PATCH Material Status - URL: ${url}`);
     return apiClient.patch(url, {});
   },
+
+  deleteMaterial: async (materialId: string) => {
+    return apiClient.delete<{ status: number; message: string; data: any }>(
+      `/api/materials/${materialId}`
+    );
+  },
 };
+
 

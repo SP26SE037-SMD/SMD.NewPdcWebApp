@@ -6,8 +6,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskService } from '@/services/task.service';
 import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2, Plus } from 'lucide-react';
+import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2, Plus, Trash2, LayoutGrid, List } from 'lucide-react';
 import ImportModal from '@/components/dashboard/ImportModal';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import localforage from 'localforage';
 
 const C = {
@@ -77,6 +78,13 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
     const [tempOrder, setTempOrder] = useState<string | number>(0);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+    // Delete states
+    const [materialToDelete, setMaterialToDelete] = useState<Material | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // View mode state
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
     const openModal = (material: Material, type: 'RENAME' | 'TYPE' | 'ORDER') => {
         setEditingMaterial(material);
         setModalType(type);
@@ -107,6 +115,26 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
         }
     };
 
+    const handleDeleteClick = (material: Material) => {
+        setMaterialToDelete(material);
+        setActiveMenuId(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!materialToDelete) return;
+        setIsDeleting(true);
+        try {
+            await MaterialService.deleteMaterial(materialToDelete.materialId);
+            queryClient.invalidateQueries({ queryKey: ['pdcm-materials'] });
+            setMaterialToDelete(null);
+        } catch (error) {
+            console.error("Delete failed:", error);
+            alert("Delete failed. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     if (isTaskLoading || (syllabusId && isMaterialsLoading)) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -132,7 +160,25 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                         <span>Drag and drop available</span>
                     </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
+                    {/* View mode toggle */}
+                    <div className="flex items-center bg-[#ebf0e5]/60 p-1 rounded-xl border border-[#dee1d8]/40 mr-1 shrink-0">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#41683f]' : 'text-[#5a6157] hover:text-zinc-800'}`}
+                            title="List View"
+                        >
+                            <List size={16} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#41683f]' : 'text-[#5a6157] hover:text-zinc-800'}`}
+                            title="Grid View"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                    </div>
+
                     <button
                         onClick={() => setIsImportModalOpen(true)}
                         className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border"
@@ -165,8 +211,108 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                             <h3 className="text-lg font-bold mb-2" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
                             <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>Get started by creating a new material document or importing an existing file.</p>
                         </div>
+                    ) : viewMode === 'list' ? (
+                        <div className="bg-white rounded-[24px] overflow-hidden border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300">
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-zinc-100" style={{ background: `${C.primary}04` }}>
+                                            <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-400 w-12 text-center">#</th>
+                                            <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Name</th>
+                                            <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Type</th>
+                                            <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Uploaded Date</th>
+                                            <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500 text-right pr-8">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100">
+                                        {materials.map((material, idx) => (
+                                            <tr key={material.materialId} className="hover:bg-zinc-50/50 transition-colors group">
+                                                <td className="px-6 py-4 text-xs font-bold text-zinc-400 text-center">{idx + 1}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${C.primary}12`, color: C.primary }}>
+                                                            <span className="material-symbols-outlined text-[20px]">
+                                                                {material.materialType === 'PDF' ? 'picture_as_pdf' : material.materialType === 'VIDEO' ? 'smart_display' : 'description'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className="text-sm font-extrabold text-[#2d342b] truncate max-w-md" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                                                {material.title}
+                                                            </h4>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide border" style={{ background: `${C.primary}08`, color: C.primary, borderColor: `${C.primary}20` }}>
+                                                        {material.materialType || 'Document'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-xs font-semibold text-zinc-500">
+                                                    {new Date(material.uploadedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                </td>
+                                                <td className="px-6 py-4 text-right pr-8">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}&taskId=${taskId}`)}
+                                                            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-all flex items-center justify-center cursor-pointer"
+                                                            title="View"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}&taskId=${taskId}`)}
+                                                            className="p-2 rounded-lg text-zinc-400 hover:text-[#41683f] hover:bg-[#41683f]08 transition-all flex items-center justify-center cursor-pointer"
+                                                            title="Edit"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                                                        </button>
+                                                        
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === material.materialId ? null : material.materialId); }}
+                                                                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-all flex items-center justify-center cursor-pointer"
+                                                            >
+                                                                <MoreVertical size={16} />
+                                                            </button>
+                                                            
+                                                            <AnimatePresence>
+                                                                {activeMenuId === material.materialId && (
+                                                                    <>
+                                                                        <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                            className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-zinc-100 py-1.5 z-20 text-left"
+                                                                        >
+                                                                            <button onClick={() => openModal(material, 'RENAME')} className="w-full px-3.5 py-2 text-left text-[11px] font-bold flex items-center gap-2.5 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                                <Edit2 size={14} /> Rename
+                                                                            </button>
+                                                                            <button onClick={() => openModal(material, 'TYPE')} className="w-full px-3.5 py-2 text-left text-[11px] font-bold flex items-center gap-2.5 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                                <FileType size={14} /> Change Type
+                                                                            </button>
+                                                                            <button onClick={() => openModal(material, 'ORDER')} className="w-full px-3.5 py-2 text-left text-[11px] font-bold flex items-center gap-2.5 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
+                                                                                <ListOrdered size={14} /> Change Order
+                                                                            </button>
+                                                                            <div className="h-px bg-zinc-100 my-1" />
+                                                                            <button onClick={() => handleDeleteClick(material)} className="w-full px-3.5 py-2 text-left text-[11px] font-bold flex items-center gap-2.5 hover:bg-red-50 hover:text-red-600 transition-colors text-red-500">
+                                                                                <Trash2 size={14} /> Delete
+                                                                            </button>
+                                                                        </motion.div>
+                                                                    </>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
                             {materials.map(material => (
                                 <div key={material.materialId}
                                     className="relative bg-white rounded-[24px] p-6 group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
@@ -216,6 +362,10 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                                                             </button>
                                                             <button onClick={() => openModal(material, 'ORDER')} className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-3 hover:bg-zinc-50 transition-colors" style={{ color: C.onSurface }}>
                                                                 <ListOrdered size={16} /> Change Order
+                                                            </button>
+                                                            <div className="h-px bg-zinc-100 my-1" />
+                                                            <button onClick={() => handleDeleteClick(material)} className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-3 hover:bg-red-50 hover:text-red-600 transition-colors text-red-500">
+                                                                <Trash2 size={16} /> Delete
                                                             </button>
                                                         </motion.div>
                                                     </>
@@ -376,6 +526,17 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                         alert("Failed to process file. Please try again.");
                     }
                 }}
+            />
+
+            <ConfirmModal
+                isOpen={!!materialToDelete}
+                title="Delete Material"
+                message={`Are you sure you want to delete "${materialToDelete?.title}"? This action cannot be undone.`}
+                confirmLabel={isDeleting ? "Deleting..." : "Delete"}
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmDelete}
+                onClose={() => !isDeleting && setMaterialToDelete(null)}
+                isDanger={true}
             />
         </div>
     );
