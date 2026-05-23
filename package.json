@@ -22,6 +22,8 @@
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
     "docx": "^9.6.1",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.34.0",
     "localforage": "^1.10.0",
     "lucide-react": "^0.564.0",
@@ -37,6 +39,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
