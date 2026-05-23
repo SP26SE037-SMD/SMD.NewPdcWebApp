@@ -12,6 +12,8 @@ import { TaskService } from '@/services/task.service';
 import { ReviewTaskService } from '@/services/review-task.service';
 import { PDCMBaseLayout } from '@/components/layout/PDCMBaseLayout';
 import { ReviewProvider, useReview } from './ReviewContext';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { ConfirmReviewModal } from './_components/ConfirmReviewModal';
 import { Send } from 'lucide-react';
 import { useToast } from "@/components/ui/Toast";
@@ -296,9 +298,12 @@ export default function PDCMReviewLayout({
         { id: 'assessments', label: 'Assessments', icon: 'assignment', onClick: () => router.push(`/dashboard/pdcm/reviews/${reviewId}/assessments`), isActive: pathname.includes('assessments') },
     ];
 
+    const { user } = useSelector((state: RootState) => state.auth);
+
     const globalHeaderTabs = [
         { id: 'develop', label: 'My Task', isActive: false, onClick: () => router.push('/dashboard/pdcm/develop') },
-        { id: 'peer-review', label: 'My Review Task', isActive: true, onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        ...(user?.role?.toUpperCase() !== 'COLLABORATOR' ? [{ id: 'peer-review', label: 'My Review Task', isActive: true, onClick: () => router.push('/dashboard/pdcm/peer-review') }] : []),
+        { id: 'requests', label: 'Requests', isActive: false, onClick: () => router.push('/dashboard/pdcm/requests') },
     ];
     ;
 

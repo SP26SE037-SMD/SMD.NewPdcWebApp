@@ -11,7 +11,6 @@ import { RootState, AppDispatch } from '@/store';
 import { setSyllabusInfo } from '@/store/slices/syllabusSlice';
 import { formatBloomLevel } from '@/components/dashboard/SyllabusInfoModal';
 import { useQuery } from '@tanstack/react-query';
-import { useRevisionRequest } from '@/hooks/useRevisionRequest';
 import { ReviewerFeedback } from '@/components/dashboard/ReviewerFeedback';
 
 const C = {
@@ -57,9 +56,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
 
     const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
     const isRevisionRequested = routeTaskData?.data?.status === 'REVISION_REQUESTED';
-
-    // Fetch Revision Request Data (Always enabled for this route)
-    const { data: revisionRequest, isLoading: isRevisionLoading } = useRevisionRequest(taskId, true);
+    const realTask = routeTaskData?.data;
 
     // Fetch Syllabus Data
     const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({
@@ -180,13 +177,12 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
 
     return (
         <div className="space-y-7">
-            {!isRevisionLoading && revisionRequest && (
+            {realTask && (realTask.description || realTask.comment) && (
                 <ReviewerFeedback 
-                    reviewer={revisionRequest.reviewer}
+                    reviewer={realTask.createdBy}
                     comments={[
-                        { title: 'Material Feedback', content: revisionRequest.commentMaterial },
-                        { title: 'Session Feedback', content: revisionRequest.commentSession },
-                        { title: 'Assessment Feedback', content: revisionRequest.commentAssessment }
+                        { title: 'Task Requirement / Description', content: realTask.description },
+                        { title: 'Additional Comments', content: realTask.comment }
                     ]}
                 />
             )}

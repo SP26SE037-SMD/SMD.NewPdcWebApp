@@ -11,6 +11,7 @@ import { RootState, AppDispatch } from '@/store';
 import { setSyllabusInfo } from '@/store/slices/syllabusSlice';
 import { formatBloomLevel } from '@/components/dashboard/SyllabusInfoModal';
 import { useQuery } from '@tanstack/react-query';
+import { ReviewerFeedback } from '@/components/dashboard/ReviewerFeedback';
 
 const C = {
     primary: "#41683f",
@@ -230,6 +231,15 @@ info: {
 
     return (
         <div className="space-y-7">
+            {realTask && (realTask.description || realTask.comment) && (
+                <ReviewerFeedback 
+                    reviewer={realTask.createdBy}
+                    comments={[
+                        { title: 'Task Requirement / Description', content: realTask.description },
+                        { title: 'Additional Comments', content: realTask.comment }
+                    ]}
+                />
+            )}
 
             {/* ── Bento Grid ── */}
             <div className="grid grid-cols-12 gap-5">
