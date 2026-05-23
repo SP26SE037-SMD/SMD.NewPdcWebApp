@@ -556,8 +556,6 @@ export default function PDCMDashboardContent({
   const tasks = tasksData?.data?.content || [];
   const totalPages = tasksData?.data?.totalPages || 0;
 
-  const globalHeaderTabs: any[] = [];
-
   const sidebarItems = [
     {
       id: "tasks",
@@ -571,7 +569,11 @@ export default function PDCMDashboardContent({
   return (
     <PDCMBaseLayout
       activeSidebarId={navTab === "develop" ? "tasks" : "reviews"}
-      headerTabs={globalHeaderTabs}
+      headerTabs={[
+        { id: 'develop', label: 'My Task', isActive: navTab === 'develop', onClick: () => router.push('/dashboard/pdcm/develop') },
+        { id: 'peer-review', label: 'My Review Task', isActive: navTab === 'peer-review', onClick: () => router.push('/dashboard/pdcm/peer-review') },
+        { id: 'requests', label: 'Requests', isActive: false, onClick: () => router.push('/dashboard/pdcm/requests') },
+      ]}
       sidebarItems={sidebarItems}
     >
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">

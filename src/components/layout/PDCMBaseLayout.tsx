@@ -42,6 +42,7 @@ export function PDCMBaseLayout({
     headerTabs = [
         { id: 'develop', label: 'My Task', isActive: true, onClick: () => {} },
         { id: 'peer-review', label: 'My Review Task', isActive: false, onClick: () => {} },
+        { id: 'requests', label: 'Requests', isActive: false, onClick: () => {} },
     ],
     onBack,
     actionButton,

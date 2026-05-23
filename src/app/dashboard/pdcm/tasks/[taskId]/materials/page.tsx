@@ -7,9 +7,8 @@ import { TaskService } from '@/services/task.service';
 import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Edit2, FileType, ListOrdered, X, CheckCircle2, Plus, Trash2, LayoutGrid, List } from 'lucide-react';
-import ImportModal from '@/components/dashboard/ImportModal';
+import BulkImportMaterialModal from '@/components/dashboard/BulkImportMaterialModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
-import localforage from 'localforage';
 
 const C = {
     primary: "#41683f",
@@ -508,23 +507,12 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                 )}
             </AnimatePresence>
 
-            <ImportModal 
+            <BulkImportMaterialModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
-                type="material"
-                onImport={async (file) => {
-                    try {
-                        const arrayBuffer = await file.arrayBuffer();
-                        await localforage.setItem('pdcm_material_import_draft', {
-                            name: file.name,
-                            type: file.type,
-                            data: arrayBuffer
-                        });
-                        router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}&importDraft=true`);
-                    } catch (error) {
-                        console.error("Failed to store file for import:", error);
-                        alert("Failed to process file. Please try again.");
-                    }
+                syllabusId={syllabusId || ''}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['pdcm-materials'] });
                 }}
             />
 
