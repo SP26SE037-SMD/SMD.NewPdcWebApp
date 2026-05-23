@@ -198,8 +198,8 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
         try {
             await TaskService.acceptTask(targetTaskId, true, commentText.trim() || "Approved");
             if (typeof window !== "undefined") {
-                localStorage.removeItem(`final_decision_comment_${createSyllabusTaskId}`);
-                dispatchDecisionCommentUpdate(createSyllabusTaskId, "");
+                localStorage.removeItem(`final_decision_comment_${targetTaskId}`);
+                dispatchDecisionCommentUpdate(targetTaskId, "");
             }
             setCommentText("");
             showToast("Syllabus accepted successfully", "success");
