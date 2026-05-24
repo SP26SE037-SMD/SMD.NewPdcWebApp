@@ -131,9 +131,11 @@ export default function TaskDetailPage() {
 
     const load = async () => {
       try {
-        const res = await TaskService.getTaskById(taskId, { signal: controller.signal });
+        const res = await TaskService.getTaskById(taskId, {
+          signal: controller.signal,
+        });
         if (!isMounted) return;
-        
+
         let rawTask = (res as any)?.data;
 
         console.log("[TaskDetail] Raw Response Data:", rawTask);
@@ -163,10 +165,12 @@ export default function TaskDetailPage() {
 
             // Check Document details to see if majorId is already assigned
             try {
-              const docDetail =
-                await DocumentService.getDocument(effectiveDocId, { signal: controller.signal });
+              const docDetail = await DocumentService.getDocument(
+                effectiveDocId,
+                { signal: controller.signal },
+              );
               if (!isMounted) return;
-              
+
               console.log(
                 "[TaskDetail] Document Detail fetched for redirect check:",
                 docDetail,
@@ -177,27 +181,37 @@ export default function TaskDetailPage() {
                 docDetail?.majorId || (docDetail as any)?.data?.majorId;
 
               if (actualMajorId) {
-                console.log(
-                  "[TaskDetail] Found majorId:",
-                  actualMajorId,
-                );
+                console.log("[TaskDetail] Found majorId:", actualMajorId);
                 setMajorId(actualMajorId);
-                
+
                 // Check if curriculum already reached SYLLABUS_DEVELOP status
                 try {
-                  const currRes = await CurriculumService.getCurriculumsByMajorId(actualMajorId, { signal: controller.signal });
+                  const currRes =
+                    await CurriculumService.getCurriculumsByMajorId(
+                      actualMajorId,
+                      { signal: controller.signal },
+                    );
                   if (!isMounted) return;
-                  
+
                   const currList = (currRes as any)?.data || [];
-                  const finalizedCurr = currList.find((c: any) => c.status === CURRICULUM_STATUS.SYLLABUS_DEVELOP);
-                  
+                  const finalizedCurr = currList.find(
+                    (c: any) => c.status === CURRICULUM_STATUS.SYLLABUS_DEVELOP,
+                  );
+
                   if (finalizedCurr) {
-                    console.log("[TaskDetail] Curriculum finalized, redirecting to detail page");
-                    router.replace(`/dashboard/hocfdc/curriculums/${finalizedCurr.curriculumId}`);
+                    console.log(
+                      "[TaskDetail] Curriculum finalized, redirecting to detail page",
+                    );
+                    router.replace(
+                      `/dashboard/hocfdc/curriculums/${finalizedCurr.curriculumId}`,
+                    );
                     return; // Stop further processing
                   }
                 } catch (currErr) {
-                  console.error("[TaskDetail] Failed to check curriculum status:", currErr);
+                  console.error(
+                    "[TaskDetail] Failed to check curriculum status:",
+                    currErr,
+                  );
                 }
 
                 setActiveTab("major");
@@ -228,8 +242,8 @@ export default function TaskDetailPage() {
         }
       } catch (err: any) {
         if (!isMounted) return;
-        if (err.name === 'AbortError') return;
-        
+        if (err.name === "AbortError") return;
+
         console.error("[TaskDetail] Failed to load task:", err);
         toast.error("Failed to load task. Please check your connection.");
         if (isMounted) {
@@ -241,7 +255,7 @@ export default function TaskDetailPage() {
       }
     };
     load();
-    
+
     return () => {
       isMounted = false;
       controller.abort();
@@ -349,7 +363,9 @@ export default function TaskDetailPage() {
       await CurriculumService.syncStatus(curriculum.curriculumId);
 
       toast.success("Curriculum finalized and synchronized successfully!");
-      router.replace(`/dashboard/hocfdc/curriculums/${curriculum.curriculumId}`);
+      router.replace(
+        `/dashboard/hocfdc/curriculums/${curriculum.curriculumId}`,
+      );
     } catch (e: any) {
       toast.error(
         e?.response?.data?.message ||
@@ -476,7 +492,7 @@ export default function TaskDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-0 py-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

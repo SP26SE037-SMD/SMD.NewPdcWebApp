@@ -66,6 +66,22 @@ export interface RequestItem {
     receivedBy?: RequestCreatedBy;
     curriculum?: RequestCurriculum;
     major?: RequestMajor;
+    type?: string;
+    targetId?: string;
+    sprint?: {
+        sprintId: string;
+        sprintName: string;
+    };
+    task?: {
+        taskId: string;
+        taskName: string;
+        type?: string;
+    };
+    subject?: {
+        subjectId: string;
+        subjectCode: string;
+        subjectName: string;
+    };
     createdAt?: string;
     updatedAt?: string;
 }

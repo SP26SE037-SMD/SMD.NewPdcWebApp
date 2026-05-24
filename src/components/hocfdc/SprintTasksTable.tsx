@@ -15,6 +15,7 @@ import {
   Check,
   Trash2,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 import { SPRINT_STATUS } from "@/services/sprint.service";
@@ -23,30 +24,29 @@ import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 
 interface SprintTasksTableProps {
+  tasks: (TaskItem & { children?: TaskItem[] })[];
+  isLoading: boolean;
   sprintId: string;
   sprintEndDate?: string;
   sprintStatus?: string;
   curriculumId: string;
+  onEdit: (task: TaskItem) => void;
+  onViewDetails: (task: TaskItem & { children?: TaskItem[] }) => void;
 }
 
 export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
+  tasks,
+  isLoading,
   sprintId,
   sprintEndDate,
   sprintStatus,
   curriculumId,
+  onEdit,
+  onViewDetails,
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-
-  const { data: tasksRes, isLoading } = useQuery({
-    queryKey: ["tasks", sprintId, "SUBJECT"],
-    queryFn: () => TaskService.getTasksBySprintId(sprintId, undefined, "SUBJECT"),
-  });
-
-  const tasksFromApi = tasksRes?.content || [];
-
-  const tasks = tasksFromApi;
 
   const deleteMutation = useMutation({
     mutationFn: (taskId: string) => TaskService.deleteTask(taskId),
@@ -272,7 +272,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
         <thead>
           <tr className="bg-primary/20 border-b border-primary/10 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900">
             <th className="px-6 py-5 font-black">Task Name</th>
-            <th className="px-6 py-5 font-black">Description</th>
+            <th className="px-6 py-5 font-black">Deadline</th>
             <th className="px-6 py-5 font-black">Assignee</th>
             <th className="px-6 py-5 font-black">Status</th>
             <th className="px-6 py-5 font-black text-right">Actions</th>
@@ -287,9 +287,12 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               {/* Task Name */}
               <td className="px-6 py-5">
                 <div className="flex flex-col gap-1">
-                  <span className="font-black text-sm text-zinc-900 tracking-tight group-hover:text-zinc-600 transition-colors">
+                  <button
+                    onClick={() => onViewDetails(task)}
+                    className="font-black text-sm text-zinc-900 text-left tracking-tight hover:text-primary transition-colors outline-none cursor-pointer"
+                  >
                     {task.taskName}
-                  </span>
+                  </button>
                   <div className="flex items-center gap-2">
                     <Tag size={10} className="text-zinc-300" />
                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
@@ -299,12 +302,15 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                 </div>
               </td>
 
-              {/* Task Description */}
+              {/* Deadline */}
               <td className="px-6 py-5">
-                <div className="flex flex-col gap-1 max-w-[250px]">
-                  <p className="text-xs font-medium text-zinc-600 leading-relaxed line-clamp-2" title={task.description}>
-                    {task.description || <span className="text-zinc-400 italic font-medium tracking-tight">No description provided</span>}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-zinc-400" />
+                  <span className="text-xs font-semibold text-zinc-700">
+                    {isValidDeadline(task.deadline)
+                      ? new Date(task.deadline).toLocaleDateString("vi-VN")
+                      : <span className="text-zinc-400 italic font-medium tracking-tight">No deadline</span>}
+                  </span>
                 </div>
               </td>
 
@@ -346,24 +352,17 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
 
               {/* Actions */}
               <td className="px-6 py-5 text-right">
-                {task.status === TASK_STATUS.DONE ? (
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
-                      )
-                    }
-                    className="px-2.5 py-1.5 bg-[#409b43] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-[#409b43]/20 flex items-center gap-1.5 ml-auto group/btn"
-                  >
-                    <CheckCircle2
-                      size={14}
-                      className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
-                    />
-                    recheck subject
-                  </button>
-                ) : (
-                  <div className="flex items-center justify-end gap-2">
-                    {sprintStatus === SPRINT_STATUS.PLANNING && (
+                <div className="flex items-center justify-end gap-2">
+                  {sprintStatus === SPRINT_STATUS.PLANNING && (
+                    <>
+                      <button
+                        onClick={() => onEdit(task)}
+                        className="p-2 text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600 border border-transparent hover:border-zinc-200 rounded-lg transition-all"
+                        title="Edit Task"
+                      >
+                        <Pencil size={14} />
+                      </button>
+
                       <button
                         onClick={() => {
                           if (confirm("Confirm task removal?")) {
@@ -380,12 +379,30 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                           <Trash2 size={14} />
                         )}
                       </button>
-                    )}
+                    </>
+                  )}
+                  {task.status === TASK_STATUS.DONE && (
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
+                        )
+                      }
+                      className="px-2.5 py-1.5 bg-[#409b43] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-[#409b43]/20 flex items-center gap-1.5 ml-auto group/btn"
+                    >
+                      <CheckCircle2
+                        size={14}
+                        className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
+                      />
+                      recheck subject
+                    </button>
+                  )}
+                  {sprintStatus !== SPRINT_STATUS.PLANNING && task.status !== TASK_STATUS.DONE && (
                     <button className="p-2 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200">
                       <MoreVertical size={16} />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </td>
             </tr>
           ))}

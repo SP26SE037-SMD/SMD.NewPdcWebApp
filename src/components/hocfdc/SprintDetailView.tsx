@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -22,13 +22,20 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { User } from "@/lib/auth";
 import { SprintService, SPRINT_STATUS } from "@/services/sprint.service";
-import { TaskService } from "@/services/task.service";
+import { TaskService, TaskItem, TASK_STATUS, TaskStatus } from "@/services/task.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
+import { AccountService } from "@/services/account.service";
+import { SyllabusService } from "@/services/syllabus.service";
 import { SprintTasksTable } from "./SprintTasksTable";
 import { useToast } from "@/components/ui/Toast";
 import { CreateTaskModal } from "./CreateTaskModal";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
+import { TaskDetailModal } from "../hopdc/syllabus/TaskDetailModal";
+import { CreateSyllabusTaskModal } from "../hopdc/syllabus/CreateSyllabusTaskModal";
 
 interface SprintDetailViewProps {
   sprintId: string;
@@ -42,10 +49,20 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [isQuickLaunchConfirmOpen, setIsQuickLaunchConfirmOpen] = useState(false);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedDetailTask, setSelectedDetailTask] = useState<(TaskItem & { children?: TaskItem[] }) | null>(null);
+  const [taskHistory, setTaskHistory] = useState<TaskItem[]>([]);
+
+  const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
+  const [subtaskModalMode, setSubtaskModalMode] = useState<"CREATE" | "UPDATE" | "REVIEW">("CREATE");
+  const [subtaskParentTask, setSubtaskParentTask] = useState<TaskItem | null>(null);
 
   const { data: sprintRes, isLoading: sprintLoading } = useQuery({
     queryKey: ["sprint", sprintId],
@@ -53,20 +70,73 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   });
 
   const { data: tasksRes, isLoading: tasksLoading } = useQuery({
-    queryKey: ["tasks", sprintId, "SUBJECT"],
-    queryFn: () => TaskService.getTasksBySprintId(sprintId, undefined, "SUBJECT"),
+    queryKey: ["tasks", sprintId],
+    queryFn: () => TaskService.getTasksBySprintId(sprintId),
   });
 
-  const tasks = tasksRes?.content || [];
-  const totalTasks = tasks.length;
+  const { data: departmentAccounts = [] } = useQuery({
+    queryKey: ["assignments-department-accounts", sprintRes?.data?.departmentId],
+    queryFn: () => AccountService.getAccountsByDepartment(sprintRes?.data?.departmentId || ""),
+    enabled: !!sprintRes?.data?.departmentId,
+  });
 
-  const allTasksDone = totalTasks > 0 && tasks.every((t) => t.status === "DONE");
-  const pendingSubjectsCount = tasks.filter((t) =>
+  const allTasks = useMemo(() => tasksRes?.content || [], [tasksRes]);
+
+  // Build Tree (group tasks by rootTaskId)
+  const rootTasks = useMemo(() => {
+    const taskMap: Record<string, TaskItem & { children?: TaskItem[] }> = {};
+    const roots: (TaskItem & { children?: TaskItem[] })[] = [];
+
+    allTasks.forEach((t) => {
+      taskMap[t.taskId] = { ...t, children: [] };
+    });
+
+    allTasks.forEach((t) => {
+      const node = taskMap[t.taskId];
+      if (node) {
+        if (t.rootTaskId && taskMap[t.rootTaskId]) {
+          taskMap[t.rootTaskId].children?.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+    });
+
+    return roots;
+  }, [allTasks]);
+
+  // Sync selected task with refreshed data
+  useEffect(() => {
+    if (selectedDetailTask) {
+      const findInTree = (
+        list: (TaskItem & { children?: TaskItem[] })[],
+        id: string,
+      ): (TaskItem & { children?: TaskItem[] }) | null => {
+        for (const node of list) {
+          if (node.taskId === id) return node;
+          if (node.children) {
+            const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const updated = findInTree(rootTasks, selectedDetailTask.taskId);
+      if (updated) {
+        setSelectedDetailTask(updated);
+      }
+    }
+  }, [rootTasks, selectedDetailTask]);
+
+  const totalTasks = rootTasks.length;
+
+  const allTasksDone = totalTasks > 0 && rootTasks.every((t) => t.status === "DONE");
+  const pendingSubjectsCount = rootTasks.filter((t) =>
     t.status === "DONE" &&
     t.subjectStatus !== "COMPLETED"
   ).length;
 
-  const readyTasks = tasks.filter((t) =>
+  const readyTasks = rootTasks.filter((t) =>
     t.status === "DONE" && t.subjectStatus === "COMPLETED"
   ).length;
 
@@ -89,6 +159,124 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     },
     onError: (err: any) =>
       showToast(err.message || "Connection error", "error"),
+  });
+
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
+      TaskService.updateTaskStatus(taskId, status),
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(
+          new CustomEvent("final-decision-comment-updated", {
+            detail: { taskId: variables.taskId, comment: "" },
+          }),
+        );
+      }
+      showToast("Task status updated successfully", "success");
+      await queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to update status", "error");
+    },
+  });
+
+  const acceptSyllabusMutation = useMutation({
+    mutationFn: async ({ taskId, comment }: { taskId: string; comment: string }) => {
+      await TaskService.acceptTask(taskId, true, comment);
+      return TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(
+          new CustomEvent("final-decision-comment-updated", {
+            detail: { taskId: variables.taskId, comment: "" },
+          }),
+        );
+      }
+      showToast("Syllabus accepted successfully", "success");
+      await queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to accept syllabus", "error");
+    },
+  });
+
+  const rejectSyllabusMutation = useMutation({
+    mutationFn: async ({
+      task,
+      assignTo,
+      dueDate,
+      comment,
+    }: {
+      task: TaskItem;
+      assignTo: string;
+      dueDate: string;
+      comment: string;
+    }) => {
+      const cleanTaskName = task.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+      await TaskService.createTask({
+        sprintId: sprintId || "",
+        assignTo,
+        taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
+        description: comment,
+        action: "UPDATE",
+        priority: task.priority || "MEDIUM",
+        type: "SYLLABUS",
+        targetId: task.targetId || task.syllabusId || undefined,
+        rootTaskId: task.rootTaskId || undefined,
+        dueDate,
+      });
+
+      const syllabusId = task.targetId || task.syllabusId || task.syllabus?.syllabusId;
+      if (syllabusId && user?.accountId) {
+        try {
+          await SyllabusService.updateSyllabusStatus(syllabusId, user.accountId, "DRAFT");
+        } catch (error) {
+          console.warn("Soft fail: Unable to update syllabus status to DRAFT", error);
+        }
+      }
+
+      return TaskService.acceptTask(task.taskId, false, comment);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.task.taskId}`);
+        window.dispatchEvent(
+          new CustomEvent("final-decision-comment-updated", {
+            detail: { taskId: variables.task.taskId, comment: "" },
+          }),
+        );
+      }
+      showToast("Syllabus rejected and update task assigned", "success");
+      await queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to reject syllabus", "error");
+    },
+  });
+
+  const resetDecisionMutation = useMutation({
+    mutationFn: async (task: TaskItem) => {
+      await TaskService.acceptTask(task.taskId, null, "");
+      return TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+    },
+    onSuccess: async (_, variables) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
+        window.dispatchEvent(
+          new CustomEvent("final-decision-comment-updated", {
+            detail: { taskId: variables.taskId, comment: "" },
+          }),
+        );
+      }
+      showToast("Decision reset successfully", "success");
+      await queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+    },
+    onError: (error: any) => {
+      showToast(error.message || "Failed to reset decision", "error");
+    },
   });
 
   const handleStatusChange = (sprintId: string, newStatus: string) => {
@@ -370,7 +558,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               )}
 
               <button
-                onClick={() => setIsTaskModalOpen(true)}
+                onClick={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
                 className="flex items-center gap-3 bg-zinc-100 text-zinc-900 px-8 py-4 font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus size={18} />
@@ -397,19 +588,160 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         </div>
 
         <SprintTasksTable
+          tasks={rootTasks}
+          isLoading={tasksLoading}
           sprintId={sprintId}
           sprintEndDate={sprint.endDate}
           sprintStatus={sprint.status}
           curriculumId={curriculumId}
+          onEdit={(task) => {
+            setEditingTask(task);
+            setIsTaskModalOpen(true);
+          }}
+          onViewDetails={(task) => {
+            setSelectedDetailTask(task);
+            setTaskHistory([]);
+            setIsDetailModalOpen(true);
+          }}
         />
       </div>
 
       <CreateTaskModal
         isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
+        onClose={() => {
+          setIsTaskModalOpen(false);
+          setEditingTask(null);
+        }}
         sprintId={sprintId}
         curriculumId={sprint?.curriculumId || ""}
         departmentId={sprint?.departmentId || ""}
+        task={editingTask}
+      />
+
+      {selectedDetailTask && (
+        <TaskDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedDetailTask(null);
+            setTaskHistory([]);
+          }}
+          task={selectedDetailTask}
+          pdcmAccounts={departmentAccounts}
+          currentUser={user as User | null}
+          curriculumId={curriculumId}
+          sprintId={sprintId}
+          sprintDeadline={sprint?.endDate}
+          onUpdateStatus={(taskId, status) =>
+            updateTaskStatusMutation.mutate({ taskId, status })
+          }
+          isUpdatingStatus={updateTaskStatusMutation.isPending}
+          onOpenTaskModal={(mode, parentTask) => {
+            setSubtaskModalMode(mode);
+            setSubtaskParentTask(parentTask);
+            setIsSubtaskModalOpen(true);
+          }}
+          onAcceptSyllabus={async (t, comment) => {
+            await acceptSyllabusMutation.mutateAsync({ taskId: t.taskId, comment });
+          }}
+          onRejectSyllabus={async (t, assignTo, dueDate, comment) => {
+            await rejectSyllabusMutation.mutateAsync({ task: t, assignTo, dueDate, comment });
+          }}
+          onResetDecision={async (t) => {
+            await resetDecisionMutation.mutateAsync(t);
+          }}
+          taskHistory={taskHistory}
+          onNavigateToHistory={(index) => {
+            const targetTask = taskHistory[index];
+            setTaskHistory((prev) => prev.slice(0, index));
+            const findInTree = (
+              list: (TaskItem & { children?: TaskItem[] })[],
+              id: string,
+            ): (TaskItem & { children?: TaskItem[] }) | null => {
+              for (const node of list) {
+                if (node.taskId === id) return node;
+                if (node.children) {
+                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  if (found) return found;
+                }
+              }
+              return null;
+            };
+            const found = findInTree(rootTasks, targetTask.taskId);
+            if (found) {
+              setSelectedDetailTask(found);
+            }
+          }}
+          onSelectTask={(t) => {
+            if (selectedDetailTask) {
+              setTaskHistory((prev) => [...prev, selectedDetailTask]);
+            }
+            const findInTree = (
+              list: (TaskItem & { children?: TaskItem[] })[],
+              id: string,
+            ): (TaskItem & { children?: TaskItem[] }) | null => {
+              for (const node of list) {
+                if (node.taskId === id) return node;
+                if (node.children) {
+                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  if (found) return found;
+                }
+              }
+              return null;
+            };
+            const found = findInTree(rootTasks, t.taskId);
+            if (found) {
+              setSelectedDetailTask(found);
+            }
+          }}
+        />
+      )}
+
+      <CreateSyllabusTaskModal
+        isOpen={isSubtaskModalOpen}
+        onClose={() => {
+          setIsSubtaskModalOpen(false);
+          setSubtaskParentTask(null);
+        }}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+        }}
+        mode={subtaskModalMode}
+        sprintId={sprintId}
+        rootTaskId={subtaskParentTask?.taskId || null}
+        subjectId={subtaskParentTask?.subjectId}
+        subjectName={subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
+        targetId={
+          subtaskParentTask?.targetId ||
+          subtaskParentTask?.syllabus?.syllabusId ||
+          subtaskParentTask?.syllabusId
+        }
+        accounts={departmentAccounts}
+        currentUserEmail={user?.email || ""}
+        sprintDeadline={sprint?.endDate}
+        initialData={
+          subtaskModalMode === "UPDATE"
+            ? {
+                taskName: `UPDATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                description: "",
+                priority: subtaskParentTask?.priority,
+                dueDate: subtaskParentTask?.deadline,
+                assignTo: subtaskParentTask?.account?.accountId,
+              }
+            : subtaskModalMode === "REVIEW"
+            ? {
+                taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                priority: "MEDIUM",
+                dueDate: subtaskParentTask?.deadline,
+                excludeAccountId: subtaskParentTask?.account?.accountId,
+              }
+            : {
+                taskName: `CREATE SYLLABUS: Syllabus for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                description: `Draft syllabus content for Syllabus for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                priority: "MEDIUM",
+              }
+        }
       />
 
       <ConfirmModal
