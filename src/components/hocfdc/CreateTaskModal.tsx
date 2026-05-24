@@ -16,7 +16,7 @@ import {
   FileText,
   AlertCircle
 } from "lucide-react";
-import { TaskService, TASK_TYPE, CreateTaskPayload } from "@/services/task.service";
+import { TaskService, TASK_TYPE, CreateTaskPayload, TaskItem, UpdateTaskPayload } from "@/services/task.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { AccountService } from "@/services/account.service";
 import { useToast } from "@/components/ui/Toast";
@@ -27,6 +27,7 @@ interface CreateTaskModalProps {
   sprintId: string;
   curriculumId: string;
   departmentId: string;
+  task?: TaskItem | null;
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ 
@@ -34,7 +35,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   onClose, 
   sprintId,
   curriculumId,
-  departmentId
+  departmentId,
+  task
 }) => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -47,7 +49,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [type, setType] = useState<string>(TASK_TYPE.NEW_SUBJECT);
   const [deadline, setDeadline] = useState("");
 
-  const [assigneeId, setAssigneeId] = useState(""); // Internal state for auto-assign but hidden from UI
+  const [assigneeId, setAssigneeId] = useState(""); // Internal state for assignee
 
   // Fetch Accounts (HoPDC) for auto-assignment
   const { data: accountsRes } = useQuery({
@@ -66,21 +68,48 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const hopdcs = (accountsRes || []).filter(acc => acc.roleName === 'HOPDC');
   const subjects = subjectsRes?.data?.content || [];
 
-  // Auto-set assignee internally if there's only one HoPDC
+  // Fetch details of the task being edited to ensure complete payload
+  const { data: taskDetailRes } = useQuery({
+    queryKey: ["task-detail", task?.taskId],
+    queryFn: () => task?.taskId ? TaskService.getTaskById(task.taskId) : Promise.reject("No task ID"),
+    enabled: isOpen && !!task?.taskId,
+  });
+
+  const latestTask = taskDetailRes?.data;
+
+  // Populate form fields in Edit Mode
   useEffect(() => {
-    if (hopdcs.length === 1 && !assigneeId) {
+    if (isOpen) {
+      const activeTask = latestTask || task;
+      if (activeTask) {
+        setTaskName(activeTask.taskName || "");
+        setSubjectId(activeTask.subjectId || activeTask.targetId || "");
+        setDescription(activeTask.description || "");
+        setPriority(activeTask.priority || "MEDIUM");
+        setType(activeTask.type || TASK_TYPE.NEW_SUBJECT);
+        setDeadline(activeTask.deadline ? activeTask.deadline.split("T")[0] : "");
+        setAssigneeId(activeTask.account?.accountId || "");
+      } else {
+        resetForm();
+      }
+    }
+  }, [isOpen, task, latestTask]);
+
+  // Auto-set assignee internally if there's only one HoPDC and we are not in edit mode
+  useEffect(() => {
+    if (!task && hopdcs.length === 1 && !assigneeId) {
       setAssigneeId(hopdcs[0].accountId);
     }
-  }, [hopdcs]);
+  }, [hopdcs, task]);
 
   useEffect(() => {
-     if (subjectId && !taskName) {
+     if (!task && subjectId && !taskName) {
          const sub = subjects.find(s => s.subjectId === subjectId);
          if (sub) {
              setTaskName(`${sub.subjectCode} Deliverable`);
          }
      }
-  }, [subjectId]);
+  }, [subjectId, task]);
 
   const singleMutation = useMutation({
     mutationFn: (payload: CreateTaskPayload) => TaskService.createTask(payload),
@@ -95,6 +124,22 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       }
     },
     onError: (err: any) => showToast(err.message || "Error creating task", "error")
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: { taskId: string; data: UpdateTaskPayload }) => 
+      TaskService.updateTask(payload.taskId, payload.data),
+    onSuccess: (res) => {
+      if (res.status === 1000 || (res as any).taskId) {
+        showToast("Task updated successfully", "success");
+        queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
+        onClose();
+        resetForm();
+      } else {
+        showToast(res.message || "Failed to update task", "error");
+      }
+    },
+    onError: (err: any) => showToast(err.message || "Error updating task", "error")
   });
 
   const bulkMutation = useMutation({
@@ -136,20 +181,46 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     e.preventDefault();
     if (!taskName || !subjectId) return;
 
-    const payload: CreateTaskPayload = {
-      sprintId,
-      assignTo: assigneeId || undefined,
-      taskName,
-      description,
-      action: "CREATE",
-      priority: priority === "null" ? null : priority,
-      type: "SYLLABUS",
-      targetId: subjectId,
-      rootTaskId: null,
-      dueDate: deadline ? new Date(deadline).toISOString() : undefined,
-    };
+    if (task) {
+      const activeTask = latestTask || task;
+      
+      let formattedDueDate = "";
+      if (deadline) {
+        formattedDueDate = deadline.split("T")[0];
+      } else if (activeTask.deadline) {
+        formattedDueDate = activeTask.deadline.split("T")[0];
+      }
 
-    singleMutation.mutate(payload);
+      const payload: UpdateTaskPayload = {
+        assignTo: assigneeId || activeTask.account?.accountId || "",
+        taskName: taskName || activeTask.taskName || "",
+        description: description || activeTask.description || "",
+        action: activeTask.action || "",
+        isAccepted: activeTask.isAccepted !== undefined && activeTask.isAccepted !== null ? activeTask.isAccepted : null,
+        comment: activeTask.comment || "",
+        priority: priority === "null" ? "MEDIUM" : (priority || activeTask.priority || "MEDIUM"),
+        type: type || activeTask.type || "SYLLABUS",
+        targetId: subjectId || activeTask.subjectId || activeTask.targetId || "",
+        rootTaskId: activeTask.rootTaskId || "",
+        dueDate: formattedDueDate,
+      };
+      
+      updateMutation.mutate({ taskId: task.taskId, data: payload });
+    } else {
+      const payload: CreateTaskPayload = {
+        sprintId,
+        assignTo: assigneeId || undefined,
+        taskName,
+        description,
+        action: "CREATE",
+        priority: priority === "null" ? null : priority,
+        type: "SYLLABUS",
+        targetId: subjectId,
+        rootTaskId: null,
+        dueDate: deadline ? new Date(deadline).toISOString() : undefined,
+      };
+      singleMutation.mutate(payload);
+    }
   };
 
   if (!isOpen) return null;
@@ -159,8 +230,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       <div className="w-full max-w-4xl bg-white border border-zinc-100 shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-8 border-b border-zinc-100 bg-zinc-50/50">
           <div className="flex flex-col">
-            <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">Campaign Execution</p>
-            <h2 className="text-2xl font-black tracking-tight text-zinc-900">Task Intelligence</h2>
+            <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">
+              {task ? "Campaign Update" : "Campaign Execution"}
+            </p>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-900">
+              {task ? "Update Task Details" : "Task Intelligence"}
+            </h2>
           </div>
           <button 
             onClick={onClose}
@@ -193,9 +268,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 </label>
                 <select
                   required
+                  disabled={!!task}
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 p-4 font-bold text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl"
+                  className="w-full bg-zinc-50 border border-zinc-200 p-4 font-bold text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Subject...</option>
                   {subjects.map((s) => (
@@ -264,6 +340,24 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   className="w-full bg-zinc-50 border border-zinc-200 p-4 font-bold text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl"
                 />
               </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <Building2 size={14} /> Assignee (HoPDC)
+                </label>
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  className="w-full bg-zinc-50 border border-zinc-200 p-4 font-bold text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl"
+                >
+                  <option value="">Unassigned</option>
+                  {hopdcs.map((hopdc) => (
+                    <option key={hopdc.accountId} value={hopdc.accountId}>
+                      {hopdc.fullName} ({hopdc.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </form>
@@ -277,13 +371,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </button>
           <button 
             onClick={handleSubmit}
-            disabled={singleMutation.isPending || !taskName || !subjectId}
+            disabled={singleMutation.isPending || updateMutation.isPending || !taskName || !subjectId}
             className="flex items-center gap-3 bg-zinc-900 text-white px-10 py-5 font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary transition-all active:scale-95 disabled:opacity-30 rounded-xl"
           >
-            {singleMutation.isPending ? (
-              <>Constructing <Loader2 size={16} className="animate-spin" /></>
+            {singleMutation.isPending || updateMutation.isPending ? (
+              <>{task ? "Updating" : "Constructing"} <Loader2 size={16} className="animate-spin" /></>
             ) : (
-              <>Commit Task <Check size={16} /></>
+              <>{task ? "Update Task" : "Commit Task"} <Check size={16} /></>
             )}
           </button>
         </div>

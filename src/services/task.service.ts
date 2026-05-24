@@ -264,13 +264,17 @@ export interface CreateTaskPayload {
 }
 
 export interface UpdateTaskPayload {
-  accountId: string;
-  syllabusId: string;
+  assignTo: string;
   taskName: string;
   description: string;
+  action: string;
+  isAccepted: boolean | null;
+  comment: string;
   priority: string;
   type: string;
-  deadline: string;
+  targetId: string;
+  rootTaskId: string;
+  dueDate: string;
 }
 
 export interface BatchTaskPayload {
@@ -572,7 +576,7 @@ export const TaskService = {
       status: number;
       message: string;
       data?: TaskApiItem;
-    }>(`/api/tasks/${taskId}`, payload, {
+    }>(`/api/v1/tasks-v2/${taskId}`, payload, {
       credentials: "include",
     });
   },
