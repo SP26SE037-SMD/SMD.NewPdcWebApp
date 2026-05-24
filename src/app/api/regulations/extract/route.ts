@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        const backendUrl = `${BACKEND_URL}:8080/api/regulations/extract`;
+        const backendUrl = `${BACKEND_URL}/api/regulations/extract`;
         console.log(`[BFF] Calling Backend: ${backendUrl}`);
 
         const backendResponse = await fetch(backendUrl, {
