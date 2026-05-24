@@ -215,7 +215,8 @@ export default function CurriculumDetail({ id }: { id: string }) {
     if (tab && TABS.some((t) => t.id === tab) && tab !== activeTab) {
       setActiveTab(tab);
     }
-  }, [searchParams, activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Force refetch on mount to ensure latest status
   React.useEffect(() => {
@@ -350,7 +351,12 @@ export default function CurriculumDetail({ id }: { id: string }) {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    const params = new URLSearchParams(window.location.search);
+                    params.set("tab", tab.id);
+                    router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+                  }}
                   className={`relative flex items-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                     isActive
                       ? "text-primary"
