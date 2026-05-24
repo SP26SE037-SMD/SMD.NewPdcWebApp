@@ -307,7 +307,7 @@ export default function HoPDCDashboardContent() {
                     transition={{ delay: idx * 0.03 }}
                     onClick={() =>
                       router.push(
-                        `/dashboard/hocfdc/subjects/${subject.subjectId}`,
+                        `/dashboard/hopdc/subjects/${subject.subjectId}`,
                       )
                     }
                     className="grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 hover:bg-zinc-50/60 transition-colors cursor-pointer group items-center"

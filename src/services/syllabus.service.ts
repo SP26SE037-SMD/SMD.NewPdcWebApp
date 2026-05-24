@@ -18,6 +18,14 @@ export interface CreateSyllabusPayload {
   minBloomLevel: number;
 }
 
+export interface CompareResult {
+  removed_concepts: string[];
+  added_concepts: string[];
+  modified_concepts: string[];
+  risk_assessment: string;
+  risk_reason: string;
+}
+
 export interface SubjectSyllabus {
   syllabusId: string;
   syllabusName: string;
@@ -41,6 +49,10 @@ export interface SubjectSyllabusOption {
   subjectId?: string;
   subjectCode?: string;
   subjectName?: string;
+  minAvgGrade?: number;
+  credit?: number;
+  createdAt?: string;
+  approvedDate?: string;
 }
 
 export interface PendingReviewSyllabus extends SubjectSyllabusOption {
@@ -260,6 +272,27 @@ export const SyllabusService = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData?.message || "Failed to update syllabus status");
+    }
+
+    return response.json();
+  },
+
+  async compareSyllabus(
+    oldSyllabusId: string,
+    newSyllabusId: string,
+  ): Promise<ApiResponse<CompareResult>> {
+    const response = await fetch(
+      `/api/syllabus/compare?oldSyllabusId=${oldSyllabusId}&newSyllabusId=${newSyllabusId}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { accept: "*/*" },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to compare syllabuses");
     }
 
     return response.json();
