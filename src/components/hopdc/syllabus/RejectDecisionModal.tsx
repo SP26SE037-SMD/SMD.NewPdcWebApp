@@ -113,7 +113,7 @@ export function RejectDecisionModal({
   };
 
   const wrapperClass = isFloating
-    ? "absolute top-0 left-0 right-0 z-[60] rounded-3xl border border-zinc-200 bg-white shadow-2xl overflow-hidden flex flex-col w-full max-h-[calc(100vh-10rem)] animate-in fade-in slide-in-from-top-2 duration-300"
+    ? "absolute top-0 left-0 right-0 z-[110] rounded-3xl border border-zinc-200 bg-white shadow-2xl overflow-hidden flex flex-col w-full max-h-[calc(100vh-10rem)] animate-in fade-in slide-in-from-top-2 duration-300"
     : "w-full max-w-xl rounded-[20px] border border-zinc-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300";
 
   const renderContent = () => (
@@ -318,7 +318,7 @@ export function RejectDecisionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
       <div className={wrapperClass}>
         {renderContent()}
       </div>

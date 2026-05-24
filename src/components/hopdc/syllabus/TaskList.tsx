@@ -30,7 +30,6 @@ import {
   ChevronDown,
   ChevronRight,
   Flag as FlagIcon,
-  UserRound,
   X,
   Loader2,
   Plus,
@@ -116,11 +115,9 @@ export function TaskList({ sprintId }: TaskListProps) {
   const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] = useState("");
 
   // ─── Filter States ─────────────────────────────────────────────────────────
-  const [showClosed, setShowClosed] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<string[]>([]);
-  const [filterAssigneeId, setFilterAssigneeId] = useState<string | null>(null);
-  const [showAssigneePopover, setShowAssigneePopover] = useState(false);
 
   // ─── Collapsed group state ─────────────────────────────────────────────────
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -221,6 +218,18 @@ export function TaskList({ sprintId }: TaskListProps) {
   const sprint = sprintRes?.data;
   const tasks = useMemo<TaskItem[]>(() => tasksRes?.content || [], [tasksRes]);
 
+  const getParentTrail = (t: TaskItem): TaskItem[] => {
+    const trail: TaskItem[] = [];
+    let current = t;
+    while (current.rootTaskId) {
+      const parent = tasks.find((x) => x.taskId === current.rootTaskId);
+      if (!parent) break;
+      trail.unshift(parent);
+      current = parent;
+    }
+    return trail;
+  };
+
   // ─── Build Tree (group tasks by rootTaskId) ────────────────────────────────
   const rootTasks = useMemo(() => {
     const taskMap: Record<string, TaskItem & { children?: TaskItem[] }> = {};
@@ -245,7 +254,20 @@ export function TaskList({ sprintId }: TaskListProps) {
   // ─── Sync selected task with refreshed data ────────────────────────────────
   useEffect(() => {
     if (selectedTask) {
-      const updated = rootTasks.find((t) => t.taskId === selectedTask.taskId);
+      const findInTree = (
+        list: (TaskItem & { children?: TaskItem[] })[],
+        id: string,
+      ): (TaskItem & { children?: TaskItem[] }) | null => {
+        for (const node of list) {
+          if (node.taskId === id) return node;
+          if (node.children) {
+            const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const updated = findInTree(rootTasks, selectedTask.taskId);
       if (updated) setSelectedTask(updated);
     }
   }, [rootTasks]);
@@ -258,13 +280,8 @@ export function TaskList({ sprintId }: TaskListProps) {
         filterPriorities.includes((t.priority || "NORMAL").toUpperCase()),
       );
     }
-    if (filterAssigneeId) {
-      result = result.filter(
-        (t) => t.account?.accountId === filterAssigneeId,
-      );
-    }
     return result;
-  }, [rootTasks, filterPriorities, filterAssigneeId]);
+  }, [rootTasks, filterPriorities]);
 
   // ─── Group by status ───────────────────────────────────────────────────────
   const tasksByStatus = useMemo(() => {
@@ -491,93 +508,19 @@ export function TaskList({ sprintId }: TaskListProps) {
             </div>
           );
         })}
-        {filterAssigneeId && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-zinc-200 rounded-full text-[10px] font-bold text-zinc-600 shadow-sm">
-            <UserRound size={11} />
-            {departmentAccounts.find((a: any) => a.accountId === filterAssigneeId)?.fullName || "Assignee"}
-            <button
-              onClick={() => setFilterAssigneeId(null)}
-              className="text-zinc-400 hover:text-zinc-600"
-            >
-              <X size={11} />
-            </button>
-          </div>
-        )}
 
-        {/* Assignee Popover Button */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowAssigneePopover(!showAssigneePopover);
-              setShowFilterPopover(false);
-            }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-colors shadow-sm ${
-              filterAssigneeId
-                ? "bg-emerald-600 text-white border-emerald-600"
-                : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300"
-            }`}
-          >
-            <UserRound size={13} />
-            Assignee
-          </button>
-          <AnimatePresence>
-            {showAssigneePopover && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-30 overflow-hidden"
-              >
-                <div className="p-2">
-                  <p className="px-2 py-1 text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                    Assignee
-                  </p>
-                  <div className="mt-1 space-y-0.5 max-h-48 overflow-y-auto">
-                    {departmentAccounts.map((acc: any) => (
-                      <button
-                        key={acc.accountId}
-                        onClick={() => {
-                          setFilterAssigneeId(
-                            filterAssigneeId === acc.accountId ? null : acc.accountId,
-                          );
-                          setShowAssigneePopover(false);
-                        }}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs font-medium transition-colors ${
-                          filterAssigneeId === acc.accountId
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "hover:bg-zinc-50 text-zinc-700"
-                        }`}
-                      >
-                        <div className="h-6 w-6 rounded-full bg-zinc-100 flex items-center justify-center text-[9px] font-bold text-zinc-500 border border-zinc-200 shrink-0">
-                          {acc.fullName
-                            ?.split(" ")
-                            .map((n: string) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </div>
-                        <span className="truncate">{acc.fullName || acc.email}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* Closed Toggle */}
+        {/* Done Toggle */}
         <button
-          onClick={() => setShowClosed(!showClosed)}
+          onClick={() => setShowDone(!showDone)}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-colors shadow-sm ${
-            showClosed
+            showDone
               ? "bg-emerald-600 text-white border-emerald-600"
               : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300"
           }`}
         >
           <CheckCircle2 size={13} />
-          Closed
+          Done
         </button>
 
         {/* Filter Popover Button */}
@@ -585,7 +528,6 @@ export function TaskList({ sprintId }: TaskListProps) {
           <button
             onClick={() => {
               setShowFilterPopover(!showFilterPopover);
-              setShowAssigneePopover(false);
             }}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-colors shadow-sm ${
               filterPriorities.length > 0
@@ -664,13 +606,13 @@ export function TaskList({ sprintId }: TaskListProps) {
       </div>
 
       {/* ─── Task Table ───────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
         {/* Table Column Headers */}
-        <div className="grid grid-cols-12 gap-4 px-6 py-2 border-b border-zinc-100 bg-zinc-50 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-          <div className="col-span-5">Name</div>
+        <div className="grid grid-cols-12 gap-4 px-6 py-2 border-b border-zinc-100 bg-zinc-50 rounded-t-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400">
+          <div className="col-span-6">Name</div>
           <div className="col-span-1">Assignee</div>
           <div className="col-span-1">Due Date</div>
-          <div className="col-span-2">Priority</div>
+          <div className="col-span-1">Priority</div>
           <div className="col-span-1">Action</div>
           <div className="col-span-1">Type</div>
           <div className="col-span-1" />
@@ -678,7 +620,7 @@ export function TaskList({ sprintId }: TaskListProps) {
 
         {/* Status Groups */}
         {STATUS_GROUPS.filter(({ status }) => {
-          if (!showClosed && status === TASK_STATUS.DONE) return false;
+          if (!showDone && status === TASK_STATUS.DONE) return false;
           return true;
         }).map(({ status, label, icon: Icon, headerClass, badgeClass }) => {
           const groupTasks = tasksByStatus[status] || [];
@@ -711,7 +653,7 @@ export function TaskList({ sprintId }: TaskListProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
+                    className="overflow-visible"
                   >
                     {groupTasks.length === 0 ? (
                       <div className="px-6 py-4 text-xs font-medium text-zinc-400 text-center border-b border-zinc-50">
@@ -727,9 +669,12 @@ export function TaskList({ sprintId }: TaskListProps) {
                           onOpenTaskModal={onOpenTaskModal}
                           onOpenDetailModal={(t) => {
                             setSelectedTask(t);
-                            setTaskHistory([]);
+                            setTaskHistory(getParentTrail(t));
                             setIsDetailModalOpen(true);
                           }}
+                          onUpdateStatus={(taskId, status) =>
+                            updateStatusMutation.mutate({ taskId, status })
+                          }
                         />
                       ))
                     )}
