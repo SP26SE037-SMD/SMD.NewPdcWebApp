@@ -289,6 +289,11 @@ export default function DashboardLayout({
               label: "Curriculum Deliverables",
             },
             {
+              href: "/dashboard/hopdc/subjects",
+              icon: BookOpen,
+              label: "Subjects",
+            },
+            {
               href: "/dashboard/hopdc/requests",
               icon: ClipboardList,
               label: "Requests",
