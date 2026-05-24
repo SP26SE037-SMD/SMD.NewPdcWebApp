@@ -209,7 +209,7 @@ export default function AcademicDocumentsContent() {
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { aiProcessingMessage, aiProcessingStatus } = useSelector(
+  const { aiProcessingMessage, aiProcessingStatus, aiProcessingData } = useSelector(
     (state: RootState) => state.notification,
   );
 
@@ -227,6 +227,30 @@ export default function AcademicDocumentsContent() {
     }
   }, [selectedMajor]);
 
+  // Helper to compile validation report errors
+  const getValidationErrors = (report: any): string[] => {
+    if (!report) return [];
+    const ruleKeys = [
+      "po_plo_rule",
+      "total_credits_rule",
+      "excluded_credits_rule",
+      "general_education_credits",
+      "professional_education_credits",
+      "assessment_rule",
+      "course_catalog_validation",
+      "course_detail_mapping",
+      "source_validation",
+    ];
+    const errors: string[] = [];
+    ruleKeys.forEach((key) => {
+      const val = report[key];
+      if (val && val !== "Valid Data" && val !== "Bypassed") {
+        errors.push(val);
+      }
+    });
+    return errors;
+  };
+
   // WebSocket Watcher for Validation
   useEffect(() => {
     if (validationState === "validating") {
@@ -235,7 +259,22 @@ export default function AcademicDocumentsContent() {
         setValidationError(null);
         showToast("PDF Content Validated Successfully!", "success");
         dispatch(clearAiProcessingMessage());
-      } else if (aiProcessingStatus === "PDF_PROCESS_FAIL") {
+      } else if (aiProcessingStatus === "VALIDATE_SUCCESS") {
+        const errors = getValidationErrors(aiProcessingData);
+        if (errors.length > 0) {
+          setValidationState("error");
+          setValidationError(errors.join("\n\n"));
+          showToast("Validation completed with inconsistencies", "error");
+        } else {
+          setValidationState("success");
+          setValidationError(null);
+          showToast("PDF Content Validated Successfully!", "success");
+        }
+        dispatch(clearAiProcessingMessage());
+      } else if (
+        aiProcessingStatus === "PDF_PROCESS_FAIL" ||
+        aiProcessingStatus === "VALIDATE_FAIL"
+      ) {
         setValidationState("error");
         setValidationError(
           aiProcessingMessage ||
@@ -249,6 +288,7 @@ export default function AcademicDocumentsContent() {
     aiProcessingStatus,
     validationState,
     aiProcessingMessage,
+    aiProcessingData,
     dispatch,
     showToast,
   ]);
@@ -1079,7 +1119,7 @@ export default function AcademicDocumentsContent() {
                       <h3 className="text-xl font-bold text-zinc-900 mb-2">
                         Document Non-Compliant
                       </h3>
-                      <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-medium border border-red-100 mb-8 max-w-sm">
+                      <div className="bg-red-50 text-red-700 p-5 rounded-2xl text-xs font-semibold border border-red-100 mb-8 w-full max-w-md max-h-[350px] overflow-y-auto whitespace-pre-wrap text-left shadow-inner">
                         {validationError}
                       </div>
                       <button

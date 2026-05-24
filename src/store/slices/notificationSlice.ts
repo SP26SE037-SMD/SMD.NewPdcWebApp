@@ -21,6 +21,8 @@ interface NotificationState {
   aiProcessingMessage: string | null;
   /** Realtime status code from AI Processing */
   aiProcessingStatus: string | null;
+  /** Realtime status data from AI Processing (can be validation report object) */
+  aiProcessingData: any | null;
   /** Incremented whenever a task-related notification arrives to trigger UI refetch */
   refreshTaskTrigger: number;
 }
@@ -37,6 +39,7 @@ const initialState: NotificationState = {
   latestRealtimeNotification: null,
   aiProcessingMessage: null,
   aiProcessingStatus: null,
+  aiProcessingData: null,
   refreshTaskTrigger: 0,
 };
 
@@ -124,8 +127,14 @@ const notificationSlice = createSlice({
             state.aiProcessingStatus = message.replace("Status updated: ", "").trim();
           }
           
-          // Store the realtime AI processing status
-          state.aiProcessingMessage = data || (data as any) || "Processing...";
+          // Store the realtime AI processing status safely
+          if (data && typeof data === 'object') {
+            state.aiProcessingData = data;
+            state.aiProcessingMessage = message || "Processing...";
+          } else {
+            state.aiProcessingData = null;
+            state.aiProcessingMessage = data || message || "Processing...";
+          }
           console.log(`[STATUS_UPDATE] Status: ${state.aiProcessingStatus} | Msg: ${state.aiProcessingMessage}`);
           break;
         }
@@ -197,6 +206,7 @@ const notificationSlice = createSlice({
     clearAiProcessingMessage(state) {
       state.aiProcessingMessage = null;
       state.aiProcessingStatus = null;
+      state.aiProcessingData = null;
     },
   },
 
