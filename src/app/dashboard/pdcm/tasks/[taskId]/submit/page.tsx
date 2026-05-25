@@ -227,8 +227,8 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 // 3. Create a Review Request
                                 const isUpdate = taskData?.action === 'UPDATE';
                                 const requestPayload = {
-                                    title: isUpdate ? "Yêu cầu review lại syllabus đã sửa" : "Yêu cầu review syllabus",
-                                    content: isUpdate ? "Syllabus đã được chỉnh sửa theo yêu cầu và gửi lại để review." : "Syllabus đã được hoàn thiện và gửi để review.",
+                                    title: isUpdate ? "Request to review revised syllabus" : "Request to review syllabus",
+                                    content: isUpdate ? "The syllabus has been revised as requested and resubmitted for review." : "The syllabus has been completed and submitted for review.",
                                     type: "REVIEW",
                                     targetId: syllabusId,
                                     receivedById: taskData?.createdBy?.accountId || null

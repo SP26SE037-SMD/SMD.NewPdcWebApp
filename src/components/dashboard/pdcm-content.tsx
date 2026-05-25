@@ -192,20 +192,7 @@ const DevelopCard = ({
             </span>
             Pending Review
           </span>
-        ) : status === "DONE" ? (
-          <button
-            onClick={() => {
-              router.push(`/dashboard/pdcm/tasks/${task.taskId}/information`);
-            }}
-            className="btn-pdcm-ghost px-5 py-2 rounded-xl text-sm w-full md:w-auto flex items-center justify-center gap-2 transition-all hover:bg-zinc-100"
-            style={{ border: `1px solid ${C.outline}30` }}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              visibility
-            </span>
-            View
-          </button>
-        ) : (
+        ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : (
           <button
             onClick={() => {
               console.log("=== TASK PAYLOAD ON DO TASK ===", task);
@@ -346,7 +333,7 @@ const ReviewCard = ({
               </>
             )}
           </button>
-        ) : isCompleted ? (
+        ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : isCompleted ? (
           <button
             onClick={() =>
               router.push(
@@ -561,8 +548,15 @@ export default function PDCMDashboardContent({
       id: "tasks",
       label: "My Tasks",
       icon: "task",
-      isActive: true,
+      isActive: navTab === "develop" || navTab === "peer-review",
       onClick: () => router.push("/dashboard/pdcm/develop"),
+    },
+    {
+      id: "requests",
+      label: "My Requests",
+      icon: "send",
+      isActive: false,
+      onClick: () => router.push("/dashboard/pdcm/requests"),
     },
   ];
 

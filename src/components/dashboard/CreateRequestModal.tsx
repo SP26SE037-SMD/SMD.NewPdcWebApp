@@ -106,9 +106,9 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
   }, [isOpen, type, user?.accountId]);
 
   const handleSubmit = async () => {
-    if (!title.trim()) { setError("Vui lòng nhập tiêu đề."); return; }
-    if (!content.trim()) { setError("Vui lòng nhập nội dung."); return; }
-    if (!targetId) { setError("Vui lòng chọn mục tiêu."); return; }
+    if (!title.trim()) { setError("Please enter a title."); return; }
+    if (!content.trim()) { setError("Please enter the content."); return; }
+    if (!targetId) { setError("Please select a target."); return; }
 
     setIsSubmitting(true);
     setError(null);
@@ -123,7 +123,7 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setError(err?.message || "Tạo request thất bại. Vui lòng thử lại.");
+      setError(err?.message || "Failed to create request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -155,10 +155,10 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black" style={{ color: C.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                  Tạo Request mới
+                  Create New Request
                 </h2>
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                  Gửi yêu cầu đến người phụ trách
+                  Send a request to the assignee
                 </p>
               </div>
               <button
@@ -176,7 +176,7 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
             {/* Type Dropdown */}
             <div>
               <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
-                Loại Request
+                Request Type
               </label>
               <div className="relative">
                 <select
@@ -195,13 +195,13 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
             {/* Title */}
             <div>
               <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
-                Tiêu đề
+                Title
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="Nhập tiêu đề request..."
+                placeholder="Enter request title..."
                 className="w-full px-4 py-3 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#41683f26] focus:border-[#41683f80] transition-all"
                 style={{ color: C.onSurface }}
               />
@@ -210,12 +210,12 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
             {/* Content */}
             <div>
               <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
-                Nội dung
+                Content
               </label>
               <textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
-                placeholder="Mô tả chi tiết yêu cầu của bạn..."
+                placeholder="Describe your request in detail..."
                 rows={3}
                 className="w-full px-4 py-3 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#41683f26] focus:border-[#41683f80] transition-all resize-none"
                 style={{ color: C.onSurface }}
@@ -225,12 +225,12 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
             {/* Target selection */}
             <div>
               <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
-                {type === "TASK" ? "Chọn Task" : "Chọn Syllabus"}
+                {type === "TASK" ? "Select Task" : "Select Syllabus"}
               </label>
               <div className="relative">
                 {(type === "TASK" ? isLoadingTasks : isLoadingSyllabuses) ? (
                   <div className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-400">
-                    <Loader2 size={16} className="animate-spin" /> Đang tải...
+                    <Loader2 size={16} className="animate-spin" /> Loading...
                   </div>
                 ) : (
                   <>
@@ -240,7 +240,7 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
                       className="w-full px-4 py-3 pr-10 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#41683f26] focus:border-[#41683f80] transition-all appearance-none cursor-pointer"
                       style={{ color: targetId ? C.onSurface : C.onSurfaceVariant }}
                     >
-                      <option value="">— Chọn {type === "TASK" ? "task" : "syllabus"} —</option>
+                      <option value="">— Select {type === "TASK" ? "task" : "syllabus"} —</option>
                       {type === "TASK"
                         ? tasks.map(t => (
                             <option key={t.taskId} value={t.taskId}>
@@ -276,7 +276,7 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
               disabled={isSubmitting}
               className="flex-1 py-3.5 rounded-2xl font-bold text-sm bg-zinc-50 text-zinc-500 hover:bg-zinc-100 transition-all"
             >
-              Huỷ
+              Cancel
             </button>
             <button
               onClick={handleSubmit}
@@ -285,9 +285,9 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
               style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}30` }}
             >
               {isSubmitting ? (
-                <><Loader2 size={18} className="animate-spin" /> Đang gửi...</>
+                <><Loader2 size={18} className="animate-spin" /> Submitting...</>
               ) : (
-                <><CheckCircle2 size={18} /> Gửi Request</>
+                <><CheckCircle2 size={18} /> Submit Request</>
               )}
             </button>
           </div>

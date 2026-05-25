@@ -8,8 +8,9 @@ import { RootState } from "@/store";
 import { RequestService, RequestItem } from "@/services/request.service";
 import { PDCMBaseLayout } from "@/components/layout/PDCMBaseLayout";
 import CreateRequestModal from "@/components/dashboard/CreateRequestModal";
+import RequestDetailModal from "@/components/dashboard/RequestDetailModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Loader2, RefreshCw, ClipboardList, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { Plus, Loader2, RefreshCw, ClipboardList, CheckCircle2, XCircle, Clock, AlertCircle, Eye } from "lucide-react";
 
 const C = {
   primary: "#41683f",
@@ -23,11 +24,10 @@ const C = {
   outlineVariant: "#adb4a8",
 };
 
-type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED" | "IN_PROGRESS";
+type StatusFilter = "all" | "PENDING" | "APPROVED" | "REJECTED";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   PENDING:     { label: "Pending",     color: "#b45309", bg: "#fef3c7", icon: Clock },
-  IN_PROGRESS: { label: "In Progress", color: "#0369a1", bg: "#e0f2fe", icon: AlertCircle },
   APPROVED:    { label: "Approved",    color: "#15803d", bg: "#dcfce7", icon: CheckCircle2 },
   REJECTED:    { label: "Rejected",    color: "#b91c1c", bg: "#ffe4e6", icon: XCircle },
 };
@@ -54,6 +54,7 @@ export default function RequestsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
 
   const {
     data: requestsData,
@@ -96,7 +97,6 @@ export default function RequestsPage() {
   const FILTER_TABS = [
     { id: "all" as StatusFilter, label: "All", icon: "apps" },
     { id: "PENDING" as StatusFilter, label: "Pending", icon: "schedule" },
-    { id: "IN_PROGRESS" as StatusFilter, label: "In Progress", icon: "autorenew" },
     { id: "APPROVED" as StatusFilter, label: "Approved", icon: "task_alt" },
     { id: "REJECTED" as StatusFilter, label: "Rejected", icon: "cancel" },
   ];
@@ -120,14 +120,14 @@ export default function RequestsPage() {
                 My Requests
               </h2>
               <p className="text-sm font-medium" style={{ color: C.onSurfaceVariant }}>
-                Danh sách các yêu cầu bạn đã gửi
+                List of requests you have sent
               </p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => refetch()}
                 className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-400 hover:text-zinc-600 transition-all"
-                title="Làm mới"
+                title="Refresh"
               >
                 <RefreshCw size={16} />
               </button>
@@ -137,7 +137,7 @@ export default function RequestsPage() {
                 style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}40` }}
               >
                 <Plus size={18} />
-                Tạo Request
+                Create Request
               </button>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function RequestsPage() {
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center text-zinc-400">
             <Loader2 className="animate-spin mb-4" size={40} />
-            <p className="text-sm font-bold uppercase tracking-widest">Đang tải...</p>
+            <p className="text-sm font-bold uppercase tracking-widest">Loading...</p>
           </div>
         ) : requests.length > 0 ? (
           <div className="bg-white rounded-[24px] border border-zinc-100 shadow-sm overflow-hidden mb-8">
@@ -175,12 +175,12 @@ export default function RequestsPage() {
                 <thead>
                   <tr className="border-b border-zinc-100" style={{ background: `${C.primary}04` }}>
                     <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-400 w-10 text-center">#</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Tiêu đề</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Loại</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Trạng thái</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Người nhận</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Ngày tạo</th>
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Nhận xét</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Title</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Type</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Status</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Receiver</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500">Created Date</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-zinc-500 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -228,15 +228,19 @@ export default function RequestsPage() {
                         </td>
                         <td className="px-6 py-4 text-xs font-semibold text-zinc-500 whitespace-nowrap">
                           {req.createdAt
-                            ? new Date(req.createdAt).toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" })
+                            ? new Date(req.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                             : "—"}
                         </td>
-                        <td className="px-6 py-4 text-xs text-zinc-500 max-w-[180px]">
-                          {req.comment ? (
-                            <span className="line-clamp-2">{req.comment}</span>
-                          ) : (
-                            <span className="text-zinc-300">—</span>
-                          )}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center">
+                            <button
+                              onClick={() => setSelectedRequest(req)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-50 text-zinc-400 hover:bg-primary-50 hover:text-primary-600 transition-all border border-zinc-200 hover:border-primary-200"
+                              title="View Details"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
                         </td>
                       </motion.tr>
                     ))}
@@ -253,15 +257,15 @@ export default function RequestsPage() {
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: C.surfaceContainerHigh }}>
               <span className="material-symbols-outlined text-3xl" style={{ color: C.onSurfaceVariant }}>send</span>
             </div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: C.onSurface }}>Chưa có request nào</h3>
-            <p className="text-sm mb-6" style={{ color: C.onSurfaceVariant }}>Tạo request đầu tiên của bạn!</p>
+            <h3 className="text-lg font-bold mb-1" style={{ color: C.onSurface }}>No requests found</h3>
+            <p className="text-sm mb-6" style={{ color: C.onSurfaceVariant }}>Create your first request!</p>
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
               style={{ background: C.primary }}
             >
               <Plus size={18} />
-              Tạo Request
+              Create Request
             </button>
           </div>
         )}
@@ -301,13 +305,18 @@ export default function RequestsPage() {
         )}
       </div>
 
-      {/* Create Request Modal */}
       <CreateRequestModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["pdcm-requests"] });
         }}
+      />
+
+      <RequestDetailModal
+        isOpen={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        request={selectedRequest}
       />
     </PDCMBaseLayout>
   );
