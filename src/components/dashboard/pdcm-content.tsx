@@ -117,9 +117,12 @@ const DevelopCard = ({
             ? "list_alt"
             : status === "IN_PROGRESS"
               ? "edit_document"
-              : status === "REVISION_REQUESTED"
-                  ? "history_edu"
-                  : "task_alt"}
+              : syllabusStatus === "PENDING_REVIEW"
+                ? "hourglass_top"
+                : status === "OVERDUE"
+                  ? "gpp_maybe"
+                  : // DONE
+                    "task_alt"}
         </span>
       </div>
 
@@ -147,11 +150,9 @@ const DevelopCard = ({
                 ? "TO DO"
                 : status === "IN_PROGRESS"
                   ? "IN PROGRESS"
-                  : status === "REVISION_REQUESTED"
-                    ? "REVISION REQ"
-                    : status === "DONE"
-                      ? "DONE"
-                      : status}
+                  : status === "OVERDUE"
+                    ? "OVERDUE"
+                    : "DONE"}
           </span>
           {status !== "DONE" && status !== "COMPLETED" && <DaysLeftBadge daysLeft={daysLeft} />}
         </div>
@@ -181,7 +182,7 @@ const DevelopCard = ({
             onClick={() => {
               console.log("=== TASK PAYLOAD ON DO TASK ===", task);
               const basePath =
-                status === "REVISION_REQUESTED" ? "revisions" : "tasks";
+                task.action === "UPDATE" ? "revisions" : "tasks";
               router.push(
                 `/dashboard/pdcm/${basePath}/${task.taskId}/information`,
               );
@@ -429,7 +430,7 @@ export default function PDCMDashboardContent({
     todo: "TO_DO",
     inprogress: "IN_PROGRESS",
     completed: "DONE",
-    overdue: undefined,
+    overdue: "OVERDUE",
     revision_requested: undefined,
   };
 
@@ -463,7 +464,7 @@ export default function PDCMDashboardContent({
         const res = await TaskService.getTasksV2({
           assignTo: user?.accountId,
           action:
-            statusTab === "all"
+            statusTab === "all" || statusTab === "overdue"
               ? ["CREATE", "UPDATE"]
               : statusTab === "revision_requested"
                 ? "UPDATE"
@@ -602,6 +603,11 @@ export default function PDCMDashboardContent({
             { id: "completed", label: "Completed", icon: "task_alt" },
             ...(navTab === "develop"
               ? [
+                  {
+                    id: "overdue",
+                    label: "Overdue",
+                    icon: "gpp_maybe",
+                  },
                   {
                     id: "revision_requested",
                     label: "Revisions",

@@ -101,7 +101,7 @@ const getStatusSelectClass = (status: string) => {
       return "bg-blue-600 text-white hover:bg-blue-700";
     case "TO_DO":
       return "bg-zinc-500 text-white hover:bg-zinc-600";
-    case "REVISION_REQUESTED":
+    case "OVERDUE":
       return "bg-rose-600 text-white hover:bg-rose-700";
     default:
       return "bg-zinc-500 text-white hover:bg-zinc-600";
@@ -250,7 +250,7 @@ export function TaskDetailModal({
       }
     }
 
-    const isReadOnly = task.status === TASK_STATUS.DONE;
+    const isReadOnly = task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE;
     router.push(
       `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
     );
@@ -270,7 +270,7 @@ export function TaskDetailModal({
       }
     }
 
-    const isReadOnly = task.status === TASK_STATUS.DONE;
+    const isReadOnly = task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE;
     const targetSyllabusId =
       task.syllabus?.syllabusId || task.targetId || task.syllabusId || "null";
     router.push(
@@ -316,6 +316,9 @@ export function TaskDetailModal({
 
   // Workflow action restrictions
   const canAddSubtask = useMemo(() => {
+    if (task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE) {
+      return false; // Cannot add subtask if task is already Done or Overdue
+    }
     if (currentUser?.role === "HOCFDC") {
       return false; // HoCFDC cannot add task
     }
@@ -326,11 +329,11 @@ export function TaskDetailModal({
     ) {
       return true; // Can create syllabus task
     }
-    if (task.type === "SYLLABUS" && task.action === "CREATE") {
+    if (task.type === "SYLLABUS" && (task.action === "CREATE" || task.action === "UPDATE")) {
       return true; // Can create review task
     }
     return false; // Type SYLLABUS, action REVIEW cannot add task
-  }, [task.type, task.action, currentUser?.role]);
+  }, [task.type, task.action, task.status, currentUser?.role]);
 
   const handleAddSubtask = () => {
     if (!canAddSubtask) return;
@@ -451,7 +454,7 @@ export function TaskDetailModal({
                     onChange={(e) =>
                       onUpdateStatus(task.taskId, e.target.value as TaskStatus)
                     }
-                    disabled={isUpdatingStatus}
+                    disabled={isUpdatingStatus || task.status === TASK_STATUS.OVERDUE}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none transition-colors cursor-pointer disabled:opacity-50 ${getStatusSelectClass(task.status)}`}
                   >
                     <option
@@ -471,6 +474,12 @@ export function TaskDetailModal({
                       className="bg-white text-zinc-800 font-semibold"
                     >
                       DONE
+                    </option>
+                    <option
+                      value={TASK_STATUS.OVERDUE}
+                      className="bg-white text-zinc-800 font-semibold"
+                    >
+                      OVERDUE
                     </option>
                   </select>
                 )}
@@ -581,133 +590,135 @@ export function TaskDetailModal({
           </div>
 
           {/* Subtasks Section */}
-          <div className="space-y-4 pt-4 border-t border-zinc-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-zinc-900 uppercase tracking-wide">
-                  Subtasks
-                </h3>
-                {children.length > 0 && (
-                  <span className="text-xs font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
-                    {doneChildrenCount}/{children.length} Done
-                  </span>
+          {!(task.type === "SYLLABUS" && task.action === "REVIEW") && (
+            <div className="space-y-4 pt-4 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-zinc-900 uppercase tracking-wide">
+                    Subtasks
+                  </h3>
+                  {children.length > 0 && (
+                    <span className="text-xs font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                      {doneChildrenCount}/{children.length} Done
+                    </span>
+                  )}
+                </div>
+
+                {canAddSubtask && (
+                  <button
+                    onClick={handleAddSubtask}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-lg transition-colors shadow-sm"
+                  >
+                    <Plus size={12} />
+                    Add Task
+                  </button>
                 )}
               </div>
 
-              {canAddSubtask && (
-                <button
-                  onClick={handleAddSubtask}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-lg transition-colors shadow-sm"
-                >
-                  <Plus size={12} />
-                  Add Task
-                </button>
+              {children.length > 0 ? (
+                <div className="space-y-3">
+                  {/* Progress Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-zinc-500">
+                      <span>Progress</span>
+                      <span>{progressPercent}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subtask Table/List */}
+                  <div className="border border-zinc-100 rounded-xl overflow-hidden shadow-sm bg-white">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-zinc-50 border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider">
+                          <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Assignee</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Priority</th>
+                          <th className="px-4 py-3">Due Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-50">
+                        {children.map((subtask) => {
+                          const subPriority = getPriorityConfig(subtask.priority);
+                          const resolvedSubEmail = subtask.account?.email || "";
+                          const conf = getTaskStatusConfig(subtask.status);
+                          return (
+                            <tr
+                              key={subtask.taskId}
+                              onClick={() => onSelectTask(subtask)}
+                              className="hover:bg-zinc-50/80 cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3 font-semibold text-zinc-700 hover:text-primary max-w-[200px] truncate">
+                                {subtask.taskName}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="h-6 w-6 rounded-full bg-zinc-100 flex items-center justify-center text-[9px] font-bold text-zinc-500 border border-zinc-200">
+                                    {subtask.account?.fullName
+                                      ?.split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .slice(0, 2)
+                                      .toUpperCase()}
+                                  </div>
+                                  <span
+                                    className="font-medium text-zinc-600 line-clamp-1 max-w-[120px]"
+                                    title={resolvedSubEmail}
+                                  >
+                                    {subtask.account?.fullName || "Unassigned"}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${conf.bg} ${conf.text} border border-current/10`}
+                                >
+                                  <conf.icon size={10} />
+                                  {(subtask.status || "UNKNOWN").replace(
+                                    /_/g,
+                                    " ",
+                                  )}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1.5">
+                                  <FlagIcon
+                                    size={12}
+                                    className={subPriority.color}
+                                    fill={subPriority.fill}
+                                  />
+                                  <span className="font-medium text-zinc-500">
+                                    {subPriority.label}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-zinc-500 font-medium">
+                                {subtask.deadline
+                                  ? new Date(subtask.deadline).toLocaleDateString(
+                                      "vi-VN",
+                                    )
+                                  : "N/A"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-zinc-400 font-bold border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50/50">
+                  No subtasks added yet.
+                </div>
               )}
             </div>
-
-            {children.length > 0 ? (
-              <div className="space-y-3">
-                {/* Progress Bar */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-500">
-                    <span>Progress</span>
-                    <span>{progressPercent}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Subtask Table/List */}
-                <div className="border border-zinc-100 rounded-xl overflow-hidden shadow-sm bg-white">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-zinc-50 border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider">
-                        <th className="px-4 py-3">Name</th>
-                        <th className="px-4 py-3">Assignee</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Priority</th>
-                        <th className="px-4 py-3">Due Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-50">
-                      {children.map((subtask) => {
-                        const subPriority = getPriorityConfig(subtask.priority);
-                        const resolvedSubEmail = subtask.account?.email || "";
-                        const conf = getTaskStatusConfig(subtask.status);
-                        return (
-                          <tr
-                            key={subtask.taskId}
-                            onClick={() => onSelectTask(subtask)}
-                            className="hover:bg-zinc-50/80 cursor-pointer transition-colors"
-                          >
-                            <td className="px-4 py-3 font-semibold text-zinc-700 hover:text-primary max-w-[200px] truncate">
-                              {subtask.taskName}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-1.5">
-                                <div className="h-6 w-6 rounded-full bg-zinc-100 flex items-center justify-center text-[9px] font-bold text-zinc-500 border border-zinc-200">
-                                  {subtask.account?.fullName
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .slice(0, 2)
-                                    .toUpperCase()}
-                                </div>
-                                <span
-                                  className="font-medium text-zinc-600 line-clamp-1 max-w-[120px]"
-                                  title={resolvedSubEmail}
-                                >
-                                  {subtask.account?.fullName || "Unassigned"}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${conf.bg} ${conf.text} border border-current/10`}
-                              >
-                                <conf.icon size={10} />
-                                {(subtask.status || "UNKNOWN").replace(
-                                  /_/g,
-                                  " ",
-                                )}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-1.5">
-                                <FlagIcon
-                                  size={12}
-                                  className={subPriority.color}
-                                  fill={subPriority.fill}
-                                />
-                                <span className="font-medium text-zinc-500">
-                                  {subPriority.label}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-zinc-500 font-medium">
-                              {subtask.deadline
-                                ? new Date(subtask.deadline).toLocaleDateString(
-                                    "vi-VN",
-                                  )
-                                : "N/A"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-zinc-400 font-bold border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50/50">
-                No subtasks added yet.
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Attachments Section */}
           {currentUser?.role !== "HOCFDC" && (
@@ -1016,6 +1027,39 @@ export function TaskDetailModal({
                           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors shadow-sm mt-2 animate-in fade-in duration-300"
                         >
                           Submit Review Request
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {/* HOPDC Request Extension Block (Overdue Tasks) */}
+              {currentUser?.role === "HOPDC" &&
+                task.status === TASK_STATUS.OVERDUE && (
+                  <div className="pt-4">
+                    <div className="w-full p-5 rounded-2xl bg-rose-50 border border-rose-200 space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-rose-200/50 text-rose-700 animate-pulse">
+                          <AlertCircle size={14} />
+                        </div>
+                        <span className="text-[11px] font-black text-rose-700 uppercase tracking-wider">
+                          Task Overdue
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2 text-xs">
+                        <p className="font-semibold text-zinc-500 leading-relaxed">
+                          This task is <span className="font-bold text-rose-700">OVERDUE</span>. You cannot change its status or add subtasks. Please request the Head of Curriculum (HoCFDC) for a deadline extension to continue.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRequestTitle(`Request Deadline Extension: Task ${task.taskName || ""}`);
+                            setRequestContent(`Hi HoCFDC, please extend the deadline for task: ${task.taskName || ""}.`);
+                            setIsRequestModalOpen(true);
+                          }}
+                          className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors shadow-sm mt-2 animate-in fade-in duration-300"
+                        >
+                          Request Extension
                         </button>
                       </div>
                     </div>

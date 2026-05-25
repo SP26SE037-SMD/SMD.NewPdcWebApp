@@ -45,6 +45,9 @@ export function TaskRow({
 
   // Workflow action restrictions
   const canAddSubtask = useMemo(() => {
+    if (task.status === "OVERDUE") {
+      return false; // Overdue tasks cannot have subtasks added
+    }
     if (task.type === "SUBJECT" || task.type === TASK_TYPE.NEW_SUBJECT || task.type === TASK_TYPE.REUSED_SUBJECT) {
       return true; // Can create syllabus task
     }
@@ -52,7 +55,7 @@ export function TaskRow({
       return true; // Can create review task
     }
     return false; // Type SYLLABUS, action REVIEW cannot add task
-  }, [task.type, task.action]);
+  }, [task.type, task.action, task.status]);
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -95,7 +98,7 @@ export function TaskRow({
           </div>
 
           {/* Status Bullet */}
-          {onUpdateStatus ? (
+          {onUpdateStatus && task.status !== "OVERDUE" ? (
             <div className="relative mr-2.5 shrink-0 z-10">
               <button
                 type="button"

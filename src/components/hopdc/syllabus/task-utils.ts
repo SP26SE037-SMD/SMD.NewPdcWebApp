@@ -72,18 +72,11 @@ export const getTaskStatusConfig = (status?: string): TaskStatusConfig => {
         bg: "bg-zinc-100",
         icon: Calendar,
       };
-    case "REVISION_REQUESTED":
+    case "OVERDUE":
       return {
         color: "bg-rose-500",
         text: "text-rose-600",
         bg: "bg-rose-50",
-        icon: AlertCircle,
-      };
-    case "CANCELLED":
-      return {
-        color: "bg-zinc-300",
-        text: "text-zinc-400",
-        bg: "bg-zinc-50",
         icon: AlertCircle,
       };
     default:

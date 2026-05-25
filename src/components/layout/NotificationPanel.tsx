@@ -227,7 +227,7 @@ export const NotificationPanel = () => {
                             setLoadingNotifId(null);
                             return;
                         }
-                        const basePath = status === 'REVISION_REQUESTED' ? 'revisions' : 'tasks';
+                        const basePath = task.action === 'UPDATE' ? 'revisions' : 'tasks';
                         router.push(`/dashboard/pdcm/${basePath}/${task.taskId}/information`);
                     } else {
                         router.push(`/dashboard/pdcm/tasks/${entity.id}/information`);

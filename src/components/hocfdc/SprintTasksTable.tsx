@@ -86,15 +86,10 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
           color: "text-blue-600 bg-blue-50 border-blue-100",
           dot: "bg-blue-500",
         };
-      case "REVISION_REQUESTED":
+      case "OVERDUE":
         return {
           color: "text-rose-600 bg-rose-50 border-rose-100",
           dot: "bg-rose-500",
-        };
-      case "CANCELLED":
-        return {
-          color: "text-zinc-400 bg-zinc-50 border-zinc-100 opacity-60",
-          dot: "bg-zinc-300",
         };
       case "DRAFT":
       default:
@@ -105,7 +100,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
     }
   };
 
-  const TaskStatusStepper = ({ status }: { status: string }) => {
+  const TaskStatusStepper = ({ status, isRevision }: { status: string; isRevision?: boolean }) => {
     const s = status.toUpperCase();
     const steps = [
       TASK_STATUS.TO_DO,
@@ -113,13 +108,12 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
       TASK_STATUS.DONE,
     ];
     const currentIdx = steps.indexOf(s as any);
-    const isRevision = s === "REVISION_REQUESTED";
+    const isOverdue = s === TASK_STATUS.OVERDUE;
     const isApproved = s === TASK_STATUS.DONE;
 
     // Determine active index for the 3 points
     let activeIdx = currentIdx;
-    if (isRevision) activeIdx = 1; // Map revision to In Progress point
-    if (s === "CANCELLED") activeIdx = -1;
+    if (isOverdue) activeIdx = 1; // Map overdue to In Progress point
 
     return (
       <div className="flex flex-col gap-1.5 min-w-[140px]">
@@ -347,7 +341,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
 
               {/* Status */}
               <td className="px-6 py-5">
-                <TaskStatusStepper status={task.status} />
+                <TaskStatusStepper status={task.status} isRevision={task.action === 'UPDATE'} />
               </td>
 
               {/* Actions */}

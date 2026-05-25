@@ -4,12 +4,10 @@ import { SUBJECT_STATUS, SubjectStatus } from "./subject.service";
 import { SyllabusStatus } from "./syllabus.service";
 
 export const TASK_STATUS = {
-    DRAFT: 'DRAFT',
     TO_DO: 'TO_DO',
     IN_PROGRESS: 'IN_PROGRESS',
     DONE: 'DONE',
-    REVISION_REQUESTED: 'REVISION_REQUESTED',
-    CANCELLED: 'CANCELLED',
+    OVERDUE: 'OVERDUE',
 } as const;
 
 export type TaskStatus = (typeof TASK_STATUS)[keyof typeof TASK_STATUS];

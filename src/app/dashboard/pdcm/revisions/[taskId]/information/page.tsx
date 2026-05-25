@@ -55,7 +55,6 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
     });
 
     const syllabusId = routeTaskData?.data?.syllabus?.syllabusId;
-    const isRevisionRequested = routeTaskData?.data?.status === 'REVISION_REQUESTED';
     const realTask = routeTaskData?.data;
 
     // Fetch Syllabus Data
