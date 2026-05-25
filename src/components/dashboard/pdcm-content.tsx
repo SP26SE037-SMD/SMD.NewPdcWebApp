@@ -109,7 +109,7 @@ const DevelopCard = ({
               ? { background: "#e0f2fe", color: "#0369a1" }
               : syllabusStatus === "PENDING_REVIEW"
                 ? { background: "#f3e8ff", color: "#0369a1" }
-                : status === "REVISION_REQUESTED"
+                : status === "OVERDUE"
                   ? { background: "#ffe4e6", color: "#b91c1c" }
                   : { background: "#dcfce7", color: "#15803d" }
         }
@@ -121,8 +121,8 @@ const DevelopCard = ({
               ? "edit_document"
               : syllabusStatus === "PENDING_REVIEW"
                 ? "hourglass_top"
-                : status === "REVISION_REQUESTED"
-                  ? "history_edu"
+                : status === "OVERDUE"
+                  ? "gpp_maybe"
                   : // DONE
                     "task_alt"}
         </span>
@@ -154,8 +154,8 @@ const DevelopCard = ({
                 ? "TO DO"
                 : status === "IN_PROGRESS"
                   ? "IN PROGRESS"
-                  : status === "REVISION_REQUESTED"
-                    ? "REVISION REQ"
+                  : status === "OVERDUE"
+                    ? "OVERDUE"
                     : "DONE"}
           </span>
           {status !== "DONE" && <DaysLeftBadge daysLeft={daysLeft} />}
@@ -210,7 +210,7 @@ const DevelopCard = ({
             onClick={() => {
               console.log("=== TASK PAYLOAD ON DO TASK ===", task);
               const basePath =
-                status === "REVISION_REQUESTED" ? "revisions" : "tasks";
+                task.action === "UPDATE" ? "revisions" : "tasks";
               router.push(
                 `/dashboard/pdcm/${basePath}/${task.taskId}/information`,
               );
@@ -458,7 +458,7 @@ export default function PDCMDashboardContent({
     todo: "TO_DO",
     inprogress: "IN_PROGRESS",
     completed: "DONE",
-    overdue: undefined,
+    overdue: "OVERDUE",
     revision_requested: undefined,
   };
 
@@ -492,7 +492,7 @@ export default function PDCMDashboardContent({
         const res = await TaskService.getTasksV2({
           assignTo: user?.accountId,
           action:
-            statusTab === "all"
+            statusTab === "all" || statusTab === "overdue"
               ? ["CREATE", "UPDATE"]
               : statusTab === "revision_requested"
                 ? "UPDATE"
@@ -624,6 +624,11 @@ export default function PDCMDashboardContent({
             { id: "completed", label: "Completed", icon: "task_alt" },
             ...(navTab === "develop"
               ? [
+                  {
+                    id: "overdue",
+                    label: "Overdue",
+                    icon: "gpp_maybe",
+                  },
                   {
                     id: "revision_requested",
                     label: "Revisions",
