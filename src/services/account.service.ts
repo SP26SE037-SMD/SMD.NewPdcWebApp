@@ -97,4 +97,27 @@ export const AccountService = {
       .map((item) => toAccount(item))
       .filter((item) => !!item.accountId);
   },
+
+  async getHopdcByAccountId(accountId: string): Promise<DepartmentAccount[]> {
+    const response = await apiClient.get<unknown>(
+      `/api/accounts/${accountId}/hopdc`,
+      {
+        credentials: "include",
+      },
+    );
+
+    const payload =
+      response && typeof response === "object"
+        ? (response as UnknownRecord)
+        : {};
+    const data = payload.data;
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .map((item) => toAccount(item))
+      .filter((item) => !!item.accountId);
+  },
 };

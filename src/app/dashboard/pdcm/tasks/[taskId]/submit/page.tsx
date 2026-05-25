@@ -225,9 +225,10 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 await TaskService.updateTaskStatus(taskId, 'DONE');
 
                                 // 3. Create a Review Request
+                                const isUpdate = taskData?.action === 'UPDATE';
                                 const requestPayload = {
-                                    title: "Review Syllabus",
-                                    content: "The syllabus has been fully configured and is submitted for HoPDC review.",
+                                    title: isUpdate ? "Yêu cầu review lại syllabus đã sửa" : "Yêu cầu review syllabus",
+                                    content: isUpdate ? "Syllabus đã được chỉnh sửa theo yêu cầu và gửi lại để review." : "Syllabus đã được hoàn thiện và gửi để review.",
                                     type: "REVIEW",
                                     targetId: syllabusId,
                                     receivedById: taskData?.createdBy?.accountId || null

@@ -85,6 +85,7 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
     useEffect(() => {
         const fetchInfo = async () => {
             if (!syllabusId && !subjectId) return;
+            if (!realTask) return; // Wait for realTask to be loaded so we can extract sources
             if (syllabusInfo) return;
 
             try {
@@ -105,23 +106,24 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
 
                 if (!sid) return;
 
-                const [sourcesResult, closResult] = await Promise.allSettled([
-                    SourceService.getSubjectSources(sid),
-                    CloPloService.getSubjectClos(sid, 0, 100)
-                ]);
-
                 let sourcesReference: string[] = [];
-                if (sourcesResult.status === 'fulfilled' && (sourcesResult.value as any)?.data) {
-                    const sourcesData = (sourcesResult.value as any).data as Array<{ sourceName: string, author: string, publisher: string, publishedYear: number }>;
-                    sourcesReference = (sourcesData || []).map(s =>
+                const sourcesData = realTask?.subject?.sources;
+                if (sourcesData && Array.isArray(sourcesData)) {
+                    sourcesReference = sourcesData.map((s: any) =>
                         `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`
                     );
                 }
 
                 let closText: string[] = [];
-                if (closResult.status === 'fulfilled' && (closResult.value as any)?.data?.content) {
-                    const closData = (closResult.value as any).data.content;
-                    closText = closData.map((c: any) => `[${c.cloCode}] ${c.description}`);
+                if (sid && sid !== 'restricted-subject') {
+                    try {
+                        const closResult = await CloPloService.getSubjectClos(sid, 0, 100);
+                        if (closResult?.data?.content) {
+                            closText = closResult.data.content.map((c: any) => `[${c.cloCode}] ${c.description}`);
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch CLOs", e);
+                    }
                 }
 
                 const targetId = syllabusId || subjectId || 'placeholder';
@@ -148,7 +150,7 @@ info: {
             }
         };
         fetchInfo();
-    }, [syllabusId, subjectId, dispatch, syllabusInfo, subjectData]);
+    }, [syllabusId, subjectId, dispatch, syllabusInfo, subjectData, realTask]);
 
     const displayInfo = syllabusInfo || {
         bloomTaxonomy: "Loading...",
@@ -231,7 +233,7 @@ info: {
 
     return (
         <div className="space-y-7">
-            {realTask && (realTask.description || realTask.comment) && (
+            {realTask && realTask.action === 'UPDATE' && (realTask.description || realTask.comment) && (
                 <ReviewerFeedback 
                     reviewer={realTask.createdBy as any}
                     comments={[
