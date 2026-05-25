@@ -107,7 +107,7 @@ export default function NewSubjectContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isReadOnly = searchParams.get("readOnly") === "true";
+  const isReadOnly = searchParams.get("readOnly") === "true" || associatedTask?.status === "OVERDUE";
   const [isSyllabusConfirmOpen, setIsSyllabusConfirmOpen] = useState(false);
   const [syllabusToArchive, setSyllabusToArchive] = useState<string | null>(
     null,
@@ -248,6 +248,21 @@ export default function NewSubjectContent() {
         )}
       </div>
 
+      {associatedTask?.status === "OVERDUE" && (
+        <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-6 flex items-start gap-4 shadow-sm animate-in slide-in-from-top-4 duration-300">
+          <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={22} />
+          <div className="space-y-1">
+            <h4 className="text-base font-black text-rose-900 uppercase tracking-wide">
+              Read-Only Mode (Task Overdue)
+            </h4>
+            <p className="text-sm text-rose-700 leading-relaxed font-semibold">
+              This workspace is currently in read-only mode because the associated task is **Overdue**. 
+              You cannot modify CLOs, map PLOs, or manage syllabi. Please request a deadline extension from HoCFDC to resume.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tab Content */}
       <div className="space-y-6">
         {/* Tab 0: Subject Information */}
@@ -345,18 +360,18 @@ export default function NewSubjectContent() {
               syncMatrix={syncMatrix}
               submittingKey={submittingKey}
               mappingNotice={mappingNotice}
-              disableMapping={isMappingReadOnly}
-              hideImport={isCloStructureReadOnly}
-              hideCreate={isCloStructureReadOnly}
-              hideSync={isMappingReadOnly}
-              onCreateClo={isCloStructureReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
-              onEditClo={isCloStructureReadOnly ? undefined : handleCloEdit}
-              onDeleteClo={isCloStructureReadOnly ? undefined : deleteClo}
+              disableMapping={isMappingReadOnly || isReadOnly}
+              hideImport={isCloStructureReadOnly || isReadOnly}
+              hideCreate={isCloStructureReadOnly || isReadOnly}
+              hideSync={isMappingReadOnly || isReadOnly}
+              onCreateClo={isCloStructureReadOnly || isReadOnly ? undefined : () => setIsCreateCloModalOpen(true)}
+              onEditClo={isCloStructureReadOnly || isReadOnly ? undefined : handleCloEdit}
+              onDeleteClo={isCloStructureReadOnly || isReadOnly ? undefined : deleteClo}
               deletingCloId={deletingCloId}
               hasUnsavedChanges={hasUnsavedChanges}
               addedCount={addedCount}
               deletedCount={deletedCount}
-              onImportClos={isCloStructureReadOnly ? undefined : async () => setIsImportClosModalOpen(true)}
+              onImportClos={isCloStructureReadOnly || isReadOnly ? undefined : async () => setIsImportClosModalOpen(true)}
               isImportingClos={submittingKey === "import"}
               iconBgColor="bg-emerald-50"
               iconTextColor="text-emerald-700"

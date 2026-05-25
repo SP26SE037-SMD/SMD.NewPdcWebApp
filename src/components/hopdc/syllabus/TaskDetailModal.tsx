@@ -250,7 +250,7 @@ export function TaskDetailModal({
       }
     }
 
-    const isReadOnly = task.status === TASK_STATUS.DONE;
+    const isReadOnly = task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE;
     router.push(
       `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
     );
@@ -270,7 +270,7 @@ export function TaskDetailModal({
       }
     }
 
-    const isReadOnly = task.status === TASK_STATUS.DONE;
+    const isReadOnly = task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE;
     const targetSyllabusId =
       task.syllabus?.syllabusId || task.targetId || task.syllabusId || "null";
     router.push(
@@ -316,8 +316,8 @@ export function TaskDetailModal({
 
   // Workflow action restrictions
   const canAddSubtask = useMemo(() => {
-    if (task.status === TASK_STATUS.DONE) {
-      return false; // Cannot add subtask if task is already Done
+    if (task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE) {
+      return false; // Cannot add subtask if task is already Done or Overdue
     }
     if (currentUser?.role === "HOCFDC") {
       return false; // HoCFDC cannot add task
@@ -454,7 +454,7 @@ export function TaskDetailModal({
                     onChange={(e) =>
                       onUpdateStatus(task.taskId, e.target.value as TaskStatus)
                     }
-                    disabled={isUpdatingStatus}
+                    disabled={isUpdatingStatus || task.status === TASK_STATUS.OVERDUE}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none transition-colors cursor-pointer disabled:opacity-50 ${getStatusSelectClass(task.status)}`}
                   >
                     <option
@@ -1027,6 +1027,39 @@ export function TaskDetailModal({
                           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors shadow-sm mt-2 animate-in fade-in duration-300"
                         >
                           Submit Review Request
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {/* HOPDC Request Extension Block (Overdue Tasks) */}
+              {currentUser?.role === "HOPDC" &&
+                task.status === TASK_STATUS.OVERDUE && (
+                  <div className="pt-4">
+                    <div className="w-full p-5 rounded-2xl bg-rose-50 border border-rose-200 space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-rose-200/50 text-rose-700 animate-pulse">
+                          <AlertCircle size={14} />
+                        </div>
+                        <span className="text-[11px] font-black text-rose-700 uppercase tracking-wider">
+                          Task Overdue
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2 text-xs">
+                        <p className="font-semibold text-zinc-500 leading-relaxed">
+                          This task is <span className="font-bold text-rose-700">OVERDUE</span>. You cannot change its status or add subtasks. Please request the Head of Curriculum (HoCFDC) for a deadline extension to continue.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRequestTitle(`Request Deadline Extension: Task ${task.taskName || ""}`);
+                            setRequestContent(`Hi HoCFDC, please extend the deadline for task: ${task.taskName || ""}.`);
+                            setIsRequestModalOpen(true);
+                          }}
+                          className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors shadow-sm mt-2 animate-in fade-in duration-300"
+                        >
+                          Request Extension
                         </button>
                       </div>
                     </div>
