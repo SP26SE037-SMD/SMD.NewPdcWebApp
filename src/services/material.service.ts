@@ -14,9 +14,14 @@ export const MaterialService = {
   getMaterialsBySyllabusId: async (syllabusId: string) => {
     let response: any;
     try {
-      response = await apiClient.get<{ status: number; message: string; data: MaterialItem[] }>(
-        `/api/materials/syllabus/${syllabusId}`
+      response = await apiClient.get<{ status: number; message: string; data: any }>(
+        `/api/materials/syllabus/${syllabusId}?page=0&size=1000`
       );
+      
+      // If backend was updated to return paginated data (Page<Material>), extract the content array.
+      if (response && response.data && typeof response.data === 'object' && !Array.isArray(response.data) && 'content' in response.data) {
+        response.data = response.data.content;
+      }
     } catch (err) {
       console.warn("API Call for materials failed, using mock container", err);
       response = { status: 200, message: "Mock Container", data: [] };

@@ -107,9 +107,7 @@ const DevelopCard = ({
             ? { background: "#fef3c7", color: "#b45309" }
             : status === "IN_PROGRESS"
               ? { background: "#e0f2fe", color: "#0369a1" }
-              : syllabusStatus === "PENDING_REVIEW"
-                ? { background: "#f3e8ff", color: "#0369a1" }
-                : status === "REVISION_REQUESTED"
+              : status === "REVISION_REQUESTED"
                   ? { background: "#ffe4e6", color: "#b91c1c" }
                   : { background: "#dcfce7", color: "#15803d" }
         }
@@ -119,12 +117,9 @@ const DevelopCard = ({
             ? "list_alt"
             : status === "IN_PROGRESS"
               ? "edit_document"
-              : syllabusStatus === "PENDING_REVIEW"
-                ? "hourglass_top"
-                : status === "REVISION_REQUESTED"
+              : status === "REVISION_REQUESTED"
                   ? "history_edu"
-                  : // DONE
-                    "task_alt"}
+                  : "task_alt"}
         </span>
       </div>
 
@@ -148,17 +143,17 @@ const DevelopCard = ({
             className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md"
             style={{ background: C.surfaceVariant, color: C.onSurfaceVariant }}
           >
-            {syllabusStatus === "PENDING_REVIEW"
-              ? "PENDING REVIEW"
-              : status === "TO_DO"
+            {status === "TO_DO"
                 ? "TO DO"
                 : status === "IN_PROGRESS"
                   ? "IN PROGRESS"
                   : status === "REVISION_REQUESTED"
                     ? "REVISION REQ"
-                    : "DONE"}
+                    : status === "DONE"
+                      ? "DONE"
+                      : status}
           </span>
-          {status !== "DONE" && <DaysLeftBadge daysLeft={daysLeft} />}
+          {status !== "DONE" && status !== "COMPLETED" && <DaysLeftBadge daysLeft={daysLeft} />}
         </div>
       </div>
 
@@ -181,17 +176,6 @@ const DevelopCard = ({
               </>
             )}
           </button>
-        ) : status === "PENDING_REVIEW" ||
-          (status === "IN_PROGRESS" && syllabusStatus === "PENDING_REVIEW") ? (
-          <span
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold w-full md:w-auto"
-            style={{ color: C.onSurfaceVariant, background: "#f5f5f5" }}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              hourglass_top
-            </span>
-            Pending Review
-          </span>
         ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : (
           <button
             onClick={() => {

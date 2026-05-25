@@ -211,8 +211,8 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
                             <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>Get started by creating a new material document or importing an existing file.</p>
                         </div>
                     ) : viewMode === 'list' ? (
-                        <div className="bg-white rounded-[24px] overflow-hidden border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300">
-                            <div className="overflow-x-auto">
+                        <div className="bg-white rounded-[24px] border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300">
+                            <div className="">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
                                         <tr className="border-b border-zinc-100" style={{ background: `${C.primary}04` }}>
