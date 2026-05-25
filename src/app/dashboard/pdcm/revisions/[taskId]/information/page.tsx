@@ -84,6 +84,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
     useEffect(() => {
         const fetchInfo = async () => {
             if (!syllabusId) return;
+            if (!realTask) return; // Wait for realTask to be loaded so we can extract sources
             if (syllabusInfo) return;
 
             try {
@@ -95,23 +96,24 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
 
                 if (!sid) return;
 
-                const [sourcesResult, closResult] = await Promise.allSettled([
-                    SourceService.getSubjectSources(sid),
-                    CloPloService.getSubjectClos(sid, 0, 100)
-                ]);
-
                 let sourcesReference: string[] = [];
-                if (sourcesResult.status === 'fulfilled' && (sourcesResult.value as any)?.data) {
-                    const sourcesData = (sourcesResult.value as any).data as Array<{ sourceName: string, author: string, publisher: string, publishedYear: number }>;
-                    sourcesReference = (sourcesData || []).map(s =>
+                const sourcesData = realTask?.subject?.sources;
+                if (sourcesData && Array.isArray(sourcesData)) {
+                    sourcesReference = sourcesData.map((s: any) =>
                         `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`
                     );
                 }
 
                 let closText: string[] = [];
-                if (closResult.status === 'fulfilled' && (closResult.value as any)?.data?.content) {
-                    const closData = (closResult.value as any).data.content;
-                    closText = closData.map((c: any) => `[${c.cloCode}] ${c.description}`);
+                if (sid && sid !== 'restricted-subject') {
+                    try {
+                        const closResult = await CloPloService.getSubjectClos(sid, 0, 100);
+                        if (closResult?.data?.content) {
+                            closText = closResult.data.content.map((c: any) => `[${c.cloCode}] ${c.description}`);
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch CLOs", err);
+                    }
                 }
 
                 dispatch(setSyllabusInfo({
@@ -127,7 +129,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
             }
         };
         fetchInfo();
-    }, [syllabusId, dispatch, syllabusInfo]);
+    }, [syllabusId, dispatch, syllabusInfo, realTask]);
 
     const displayInfo = syllabusInfo || {
         bloomTaxonomy: "Loading...",

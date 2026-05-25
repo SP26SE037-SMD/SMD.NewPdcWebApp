@@ -8,6 +8,7 @@ import { RootState } from "@/store";
 import { RequestService } from "@/services/request.service";
 import { TaskService } from "@/services/task.service";
 import { SyllabusService } from "@/services/syllabus.service";
+import { AccountService } from "@/services/account.service";
 
 const C = {
   primary: "#41683f",
@@ -60,6 +61,19 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
       setError(null);
     }
   }, [isOpen]);
+
+  // Fetch HOPDC receiver automatically
+  useEffect(() => {
+    if (isOpen && user?.accountId) {
+      AccountService.getHopdcByAccountId(user.accountId)
+        .then(accounts => {
+          if (accounts && accounts.length > 0) {
+            setReceivedById(accounts[0].accountId);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isOpen, user?.accountId]);
 
   // Load tasks when type = TASK
   useEffect(() => {
@@ -245,20 +259,7 @@ export default function CreateRequestModal({ isOpen, onClose, onSuccess }: Creat
               </div>
             </div>
 
-            {/* Receiver ID (optional) */}
-            <div>
-              <label className="block text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: C.onSurfaceVariant }}>
-                ID Người nhận <span className="normal-case font-medium text-zinc-400">(tuỳ chọn)</span>
-              </label>
-              <input
-                type="text"
-                value={receivedById}
-                onChange={e => setReceivedById(e.target.value)}
-                placeholder="Nhập accountId của người nhận..."
-                className="w-full px-4 py-3 rounded-2xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#41683f26] focus:border-[#41683f80] transition-all"
-                style={{ color: C.onSurface }}
-              />
-            </div>
+
 
             {/* Error */}
             {error && (
