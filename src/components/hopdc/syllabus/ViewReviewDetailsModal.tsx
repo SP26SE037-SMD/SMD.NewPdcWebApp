@@ -165,7 +165,7 @@ export function ViewReviewDetailsModal({
   const isLoading = isReviewsLoading || (!!syllabusId && isMaterialsLoading);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
       <div className="w-full max-w-xl rounded-[10px] border border-zinc-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-8 py-6 bg-white shrink-0">

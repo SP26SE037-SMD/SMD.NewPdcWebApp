@@ -234,7 +234,7 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
                         setConfirmState({ open: true, type: 'task', id: task.taskId, name: task.taskName || 'Untitled Task', loading: false });
                         return;
                     }
-                    const basePath = status === 'REVISION_REQUESTED' ? 'revisions' : 'tasks';
+                    const basePath = task.action === 'UPDATE' ? 'revisions' : 'tasks';
                     setIsNotiOpen(false); setIsAllNotiModalOpen(false);
                     router.push(`/dashboard/pdcm/${basePath}/${task.taskId}/information`);
                 }

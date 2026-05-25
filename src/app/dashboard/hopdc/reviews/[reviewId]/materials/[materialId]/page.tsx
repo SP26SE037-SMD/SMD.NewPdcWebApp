@@ -2,7 +2,7 @@
 
 import React, { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, FileText, ShieldCheck, Info, Bell, ChevronDown, AlertCircle, X, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, ShieldCheck, Info, Bell, ChevronDown, AlertCircle, X, Check, ClipboardList, MessageSquare } from 'lucide-react';
 import { BlockService, BlockItem } from "@/services/block.service";
 import { MaterialService } from "@/services/material.service";
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +85,8 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
     const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [showRejectBanner, setShowRejectBanner] = useState(true);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [isDecisionOpen, setIsDecisionOpen] = useState(false);
     const { data: reviewTaskRes, isLoading: isReviewTaskLoading } = useQuery({
         queryKey: ['hopdc-review-detail', reviewId],
         queryFn: () => ReviewTaskService.getReviewTaskById(reviewId),
@@ -140,7 +142,7 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                 // Prioritize active (not DONE/CANCELLED) syllabus tasks
                 const activeSyllabusTask = list.find(t => 
                     (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
-                    t.status !== 'DONE' && t.status !== 'CANCELLED'
+                    t.status !== 'DONE'
                 );
                 
                 const matchedTask = activeSyllabusTask
@@ -165,7 +167,9 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                                normalizedStatus === 'REVISION_REQUESTED' ||
                                normalizedStatus?.replace(/_/g, ' ') === 'REVISION REQUESTED';
 
-    const showFloatingDecision = !!syllabusId && (
+    const hasDecisionBeenMade = createSyllabusTask && (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined);
+
+    const showFloatingDecision = !!syllabusId && !hasDecisionBeenMade && (
         isRevisionRequested ||
         !createSyllabusTask ||
         createSyllabusTask.status !== "DONE"
@@ -458,27 +462,71 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
 
         {/* Floating Panels Container */}
         {(rejectComment || showFloatingDecision) && (
-            <div className="fixed top-32 right-12 z-[150] w-96 flex flex-col gap-4 pointer-events-none">
+            <div className="fixed top-32 right-6 z-[150] flex flex-col items-end gap-4 pointer-events-none">
                 {/* Floating Rejection Comment Banner */}
                 {rejectComment && (
-                    <div id="rejected-feedback-banner" className="pointer-events-auto w-full p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                        <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
-                            <AlertCircle size={20} />
-                        </div>
-                        <div className="space-y-1 relative w-full">
-                            <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none mb-1">
-                                Rejected Feedback
-                            </p>
-                            <p className="text-xs font-bold text-rose-955 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
-                                {rejectComment}
-                            </p>
-                        </div>
+                    <div className="flex items-start gap-3 pointer-events-auto">
+                        {isFeedbackOpen && (
+                            <div id="rejected-feedback-banner" className="w-96 p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300 relative">
+                                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
+                                    <AlertCircle size={20} />
+                                </div>
+                                <div className="space-y-1 relative w-full pr-6">
+                                    <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none mb-1">
+                                        Rejected Feedback
+                                    </p>
+                                    <p className="text-xs font-bold text-rose-955 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
+                                        {rejectComment}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setIsFeedbackOpen(!isFeedbackOpen)}
+                            className={`relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 shrink-0 ${
+                                isFeedbackOpen 
+                                    ? 'bg-rose-600 border-rose-600 text-white hover:bg-rose-700' 
+                                    : 'bg-white border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 active:scale-95'
+                            }`}
+                            title="View Rejected Feedback"
+                        >
+                            {isFeedbackOpen ? <X size={20} /> : <AlertCircle size={20} />}
+                            {!isFeedbackOpen && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                                </span>
+                            )}
+                        </button>
                     </div>
                 )}
 
                 {/* Floating Decision Card */}
                 {showFloatingDecision && (
-                    <FinalDecisionCard syllabusId={syllabusId} taskId={taskIdFromUrl || routeTaskData?.data?.rootTaskId} />
+                    <div className="flex items-start gap-3 pointer-events-auto">
+                        {isDecisionOpen && (
+                            <div className="w-96 shadow-2xl rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur-md relative animate-in fade-in slide-in-from-right-4 duration-300 overflow-hidden">
+                                <FinalDecisionCard syllabusId={syllabusId} taskId={taskIdFromUrl || routeTaskData?.data?.rootTaskId} />
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setIsDecisionOpen(!isDecisionOpen)}
+                            className={`relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 shrink-0 ${
+                                isDecisionOpen 
+                                    ? 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700' 
+                                    : 'bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:scale-105 active:scale-95'
+                            }`}
+                            title="Syllabus Approval Decision"
+                        >
+                            {isDecisionOpen ? <X size={20} /> : <ClipboardList size={20} />}
+                            {!isDecisionOpen && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 )}
             </div>
         )}

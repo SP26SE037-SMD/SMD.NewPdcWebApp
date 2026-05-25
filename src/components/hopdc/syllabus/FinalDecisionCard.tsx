@@ -88,7 +88,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                 // Prioritize active (not DONE/CANCELLED) syllabus tasks
                 const activeSyllabusTask = list.find(t =>
                     (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
-                    t.status !== 'DONE' && t.status !== 'CANCELLED'
+                    t.status !== 'DONE'
                 );
 
                 const matchedTask = activeSyllabusTask

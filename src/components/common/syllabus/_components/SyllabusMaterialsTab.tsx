@@ -119,26 +119,38 @@ export function SyllabusMaterialsTab({
       ev = evaluations.materials[materialId];
     }
 
+    // Fallback: if not found, but there's only 1 material in total and 1 evaluation in total
+    if (!ev && materials.length === 1 && Object.keys(evaluations).length === 1) {
+      const firstKey = Object.keys(evaluations)[0];
+      ev = evaluations[firstKey];
+    }
+
     if (!ev || isStatusPending(ev.status)) return null;
     return getStatusStyle(ev.status);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 text-left">
-
-
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {materials.map((material) => {
           const badge = getEvalBadge(material.materialId);
           const baseStatusStyle = getStatusStyle(material.status);
-          const currentEvalStatus =
+          let currentEvalStatus =
             evaluations?.[material.materialId]?.status ||
             evaluations?.materials?.[material.materialId]?.status;
-          const evaluationComment =
+          let evaluationComment =
             evaluations?.[material.materialId]?.comment ||
             evaluations?.materials?.[material.materialId]?.comment ||
             evaluations?.[material.materialId]?.note ||
             evaluations?.materials?.[material.materialId]?.note;
+
+          // Fallback: if not found, but there's only 1 material in total and 1 evaluation in total
+          if (!currentEvalStatus && materials.length === 1 && evaluations && Object.keys(evaluations).length === 1) {
+            const firstKey = Object.keys(evaluations)[0];
+            const ev = evaluations[firstKey];
+            currentEvalStatus = ev?.status;
+            evaluationComment = ev?.comment || ev?.note;
+          }
 
           const isExpanded = !!expandedComments[material.materialId];
 

@@ -271,7 +271,7 @@ export default function DashboardAlerts() {
             const task = res?.data;
             if (task) {
                 const status = (task.status || "").toUpperCase().replace(/\s+/g, "_");
-                const basePath = status === "REVISION_REQUESTED" ? "revisions" : "tasks";
+                const basePath = task.action === "UPDATE" ? "revisions" : "tasks";
                 setIsOpen(false);
                 router.push(`/dashboard/pdcm/${basePath}/${task.taskId}/information`);
             }

@@ -69,8 +69,8 @@ const STATUS_GROUPS: Array<{
     badgeClass: "bg-blue-100 text-blue-700",
   },
   {
-    status: TASK_STATUS.REVISION_REQUESTED,
-    label: "Revision Requested",
+    status: TASK_STATUS.OVERDUE,
+    label: "Overdue",
     icon: AlertCircle,
     headerClass: "text-rose-600 bg-rose-50 border-rose-200",
     badgeClass: "bg-rose-100 text-rose-700",
@@ -170,13 +170,13 @@ export function TaskList({ sprintId }: TaskListProps) {
         const mappings = res.data || [];
         if (mappings.length === 0) {
           showToast(
-            "Môn học này chưa có CLOs hoặc CLO-PLO mapping. Vui lòng cấu hình trước khi tạo Syllabus!",
+            "This subject does not have CLOs or CLO-PLO mapping. Please configure them before creating the Syllabus!",
             "warning",
           );
           return;
         }
       } catch (err) {
-        showToast("Không thể kiểm tra dữ liệu CLO-PLO. Vui lòng thử lại.", "error");
+        showToast("Unable to verify CLO-PLO data. Please try again.", "error");
         return;
       } finally {
         setValidatingTaskId(null);
@@ -679,14 +679,7 @@ export function TaskList({ sprintId }: TaskListProps) {
                       ))
                     )}
 
-                    {/* + Add Task button for each group */}
-                    <button
-                      onClick={() => showToast("Please use an existing task to add subtasks.", "info")}
-                      className="w-full flex items-center gap-2 px-6 py-2 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 border-b border-zinc-50 transition-colors"
-                    >
-                      <Plus size={12} />
-                      Add Task
-                    </button>
+
                   </motion.div>
                 )}
               </AnimatePresence>

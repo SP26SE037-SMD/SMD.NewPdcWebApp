@@ -299,7 +299,7 @@ export function HeaderRightActions() {
                         return;
                     }
                     // Otherwise redirect
-                    const basePath = status === 'REVISION_REQUESTED' ? 'revisions' : 'tasks';
+                    const basePath = task.action === 'UPDATE' ? 'revisions' : 'tasks';
                     setIsNotiOpen(false);
                     setIsAllNotiModalOpen(false);
                     router.push(`/dashboard/pdcm/${basePath}/${task.taskId}/information`);
