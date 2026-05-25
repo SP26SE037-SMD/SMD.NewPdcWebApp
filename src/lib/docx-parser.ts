@@ -57,7 +57,6 @@ export const parseHtmlToBlocks = (html: string): ParsedBlock[] => {
   const doc = parser.parseFromString(html, 'text/html');
   const body = doc.body;
   const resultBlocks: ParsedBlock[] = [];
-  let h2Count = 0;
 
   const processNode = (node: Node) => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -149,11 +148,12 @@ export const parseHtmlToBlocks = (html: string): ParsedBlock[] => {
             innerHtml.replace(/<b>/g, '').replace(/<\/b>/g, '').trim() === text);
 
         const isChapter = /^Chapter\s+\d+/i.test(text) || /^Chương\s+\d+/i.test(text);
+        const isH2Regex = /^\d+\.\d+(\.\d+)*\s+/.test(text);
         const listMatch = text.match(/^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+(.*)/);
         const bulletMatch = text.match(/^([\-\*•])\s+(.*)/);
 
         if (isChapter) type = 'H1';
-        else if (isFullyBold && text.length < 150) type = 'H2';
+        else if (isH2Regex || (isFullyBold && text.length < 150)) type = 'H2';
         else if (listMatch) type = 'ORDERED_LIST';
         else if (bulletMatch) type = 'BULLET_LIST';
         else type = 'PARAGRAPH';
@@ -176,11 +176,6 @@ export const parseHtmlToBlocks = (html: string): ParsedBlock[] => {
 
         if (text.length > 0 || innerHtml.length > 0) {
           let finalContent = sanitizeBlockContent(li.innerHTML);
-          if (liType === 'H2') {
-            h2Count++;
-            const plainText = stripHtml(finalContent).trim();
-            if (!/^\d+\.\s/.test(plainText)) finalContent = `${h2Count}. ${finalContent}`;
-          }
           resultBlocks.push({ id: crypto.randomUUID(), type: liType, content: finalContent, align });
         }
       });
@@ -213,11 +208,6 @@ export const parseHtmlToBlocks = (html: string): ParsedBlock[] => {
     if (resultBlocks.length === 0) type = 'H1';
 
     let finalContent = sanitizeBlockContent(el.innerHTML);
-    if (type === 'H2') {
-      h2Count++;
-      const plainText = stripHtml(finalContent).trim();
-      if (!/^\d+\.\s/.test(plainText)) finalContent = `${h2Count}. ${finalContent}`;
-    }
 
     resultBlocks.push({ id: crypto.randomUUID(), type, content: finalContent, align });
   };

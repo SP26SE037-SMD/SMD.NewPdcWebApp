@@ -14,9 +14,12 @@ export async function GET(
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        console.log(`\n[PROXY GET /api/materials/syllabus/${syllabusId}] SENDING TO BACKEND`);
+        // Extract search params from the incoming request
+        const searchParams = request.nextUrl.search; // e.g. "?page=0&size=1000"
 
-        const response = await fetch(`${API_BASE_URL}/api/materials/syllabus/${syllabusId}`, {
+        console.log(`\n[PROXY GET /api/materials/syllabus/${syllabusId}${searchParams}] SENDING TO BACKEND`);
+
+        const response = await fetch(`${API_BASE_URL}/api/materials/syllabus/${syllabusId}${searchParams}`, {
             headers: {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {}),

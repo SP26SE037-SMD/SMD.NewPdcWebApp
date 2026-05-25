@@ -34,10 +34,10 @@ interface BulkImportMaterialModalProps {
 }
 
 const statusConfig: Record<FileStatus, { icon: any; color: string; label: string }> = {
-  pending:    { icon: FileText,       color: "#5a6157", label: "Đang chờ" },
-  processing: { icon: Loader2,        color: "#0369a1", label: "Đang xử lý..." },
-  success:    { icon: CheckCircle2,   color: "#15803d", label: "Thành công" },
-  error:      { icon: XCircle,        color: "#b91c1c", label: "Thất bại" },
+  pending:    { icon: FileText,       color: "#5a6157", label: "Pending" },
+  processing: { icon: Loader2,        color: "#0369a1", label: "Processing..." },
+  success:    { icon: CheckCircle2,   color: "#15803d", label: "Success" },
+  error:      { icon: XCircle,        color: "#b91c1c", label: "Failed" },
 };
 
 export default function BulkImportMaterialModal({
@@ -67,7 +67,7 @@ export default function BulkImportMaterialModal({
       return ext === "doc" || ext === "docx";
     });
     if (docxFiles.length === 0) {
-      alert("Vui lòng chọn file Word (.doc, .docx).");
+      alert("Please select a Word file (.doc, .docx).");
       return;
     }
     setFiles(prev => [
@@ -108,6 +108,19 @@ export default function BulkImportMaterialModal({
 
     const pendingFiles = files.filter(f => f.status === "pending");
 
+    // Fetch existing materials to find max id
+    let nextId = 0;
+    try {
+      const existingRes = await MaterialService.getMaterialsBySyllabusId(syllabusId);
+      const existingMaterials = existingRes?.data || [];
+      if (Array.isArray(existingMaterials) && existingMaterials.length > 0) {
+        const maxId = Math.max(...existingMaterials.map(m => m.id || 0));
+        nextId = maxId + 1;
+      }
+    } catch (err) {
+      console.error("Failed to fetch existing materials to calculate nextId", err);
+    }
+
     for (const importFile of pendingFiles) {
       // Mark as processing
       setFiles(prev =>
@@ -122,7 +135,7 @@ export default function BulkImportMaterialModal({
         const materialRes = await MaterialService.createMaterial({
           title,
           materialType: "DOCUMENT",
-          id: 0,
+          id: nextId,
           syllabusId,
         });
 
@@ -130,7 +143,7 @@ export default function BulkImportMaterialModal({
           (materialRes as any)?.data?.materialId ||
           (materialRes as any)?.materialId;
 
-        if (!materialId) throw new Error("Không nhận được materialId từ server.");
+        if (!materialId) throw new Error("Failed to retrieve materialId from server.");
 
         // 3. Create blocks
         if (blocks.length > 0) {
@@ -155,11 +168,13 @@ export default function BulkImportMaterialModal({
         setFiles(prev =>
           prev.map(f =>
             f.id === importFile.id
-              ? { ...f, status: "error", error: err?.message || "Lỗi không xác định" }
+              ? { ...f, status: "error", error: err?.message || "Unknown error" }
               : f
           )
         );
       }
+      
+      nextId++; // Increment ID for the next file
     }
 
     setIsRunning(false);
@@ -199,7 +214,7 @@ export default function BulkImportMaterialModal({
                   Import Materials
                 </h2>
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                  Hỗ trợ nhiều file Word cùng lúc
+                  Supports multiple Word files
                 </p>
               </div>
               <button
@@ -239,8 +254,8 @@ export default function BulkImportMaterialModal({
                 <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm border border-zinc-100 text-[#41683f]">
                   <UploadCloud size={28} />
                 </div>
-                <p className="font-bold text-[#2d342b] text-sm mb-1">Kéo thả hoặc click để chọn file</p>
-                <p className="text-xs text-zinc-400">Hỗ trợ .doc, .docx — Chọn nhiều file cùng lúc</p>
+                <p className="font-bold text-[#2d342b] text-sm mb-1">Drag & drop or click to select files</p>
+                <p className="text-xs text-zinc-400">Supports .doc, .docx — Select multiple files</p>
               </div>
             )}
 
@@ -268,9 +283,6 @@ export default function BulkImportMaterialModal({
                         <p className="text-sm font-bold truncate" style={{ color: C.onSurface }}>
                           {f.materialTitle || f.file.name}
                         </p>
-                        {f.status === "success" && (
-                          <p className="text-xs text-green-600 font-semibold">{f.blocksCount} blocks đã tạo</p>
-                        )}
                         {f.status === "error" && (
                           <p className="text-xs text-red-500 font-semibold truncate">{f.error}</p>
                         )}
@@ -305,12 +317,12 @@ export default function BulkImportMaterialModal({
                 )}
                 <div>
                   <p className="text-sm font-black" style={{ color: C.onSurface }}>
-                    Hoàn thành!
+                    Completed!
                   </p>
                   <p className="text-xs text-zinc-500">
-                    {successCount > 0 && <span className="text-green-600 font-bold">{successCount} thành công</span>}
+                    {successCount > 0 && <span className="text-green-600 font-bold">{successCount} successful</span>}
                     {successCount > 0 && errorCount > 0 && " · "}
-                    {errorCount > 0 && <span className="text-red-500 font-bold">{errorCount} thất bại</span>}
+                    {errorCount > 0 && <span className="text-red-500 font-bold">{errorCount} failed</span>}
                   </p>
                 </div>
               </div>
@@ -324,7 +336,7 @@ export default function BulkImportMaterialModal({
               disabled={isRunning}
               className="flex-1 py-3.5 rounded-2xl font-bold text-sm bg-zinc-50 text-zinc-500 hover:bg-zinc-100 transition-all disabled:opacity-50"
             >
-              {isDone ? "Đóng" : "Huỷ"}
+              {isDone ? "Close" : "Cancel"}
             </button>
             {!isDone && (
               <button
@@ -334,7 +346,7 @@ export default function BulkImportMaterialModal({
                 style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}30` }}
               >
                 {isRunning ? (
-                  <><Loader2 size={18} className="animate-spin" /> Đang import ({files.filter(f => f.status === "processing").length}/{files.length})...</>
+                  <><Loader2 size={18} className="animate-spin" /> Importing ({files.filter(f => f.status === "processing").length}/{files.length})...</>
                 ) : (
                   <><UploadCloud size={18} /> Import {pendingCount} file{pendingCount !== 1 ? "s" : ""}</>
                 )}

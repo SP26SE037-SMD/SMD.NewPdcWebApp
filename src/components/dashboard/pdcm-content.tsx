@@ -107,9 +107,7 @@ const DevelopCard = ({
             ? { background: "#fef3c7", color: "#b45309" }
             : status === "IN_PROGRESS"
               ? { background: "#e0f2fe", color: "#0369a1" }
-              : syllabusStatus === "PENDING_REVIEW"
-                ? { background: "#f3e8ff", color: "#0369a1" }
-                : status === "OVERDUE"
+              : status === "REVISION_REQUESTED"
                   ? { background: "#ffe4e6", color: "#b91c1c" }
                   : { background: "#dcfce7", color: "#15803d" }
         }
@@ -148,9 +146,7 @@ const DevelopCard = ({
             className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md"
             style={{ background: C.surfaceVariant, color: C.onSurfaceVariant }}
           >
-            {syllabusStatus === "PENDING_REVIEW"
-              ? "PENDING REVIEW"
-              : status === "TO_DO"
+            {status === "TO_DO"
                 ? "TO DO"
                 : status === "IN_PROGRESS"
                   ? "IN PROGRESS"
@@ -158,7 +154,7 @@ const DevelopCard = ({
                     ? "OVERDUE"
                     : "DONE"}
           </span>
-          {status !== "DONE" && <DaysLeftBadge daysLeft={daysLeft} />}
+          {status !== "DONE" && status !== "COMPLETED" && <DaysLeftBadge daysLeft={daysLeft} />}
         </div>
       </div>
 
@@ -181,17 +177,6 @@ const DevelopCard = ({
               </>
             )}
           </button>
-        ) : status === "PENDING_REVIEW" ||
-          (status === "IN_PROGRESS" && syllabusStatus === "PENDING_REVIEW") ? (
-          <span
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold w-full md:w-auto"
-            style={{ color: C.onSurfaceVariant, background: "#f5f5f5" }}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              hourglass_top
-            </span>
-            Pending Review
-          </span>
         ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : (
           <button
             onClick={() => {
