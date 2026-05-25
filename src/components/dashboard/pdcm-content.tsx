@@ -561,8 +561,15 @@ export default function PDCMDashboardContent({
       id: "tasks",
       label: "My Tasks",
       icon: "task",
-      isActive: true,
+      isActive: navTab === "develop" || navTab === "peer-review",
       onClick: () => router.push("/dashboard/pdcm/develop"),
+    },
+    {
+      id: "requests",
+      label: "My Requests",
+      icon: "send",
+      isActive: false,
+      onClick: () => router.push("/dashboard/pdcm/requests"),
     },
   ];
 
