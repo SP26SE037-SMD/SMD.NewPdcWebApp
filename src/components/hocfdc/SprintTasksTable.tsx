@@ -100,7 +100,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
     }
   };
 
-  const TaskStatusStepper = ({ status }: { status: string }) => {
+  const TaskStatusStepper = ({ status, isRevision }: { status: string; isRevision?: boolean }) => {
     const s = status.toUpperCase();
     const steps = [
       TASK_STATUS.TO_DO,
@@ -341,7 +341,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
 
               {/* Status */}
               <td className="px-6 py-5">
-                <TaskStatusStepper status={task.status} />
+                <TaskStatusStepper status={task.status} isRevision={task.action === 'UPDATE'} />
               </td>
 
               {/* Actions */}
