@@ -890,6 +890,8 @@ function FinalizeTab({
   onFinalize: () => void;
   submitting: boolean;
 }) {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   if (!curriculum) {
     return (
       <NoCurriculumPlaceholder onGoCreate={onGoCreate} label="finalization" />
@@ -905,9 +907,8 @@ function FinalizeTab({
         <h2 className="text-3xl font-black text-on-surface tracking-tight">
           Review & Finalize
         </h2>
-        <p className="text-on-surface-variant max-w-md mx-auto">
-          Please review the curriculum structure one last time. Once finalized,
-          it will be moved to the syllabus development phase.
+        <p className="text-on-surface-variant max-w-lg mx-auto leading-relaxed">
+          Please review the curriculum framework structure. Once confirmed, it will transition to the <strong>Syllabus Develop</strong> stage (cannot be modified or reverted to Draft).
         </p>
       </div>
 
@@ -978,28 +979,72 @@ function FinalizeTab({
         </div>
       </div>
 
-      <div className="bg-primary/5 rounded-2xl border border-primary/20 p-8 flex flex-col items-center text-center space-y-6">
-        <div className="space-y-2">
-          <h3 className="text-lg font-black text-primary">Ready to proceed?</h3>
-          <p className="text-sm text-on-surface-variant max-w-sm">
-            Finalizing will mark this task as complete and prepare the
-            curriculum for the next stage of development.
-          </p>
-        </div>
-
+      <div className="flex flex-col items-center justify-center">
         <button
-          onClick={onFinalize}
-          disabled={submitting}
-          className="w-full max-w-sm flex items-center justify-center gap-3 py-4 bg-primary text-on-primary rounded-2xl font-black text-base shadow-xl shadow-primary/25 hover:bg-primary/90 transition active:scale-[0.98] disabled:opacity-60"
+          onClick={() => setShowConfirmModal(true)}
+          className="w-full max-w-sm flex items-center justify-center gap-3 py-4 bg-primary text-on-primary rounded-2xl font-black text-base shadow-xl shadow-primary/25 hover:bg-primary/90 transition active:scale-[0.98]"
         >
-          {submitting ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : (
-            <CheckCircle2 className="h-6 w-6" />
-          )}
-          {submitting ? "Finalizing..." : "Finalize Curriculum"}
+          <CheckCircle2 className="h-6 w-6" />
+          Move to Syllabus Develop
         </button>
       </div>
+
+      {/* Confirmation Popup Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !submitting && setShowConfirmModal(false)}
+              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl overflow-hidden border border-zinc-100 flex flex-col items-center text-center space-y-6"
+            >
+              <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+
+              <div className="space-y-2 w-full">
+                <h3 className="text-xl font-black text-zinc-900 tracking-tight">Confirm Transition</h3>
+                <p className="text-sm text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto">
+                  Confirming will lock this curriculum framework from any further edits and advance it to the <strong>Syllabus Develop</strong> phase. This action cannot be reverted to Draft.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  onClick={() => {
+                    onFinalize();
+                  }}
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center gap-3 py-3.5 bg-primary text-on-primary rounded-2xl font-black text-sm shadow-xl shadow-primary/25 hover:bg-primary/90 transition active:scale-[0.98] disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5" />
+                  )}
+                  {submitting ? "Confirming..." : "Confirm & Move to Syllabus Develop"}
+                </button>
+
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={submitting}
+                  className="w-full py-3.5 border border-zinc-200 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50 rounded-2xl font-bold text-sm transition active:scale-[0.98] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
