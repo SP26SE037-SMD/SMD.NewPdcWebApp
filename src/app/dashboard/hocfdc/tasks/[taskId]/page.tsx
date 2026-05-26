@@ -194,16 +194,16 @@ export default function TaskDetailPage() {
                   if (!isMounted) return;
 
                   const currList = (currRes as any)?.data || [];
-                  const finalizedCurr = currList.find(
-                    (c: any) => c.status === CURRICULUM_STATUS.SYLLABUS_DEVELOP,
+                  const nonDraftCurr = currList.find(
+                    (c: any) => c.status !== CURRICULUM_STATUS.DRAFT,
                   );
 
-                  if (finalizedCurr) {
+                  if (nonDraftCurr) {
                     console.log(
-                      "[TaskDetail] Curriculum finalized, redirecting to detail page",
+                      "[TaskDetail] Curriculum is not in DRAFT status, redirecting to detail page",
                     );
                     router.replace(
-                      `/dashboard/hocfdc/curriculums/${finalizedCurr.curriculumId}`,
+                      `/dashboard/hocfdc/curriculums/${nonDraftCurr.curriculumId}`,
                     );
                     return; // Stop further processing
                   }
