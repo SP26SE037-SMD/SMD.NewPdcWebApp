@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { TaskItem, TaskService } from "@/services/task.service";
+import { TaskItem, TaskService, TaskStatus } from "@/services/task.service";
 import { DocumentService } from "@/services/document.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,7 @@ import {
   Play,
   FileText,
   ChevronDown,
+  ClipboardCheck,
   Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ export default function TasksPage() {
   const [startingTaskId, setStartingTaskId] = useState<string | null>(null);
   const [checkingPhaseId, setCheckingPhaseId] = useState<string | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
   const tabs = [
     { id: "ALL", label: "All Tasks" },
@@ -148,14 +150,16 @@ export default function TasksPage() {
 
   const handleOpenTask = async (e: React.MouseEvent, task: TaskItem) => {
     e.stopPropagation();
+    const docId = task.document?.documentId || task.targetId || "";
 
-    if (task.type === "MAJOR" && task.targetId) {
+    if (task.type === "MAJOR" && docId) {
       setCheckingPhaseId(task.taskId);
       try {
-        const docDetail = await DocumentService.getDocument(task.targetId);
-        const effectiveMajorId = docDetail.majorId;
+        const docDetail = await DocumentService.getDocument(docId);
+        const effectiveMajorId =
+          docDetail.majorId || (docDetail as any).data?.majorId;
 
-        const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${task.targetId}&type=${task.type}&action=${task.action || ""}${effectiveMajorId ? `&majorId=${effectiveMajorId}` : ""}`;
+        const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${docId}&type=${task.type}&action=${task.action || ""}${effectiveMajorId ? `&majorId=${effectiveMajorId}` : ""}`;
         router.push(url);
       } catch (err) {
         console.error("Failed to check document phase:", err);
@@ -164,8 +168,22 @@ export default function TasksPage() {
         setCheckingPhaseId(null);
       }
     } else {
-      const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${task.targetId || ""}&type=${task.type}&action=${task.action || ""}`;
+      const url = `/dashboard/hocfdc/tasks/${task.taskId}?targetId=${docId}&type=${task.type}&action=${task.action || ""}`;
       router.push(url);
+    }
+  };
+
+  const handleUpdateStatus = async (taskId: string, newStatus: TaskStatus) => {
+    setUpdatingTaskId(taskId);
+    try {
+      await TaskService.updateTaskStatus(taskId, newStatus);
+      toast.success("Task status updated successfully!");
+      await fetchTasks();
+    } catch (err: any) {
+      console.error("Failed to update status:", err);
+      toast.error(err?.message || "Failed to update status.");
+    } finally {
+      setUpdatingTaskId(null);
     }
   };
 
@@ -291,13 +309,13 @@ export default function TasksPage() {
                     Information
                   </th>
                   <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
-                    Status / Phase
+                    Status
                   </th>
                   <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
                     Timeline
                   </th>
                   <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs text-right">
-                    Management
+                    Action
                   </th>
                 </tr>
               </thead>
@@ -382,17 +400,49 @@ export default function TasksPage() {
 
                       <td className="px-5 py-6">
                         <div className="flex flex-col gap-2.5">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-widest w-max shadow-sm ${getStatusClass(task.status)}`}
-                          >
-                            {task.status === "DONE" && (
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            )}
-                            {task.status === "IN_PROGRESS" && (
-                              <Clock className="h-3.5 w-3.5" />
-                            )}
-                            {task.status.replace(/_/g, " ")}
-                          </span>
+                          {task.status === "OVERDUE" ? (
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-widest w-max shadow-sm ${getStatusClass(task.status)}`}
+                            >
+                              <AlertCircle className="h-3.5 w-3.5" />
+                              {task.status.replace(/_/g, " ")}
+                            </span>
+                          ) : (
+                            <select
+                              value={task.status}
+                              disabled={updatingTaskId === task.taskId}
+                              onChange={(e) =>
+                                handleUpdateStatus(
+                                  task.taskId,
+                                  e.target.value as TaskStatus,
+                                )
+                              }
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-widest w-max shadow-sm outline-none cursor-pointer border-none appearance-none pr-8 relative bg-no-repeat bg-[right_10px_center] ${getStatusClass(task.status)}`}
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                backgroundSize: "1.25rem",
+                              }}
+                            >
+                              <option
+                                value="TO_DO"
+                                className="bg-white text-zinc-800 font-semibold"
+                              >
+                                TO DO
+                              </option>
+                              <option
+                                value="IN_PROGRESS"
+                                className="bg-white text-zinc-800 font-semibold"
+                              >
+                                IN PROGRESS
+                              </option>
+                              <option
+                                value="DONE"
+                                className="bg-white text-zinc-800 font-semibold"
+                              >
+                                DONE
+                              </option>
+                            </select>
+                          )}
                         </div>
                       </td>
 
@@ -444,10 +494,11 @@ export default function TasksPage() {
                           </button>
                         ) : (
                           <button
-                            disabled
-                            className="px-5 py-2.5 text-xs font-bold text-on-surface-variant/30 bg-surface-container-lowest rounded-xl italic cursor-not-allowed"
+                            onClick={(e) => handleOpenTask(e, task)}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-tertiary/20 bg-tertiary/5 px-5 py-2.5 text-xs font-black text-tertiary hover:bg-tertiary hover:text-white transition-all active:scale-95"
                           >
-                            Locked
+                            <ClipboardCheck className="h-3.5 w-3.5" />
+                            CHECK REQUEST
                           </button>
                         )}
                       </td>
