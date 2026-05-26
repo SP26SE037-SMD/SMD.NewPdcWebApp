@@ -4,6 +4,7 @@ import React, { use, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { SyllabusInfoModal } from '@/components/dashboard/SyllabusInfoModal';
+import { RevisionRequestedModal } from '@/components/dashboard/RevisionRequestedModal';
 import { useQuery } from "@tanstack/react-query";
 import { TaskService } from "@/services/task.service";
 import { useSelector } from "react-redux";
@@ -42,6 +43,7 @@ export default function RevisionWorkspaceLayout({
     const { taskId } = use(params);
     const { user } = useSelector((state: RootState) => state.auth);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
 
     const { data: routeTaskData, isLoading, error: apiError } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -122,17 +124,38 @@ export default function RevisionWorkspaceLayout({
                 </div>
             </div>
 
-            {!pathname.endsWith('/information') && (
-                <button
-                    onClick={() => setIsInfoModalOpen(true)}
-                    className="fixed bottom-10 right-10 h-10 pl-3 pr-4 rounded-full flex items-center gap-2 shadow-xl z-50 border-2 transition-all hover:scale-105"
-                    style={{ background: '#4caf50', color: '#ffffff', borderColor: 'white' }}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>info</span>
-                    <span className="font-bold text-xs whitespace-nowrap">Syllabus Info</span>
-                </button>
-            )}
+            <div className="flex flex-col gap-3 fixed bottom-10 right-10 z-50">
+                {(realTask?.description || realTask?.comment) && (
+                    <button
+                        onClick={() => setIsRevisionModalOpen(true)}
+                        className="h-10 pl-3 pr-4 rounded-full flex items-center gap-2 shadow-xl border-2 transition-all hover:scale-105"
+                        style={{ background: '#f59e0b', color: '#ffffff', borderColor: 'white' }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>rate_review</span>
+                        <span className="font-bold text-xs whitespace-nowrap">Revision Feedback</span>
+                    </button>
+                )}
+
+                {!pathname.endsWith('/information') && (
+                    <button
+                        onClick={() => setIsInfoModalOpen(true)}
+                        className="h-10 pl-3 pr-4 rounded-full flex items-center gap-2 shadow-xl border-2 transition-all hover:scale-105"
+                        style={{ background: '#4caf50', color: '#ffffff', borderColor: 'white' }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>info</span>
+                        <span className="font-bold text-xs whitespace-nowrap">Syllabus Info</span>
+                    </button>
+                )}
+            </div>
+            
             <SyllabusInfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} syllabusId={realTask?.syllabus?.syllabusId} />
+            <RevisionRequestedModal 
+                isOpen={isRevisionModalOpen} 
+                onClose={() => setIsRevisionModalOpen(false)} 
+                reviewer={realTask?.createdBy as any}
+                description={realTask?.description}
+                comment={realTask?.comment}
+            />
         </PDCMBaseLayout>
     );
 }

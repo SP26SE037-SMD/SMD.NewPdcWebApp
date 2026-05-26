@@ -464,7 +464,7 @@ export default function PDCMDashboardContent({
         const res = await TaskService.getTasksV2({
           assignTo: user?.accountId,
           action:
-            statusTab === "all" || statusTab === "overdue"
+            statusTab === "all" || statusTab === "completed" || statusTab === "overdue"
               ? ["CREATE", "UPDATE"]
               : statusTab === "revision_requested"
                 ? "UPDATE"
@@ -525,7 +525,14 @@ export default function PDCMDashboardContent({
     acceptTaskMutation.mutate(task);
   };
 
-  const tasks = tasksData?.data?.content || [];
+  let tasks = tasksData?.data?.content || [];
+  if (statusTab === "all") {
+    tasks = tasks.filter((task: any) => 
+      task.status !== "DONE" && 
+      task.status !== "COMPLETED" && 
+      task.status !== "APPROVED"
+    );
+  }
   const totalPages = tasksData?.data?.totalPages || 0;
 
   const sidebarItems = [
