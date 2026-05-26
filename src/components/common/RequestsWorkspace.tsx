@@ -78,6 +78,9 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(
     null,
   );
+  const [detailComment, setDetailComment] = useState("");
+  const [commentError, setCommentError] = useState(false);
+  const [viewTaskLoading, setViewTaskLoading] = useState(false);
 
   const [createForm, setCreateForm] = useState({
     title: "",
@@ -492,6 +495,8 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     setShowDetailModal(true);
     setDetailLoading(true);
     setSelectedRequest(null);
+    setDetailComment("");
+    setCommentError(false);
 
     try {
       const response = await RequestService.getRequestById(requestId);
@@ -505,6 +510,60 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
       setShowDetailModal(false);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const handleViewTask = async (taskId: string) => {
+    if (!taskId) return;
+    setViewTaskLoading(true);
+    try {
+      const res = await TaskService.getSprintCurriculumByTaskId(taskId);
+      const data = res?.data || res;
+      if (data?.sprintId && data?.curriculumId) {
+        setShowDetailModal(false);
+        router.push(
+          `/dashboard/hocfdc/framework-execution/${data.curriculumId}/sprints/${data.sprintId}`,
+        );
+      } else {
+        toast.error("Failed to retrieve sprint and curriculum information.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load task details");
+    } finally {
+      setViewTaskLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: "APPROVED" | "REJECTED") => {
+    if (!selectedRequest) return;
+
+    if (newStatus === "REJECTED" && !detailComment.trim()) {
+      setCommentError(true);
+      toast.error("Comment is required when rejecting a request.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await RequestService.updateRequestStatus(
+        selectedRequest.requestId,
+        newStatus,
+        detailComment.trim() || undefined,
+      );
+      toast.success(
+        newStatus === "APPROVED"
+          ? "Request approved successfully!"
+          : "Request rejected successfully!",
+      );
+      setShowDetailModal(false);
+      setDetailComment("");
+      setCommentError(false);
+      fetchRequests();
+      fetchStatusCounts();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update request status");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -619,10 +678,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
   const getStatusClass = (status: string) => {
     if (status === "PENDING")
-      return "bg-amber-500/10 text-amber-500 border border-amber-500/20";
+      return "bg-amber-500/10 text-amber-600 border border-amber-500/20";
     if (status === "APPROVED")
-      return "bg-primary/10 text-primary border border-primary/20";
-    return "bg-error/10 text-error border border-error/20";
+      return "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20";
+    if (status === "REJECTED")
+      return "bg-rose-500/10 text-rose-600 border border-rose-500/20";
+    return "bg-zinc-100 text-zinc-500 border border-zinc-200";
   };
 
   return (
@@ -635,7 +696,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
             className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5"
           >
             <div>
-              <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent pb-1">
+              <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent pb-1">
                 Requests
               </h1>
               <p className="text-on-surface-variant mt-2 text-base max-w-xl">
@@ -657,7 +718,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
               <button
                 onClick={openCreateModal}
-                className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 <ClipboardList className="h-4 w-4" />
                 <span>NEW REQUEST</span>
@@ -750,7 +811,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                     {isActive && (
                       <motion.div
                         layoutId="activeTab"
-                        className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
+                        className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
                         transition={{
                           type: "spring",
                           bounce: 0.2,
@@ -944,28 +1005,8 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                               View Detail
                             </button>
 
-                            {req.status === "APPROVED" && (
-                              <button
-                                onClick={() => handleContinueToSprint(req)}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-primary/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-primary/10 transition duration-300 hover:scale-105 active:scale-95"
-                              >
-                                <FastForward className="h-3.5 w-3.5" />
-                                Continue
-                              </button>
-                            )}
+                            {/* No Continue button in the table row list */}
 
-                            {req.status === "REJECTED" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleFixCurriculum(req);
-                                }}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-error to-error/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-error/10 transition duration-300 hover:scale-105 active:scale-95"
-                              >
-                                <Wrench className="h-3.5 w-3.5" />
-                                Update Curriculum
-                              </button>
-                            )}
                           </div>
                         </td>
                       </motion.tr>
@@ -1027,7 +1068,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1373,7 +1414,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
       <AnimatePresence>
         {showDetailModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1385,12 +1426,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl overflow-hidden rounded-[10px] border border-zinc-200 bg-white shadow-2xl"
+              className="relative w-full max-w-2xl overflow-hidden rounded-[10px] border border-zinc-200 bg-white shadow-2xl"
             >
               {/* Header */}
-              <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
                 <div>
-                  <h2 className="text-2xl font-bold text-zinc-900">
+                  <h2 className="text-xl font-bold text-zinc-900">
                     Request Detail
                   </h2>
                 </div>
@@ -1403,7 +1444,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               </div>
 
               {/* Content */}
-              <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto custom-scrollbar">
                 {detailLoading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-16 text-zinc-400">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -1412,233 +1453,168 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                     </p>
                   </div>
                 ) : selectedRequest ? (
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Current Status
-                        </label>
+                  <div className="space-y-5">
+                    {/* Title + Status + Date row */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <h4 className="text-lg font-bold text-zinc-900 leading-snug flex-1">
+                          {selectedRequest.title}
+                        </h4>
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-wider ${getStatusClass(
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${getStatusClass(
                             selectedRequest.status,
                           )}`}
                         >
                           {selectedRequest.status === "PENDING" && (
-                            <Clock size={12} />
+                            <Clock size={11} />
                           )}
                           {selectedRequest.status === "APPROVED" && (
-                            <CheckCircle2 size={12} />
+                            <CheckCircle2 size={11} />
                           )}
                           {selectedRequest.status === "REJECTED" && (
-                            <XCircle size={12} />
+                            <XCircle size={11} />
                           )}
                           {selectedRequest.status}
                         </span>
                       </div>
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Submission Timeline
-                        </label>
-                        <p className="text-base font-bold text-zinc-900 flex items-center gap-2">
-                          <CalendarDays size={16} className="text-primary" />
+                      <div className="flex items-center gap-4 text-xs text-zinc-400 font-semibold">
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays size={13} className="text-primary/60" />
                           {formatDate(selectedRequest.createdAt)}
-                        </p>
+                        </span>
                         {selectedRequest.updatedAt && (
-                          <div className="text-[10px] text-zinc-400 font-semibold mt-1 pl-6 uppercase tracking-wider">
-                            Last Modified:{" "}
-                            {formatDate(selectedRequest.updatedAt)}
-                          </div>
+                          <span className="text-zinc-300">•</span>
+                        )}
+                        {selectedRequest.updatedAt && (
+                          <span>Modified: {formatDate(selectedRequest.updatedAt)}</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="bg-zinc-50 rounded-[10px] p-6 border border-zinc-100">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-3">
-                        Request Overview
-                      </label>
-                      <h4 className="text-xl font-bold text-zinc-900 mb-3">
-                        {selectedRequest.title}
-                      </h4>
-                      <p className="text-zinc-600 leading-relaxed text-base font-medium whitespace-pre-line">
-                        {selectedRequest.content}
-                      </p>
-                    </div>
+                    {/* Content */}
+                    {selectedRequest.content && (
+                      <div className="bg-zinc-50 rounded-xl p-4 border border-zinc-100">
+                        <p className="text-sm text-zinc-600 leading-relaxed font-medium whitespace-pre-line">
+                          {selectedRequest.content}
+                        </p>
+                      </div>
+                    )}
 
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Originating Authority
+                    {/* Info grid: Sender, Receiver */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-zinc-50 rounded-xl p-3.5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">
+                          Sender
                         </label>
-                        <p className="text-base font-bold text-zinc-900">
+                        <p className="text-sm font-bold text-zinc-900 truncate">
                           {selectedRequest.createdBy?.fullName || "-"}
                         </p>
                         {selectedRequest.createdBy?.email && (
-                          <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                          <p className="text-[11px] text-zinc-400 font-medium truncate mt-0.5">
                             {selectedRequest.createdBy.email}
                           </p>
                         )}
                       </div>
-                      <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                          Reviewing Authority
+                      <div className="bg-zinc-50 rounded-xl p-3.5 border border-zinc-100">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">
+                          Receiver
                         </label>
-                        <p className="text-base font-bold text-zinc-900">
+                        <p className="text-sm font-bold text-zinc-900 truncate">
                           {selectedRequest.receivedBy?.fullName || "-"}
                         </p>
                         {selectedRequest.receivedBy?.email && (
-                          <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                          <p className="text-[11px] text-zinc-400 font-medium truncate mt-0.5">
                             {selectedRequest.receivedBy.email}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* Target Context */}
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      {(() => {
-                        const type = selectedRequest.type;
-                        if (type === "CURRICULUM") {
-                          const majorText = selectedRequest.curriculum?.major
-                            ? `${selectedRequest.curriculum.major.majorCode} - ${selectedRequest.curriculum.major.majorName}`
-                            : selectedRequest.major?.majorName || "-";
-                          return (
-                            <>
-                              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                  Academic Major
-                                </label>
-                                <p className="text-base font-bold text-zinc-900">
-                                  {majorText}
-                                </p>
-                              </div>
-                              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
-                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                  Target Curriculum
-                                </label>
-                                <p className="text-base font-bold text-zinc-900">
-                                  {selectedRequest.curriculum
-                                    ? `${selectedRequest.curriculum.curriculumCode} - ${selectedRequest.curriculum.curriculumName}`
-                                    : "-"}
-                                </p>
-                              </div>
-                            </>
-                          );
-                        }
+                    {/* Attachments */}
+                    <div className="bg-zinc-50 rounded-xl p-3.5 border border-zinc-100 flex items-center justify-between">
+                      <div className="space-y-1 flex-1 mr-4">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">
+                          {(() => {
+                            const t = selectedRequest.type;
+                            if (t === "TASK") return "Attachments (Task)";
+                            if (t === "SUBJECT") return "Attachments (Subject)";
+                            if (t === "SPRINT") return "Attachments (Sprint)";
+                            if (t === "MAJOR") return "Attachments (Major)";
+                            if (t === "CURRICULUM") return "Attachments (Curriculum)";
+                            return "Attachments";
+                          })()}
+                        </label>
+                        <p className="text-sm font-bold text-zinc-900 break-words">
+                          {(() => {
+                            const t = selectedRequest.type;
+                            if (t === "TASK") return selectedRequest.task?.taskName || "-";
+                            if (t === "SUBJECT") return selectedRequest.subject ? `${selectedRequest.subject.subjectCode} - ${selectedRequest.subject.subjectName}` : "-";
+                            if (t === "SPRINT") return selectedRequest.sprint?.sprintName || "-";
+                            if (t === "MAJOR") return selectedRequest.major ? `${selectedRequest.major.majorCode} - ${selectedRequest.major.majorName}` : "-";
+                            if (t === "CURRICULUM") return selectedRequest.curriculum ? `${selectedRequest.curriculum.curriculumCode} - ${selectedRequest.curriculum.curriculumName}` : "-";
+                            return selectedRequest.curriculum?.curriculumCode || selectedRequest.major?.majorName || "-";
+                          })()}
+                        </p>
+                        {selectedRequest.type === "CURRICULUM" && selectedRequest.curriculum?.major && (
+                          <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
+                            {selectedRequest.curriculum.major.majorCode} - {selectedRequest.curriculum.major.majorName}
+                          </p>
+                        )}
+                      </div>
 
-                        if (type === "MAJOR") {
-                          return (
-                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
-                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                Target Major
-                              </label>
-                              <p className="text-base font-bold text-zinc-900">
-                                {selectedRequest.major
-                                  ? `${selectedRequest.major.majorCode} - ${selectedRequest.major.majorName}`
-                                  : "-"}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (type === "TASK") {
-                          return (
-                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
-                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                Target Task
-                              </label>
-                              <p className="text-base font-bold text-zinc-900">
-                                {selectedRequest.task?.taskName || "-"}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (type === "SUBJECT") {
-                          return (
-                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
-                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                Target Subject
-                              </label>
-                              <p className="text-base font-bold text-zinc-900">
-                                {selectedRequest.subject
-                                  ? `${selectedRequest.subject.subjectCode} - ${selectedRequest.subject.subjectName}`
-                                  : "-"}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (type === "SPRINT") {
-                          return (
-                            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
-                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                                Target Sprint
-                              </label>
-                              <p className="text-base font-bold text-zinc-900">
-                                {selectedRequest.sprint?.sprintName || "-"}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        // Fallback logic for old requests
-                        const defaultTargetText =
-                          selectedRequest.curriculum?.curriculumCode ||
-                          selectedRequest.major?.majorName ||
-                          "-";
-                        const defaultLabel = selectedRequest.curriculum
-                          ?.curriculumCode
-                          ? "Target Framework"
-                          : selectedRequest.major?.majorName
-                            ? "Academic Major"
-                            : "Target Entity";
-
-                        return (
-                          <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 md:col-span-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">
-                              {defaultLabel}
-                            </label>
-                            <p className="text-base font-bold text-zinc-900">
-                              {defaultTargetText}
-                            </p>
-                          </div>
-                        );
-                      })()}
+                      {selectedRequest.type === "TASK" && (
+                        <button
+                          onClick={() => {
+                            const tId = selectedRequest.task?.taskId || selectedRequest.targetId;
+                            if (tId) handleViewTask(tId);
+                          }}
+                          disabled={viewTaskLoading}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95 whitespace-nowrap disabled:opacity-60 disabled:hover:bg-primary/5 disabled:hover:text-primary disabled:hover:scale-100"
+                        >
+                          {viewTaskLoading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                          {viewTaskLoading ? "Loading..." : "View Task"}
+                        </button>
+                      )}
                     </div>
 
+                    {/* Decision Comment */}
                     {selectedRequest.comment && (
-                      <div className="bg-primary/5 rounded-[10px] p-6 border border-primary/10 italic">
-                        <label className="text-xs font-bold text-primary uppercase tracking-widest block mb-3">
+                      <div className={`rounded-xl p-4 border ${
+                        selectedRequest.status === "APPROVED" 
+                          ? "bg-emerald-50 border-emerald-200/50 text-emerald-950" 
+                          : selectedRequest.status === "REJECTED" 
+                          ? "bg-rose-50 border-rose-200/50 text-rose-950" 
+                          : "bg-amber-50 border-amber-200/50 text-amber-950"
+                      }`}>
+                        <label className={`text-[10px] font-black uppercase tracking-widest block mb-1.5 ${
+                          selectedRequest.status === "APPROVED" 
+                            ? "text-emerald-600" 
+                            : selectedRequest.status === "REJECTED" 
+                            ? "text-rose-600" 
+                            : "text-amber-600"
+                        }`}>
                           Decision Comment
                         </label>
-                        <p className="text-zinc-700 text-base font-medium leading-relaxed">
-                          "{selectedRequest.comment}"
+                        <p className="text-sm font-semibold leading-relaxed italic">
+                          &ldquo;{selectedRequest.comment}&rdquo;
                         </p>
                       </div>
                     )}
 
-                    {selectedRequest && !detailLoading && (
-                      <div className="mt-8 flex justify-end gap-3 border-t border-zinc-100 pt-6">
-                        {selectedRequest.status === "APPROVED" && (
-                          <button
-                            onClick={() =>
-                              handleContinueToSprint(selectedRequest)
-                            }
-                            className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
-                          >
-                            <FastForward className="h-4 w-4" />
-                            Continue to Curriculum Overview
-                          </button>
-                        )}
-                        {selectedRequest.status === "REJECTED" && (
-                          <button
-                            onClick={() => handleFixCurriculum(selectedRequest)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-amber-500/20"
-                          >
-                            <Wrench className="h-4 w-4" />
-                            Update Curriculum
-                          </button>
-                        )}
+                    {/* Action buttons for REJECTED */}
+                    {selectedRequest && !detailLoading && selectedRequest.status === "REJECTED" && role !== "HoCFDC" && (
+                      <div className="flex justify-end gap-3 border-t border-zinc-100 pt-4">
+                        <button
+                          onClick={() => handleFixCurriculum(selectedRequest)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-amber-500/20"
+                        >
+                          <Wrench className="h-4 w-4" />
+                          Update Curriculum
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1650,13 +1626,68 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               </div>
 
               {/* Footer */}
-              <div className="px-8 py-6 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-8 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-bold shadow-lg shadow-zinc-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                  Acknowledge
-                </button>
+              <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50">
+                {selectedRequest?.status === "PENDING" && requestSource === "RECEIVED" ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className={`text-xs font-bold uppercase tracking-widest ml-1 ${
+                        commentError ? "text-rose-500" : "text-zinc-500"
+                      }`}>
+                        Comment <span className={`${commentError ? "text-rose-400" : "text-zinc-400"} normal-case tracking-normal font-medium`}>(required for rejection)</span>
+                      </label>
+                      <textarea
+                        value={detailComment}
+                        onChange={(e) => {
+                          setDetailComment(e.target.value);
+                          if (e.target.value.trim()) {
+                            setCommentError(false);
+                          }
+                        }}
+                        placeholder="Add your comment here..."
+                        rows={3}
+                        className={`w-full rounded-xl border px-5 py-3 text-sm font-medium outline-none transition resize-none ${
+                          commentError
+                            ? "border-rose-500 bg-rose-50/20 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/10"
+                            : "border-zinc-200 bg-zinc-50 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        }`}
+                      />
+                      {commentError && (
+                        <p className="text-xs text-rose-500 font-bold ml-1 animate-in fade-in duration-200">
+                          Please enter a comment before rejecting this request.
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => handleUpdateStatus("REJECTED")}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-500 bg-rose-50 px-6 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-500 hover:text-white active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                      >
+                        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        <XCircle className="h-4 w-4" />
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus("APPROVED")}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                      >
+                        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-end">
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="px-8 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-bold shadow-lg shadow-zinc-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

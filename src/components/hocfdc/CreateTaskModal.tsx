@@ -16,7 +16,7 @@ import {
   FileText,
   AlertCircle
 } from "lucide-react";
-import { TaskService, TASK_TYPE, CreateTaskPayload, TaskItem, UpdateTaskPayload } from "@/services/task.service";
+import { TaskService, TASK_TYPE, CreateTaskPayload, TaskItem, UpdateTaskPayload, TASK_STATUS } from "@/services/task.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { AccountService } from "@/services/account.service";
 import { useToast } from "@/components/ui/Toast";
@@ -127,8 +127,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: { taskId: string; data: UpdateTaskPayload }) => 
-      TaskService.updateTask(payload.taskId, payload.data),
+    mutationFn: async (payload: { taskId: string; data: UpdateTaskPayload }) => {
+      const res = await TaskService.updateTask(payload.taskId, payload.data);
+      const activeTask = latestTask || task;
+      if (activeTask && ((activeTask.status as string) === "OVERDUE")) {
+        await TaskService.updateTaskStatus(payload.taskId, "IN_PROGRESS");
+      }
+      return res;
+    },
     onSuccess: (res) => {
       if (res.status === 1000 || (res as any).taskId) {
         showToast("Task updated successfully", "success");

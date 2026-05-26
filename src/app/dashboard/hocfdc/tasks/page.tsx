@@ -291,9 +291,6 @@ export default function TasksPage() {
                     Information
                   </th>
                   <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
-                    Context
-                  </th>
-                  <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
                     Status / Phase
                   </th>
                   <th className="px-5 py-2 font-bold text-on-surface-variant/60 uppercase tracking-widest text-xs">
@@ -307,7 +304,7 @@ export default function TasksPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-24 text-center">
+                    <td colSpan={4} className="py-24 text-center">
                       <div className="flex flex-col items-center justify-center gap-4">
                         <div className="relative">
                           <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
@@ -384,22 +381,6 @@ export default function TasksPage() {
                       </td>
 
                       <td className="px-5 py-6">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-secondary/20 flex items-center justify-center text-xs font-bold text-secondary border border-secondary/10">
-                              {task.createdBy?.fullName?.charAt(0) || "V"}
-                            </div>
-                            <span className="text-xs font-bold text-on-surface-variant/80">
-                              Issued by{" "}
-                              <span className="text-on-surface">
-                                {task.createdBy?.fullName || "Vice Principal"}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-6">
                         <div className="flex flex-col gap-2.5">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-widest w-max shadow-sm ${getStatusClass(task.status)}`}
@@ -412,16 +393,6 @@ export default function TasksPage() {
                             )}
                             {task.status.replace(/_/g, " ")}
                           </span>
-                          {task.type === "MAJOR" &&
-                            task.action === "CREATE" && (
-                              <span
-                                className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border shadow-xs bg-primary/5 text-primary/60 border-primary/10 flex items-center gap-1"
-                                title="Phase will be determined when opened"
-                              >
-                                <Info size={10} />
-                                Check Phase on Open
-                              </span>
-                            )}
                         </div>
                       </td>
 
@@ -484,7 +455,7 @@ export default function TasksPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-32 text-center">
+                    <td colSpan={4} className="py-32 text-center">
                       <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in zoom-in duration-500">
                         <div className="w-20 h-20 rounded-3xl bg-surface-container flex items-center justify-center shadow-inner border border-outline/5">
                           <CheckSquare className="h-10 w-10 text-outline/40" />

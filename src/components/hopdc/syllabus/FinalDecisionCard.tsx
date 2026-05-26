@@ -206,12 +206,23 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
 
             // Redirect back to assignments page
             const redirectSprintId = searchParams.get("sprintId") || sprintId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_sprint_id") : "") || "";
-            const redirectCurriculumId = searchParams.get("curriculumId") || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
+            const redirectCurriculumId = searchParams.get("curriculumId") || createSyllabusTask?.curriculumId || rawTask?.curriculumId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
             
-            if (redirectSprintId && redirectCurriculumId) {
-                router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+            const isHoCFDC = pathname.includes("hocfdc");
+            if (isHoCFDC) {
+                const effectiveSprintId = redirectSprintId || sprintId;
+                const effectiveCurrId = redirectCurriculumId || createSyllabusTask?.curriculumId || rawTask?.curriculumId;
+                if (effectiveSprintId && effectiveCurrId) {
+                    router.push(`/dashboard/hocfdc/framework-execution/${effectiveCurrId}/sprints/${effectiveSprintId}`);
+                } else {
+                    router.back();
+                }
             } else {
-                router.push("/dashboard/hopdc/sprint-management");
+                if (redirectSprintId && redirectCurriculumId) {
+                    router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+                } else {
+                    router.push("/dashboard/hopdc/sprint-management");
+                }
             }
 
             await Promise.all([
@@ -280,12 +291,23 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
 
             // Redirect back to assignments page
             const redirectSprintId = searchParams.get("sprintId") || sprintId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_sprint_id") : "") || "";
-            const redirectCurriculumId = searchParams.get("curriculumId") || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
+            const redirectCurriculumId = searchParams.get("curriculumId") || createSyllabusTask?.curriculumId || rawTask?.curriculumId || (typeof window !== "undefined" ? localStorage.getItem("hopdc_last_curriculum_id") : "") || "";
             
-            if (redirectSprintId && redirectCurriculumId) {
-                router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+            const isHoCFDC = pathname.includes("hocfdc");
+            if (isHoCFDC) {
+                const effectiveSprintId = redirectSprintId || sprintId;
+                const effectiveCurrId = redirectCurriculumId || createSyllabusTask?.curriculumId || rawTask?.curriculumId;
+                if (effectiveSprintId && effectiveCurrId) {
+                    router.push(`/dashboard/hocfdc/framework-execution/${effectiveCurrId}/sprints/${effectiveSprintId}`);
+                } else {
+                    router.back();
+                }
             } else {
-                router.push("/dashboard/hopdc/sprint-management");
+                if (redirectSprintId && redirectCurriculumId) {
+                    router.push(`/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`);
+                } else {
+                    router.push("/dashboard/hopdc/sprint-management");
+                }
             }
 
             await Promise.all([

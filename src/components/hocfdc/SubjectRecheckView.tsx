@@ -24,7 +24,8 @@ import {
   Check,
   X,
   Send,
-  Loader2
+  Loader2,
+  ClipboardList
 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +34,7 @@ import { RootState } from "@/store";
 import { ReviewTaskService, REVIEW_TASK_STATUS } from "@/services/review-task.service";
 import { useToast } from "@/components/ui/Toast";
 import { TaskService } from "@/services/task.service";
+import { FinalDecisionCard } from "@/components/hopdc/syllabus/FinalDecisionCard";
 
 export default function SubjectRecheckView() {
   const router = useRouter();
@@ -53,6 +55,7 @@ export default function SubjectRecheckView() {
   const [titleTask, setTitleTask] = useState("");
   const [comment, setComment] = useState("");
   const [isAffectedSyllabus, setIsAffectedSyllabus] = useState(false);
+  const [isDecisionOpen, setIsDecisionOpen] = useState(false);
 
   // Approve Mutation
   const approveMutation = useMutation({
@@ -89,6 +92,10 @@ export default function SubjectRecheckView() {
 
   const taskType = taskDetailResp?.data?.type;
   const isReusedSubject = taskType === "REUSED_SUBJECT";
+
+  const syllabusId = taskDetailResp?.data?.syllabusId || taskDetailResp?.data?.syllabus?.syllabusId || null;
+  const hasDecisionBeenMade = taskDetailResp?.data && (taskDetailResp.data.isAccepted !== null && taskDetailResp.data.isAccepted !== undefined);
+  const showFloatingDecision = !!taskId && !hasDecisionBeenMade;
 
   // Force false if it's a reused subject
   useEffect(() => {
@@ -234,22 +241,7 @@ export default function SubjectRecheckView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-rose-100 transition-all flex items-center gap-2 active:scale-95"
-          >
-            <Activity size={14} />
-            Revision request
-          </button>
-          <button 
-            onClick={() => setIsApproveModalOpen(true)}
-            className="px-6 py-3 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-emerald-100 transition-all flex items-center gap-2 active:scale-95"
-          >
-            <CheckCircle2 size={14} />
-            Approve Subject
-          </button>
-        </div>
+        {/* Actions removed (Decision card handles actions) */}
       </div>
 
       <div className="flex border-b border-zinc-200 gap-8 uppercase tracking-[0.2em] text-[11px] font-black">
@@ -869,6 +861,34 @@ export default function SubjectRecheckView() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Decision Card */}
+      {showFloatingDecision && (
+        <div className="fixed bottom-8 right-8 z-[80] flex flex-col items-end gap-3 pointer-events-none">
+          {isDecisionOpen && (
+            <div className="w-96 shadow-2xl rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur-md relative animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-hidden pointer-events-auto mb-2">
+              <FinalDecisionCard syllabusId={syllabusId} taskId={taskId} />
+            </div>
+          )}
+          <button
+            onClick={() => setIsDecisionOpen(!isDecisionOpen)}
+            className={`pointer-events-auto relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 ${
+              isDecisionOpen
+                ? "bg-amber-600 border-amber-600 text-white hover:bg-amber-700"
+                : "bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:scale-105 active:scale-95"
+            }`}
+            title="Final Decision"
+          >
+            {isDecisionOpen ? <X size={20} /> : <ClipboardList size={20} />}
+            {!isDecisionOpen && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </span>
+            )}
+          </button>
         </div>
       )}
     </div>

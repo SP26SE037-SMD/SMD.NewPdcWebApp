@@ -157,7 +157,7 @@ export function TaskDetailModal({
       await RequestService.createRequestV2({
         title: requestTitle.trim(),
         content: requestContent.trim(),
-        type: "task",
+        type: "TASK",
         targetId: task.taskId,
         receivedById: task.createdBy?.accountId || null,
       });
