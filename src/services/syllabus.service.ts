@@ -297,4 +297,25 @@ export const SyllabusService = {
 
     return response.json();
   },
+
+  async copySyllabus(
+    oldSyllabusId: string,
+    newSyllabusId: string,
+  ): Promise<ApiResponse<unknown>> {
+    const response = await fetch(
+      `/api/syllabus/copy?oldSyllabusId=${oldSyllabusId}&newSyllabusId=${newSyllabusId}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { accept: "*/*" },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to copy syllabus");
+    }
+
+    return response.json();
+  },
 };

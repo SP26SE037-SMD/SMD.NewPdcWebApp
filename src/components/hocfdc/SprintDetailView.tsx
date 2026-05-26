@@ -754,8 +754,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                 excludeAccountId: subtaskParentTask?.account?.accountId,
               }
             : {
-                taskName: `CREATE SYLLABUS: Syllabus for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                description: `Draft syllabus content for Syllabus for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
+                taskName: `CREATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                description: `Draft syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
                 priority: "MEDIUM",
               }
         }

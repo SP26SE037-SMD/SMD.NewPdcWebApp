@@ -52,7 +52,7 @@ interface TaskDetailModalProps {
   curriculumId: string;
   sprintId: string;
   sprintDeadline?: string;
-  onUpdateStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateStatus: (taskId: string, status: TaskStatus, deadline?: string) => void;
   isUpdatingStatus: boolean;
   onOpenTaskModal: (
     mode: "CREATE" | "UPDATE" | "REVIEW",
@@ -137,6 +137,15 @@ export function TaskDetailModal({
   const [requestTitle, setRequestTitle] = useState("");
   const [requestContent, setRequestContent] = useState("");
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [extendedDeadline, setExtendedDeadline] = useState("");
+
+  useEffect(() => {
+    if (task?.deadline) {
+      setExtendedDeadline(toInputDate(task.deadline));
+    } else {
+      setExtendedDeadline("");
+    }
+  }, [task]);
 
   useEffect(() => {
     if (isOpen && task) {
@@ -442,45 +451,88 @@ export function TaskDetailModal({
                   <CircleDot size={16} className="text-zinc-400" />
                   <span>Status</span>
                 </div>
-                {currentUser?.role === "HOCFDC" ? (
+                {currentUser?.role === "HOCFDC" || (currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && task.status !== TASK_STATUS.OVERDUE) ? (
                   <span
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusSelectClass(task.status)}`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusSelectClass(task.status)}`}
+                    title={currentUser?.role === "HOPDC" && task.type === "SYLLABUS" ? "Cannot change status of SYLLABUS tasks" : undefined}
                   >
+                    {currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && <Lock size={12} className="shrink-0" />}
                     {(task.status || "UNKNOWN").replace(/_/g, " ")}
                   </span>
                 ) : (
                   <select
                     value={task.status}
-                    onChange={(e) =>
-                      onUpdateStatus(task.taskId, e.target.value as TaskStatus)
-                    }
-                    disabled={isUpdatingStatus || task.status === TASK_STATUS.OVERDUE}
+                    onChange={(e) => {
+                      const nextStatus = e.target.value as TaskStatus;
+                      if (task.status === TASK_STATUS.OVERDUE && nextStatus === TASK_STATUS.IN_PROGRESS && task.type === "SYLLABUS") {
+                        if (!extendedDeadline) {
+                          showToast("Please specify a new deadline date.", "error");
+                          return;
+                        }
+                        const selectedTime = new Date(extendedDeadline).setHours(0, 0, 0, 0);
+                        const todayTime = new Date().setHours(0, 0, 0, 0);
+                        if (selectedTime <= todayTime) {
+                          showToast("New deadline must be a future date.", "error");
+                          return;
+                        }
+                        if (sprintDeadline) {
+                          const sprintTime = new Date(sprintDeadline).setHours(23, 59, 59, 999);
+                          if (selectedTime > sprintTime) {
+                            showToast(`New deadline cannot exceed the sprint deadline (${new Date(sprintDeadline).toLocaleDateString("vi-VN")}).`, "error");
+                            return;
+                          }
+                        }
+                        onUpdateStatus(task.taskId, nextStatus, extendedDeadline);
+                      } else {
+                        onUpdateStatus(task.taskId, nextStatus);
+                      }
+                    }}
+                    disabled={isUpdatingStatus || (task.status === TASK_STATUS.OVERDUE && task.type !== "SYLLABUS")}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none transition-colors cursor-pointer disabled:opacity-50 ${getStatusSelectClass(task.status)}`}
                   >
-                    <option
-                      value={TASK_STATUS.TO_DO}
-                      className="bg-white text-zinc-800 font-semibold"
-                    >
-                      TO DO
-                    </option>
-                    <option
-                      value={TASK_STATUS.IN_PROGRESS}
-                      className="bg-white text-zinc-800 font-semibold"
-                    >
-                      IN PROGRESS
-                    </option>
-                    <option
-                      value={TASK_STATUS.DONE}
-                      className="bg-white text-zinc-800 font-semibold"
-                    >
-                      DONE
-                    </option>
-                    <option
-                      value={TASK_STATUS.OVERDUE}
-                      className="bg-white text-zinc-800 font-semibold"
-                    >
-                      OVERDUE
-                    </option>
+                    {task.status === TASK_STATUS.OVERDUE && task.type === "SYLLABUS" ? (
+                      <>
+                        <option
+                          value={TASK_STATUS.OVERDUE}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          OVERDUE
+                        </option>
+                        <option
+                          value={TASK_STATUS.IN_PROGRESS}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          IN PROGRESS
+                        </option>
+                      </>
+                    ) : (
+                      <>
+                        <option
+                          value={TASK_STATUS.TO_DO}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          TO DO
+                        </option>
+                        <option
+                          value={TASK_STATUS.IN_PROGRESS}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          IN PROGRESS
+                        </option>
+                        <option
+                          value={TASK_STATUS.DONE}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          DONE
+                        </option>
+                        <option
+                          value={TASK_STATUS.OVERDUE}
+                          className="bg-white text-zinc-800 font-semibold"
+                        >
+                          OVERDUE
+                        </option>
+                      </>
+                    )}
                   </select>
                 )}
               </div>
@@ -491,14 +543,25 @@ export function TaskDetailModal({
                   <Calendar size={16} className="text-zinc-400" />
                   <span>Deadline</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                  <Calendar size={14} />
-                  <span>
-                    {task.deadline
-                      ? new Date(task.deadline).toLocaleDateString("vi-VN")
-                      : "N/A"}
-                  </span>
-                </div>
+                {currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && task.status === TASK_STATUS.OVERDUE ? (
+                  <input
+                    type="date"
+                    value={extendedDeadline}
+                    min={new Date().toISOString().slice(0, 10)}
+                    max={sprintDeadline ? new Date(sprintDeadline).toISOString().slice(0, 10) : undefined}
+                    onChange={(e) => setExtendedDeadline(e.target.value)}
+                    className="px-3 py-1 text-xs border border-zinc-200 rounded-lg font-semibold text-zinc-800 outline-none focus:border-emerald-500 bg-white focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                ) : (
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                    <Calendar size={14} />
+                    <span>
+                      {task.deadline
+                        ? new Date(task.deadline).toLocaleDateString("vi-VN")
+                        : "N/A"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1035,7 +1098,8 @@ export function TaskDetailModal({
 
               {/* HOPDC Request Extension Block (Overdue Tasks) */}
               {currentUser?.role === "HOPDC" &&
-                task.status === TASK_STATUS.OVERDUE && (
+                task.status === TASK_STATUS.OVERDUE &&
+                task.type !== "SYLLABUS" && (
                   <div className="pt-4">
                     <div className="w-full p-5 rounded-2xl bg-rose-50 border border-rose-200 space-y-4 shadow-sm">
                       <div className="flex items-center gap-2">
@@ -1061,6 +1125,29 @@ export function TaskDetailModal({
                         >
                           Request Extension
                         </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {/* HOPDC Direct Extension Info for SYLLABUS tasks */}
+              {currentUser?.role === "HOPDC" &&
+                task.status === TASK_STATUS.OVERDUE &&
+                task.type === "SYLLABUS" && (
+                  <div className="pt-4">
+                    <div className="w-full p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 shadow-sm animate-in fade-in duration-300">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-amber-200/50 text-amber-700 animate-pulse">
+                          <AlertCircle size={14} />
+                        </div>
+                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">
+                          Syllabus Task Overdue
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2 text-xs">
+                        <p className="font-semibold text-zinc-500 leading-relaxed">
+                          This syllabus task is <span className="font-bold text-amber-700">OVERDUE</span>. You can extend the deadline and resume work by selecting a new deadline date in the attribute fields above, then changing the status to <span className="font-bold text-emerald-600">IN PROGRESS</span>.
+                        </p>
                       </div>
                     </div>
                   </div>
