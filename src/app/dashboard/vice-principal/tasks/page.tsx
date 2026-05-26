@@ -275,7 +275,7 @@ export default function VPTasksPage() {
                   </tr>
                 ) : tasks.length > 0 ? (
                   tasks.map((task, idx) => {
-                    const assignTo = task.assignTo as any;
+                    const assignTo = (task as any).assignTo;
                     return (
                     <motion.tr
                       key={task.taskId}
@@ -360,7 +360,7 @@ export default function VPTasksPage() {
                           <div className="flex items-center gap-2 text-on-surface-variant">
                             <CalendarDays className="w-4 h-4 text-primary/40" />
                             <span className="text-sm font-bold">
-                              {formatDate(task.deadline || task.dueDate)}
+                              {formatDate(task.deadline || (task as any).dueDate)}
                             </span>
                           </div>
                           <span
