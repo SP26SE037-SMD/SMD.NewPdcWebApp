@@ -173,7 +173,7 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                 Select
               </div>
             )}
-            <div className={`col-span-${isCompareMode ? '4' : '5'} text-xs font-black uppercase tracking-widest text-zinc-500`}>
+            <div className={`${isCompareMode ? 'col-span-4' : 'col-span-5'} text-xs font-black uppercase tracking-widest text-zinc-500`}>
               Syllabus Name
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
@@ -201,11 +201,18 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors ${
+                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${
                   isCompareMode && selectedSyllabusIds.includes(syllabus.syllabusId)
                     ? "bg-blue-50/30"
                     : "hover:bg-zinc-50/60"
                 }`}
+                onClick={() => {
+                  if (isCompareMode) {
+                    handleToggleSelect(syllabus.syllabusId);
+                  } else {
+                    router.push(`/dashboard/hopdc/syllabuses/${syllabus.syllabusId}/information`);
+                  }
+                }}
               >
                 {isCompareMode && (
                   <div className="col-span-1 flex items-center justify-center">
@@ -227,7 +234,7 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                   </div>
                 )}
                 
-                <div className={`col-span-${isCompareMode ? '4' : '5'} space-y-0.5`}>
+                <div className={`${isCompareMode ? 'col-span-4' : 'col-span-5'} space-y-0.5`}>
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
