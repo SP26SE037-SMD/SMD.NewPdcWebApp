@@ -125,7 +125,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
 
             let pointColor = "bg-zinc-200";
             if (isActive || isCompleted) {
-              pointColor = isRevision ? "bg-rose-500" : "bg-primary";
+              pointColor = isRevision || isOverdue ? "bg-rose-500" : "bg-primary";
             }
 
             return (
@@ -140,8 +140,8 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                         isActive || isCompleted
                           ? idx === 2
                             ? "var(--primary)" // Primary green for DONE
-                            : idx === 1 && isRevision
-                              ? "#f43f5e" // Red only for Revision
+                            : idx === 1 && (isRevision || isOverdue)
+                              ? "#f43f5e" // Red only for Revision or Overdue
                               : "var(--primary)"
                           : "#e4e4e7",
                     }}
@@ -149,7 +149,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                   >
                     {isCompleted || (isActive && s === "DONE") ? (
                       <Check size={8} className="text-white stroke-[4]" />
-                    ) : isActive && isRevision && idx === 1 ? (
+                    ) : isActive && (isRevision || isOverdue) && idx === 1 ? (
                       <AlertCircle size={10} className="text-white" />
                     ) : (
                       isActive && (
@@ -165,7 +165,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: isCompleted ? "100%" : "0%" }}
-                      className={`absolute inset-0 ${idx === 0 ? "bg-primary/40" : (idx === 1 && isRevision) ? "bg-rose-300" : (idx === 1 && isApproved) ? "bg-emerald-300" : "bg-primary/40"}`}
+                      className={`absolute inset-0 ${idx === 0 ? (isOverdue ? "bg-rose-300" : "bg-primary/40") : (idx === 1 && isRevision) ? "bg-rose-300" : (idx === 1 && isApproved) ? "bg-emerald-300" : "bg-primary/40"}`}
                       transition={{ duration: 0.5 }}
                     />
                   </div>
@@ -181,9 +181,9 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
             TO DO
           </span>
           <span
-            className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 1 ? (isRevision ? "text-rose-500" : "text-primary") : "text-zinc-400"}`}
+            className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 1 ? (isRevision || isOverdue ? "text-rose-500" : "text-primary") : "text-zinc-400"}`}
           >
-            {isRevision ? "REVISION REQUESTED" : "IN PROGRESS"}
+            {isOverdue ? "OVERDUE" : isRevision ? "REVISION REQUESTED" : "IN PROGRESS"}
           </span>
           <span
             className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 2 ? "text-primary" : "text-zinc-400"}`}
@@ -281,12 +281,26 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
               {/* Task Name */}
               <td className="px-6 py-5">
                 <div className="flex flex-col gap-1">
-                  <button
-                    onClick={() => onViewDetails(task)}
-                    className="font-black text-sm text-zinc-900 text-left tracking-tight hover:text-primary transition-colors outline-none cursor-pointer"
-                  >
-                    {task.taskName}
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => onViewDetails(task)}
+                      className="font-black text-sm text-zinc-900 text-left tracking-tight hover:text-primary transition-colors outline-none cursor-pointer"
+                    >
+                      {task.taskName}
+                    </button>
+                    {task.isAccepted === true && (
+                      <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md uppercase tracking-wider">
+                        <Check size={8} className="stroke-[3]" />
+                        Accepted
+                      </span>
+                    )}
+                    {task.isAccepted === false && (
+                      <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[8px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-md uppercase tracking-wider">
+                        <AlertCircle size={8} />
+                        Rejected
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <Tag size={10} className="text-zinc-300" />
                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
@@ -376,22 +390,48 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                     </>
                   )}
                   {task.status === TASK_STATUS.DONE && (
+                    <>
+                      {task.isAccepted === null || task.isAccepted === undefined ? (
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
+                            )
+                          }
+                          className="px-2.5 py-1.5 bg-[#409b43] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-[#409b43]/20 flex items-center gap-1.5 ml-auto group/btn"
+                        >
+                          <CheckCircle2
+                            size={14}
+                            className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
+                          />
+                          recheck subject
+                        </button>
+                      ) : task.isAccepted === true ? (
+                        <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-200 flex items-center gap-1.5 ml-auto shadow-sm">
+                          <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3]" />
+                          Accepted
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1.5 bg-rose-50 text-rose-700 text-[9px] font-black uppercase tracking-widest rounded-lg border border-rose-200 flex items-center gap-1.5 ml-auto shadow-sm">
+                          <AlertCircle className="h-3.5 w-3.5 text-rose-600" />
+                          Rejected
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {task.status === TASK_STATUS.OVERDUE && (
                     <button
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/hocfdc/framework-execution/${curriculumId}/recheck/${task.subjectId}?taskId=${task.taskId}`,
-                        )
-                      }
-                      className="px-2.5 py-1.5 bg-[#409b43] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-[#409b43]/20 flex items-center gap-1.5 ml-auto group/btn"
+                      onClick={() => onEdit(task)}
+                      className="px-2.5 py-1.5 bg-rose-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-700 transition-all shadow-md shadow-rose-600/20 flex items-center gap-1.5 ml-auto group/btn"
                     >
-                      <CheckCircle2
+                      <Clock
                         size={14}
-                        className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
+                        className="text-rose-100 group-hover/btn:scale-110 transition-transform"
                       />
-                      recheck subject
+                      extend task
                     </button>
                   )}
-                  {sprintStatus !== SPRINT_STATUS.PLANNING && task.status !== TASK_STATUS.DONE && (
+                  {sprintStatus !== SPRINT_STATUS.PLANNING && task.status !== TASK_STATUS.DONE && task.status !== TASK_STATUS.OVERDUE && (
                     <button className="p-2 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200">
                       <MoreVertical size={16} />
                     </button>

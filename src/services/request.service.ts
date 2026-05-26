@@ -182,13 +182,9 @@ export const RequestService = {
     },
 
     updateRequestStatus: async (id: string, status: string, comment?: string) => {
-        const queryParams = new URLSearchParams();
-        queryParams.append("status", status);
-        if (comment) queryParams.append("comment", comment);
-
         return apiClient.patch<RequestDetailResponse>(
-            `/api/requests/${id}/status?${queryParams.toString()}`,
-            {}
+            `/api/requests/${id}/status`,
+            { status, comment: comment || "" }
         );
     },
 };

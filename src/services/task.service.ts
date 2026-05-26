@@ -478,6 +478,17 @@ export const TaskService = {
     };
   },
 
+  getSprintCurriculumByTaskId: async (taskId: string) => {
+    return apiClient.get<{
+      sprintId: string;
+      sprintName: string;
+      curriculumId: string;
+      curriculumCode: string;
+    } | any>(`/api/v1/tasks-v2/${taskId}/sprint-curriculum`, {
+      credentials: "include",
+    });
+  },
+
   getTaskByAccountId: async (id: string, status?: TaskStatus) => {
     const queryParams = new URLSearchParams({ accountId: id });
     if (status) queryParams.append("status", status);
