@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CreateSyllabusTaskModal } from "./CreateSyllabusTaskModal";
+import { CreateSyllabusAdvancedModal } from "./CreateSyllabusAdvancedModal";
 import { ManageSyllabusSourcesModal } from "./ManageSyllabusSourcesModal";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { TaskRow } from "./TaskRow";
@@ -294,8 +295,36 @@ export function TaskList({ sprintId }: TaskListProps) {
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
-      TaskService.updateTaskStatus(taskId, status),
+    mutationFn: async ({
+      taskId,
+      status,
+      deadline,
+    }: {
+      taskId: string;
+      status: TaskStatus;
+      deadline?: string;
+    }) => {
+      if (deadline) {
+        const originalTask = tasks.find((t) => t.taskId === taskId);
+        if (originalTask) {
+          const payload = {
+            assignTo: originalTask.account?.accountId || "",
+            taskName: originalTask.taskName,
+            description: originalTask.description || "",
+            action: originalTask.action || "",
+            isAccepted: originalTask.isAccepted ?? null,
+            comment: originalTask.comment || "",
+            priority: originalTask.priority || "NORMAL",
+            type: originalTask.type,
+            targetId: originalTask.targetId || originalTask.syllabusId || originalTask.syllabus?.syllabusId || "",
+            rootTaskId: originalTask.rootTaskId || "",
+            dueDate: deadline,
+          };
+          await TaskService.updateTask(taskId, payload);
+        }
+      }
+      return TaskService.updateTaskStatus(taskId, status);
+    },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
         localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
@@ -305,11 +334,11 @@ export function TaskList({ sprintId }: TaskListProps) {
           }),
         );
       }
-      showToast("Status updated successfully", "success");
+      showToast("Task updated successfully", "success");
       await queryClient.invalidateQueries({ queryKey: ["assignments", sprintId] });
     },
     onError: (error: any) => {
-      showToast(error.message || "Failed to update status", "error");
+      showToast(error.message || "Failed to update task", "error");
     },
   });
 
@@ -703,8 +732,8 @@ export function TaskList({ sprintId }: TaskListProps) {
           curriculumId={curriculumId}
           sprintId={sprintId}
           sprintDeadline={sprint?.endDate}
-          onUpdateStatus={(taskId, status) =>
-            updateStatusMutation.mutate({ taskId, status })
+          onUpdateStatus={(taskId, status, deadline) =>
+            updateStatusMutation.mutate({ taskId, status, deadline })
           }
           isUpdatingStatus={updateStatusMutation.isPending}
           onOpenTaskModal={onOpenTaskModal}
@@ -773,57 +802,77 @@ export function TaskList({ sprintId }: TaskListProps) {
       />
 
       {/* ─── Create Subtask Modal ─────────────────────────────────────────────── */}
-      <CreateSyllabusTaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => {
-          setIsTaskModalOpen(false);
-          setTaskModalParentTask(null);
-        }}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["assignments"] });
-        }}
-        mode={taskModalMode}
-        sprintId={sprintId}
-        rootTaskId={taskModalParentTask?.taskId || null}
-        subjectId={taskModalParentTask?.subjectId}
-        subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
-        targetId={
-          taskModalParentTask?.targetId ||
-          taskModalParentTask?.syllabus?.syllabusId ||
-          taskModalParentTask?.syllabusId
-        }
-        accounts={departmentAccounts}
-        currentUserEmail={user?.email || ""}
-        sprintDeadline={sprint?.endDate}
-        initialData={
-          taskModalMode === "UPDATE"
-            ? {
-                taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description:
-                  (
-                    document.getElementById(
-                      `comment-${taskModalParentTask?.taskId}`,
-                    ) as HTMLTextAreaElement
-                  )?.value || "",
-                priority: taskModalParentTask?.priority,
-                dueDate: taskModalParentTask?.deadline,
-                assignTo: taskModalParentTask?.account?.accountId,
-              }
-            : taskModalMode === "REVIEW"
-            ? {
-                taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                priority: "MEDIUM",
-                dueDate: taskModalParentTask?.deadline,
-                excludeAccountId: taskModalParentTask?.account?.accountId,
-              }
-            : {
-                taskName: `CREATE SYLLABUS: Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                description: `Draft syllabus content for Syllabus for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} v1`,
-                priority: "MEDIUM",
-              }
-        }
-      />
+      {taskModalParentTask?.type === "SUBJECT" || taskModalParentTask?.type === "NEW_SUBJECT" || taskModalParentTask?.type === "REUSED_SUBJECT" ? (
+        <CreateSyllabusAdvancedModal
+          isOpen={isTaskModalOpen}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setTaskModalParentTask(null);
+          }}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["assignments"] });
+          }}
+          sprintId={sprintId}
+          rootTaskId={taskModalParentTask?.taskId || null}
+          subjectId={taskModalParentTask?.subjectId}
+          subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
+          accounts={departmentAccounts}
+          currentUserEmail={user?.email || ""}
+          sprintDeadline={sprint?.endDate}
+        />
+      ) : (
+        <CreateSyllabusTaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setTaskModalParentTask(null);
+          }}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["assignments"] });
+          }}
+          mode={taskModalMode}
+          sprintId={sprintId}
+          rootTaskId={taskModalParentTask?.taskId || null}
+          subjectId={taskModalParentTask?.subjectId}
+          subjectName={taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "")}
+          targetId={
+            taskModalParentTask?.targetId ||
+            taskModalParentTask?.syllabus?.syllabusId ||
+            taskModalParentTask?.syllabusId
+          }
+          accounts={departmentAccounts}
+          currentUserEmail={user?.email || ""}
+          sprintDeadline={sprint?.endDate}
+          initialData={
+            taskModalMode === "UPDATE"
+              ? {
+                  taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  description:
+                    (
+                      document.getElementById(
+                        `comment-${taskModalParentTask?.taskId}`,
+                      ) as HTMLTextAreaElement
+                    )?.value || "",
+                  priority: taskModalParentTask?.priority,
+                  dueDate: taskModalParentTask?.deadline,
+                  assignTo: taskModalParentTask?.account?.accountId,
+                }
+              : taskModalMode === "REVIEW"
+              ? {
+                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  priority: "MEDIUM",
+                  dueDate: taskModalParentTask?.deadline,
+                  excludeAccountId: taskModalParentTask?.account?.accountId,
+                }
+              : {
+                  taskName: `CREATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                  description: `Draft syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                  priority: "MEDIUM",
+                }
+          }
+        />
+      )}
     </div>
   );
 }

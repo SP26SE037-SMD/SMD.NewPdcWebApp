@@ -98,7 +98,7 @@ export function TaskRow({
           </div>
 
           {/* Status Bullet */}
-          {onUpdateStatus && task.status !== "OVERDUE" ? (
+          {onUpdateStatus && task.status !== "OVERDUE" && task.type !== "SYLLABUS" ? (
             <div className="relative mr-2.5 shrink-0 z-10">
               <button
                 type="button"
@@ -241,7 +241,10 @@ export function TaskRow({
               )}
             </div>
           ) : (
-            <div className={`mr-2.5 p-1 rounded-md bg-white border border-zinc-100 shadow-sm shrink-0 ${statusConfig.text}`}>
+            <div
+              className={`mr-2.5 p-1 rounded-md bg-white border border-zinc-100 shadow-sm shrink-0 ${statusConfig.text}`}
+              title={task.type === "SYLLABUS" ? "Cannot change status of SYLLABUS tasks" : undefined}
+            >
               <StatusIcon size={14} />
             </div>
           )}

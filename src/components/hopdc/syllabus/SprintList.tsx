@@ -42,16 +42,13 @@ export const SprintsReceive = ({
       accountId ?? null,
       curriculumId ?? null,
       page,
-      statusFilter,
       searchQuery,
     ],
     queryFn: () => {
       const commonParams = {
         page,
         size,
-        status: statusFilter === "OVERDUE" 
-          ? SPRINT_STATUS.IN_PROGRESS 
-          : (statusFilter === "ALL" ? undefined : statusFilter),
+        status: undefined, // Fetch all to show counts across all tabs
         search: searchQuery || undefined,
       };
 
@@ -69,7 +66,21 @@ export const SprintsReceive = ({
     refetchOnMount: "always",
   });
 
-  const sprints: SprintItem[] = (data?.data?.content || []).filter(
+  const allSprintsList: SprintItem[] = data?.data?.content || [];
+
+  const inProgressCount = allSprintsList.filter(
+    (sprint) => sprint.status === SPRINT_STATUS.IN_PROGRESS && calculateRemainingDays(sprint.endDate) > 0
+  ).length;
+
+  const completedCount = allSprintsList.filter(
+    (sprint) => sprint.status === SPRINT_STATUS.COMPLETED
+  ).length;
+
+  const overdueCount = allSprintsList.filter(
+    (sprint) => sprint.status === SPRINT_STATUS.IN_PROGRESS && calculateRemainingDays(sprint.endDate) <= 0
+  ).length;
+
+  const sprints: SprintItem[] = allSprintsList.filter(
     (sprint) => {
       if (statusFilter === "OVERDUE") {
         return sprint.status === SPRINT_STATUS.IN_PROGRESS && calculateRemainingDays(sprint.endDate) <= 0;
@@ -95,9 +106,9 @@ export const SprintsReceive = ({
   };
 
   const statusOptions = [
-    { id: SPRINT_STATUS.IN_PROGRESS, label: "In Progress" },
-    { id: SPRINT_STATUS.COMPLETED, label: "Completed" },
-    { id: "OVERDUE", label: "Overdue" },
+    { id: SPRINT_STATUS.IN_PROGRESS, label: `In Progress (${inProgressCount})` },
+    { id: SPRINT_STATUS.COMPLETED, label: `Completed (${completedCount})` },
+    { id: "OVERDUE", label: `Overdue (${overdueCount})` },
   ];
 
   const getSprintHref = (sprint: SprintItem) => {

@@ -78,7 +78,7 @@ export function CreateSyllabusTaskModal({
     return subjectName;
   }, [subjectName]);
 
-  const defaultSyllabusName = cleanSubjectName ? `Syllabus for ${cleanSubjectName}.v1` : "";
+  const defaultSyllabusName = cleanSubjectName ? `${cleanSubjectName} Syllabus.v1` : "";
 
   const [syllabusName, setSyllabusName] = useState(defaultSyllabusName);
 
@@ -259,7 +259,7 @@ export function CreateSyllabusTaskModal({
                     setDescription(`Draft syllabus content for ${val}`);
                   }
                 }}
-                placeholder="e.g. Syllabus for Software Architecture v1"
+                placeholder="e.g. Software Architecture Syllabus.v1"
                 className={`w-full h-12 rounded-[10px] border ${
                   fieldErrors.syllabusName
                     ? "border-red-500 bg-red-50/30"
