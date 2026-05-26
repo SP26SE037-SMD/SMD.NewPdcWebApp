@@ -44,7 +44,7 @@ const getInitials = (name?: string) => {
 };
 
 interface RequestsWorkspaceProps {
-  role: "HoCFDC" | "HoPDC";
+  role: "HoCFDC" | "HoPDC" | "VP";
 }
 
 export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
@@ -62,7 +62,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
   // Split tabs for createdBy (CREATED) and receiveBy (RECEIVED)
   const [requestSource, setRequestSource] = useState<"CREATED" | "RECEIVED">(
-    "CREATED",
+    role === "VP" ? "RECEIVED" : "CREATED",
   );
   const [sortBy, setSortBy] = useState<string>("date-desc");
 
@@ -716,13 +716,15 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                 Refresh
               </button>
 
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
-              >
-                <ClipboardList className="h-4 w-4" />
-                <span>NEW REQUEST</span>
-              </button>
+              {role !== "VP" && (
+                <button
+                  onClick={openCreateModal}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-primary/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  <span>NEW REQUEST</span>
+                </button>
+              )}
             </div>
           </motion.div>
 
@@ -742,47 +744,49 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
             </motion.div>
 
             {/* Request Source Segmented Tabs */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="flex bg-zinc-100 p-1.5 rounded-2xl w-full md:max-w-md border border-zinc-200/50"
-            >
-              <button
-                onClick={() => handleSourceTabChange("CREATED")}
-                className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-                  requestSource === "CREATED"
-                    ? "text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
-                }`}
+            {role !== "VP" && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="flex bg-zinc-100 p-1.5 rounded-2xl w-full md:max-w-md border border-zinc-200/50"
               >
-                {requestSource === "CREATED" && (
-                  <motion.div
-                    layoutId="sourceTabActive"
-                    className="absolute inset-0 bg-primary rounded-xl shadow-md"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">Created</span>
-              </button>
-              <button
-                onClick={() => handleSourceTabChange("RECEIVED")}
-                className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-                  requestSource === "RECEIVED"
-                    ? "text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
-                }`}
-              >
-                {requestSource === "RECEIVED" && (
-                  <motion.div
-                    layoutId="sourceTabActive"
-                    className="absolute inset-0 bg-primary rounded-xl shadow-md"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">Received</span>
-              </button>
-            </motion.div>
+                <button
+                  onClick={() => handleSourceTabChange("CREATED")}
+                  className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    requestSource === "CREATED"
+                      ? "text-white"
+                      : "text-zinc-500 hover:text-zinc-800"
+                  }`}
+                >
+                  {requestSource === "CREATED" && (
+                    <motion.div
+                      layoutId="sourceTabActive"
+                      className="absolute inset-0 bg-primary rounded-xl shadow-md"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">Created</span>
+                </button>
+                <button
+                  onClick={() => handleSourceTabChange("RECEIVED")}
+                  className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    requestSource === "RECEIVED"
+                      ? "text-white"
+                      : "text-zinc-500 hover:text-zinc-800"
+                  }`}
+                >
+                  {requestSource === "RECEIVED" && (
+                    <motion.div
+                      layoutId="sourceTabActive"
+                      className="absolute inset-0 bg-primary rounded-xl shadow-md"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">Received</span>
+                </button>
+              </motion.div>
+            )}
           </div>
 
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
@@ -1606,7 +1610,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                     )}
 
                     {/* Action buttons for REJECTED */}
-                    {selectedRequest && !detailLoading && selectedRequest.status === "REJECTED" && role !== "HoCFDC" && (
+                    {selectedRequest && !detailLoading && selectedRequest.status === "REJECTED" && role === "HoPDC" && (
                       <div className="flex justify-end gap-3 border-t border-zinc-100 pt-4">
                         <button
                           onClick={() => handleFixCurriculum(selectedRequest)}

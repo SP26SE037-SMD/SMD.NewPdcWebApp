@@ -231,9 +231,6 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
-                  <p className="text-xs text-zinc-400 font-medium">
-                    ID: {syllabus.syllabusId?.slice(0, 8)}...
-                  </p>
                 </div>
                 
                 <div className="col-span-2">
