@@ -259,6 +259,16 @@ export default function DashboardLayout({
               label: "Manage Majors",
             },
             {
+              href: "/dashboard/vice-principal/tasks",
+              icon: CheckSquare,
+              label: "Tasks",
+            },
+            {
+              href: "/dashboard/vice-principal/requests",
+              icon: ClipboardList,
+              label: "Requests",
+            },
+            {
               href: "/dashboard/vice-principal/digital-enactment",
               icon: "draw",
               label: "Digital Enactment",

@@ -30,7 +30,7 @@ export default function SyllabusCompareModal({
     enabled: isOpen && !!oldSyllabusId && !!newSyllabusId,
   });
 
-  const compareResult: CompareResult | undefined = response?.data;
+  const compareResult: CompareResult | undefined = response?.data?.comparisonResult;
 
   if (!isOpen) return null;
 
