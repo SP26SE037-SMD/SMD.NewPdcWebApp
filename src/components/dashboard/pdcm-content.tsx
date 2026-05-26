@@ -11,6 +11,7 @@ import { TaskService, TASK_STATUS } from "@/services/task.service";
 import { ReviewTaskService } from "@/services/review-task.service";
 import { SyllabusService } from "@/services/syllabus.service";
 import { RootState } from "@/store";
+import ExtensionRequestModal from "./ExtensionRequestModal";
 
 /* ─── Modern Design Tokens ─── */
 const C = {
@@ -59,11 +60,13 @@ const DevelopCard = ({
   task,
   isAccepting,
   onAccept,
+  onExtensionRequest,
   router,
 }: {
   task: any;
   isAccepting: string | null;
   onAccept: (t: any) => void;
+  onExtensionRequest?: (t: any) => void;
   router: any;
 }) => {
   const deadlineVal = task.deadline || task.dueDate;
@@ -72,7 +75,15 @@ const DevelopCard = ({
   const daysLeft = deadline
     ? Math.ceil((deadline.getTime() - now) / 86400000)
     : null;
-  const status = (task.status || "").toUpperCase().replace(/\s+/g, "_");
+  let status = (task.status || "").toUpperCase().replace(/\s+/g, "_");
+  
+  if (
+    (status === "IN_PROGRESS" || status === "TO_DO") &&
+    daysLeft !== null &&
+    daysLeft < 0
+  ) {
+    status = "OVERDUE";
+  }
 
   const effectiveSyllabusId =
     task.syllabus?.syllabusId || task.syllabus?.syllabusId;
@@ -107,7 +118,9 @@ const DevelopCard = ({
             ? { background: "#fef3c7", color: "#b45309" }
             : status === "IN_PROGRESS"
               ? { background: "#e0f2fe", color: "#0369a1" }
-              : status === "REVISION_REQUESTED"
+              : status === "OVERDUE"
+                ? { background: "#fee2e2", color: "#991b1b" }
+                : status === "REVISION_REQUESTED"
                   ? { background: "#ffe4e6", color: "#b91c1c" }
                   : { background: "#dcfce7", color: "#15803d" }
         }
@@ -176,6 +189,19 @@ const DevelopCard = ({
                 Accept
               </>
             )}
+          </button>
+        ) : status === "OVERDUE" ? (
+          <button
+            onClick={() => onExtensionRequest && onExtensionRequest(task)}
+            className="px-5 py-2 rounded-xl text-sm font-bold text-white w-full md:w-auto flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-105 bg-red-600 hover:bg-red-700"
+            style={{
+              boxShadow: `0 4px 12px rgba(220, 38, 38, 0.4)`,
+            }}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              more_time
+            </span>
+            Request Extension
           </button>
         ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : (
           <button
@@ -415,6 +441,7 @@ export default function PDCMDashboardContent({
   >("all");
   const [page, setPage] = useState(0);
   const [isAccepting, setIsAccepting] = useState<string | null>(null);
+  const [extensionTask, setExtensionTask] = useState<any>(null);
 
   // Reset page and handle tab visibility when navTab changes
   React.useEffect(() => {
@@ -526,13 +553,25 @@ export default function PDCMDashboardContent({
   };
 
   let tasks = tasksData?.data?.content || [];
+  
   if (statusTab === "all") {
     tasks = tasks.filter((task: any) => 
       task.status !== "DONE" && 
       task.status !== "COMPLETED" && 
       task.status !== "APPROVED"
     );
+  } else if (statusTab === "overdue") {
+    const now = Date.now();
+    tasks = tasks.filter((task: any) => {
+      const status = (task.status || "").toUpperCase().replace(/\s+/g, "_");
+      if (status !== "IN_PROGRESS" && status !== "TO_DO") return false;
+      const deadlineVal = task.deadline || task.dueDate;
+      if (!deadlineVal) return false;
+      const daysLeft = Math.ceil((new Date(deadlineVal).getTime() - now) / 86400000);
+      return daysLeft < 0;
+    });
   }
+  
   const totalPages = tasksData?.data?.totalPages || 0;
 
   const sidebarItems = [
@@ -669,6 +708,7 @@ export default function PDCMDashboardContent({
                     task={task}
                     isAccepting={isAccepting}
                     onAccept={handleAcceptTask}
+                    onExtensionRequest={setExtensionTask}
                     router={router}
                   />
                 ) : (
@@ -751,6 +791,13 @@ export default function PDCMDashboardContent({
           </div>
         )}
       </div>
+
+      <ExtensionRequestModal
+        isOpen={!!extensionTask}
+        task={extensionTask}
+        onClose={() => setExtensionTask(null)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+      />
     </PDCMBaseLayout>
   );
 }
