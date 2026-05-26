@@ -26,6 +26,8 @@ import {
   Settings,
   Layers,
   Share2,
+  RotateCcw,
+  FileDown,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
@@ -48,12 +50,6 @@ const TABS = [
 type TabType = (typeof TABS)[number]["id"];
 
 const ALL_STATUS_ORDER = [
-  {
-    id: CURRICULUM_STATUS.DRAFT,
-    label: "Draft",
-    icon: FileText,
-    color: "#94a3b8",
-  },
   {
     id: CURRICULUM_STATUS.SYLLABUS_DEVELOP,
     label: "Syllabus Develop",
@@ -175,7 +171,11 @@ export default function CurriculumDetail({ id }: { id: string }) {
       if (!res || res.status === 1000 || !res.status) {
         showToast("Status updated successfully", "success");
         queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
+        queryClient.invalidateQueries();
         router.refresh();
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
       } else {
         showToast(res.message || "Failed to update status", "error");
       }
@@ -236,31 +236,6 @@ export default function CurriculumDetail({ id }: { id: string }) {
     try {
       // 1. Update curriculum status to FINAL_REVIEW
       await statusMutation.mutateAsync(CURRICULUM_STATUS.FINAL_REVIEW);
-
-      // 2. Create the request
-      const isResubmit = isFromRejected;
-      const title = isResubmit
-        ? `Resubmit Final Review: ${curriculum.curriculumCode}`
-        : `Final Review: ${curriculum.curriculumCode}`;
-      const content = isResubmit
-        ? `Resubmit final review for ${curriculum.curriculumName}`
-        : `Final review for ${curriculum.curriculumName}`;
-
-      await RequestService.createRequest({
-        title,
-        content,
-        createdById: user.accountId,
-        curriculumId: id,
-        majorId: curriculum.major?.majorId || curriculum.majorId || "",
-        status: "PENDING",
-      });
-
-      showToast(
-        isResubmit
-          ? "Resubmitted for final review successfully"
-          : "Submitted for final review successfully",
-        "success",
-      );
     } catch (err: any) {
       console.error("Final review submission error:", err);
       showToast(err.message || "Failed to submit for final review", "error");
@@ -330,10 +305,39 @@ export default function CurriculumDetail({ id }: { id: string }) {
                   ) : (
                     <ShieldCheck size={14} />
                   )}
-                  {isFromRejected
-                    ? "Resubmit for Final Review"
-                    : "Submit for Final Review"}
+                  Move to Final Review
                 </button>
+              )}
+
+              {(curriculum.curriculumStatus || curriculum.status) ===
+                CURRICULUM_STATUS.FINAL_REVIEW && (
+                <>
+                  <button
+                    onClick={() => {
+                      statusMutation.mutate(CURRICULUM_STATUS.SYLLABUS_DEVELOP);
+                    }}
+                    disabled={statusMutation.isPending}
+                    className="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {statusMutation.isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <RotateCcw size={14} />
+                    )}
+                    Back to Syllabus Develop
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      showToast("Exporting curriculum to PDF...", "success");
+                      window.open(`/api/curricula/${id}/export-pdf`, "_blank");
+                    }}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                  >
+                    <FileDown size={14} />
+                    Export to PDF
+                  </button>
+                </>
               )}
 
             </div>
