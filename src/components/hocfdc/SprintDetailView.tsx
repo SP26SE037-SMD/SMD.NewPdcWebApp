@@ -20,6 +20,7 @@ import {
   RotateCcw,
   XCircle,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -473,7 +474,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   ) : (
                     <Play size={16} fill="currentColor" />
                   )}
-                  START DELIVERABLE BATCH
+                  START BATCH
                 </button>
               )}
 
@@ -500,7 +501,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
-                  COMPLETE DELIVERABLES
+                  COMPLETE
                 </button>
               )}
 
@@ -515,7 +516,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   disabled={updateStatusMutation.isPending}
                   className="flex items-center gap-2 bg-zinc-100 text-zinc-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all rounded-xl disabled:opacity-50"
                 >
-                  <RotateCcw size={16} /> RE-OPEN DELIVERABLES
+                  <RotateCcw size={16} /> RE-OPEN
                 </button>
               )}
 
@@ -524,7 +525,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   onClick={() => {
                     if (
                       confirm(
-                        "Confirm DELIVERABLE CANCELLATION? This will halt all associated task flows.",
+                        "Confirm CANCELLATION? This will halt all associated task flows.",
                       )
                     ) {
                       handleStatusChange(
@@ -535,7 +536,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   }}
                   disabled={updateStatusMutation.isPending}
                   className="px-6 py-4 bg-white border border-zinc-100 text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50 flex items-center justify-center"
-                  title="Cancel Deliverables"
+                  title="Cancel"
                 >
                   <XCircle size={16} />
                 </button>
@@ -576,9 +577,25 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       {/* Task List Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-black text-lg tracking-tight text-zinc-900">
-            Department Deliverables
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="font-black text-lg tracking-tight text-zinc-900">
+              Department Deliverables
+            </h3>
+            <button
+              onClick={async () => {
+                await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] }),
+                  queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] })
+                ]);
+                showToast("Tasks refreshed", "success");
+              }}
+              disabled={tasksLoading || sprintLoading}
+              className="p-2 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 transition-all rounded-xl shadow-sm flex items-center justify-center disabled:opacity-50 animate-in fade-in zoom-in-95 duration-200"
+              title="Refresh Tasks"
+            >
+              <RefreshCw size={14} className={tasksLoading || sprintLoading ? "animate-spin" : ""} />
+            </button>
+          </div>
           {/* <div className="flex items-center gap-2 px-3 py-1 bg-white border border-zinc-100 rounded-lg shadow-sm">
             <div className="w-2 h-2 bg-zinc-900 rounded-full" />
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 leading-none">
