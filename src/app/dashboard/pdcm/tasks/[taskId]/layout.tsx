@@ -153,8 +153,8 @@ export default function TaskWorkspaceLayout({
                 isOpen={isRevisionModalOpen} 
                 onClose={() => setIsRevisionModalOpen(false)} 
                 reviewer={realTask?.createdBy as any}
-                description={realTask?.description}
-                comment={realTask?.comment}
+                description={realTask?.description ?? undefined}
+                comment={realTask?.comment ?? undefined}
             />
         </PDCMBaseLayout>
     );
