@@ -94,8 +94,7 @@ export default function SubjectRecheckView() {
   const isReusedSubject = taskType === "REUSED_SUBJECT";
 
   const syllabusId = taskDetailResp?.data?.syllabusId || taskDetailResp?.data?.syllabus?.syllabusId || null;
-  const hasDecisionBeenMade = taskDetailResp?.data && (taskDetailResp.data.isAccepted !== null && taskDetailResp.data.isAccepted !== undefined);
-  const showFloatingDecision = !!taskId && !hasDecisionBeenMade;
+  const showFloatingDecision = !!taskId && taskDetailResp?.data?.isAccepted !== true;
 
   // Force false if it's a reused subject
   useEffect(() => {
@@ -868,7 +867,7 @@ export default function SubjectRecheckView() {
       {showFloatingDecision && (
         <div className="fixed bottom-8 right-8 z-[80] flex flex-col items-end gap-3 pointer-events-none">
           {isDecisionOpen && (
-            <div className="w-96 shadow-2xl rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur-md relative animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-hidden pointer-events-auto mb-2">
+            <div className="w-96 relative pointer-events-auto mb-2">
               <FinalDecisionCard syllabusId={syllabusId} taskId={taskId} />
             </div>
           )}

@@ -169,7 +169,8 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
 
     const hasDecisionBeenMade = createSyllabusTask && (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined);
 
-    const showFloatingDecision = !!syllabusId && !hasDecisionBeenMade && (
+    const activeTaskForDecision = taskIdFromUrl ? routeTaskData?.data : createSyllabusTask;
+    const showFloatingDecision = !!syllabusId && activeTaskForDecision?.isAccepted !== true && (
         isRevisionRequested ||
         !createSyllabusTask ||
         createSyllabusTask.status !== "DONE"
@@ -505,7 +506,7 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                 {showFloatingDecision && (
                     <div className="flex items-start gap-3 pointer-events-auto">
                         {isDecisionOpen && (
-                            <div className="w-96 shadow-2xl rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur-md relative animate-in fade-in slide-in-from-right-4 duration-300 overflow-hidden">
+                            <div className="w-96 relative">
                                 <FinalDecisionCard syllabusId={syllabusId} taskId={taskIdFromUrl || routeTaskData?.data?.rootTaskId} />
                             </div>
                         )}
