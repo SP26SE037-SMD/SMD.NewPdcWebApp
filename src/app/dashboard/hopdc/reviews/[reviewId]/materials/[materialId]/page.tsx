@@ -195,10 +195,10 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {
             const pagedData = lastPage.data;
-            if (!pagedData || pagedData.page >= pagedData.totalPages - 1 || !pagedData.content || pagedData.content.length === 0) {
+            if (!pagedData || pagedData.page >= pagedData.totalPages || !pagedData.content || pagedData.content.length === 0) {
                 return undefined;
             }
-            return pagedData.page + 2;
+            return pagedData.page + 1;
         },
         enabled: !!materialId,
     });

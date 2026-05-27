@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SessionItem } from '@/services/session.service';
-import { Plus, Minus, Eye, CheckCircle2 } from 'lucide-react';
+import { Plus, Minus, Eye, CheckCircle2, Edit2 } from 'lucide-react';
 
 interface DiffSessionsProps {
     sessions: { item: SessionItem | null, status: string }[];
