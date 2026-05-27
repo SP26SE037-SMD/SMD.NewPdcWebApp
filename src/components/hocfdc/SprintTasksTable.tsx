@@ -51,7 +51,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
   const deleteMutation = useMutation({
     mutationFn: (taskId: string) => TaskService.deleteTask(taskId),
     onSuccess: (res) => {
-      if (res.status === 1000) {
+      if (!res || res.status === 1000 || res.status === 200) {
         showToast("Task removed from deliverable package", "success");
         queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
       } else {
@@ -100,7 +100,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
     }
   };
 
-  const TaskStatusStepper = ({ status, isRevision }: { status: string; isRevision?: boolean }) => {
+  const TaskStatusStepper = ({ status }: { status: string }) => {
     const s = status.toUpperCase();
     const steps = [
       TASK_STATUS.TO_DO,
@@ -123,11 +123,6 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
             const isActive = idx === activeIdx;
             const isLast = idx === steps.length - 1;
 
-            let pointColor = "bg-zinc-200";
-            if (isActive || isCompleted) {
-              pointColor = isRevision || isOverdue ? "bg-rose-500" : "bg-primary";
-            }
-
             return (
               <React.Fragment key={step}>
                 {/* Point */}
@@ -140,8 +135,8 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                         isActive || isCompleted
                           ? idx === 2
                             ? "var(--primary)" // Primary green for DONE
-                            : idx === 1 && (isRevision || isOverdue)
-                              ? "#f43f5e" // Red only for Revision or Overdue
+                            : idx === 1 && isOverdue
+                              ? "#f43f5e" // Red only for Overdue
                               : "var(--primary)"
                           : "#e4e4e7",
                     }}
@@ -149,7 +144,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                   >
                     {isCompleted || (isActive && s === "DONE") ? (
                       <Check size={8} className="text-white stroke-[4]" />
-                    ) : isActive && (isRevision || isOverdue) && idx === 1 ? (
+                    ) : isActive && isOverdue && idx === 1 ? (
                       <AlertCircle size={10} className="text-white" />
                     ) : (
                       isActive && (
@@ -165,7 +160,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: isCompleted ? "100%" : "0%" }}
-                      className={`absolute inset-0 ${idx === 0 ? (isOverdue ? "bg-rose-300" : "bg-primary/40") : (idx === 1 && isRevision) ? "bg-rose-300" : (idx === 1 && isApproved) ? "bg-emerald-300" : "bg-primary/40"}`}
+                      className={`absolute inset-0 ${idx === 0 ? (isOverdue ? "bg-rose-300" : "bg-primary/40") : (idx === 1 && isApproved) ? "bg-emerald-300" : "bg-primary/40"}`}
                       transition={{ duration: 0.5 }}
                     />
                   </div>
@@ -181,9 +176,9 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
             TO DO
           </span>
           <span
-            className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 1 ? (isRevision || isOverdue ? "text-rose-500" : "text-primary") : "text-zinc-400"}`}
+            className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 1 ? (isOverdue ? "text-rose-500" : "text-primary") : "text-zinc-400"}`}
           >
-            {isOverdue ? "OVERDUE" : isRevision ? "REVISION REQUESTED" : "IN PROGRESS"}
+            {isOverdue ? "OVERDUE" : "IN PROGRESS"}
           </span>
           <span
             className={`text-[8px] font-black uppercase tracking-tighter ${activeIdx >= 2 ? "text-primary" : "text-zinc-400"}`}
@@ -355,38 +350,42 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
 
               {/* Status */}
               <td className="px-6 py-5">
-                <TaskStatusStepper status={task.status} isRevision={task.action === 'UPDATE'} />
+                <TaskStatusStepper status={task.status} />
               </td>
 
               {/* Actions */}
               <td className="px-6 py-5 text-right">
                 <div className="flex items-center justify-end gap-2">
-                  {sprintStatus === SPRINT_STATUS.PLANNING && (
+                  {task.status !== "DONE" && (
                     <>
-                      <button
-                        onClick={() => onEdit(task)}
-                        className="p-2 text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600 border border-transparent hover:border-zinc-200 rounded-lg transition-all"
-                        title="Edit Task"
-                      >
-                        <Pencil size={14} />
-                      </button>
+                      {(sprintStatus === SPRINT_STATUS.PLANNING || sprintStatus === SPRINT_STATUS.IN_PROGRESS) && (
+                        <button
+                          onClick={() => onEdit(task)}
+                          className="p-2 text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600 border border-transparent hover:border-zinc-200 rounded-lg transition-all"
+                          title="Edit Task"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
 
-                      <button
-                        onClick={() => {
-                          if (confirm("Confirm task removal?")) {
-                            deleteMutation.mutate(task.taskId);
-                          }
-                        }}
-                        disabled={deleteMutation.isPending}
-                        className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-100 rounded-lg transition-all disabled:opacity-50"
-                        title="Delete Task"
-                      >
-                        {deleteMutation.isPending ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
-                      </button>
+                      {sprintStatus === SPRINT_STATUS.PLANNING && task.status !== "IN_PROGRESS" && (
+                        <button
+                          onClick={() => {
+                            if (confirm("Confirm task removal?")) {
+                              deleteMutation.mutate(task.taskId);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-100 rounded-lg transition-all disabled:opacity-50"
+                          title="Delete Task"
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
+                        </button>
+                      )}
                     </>
                   )}
                   {task.status === TASK_STATUS.DONE && (

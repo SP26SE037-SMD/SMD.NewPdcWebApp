@@ -26,7 +26,6 @@ import {
   TaskItem,
   TaskStatus,
   TASK_STATUS,
-  TASK_TYPE,
   TaskService,
 } from "@/services/task.service";
 import { SubjectService } from "@/services/subject.service";
@@ -332,9 +331,7 @@ export function TaskDetailModal({
       return false; // HoCFDC cannot add task
     }
     if (
-      task.type === "SUBJECT" ||
-      task.type === TASK_TYPE.NEW_SUBJECT ||
-      task.type === TASK_TYPE.REUSED_SUBJECT
+      task.type === "SUBJECT"
     ) {
       return true; // Can create syllabus task
     }
@@ -347,9 +344,7 @@ export function TaskDetailModal({
   const handleAddSubtask = () => {
     if (!canAddSubtask) return;
     const mode =
-      task.type === "SUBJECT" ||
-      task.type === TASK_TYPE.NEW_SUBJECT ||
-      task.type === TASK_TYPE.REUSED_SUBJECT
+      task.type === "SUBJECT"
         ? "CREATE"
         : "REVIEW";
     onOpenTaskModal(mode, task);
@@ -1060,10 +1055,7 @@ export function TaskDetailModal({
 
               {/* HOPDC Request Review Block */}
               {currentUser?.role === "HOPDC" &&
-                (task.type === "SUBJECT" ||
-                  task.type === "NEW_SUBJECT" ||
-                  task.type === "REUSED_SUBJECT" ||
-                  task.type === "UPDATED_SUBJECT") &&
+                task.type === "SUBJECT" &&
                 task.status === "DONE" && (
                   <div className="pt-4">
                     <div className="w-full p-5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-4 shadow-sm">

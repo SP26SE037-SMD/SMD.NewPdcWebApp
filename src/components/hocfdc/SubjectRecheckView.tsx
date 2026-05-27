@@ -91,7 +91,7 @@ export default function SubjectRecheckView() {
   });
 
   const taskType = taskDetailResp?.data?.type;
-  const isReusedSubject = taskType === "REUSED_SUBJECT";
+  const isReusedSubject = taskType === "SUBJECT" && (taskDetailResp?.data?.subjectStatus === "COMPLETED" || taskDetailResp?.data?.subject?.status === "COMPLETED");
 
   const syllabusId = taskDetailResp?.data?.syllabusId || taskDetailResp?.data?.syllabus?.syllabusId || null;
   const showFloatingDecision = !!taskId && taskDetailResp?.data?.isAccepted !== true;

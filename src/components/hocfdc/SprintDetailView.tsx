@@ -420,20 +420,27 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="space-y-4 max-w-2xl">
               <div className="flex items-center gap-3">
-                <span
-                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border ${sprint.status === SPRINT_STATUS.IN_PROGRESS
-                    ? "bg-emerald-50 text-emerald-600 border-emerald-500/20"
-                    : sprint.status === SPRINT_STATUS.PLANNING
-                      ? "bg-amber-50 text-amber-600 border-amber-500/20"
-                      : sprint.status === SPRINT_STATUS.COMPLETED
-                        ? "bg-blue-50 text-blue-600 border-blue-500/20"
-                        : sprint.status === SPRINT_STATUS.CANCELLED
-                          ? "bg-rose-50 text-rose-600 border-rose-500/20"
-                          : "bg-zinc-50 text-zinc-600 border-zinc-200"
-                    }`}
+                <select
+                  value={sprint.status}
+                  onChange={(e) => handleStatusChange(sprint.sprintId, e.target.value)}
+                  disabled={updateStatusMutation.isPending}
+                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border outline-none cursor-pointer transition-all active:scale-95 disabled:opacity-50 ${
+                    sprint.status === SPRINT_STATUS.IN_PROGRESS
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-500/20 focus:border-emerald-500"
+                      : sprint.status === SPRINT_STATUS.PLANNING
+                        ? "bg-amber-50 text-amber-600 border-amber-500/20 focus:border-amber-500"
+                        : sprint.status === SPRINT_STATUS.COMPLETED
+                          ? "bg-blue-50 text-blue-600 border-blue-500/20 focus:border-blue-500"
+                          : sprint.status === SPRINT_STATUS.CANCELLED
+                            ? "bg-rose-50 text-rose-600 border-rose-500/20 focus:border-rose-500"
+                            : "bg-zinc-50 text-zinc-600 border-zinc-200"
+                  }`}
                 >
-                  {sprint.status}
-                </span>
+                  <option value={SPRINT_STATUS.PLANNING} className="bg-white text-zinc-800">PLANNING</option>
+                  <option value={SPRINT_STATUS.IN_PROGRESS} className="bg-white text-zinc-800">IN PROGRESS</option>
+                  <option value={SPRINT_STATUS.COMPLETED} className="bg-white text-zinc-800">COMPLETED</option>
+                  <option value={SPRINT_STATUS.CANCELLED} className="bg-white text-zinc-800">CANCELLED</option>
+                </select>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
@@ -454,94 +461,6 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
             </div>
 
             <div className="flex items-center gap-4">
-              {sprint.status === SPRINT_STATUS.PLANNING && (
-                <button
-                  onClick={() => {
-                    if (totalTasks === 0) {
-                      showToast("Cannot start an empty deliverable package. Please add tasks first.", "error");
-                      return;
-                    }
-                    handleStatusChange(
-                      sprint.sprintId,
-                      SPRINT_STATUS.IN_PROGRESS,
-                    );
-                  }}
-                  disabled={updateStatusMutation.isPending || tasksLoading || totalTasks === 0}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
-                >
-                  {updateStatusMutation.isPending ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Play size={16} fill="currentColor" />
-                  )}
-                  START BATCH
-                </button>
-              )}
-
-              {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
-                <button
-                  onClick={() => {
-                    if (!isSprintReadyToComplete) {
-                      showToast(
-                        `Cannot complete: All tasks must be completed and approved. (${readyTasks}/${totalTasks} ready)`,
-                        "error",
-                      );
-                      return;
-                    }
-                    handleStatusChange(
-                      sprint.sprintId,
-                      SPRINT_STATUS.COMPLETED,
-                    );
-                  }}
-                  disabled={updateStatusMutation.isPending || tasksLoading || (totalTasks > 0 && !isSprintReadyToComplete)}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95 rounded-xl disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
-                >
-                  {updateStatusMutation.isPending ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <CheckCircle2 size={16} />
-                  )}
-                  COMPLETE
-                </button>
-              )}
-
-              {sprint.status === SPRINT_STATUS.COMPLETED && (
-                <button
-                  onClick={() =>
-                    handleStatusChange(
-                      sprint.sprintId,
-                      SPRINT_STATUS.IN_PROGRESS,
-                    )
-                  }
-                  disabled={updateStatusMutation.isPending}
-                  className="flex items-center gap-2 bg-zinc-100 text-zinc-600 px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all rounded-xl disabled:opacity-50"
-                >
-                  <RotateCcw size={16} /> RE-OPEN
-                </button>
-              )}
-
-              {sprint.status === SPRINT_STATUS.IN_PROGRESS && (
-                <button
-                  onClick={() => {
-                    if (
-                      confirm(
-                        "Confirm CANCELLATION? This will halt all associated task flows.",
-                      )
-                    ) {
-                      handleStatusChange(
-                        sprint.sprintId,
-                        SPRINT_STATUS.CANCELLED,
-                      );
-                    }
-                  }}
-                  disabled={updateStatusMutation.isPending}
-                  className="px-6 py-4 bg-white border border-zinc-100 text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50 flex items-center justify-center"
-                  title="Cancel"
-                >
-                  <XCircle size={16} />
-                </button>
-              )}
-
               {sprint.status === SPRINT_STATUS.PLANNING && (
                 <button
                   onClick={() => setIsQuickLaunchConfirmOpen(true)}
@@ -596,12 +515,6 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               <RefreshCw size={14} className={tasksLoading || sprintLoading ? "animate-spin" : ""} />
             </button>
           </div>
-          {/* <div className="flex items-center gap-2 px-3 py-1 bg-white border border-zinc-100 rounded-lg shadow-sm">
-            <div className="w-2 h-2 bg-zinc-900 rounded-full" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 leading-none">
-              Real-time status
-            </p>
-          </div> */}
         </div>
 
         <SprintTasksTable
@@ -633,6 +546,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         curriculumId={sprint?.curriculumId || ""}
         departmentId={sprint?.departmentId || ""}
         task={editingTask}
+        sprintStatus={sprint?.status}
       />
 
       {selectedDetailTask && (

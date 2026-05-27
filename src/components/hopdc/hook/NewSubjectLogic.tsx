@@ -100,7 +100,7 @@ export function useNewSubjectLogic() {
   const { data: publishedSyllabusRes, isLoading: isPublishedSyllabusLoading } = useQuery({
     queryKey: ["subject-syllabi", subjectId, "PUBLISHED"],
     queryFn: () => SyllabusService.getSyllabiBySubject(subjectId!, "PUBLISHED"),
-    enabled: !!subjectId && associatedTask?.type === "REUSED_SUBJECT",
+    enabled: !!subjectId && (associatedTask?.type === "SUBJECT" && (associatedTask?.subjectStatus === "COMPLETED" || associatedTask?.subject?.status === "COMPLETED")),
   });
 
   const currentSyllabusId = (syllabusIdParam && syllabusIdParam !== "null")

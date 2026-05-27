@@ -67,3 +67,37 @@ export async function PUT(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ taskId: string }> }
+) {
+  try {
+    const { taskId } = await params;
+    const cookieStore = await cookies();
+    const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+
+    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/tasks-v2/${taskId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "*/*",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    // 204 No Content = successful delete, no body allowed
+    if (backendResponse.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    const data = await backendResponse.json().catch(() => null);
+    return NextResponse.json(data, { status: backendResponse.status });
+  } catch (error) {
+    console.error("[API /api/v1/tasks-v2/[taskId] DELETE] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
