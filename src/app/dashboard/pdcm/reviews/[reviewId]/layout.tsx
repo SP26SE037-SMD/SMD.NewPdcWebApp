@@ -286,7 +286,7 @@ export default function PDCMReviewLayout({
         if (sid) {
             queryClient.prefetchQuery({ queryKey: ['pdcm-syllabus-info', sid], queryFn: () => SyllabusService.getSyllabusById(sid), staleTime: 5 * 60 * 1000 });
             queryClient.prefetchQuery({ queryKey: ['pdcm-materials', sid], queryFn: () => MaterialService.getMaterialsBySyllabusId(sid), staleTime: 5 * 60 * 1000 });
-            queryClient.prefetchQuery({ queryKey: ['pdcm-sessions', sid], queryFn: () => SessionService.getDetailedSessions(sid, undefined), staleTime: 5 * 60 * 1000 });
+            queryClient.prefetchQuery({ queryKey: ['pdcm-sessions', sid], queryFn: () => SessionService.getSessions(sid, 0, 100), staleTime: 5 * 60 * 1000 });
             queryClient.prefetchQuery({ queryKey: ['pdcm-assessments', sid], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(sid), staleTime: 5 * 60 * 1000 });
         }
     }, [sid, queryClient]);

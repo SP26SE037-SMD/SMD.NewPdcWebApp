@@ -49,7 +49,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
+        queryFn: () => syllabusId ? SessionService.getSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
         enabled: !!syllabusId
     });
 
@@ -111,7 +111,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                     sessionTitle: apiSess.sessionTitle,
                     teachingMethods: apiSess.teachingMethods,
                     duration: apiSess.duration,
-                    content: JSON.stringify(selectionStates),
+                    content: apiSess.content ? apiSess.content : JSON.stringify(selectionStates),
                     cloIds: apiSess.cloIds || []
                 };
             }).sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
