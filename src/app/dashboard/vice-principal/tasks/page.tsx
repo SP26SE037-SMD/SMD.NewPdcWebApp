@@ -21,6 +21,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import CreateTaskModal from "@/components/vp/create-task-modal";
 
 export default function VPTasksPage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -34,6 +35,7 @@ export default function VPTasksPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const tabs = [
     { id: "ALL", label: "All Tasks" },
@@ -148,16 +150,25 @@ export default function VPTasksPage() {
             </p>
           </div>
 
-          <button
-            onClick={fetchTasks}
-            disabled={loading || !user?.accountId}
-            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCcw
-              className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90 shadow-md shadow-primary/20"
+            >
+              <CheckSquare className="h-4 w-4" />
+              Create Task
+            </button>
+            <button
+              onClick={fetchTasks}
+              disabled={loading || !user?.accountId}
+              className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
         </motion.div>
 
         <motion.div
@@ -452,6 +463,12 @@ export default function VPTasksPage() {
           </div>
         </motion.div>
       </div>
+      
+      <CreateTaskModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchTasks}
+      />
     </div>
   );
 }
