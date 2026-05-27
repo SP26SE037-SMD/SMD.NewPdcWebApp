@@ -35,7 +35,7 @@ export interface BulkUpdateBlocksParams {
 }
 
 export const BlockService = {
-  getBlocksByMaterialId: async (materialId: string, page: number = 1, size: number = 20) => {
+  getBlocksByMaterialId: async (materialId: string, page: number = 0, size: number = 20) => {
     return apiClient.get<{ status: number; message: string; data: PagedResponse<BlockItem> }>(
       `/api/blocks/material/${materialId}?page=${page}&size=${size}`
     );

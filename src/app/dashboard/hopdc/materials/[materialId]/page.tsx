@@ -238,8 +238,6 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
         });
     }, [rawBlocks]);
 
-    const pages = paginateBlocks(parsedBlocks);
-
     // Outline items for sidebar
     const outlineItems = useMemo(() => {
         return parsedBlocks
@@ -301,56 +299,40 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                             </div>
                         </div>
 
-                        {/* Monitor Mode Banner */}
-                        <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-[#ebf0e5] border border-[#dee5d8]/50">
-                            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center font-black text-sm shrink-0 bg-white"
-                                style={{ color: '#41683f', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                <Eye size={18} />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold" style={{ color: '#2d342b' }}>Monitoring Mode</h3>
-                                <p className="text-[10px] tracking-wider uppercase font-bold" style={{ color: 'rgba(45,52,43,0.6)' }}>
-                                    Live Content Review
-                                </p>
-                            </div>
-                        </div>
+
 
                         <div className="space-y-4">
                             {/* Heading Outline */}
                             {outlineItems.length > 0 && (
-                                <div className="p-4 rounded-2xl bg-white border border-[#dee5d8] shadow-sm">
-                                    <h4 className="text-[10px] font-black tracking-widest uppercase mb-4" style={{ color: '#adb4a8' }}>Table of Contents</h4>
-                                    <nav className="space-y-1">
+                                <div className="p-5 rounded-[24px] bg-white border border-[#dee5d8]/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_25px_rgb(0,0,0,0.06)] transition-shadow">
+                                    <h4 className="text-[10px] font-black tracking-widest uppercase mb-4 flex items-center gap-2" style={{ color: '#8b9485' }}>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#41683f]"></div>
+                                        Table of Contents
+                                    </h4>
+                                    <nav className="space-y-1.5">
                                         {outlineItems.map(item => (
                                             <button key={item.id} onClick={() => scrollToBlock(item.id)} title={item.content}
-                                                className="w-full text-left text-[11px] font-bold py-2 truncate transition-all rounded-xl px-3 hover:translate-x-1"
+                                                className="w-full text-left py-2.5 px-4 truncate transition-all rounded-xl relative group overflow-hidden"
                                                 style={{
-                                                    background: activeAnchor === item.id ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-                                                    color: activeAnchor === item.id ? 'var(--primary)' : '#5a6157',
-                                                    paddingLeft: item.type === 'H2' ? '24px' : undefined
+                                                    background: activeAnchor === item.id ? 'linear-gradient(to right, #ebf0e5, #f4f7ef)' : 'transparent',
+                                                    paddingLeft: item.type === 'H2' ? '28px' : '16px'
                                                 }}
                                             >
-                                                {item.content}
+                                                {activeAnchor === item.id && (
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#41683f] rounded-r-full"></div>
+                                                )}
+                                                <span 
+                                                    className="relative z-10 text-[12px] font-bold transition-colors"
+                                                    style={{ color: activeAnchor === item.id ? '#2d342b' : '#5a6157' }}
+                                                >
+                                                    {item.content}
+                                                </span>
+                                                <div className="absolute inset-0 bg-[#ebf0e5]/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                             </button>
                                         ))}
                                     </nav>
                                 </div>
                             )}
-
-                            {/* Stats */}
-                            <div className="p-4 rounded-2xl bg-white border border-[#dee5d8] shadow-sm">
-                                <h4 className="text-[10px] font-black tracking-widest uppercase mb-3" style={{ color: '#adb4a8' }}>Statistics</h4>
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="font-medium" style={{ color: '#5a6157' }}>Content Blocks</span>
-                                        <span className="font-black" style={{ color: '#2d342b' }}>{parsedBlocks.length}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="font-medium" style={{ color: '#5a6157' }}>Estimated Pages</span>
-                                        <span className="font-black" style={{ color: '#2d342b' }}>{pages.length}</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </aside>
@@ -366,30 +348,20 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                             <p className="text-[#64748b] max-w-xs font-medium">This material doesn&apos;t have any structured content blocks yet.</p>
                         </div>
                     ) : (
-                        pages.map((pageBlocks, pageIndex) => (
-                            <div key={pageIndex} className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
-                                <div className="flex flex-col gap-y-1">
-                                    {pageBlocks.map((block, idx) => {
-                                        const globalIndex = parsedBlocks.findIndex(b => b.id === block.id);
-                                        return (
-                                            <div
-                                                key={block.id}
-                                                id={block.id}
-                                                ref={isTriggerItem(globalIndex) ? triggerRef : null}
-                                                className="relative"
-                                            >
-                                                {renderReadOnlyBlock(block, parsedBlocks, globalIndex)}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Page number */}
-                                <div className="absolute bottom-6 right-8 text-[10px] font-bold tracking-wider" style={{ color: '#adb4a8' }}>
-                                    {pageIndex + 1} / {pages.length}
-                                </div>
+                        <div className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
+                            <div className="flex flex-col gap-y-1">
+                                {parsedBlocks.map((block, idx) => (
+                                    <div
+                                        key={block.id}
+                                        id={block.id}
+                                        ref={isTriggerItem(idx) ? triggerRef : null}
+                                        className="relative"
+                                    >
+                                        {renderReadOnlyBlock(block, parsedBlocks, idx)}
+                                    </div>
+                                ))}
                             </div>
-                        ))
+                        </div>
                     )}
 
                     {isFetchingNextPage && (

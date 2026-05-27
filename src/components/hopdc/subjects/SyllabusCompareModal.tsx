@@ -82,26 +82,22 @@ export default function SyllabusCompareModal({
     const oldMats: MaterialItem[] = extractItems(oldMaterialsRes);
     const newMats: MaterialItem[] = extractItems(newMaterialsRes);
 
-    const matched = new Set<string>();
-    const pairs: { old: MaterialItem | null, new: MaterialItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' }[] = [];
+    const pairs: { old: MaterialItem | null, new: MaterialItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED' }[] = [];
 
-    // Find matches and removed
-    oldMats.forEach(oldItem => {
-      const match = newMats.find(newItem => newItem.title === oldItem.title && !matched.has(newItem.title));
-      if (match) {
-        matched.add(match.title);
-        pairs.push({ old: oldItem, new: match, status: 'UNCHANGED' });
-      } else {
-        pairs.push({ old: oldItem, new: null, status: 'REMOVED' });
-      }
-    });
-
-    // Find added
-    newMats.forEach(newItem => {
-      if (!matched.has(newItem.title)) {
-        pairs.push({ old: null, new: newItem, status: 'ADDED' });
-      }
-    });
+    const maxLength = Math.max(oldMats.length, newMats.length);
+    for (let i = 0; i < maxLength; i++) {
+        const oldItem = oldMats[i] || null;
+        const newItem = newMats[i] || null;
+        
+        if (oldItem && newItem) {
+            const isModified = oldItem.title !== newItem.title || oldItem.materialType !== newItem.materialType;
+            pairs.push({ old: oldItem, new: newItem, status: isModified ? 'MODIFIED' : 'UNCHANGED' });
+        } else if (oldItem) {
+            pairs.push({ old: oldItem, new: null, status: 'REMOVED' });
+        } else if (newItem) {
+            pairs.push({ old: null, new: newItem, status: 'ADDED' });
+        }
+    }
     return pairs;
   }, [oldMaterialsRes, newMaterialsRes]);
 
@@ -174,7 +170,7 @@ export default function SyllabusCompareModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -346,7 +342,7 @@ export default function SyllabusCompareModal({
                   <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     {activeTab === 'materials' && (
                       <DiffMaterials 
-                        materials={materialPairs.map(p => ({ item: p.old, pairedItem: p.new, status: p.status === 'REMOVED' ? 'REMOVED' : 'UNCHANGED' }))} 
+                        materials={materialPairs.map(p => ({ item: p.old, pairedItem: p.new, status: p.status }))} 
                         syllabusId={oldSyllabusId} 
                         viewMode="list"
                         isOldSide={true}
@@ -378,7 +374,7 @@ export default function SyllabusCompareModal({
                   <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     {activeTab === 'materials' && (
                       <DiffMaterials 
-                        materials={materialPairs.map(p => ({ item: p.new, pairedItem: p.old, status: p.status === 'ADDED' ? 'ADDED' : 'UNCHANGED' }))} 
+                        materials={materialPairs.map(p => ({ item: p.new, pairedItem: p.old, status: p.status }))} 
                         syllabusId={newSyllabusId} 
                         viewMode="list"
                         isOldSide={false}
