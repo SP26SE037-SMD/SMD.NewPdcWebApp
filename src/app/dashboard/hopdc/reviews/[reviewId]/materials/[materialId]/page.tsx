@@ -192,8 +192,8 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
         isLoading: isBlocksLoading 
     } = useInfiniteQuery({
         queryKey: ['hopdc-material-blocks-infinite', materialId],
-        queryFn: ({ pageParam = 1 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
-        initialPageParam: 1,
+        queryFn: ({ pageParam = 0 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
+        initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
             const pagedData = lastPage.data;
             if (!pagedData || !pagedData.content || pagedData.content.length === 0) {
@@ -202,7 +202,7 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
             if (pagedData.content.length < 20) {
                 return undefined;
             }
-            return allPages.length + 1;
+            return allPages.length;
         },
         enabled: !!materialId,
     });
