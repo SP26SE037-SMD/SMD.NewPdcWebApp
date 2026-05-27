@@ -53,13 +53,15 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
   }, [syllabuses, statusFilter]);
 
   const handleToggleSelect = (id: string) => {
-    if (selectedSyllabusIds.includes(id)) {
-      setSelectedSyllabusIds((prev) => prev.filter((i) => i !== id));
-    } else {
-      if (selectedSyllabusIds.length < 2) {
-        setSelectedSyllabusIds((prev) => [...prev, id]);
+    setSelectedSyllabusIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((i) => i !== id);
       }
-    }
+      if (prev.length < 2) {
+        return [...prev, id];
+      }
+      return prev;
+    });
   };
 
   const handleCompareClick = () => {
@@ -217,7 +219,10 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                 {isCompareMode && (
                   <div className="col-span-1 flex items-center justify-center">
                     <button
-                      onClick={() => handleToggleSelect(syllabus.syllabusId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSelect(syllabus.syllabusId);
+                      }}
                       disabled={selectedSyllabusIds.length === 2 && !selectedSyllabusIds.includes(syllabus.syllabusId)}
                       className={`transition-colors ${
                         selectedSyllabusIds.includes(syllabus.syllabusId)
