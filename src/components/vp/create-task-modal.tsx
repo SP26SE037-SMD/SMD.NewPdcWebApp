@@ -116,12 +116,12 @@ export default function CreateTaskModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="w-full max-w-2xl bg-surface rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-outline/10 flex items-center justify-between bg-primary/5">
@@ -287,7 +287,7 @@ export default function CreateTaskModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-outline/10 bg-surface flex justify-end gap-3 mt-auto">
+          <div className="px-6 py-4 border-t border-outline/10 bg-white flex justify-end gap-3 mt-auto">
             <button
               type="button"
               onClick={onClose}

@@ -794,7 +794,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="flex gap-3 overflow-x-auto pb-2 scrollbar-none w-full xl:w-auto"
+              className="flex p-1 bg-surface-container-highest/30 rounded-xl w-full xl:w-auto overflow-x-auto custom-scrollbar"
             >
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -805,37 +805,23 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                       setActiveTab(tab.id);
                       setPage(0);
                     }}
-                    className={`relative group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-base font-bold transition-all duration-300 whitespace-nowrap
-                  ${
-                    isActive
-                      ? "text-white"
-                      : "bg-white/50 hover:bg-white border border-outline/10 text-on-surface-variant hover:border-primary/20"
-                  }`}
+                    className={`flex items-center gap-2 px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                      isActive
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50"
+                    }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
-                        transition={{
-                          type: "spring",
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
                     <ClipboardList
-                      className={`relative z-10 h-4 w-4 ${
-                        isActive
-                          ? "text-white"
-                          : "text-primary/60 group-hover:text-primary"
+                      className={`h-4 w-4 ${
+                        isActive ? "text-primary" : "text-on-surface-variant/70"
                       }`}
                     />
-                    <span className="relative z-10">{tab.label}</span>
+                    <span>{tab.label}</span>
                     <span
-                      className={`relative z-10 py-0.5 px-2 rounded-lg text-[10px] font-black ${
+                      className={`py-0.5 px-2 rounded-lg text-[10px] font-black ${
                         isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-primary/5 text-primary"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-outline/10 text-on-surface-variant"
                       }`}
                     >
                       {statusCounts[tab.id] ?? 0}
@@ -881,7 +867,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
+            className="rounded-3xl border border-outline/20 bg-surface p-2 shadow-xl shadow-black/5"
           >
             {error && (
               <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
@@ -1078,7 +1064,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeCreateModal}
-              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-950/60"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1424,7 +1410,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDetailModal(false)}
-              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-950/60"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
