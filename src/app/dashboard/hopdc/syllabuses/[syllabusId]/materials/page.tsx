@@ -164,7 +164,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                 </div>
             </div>
 
-            <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pb-10">
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pb-32">
                 <div className="max-w-6xl mx-auto">
                     {materials.length === 0 ? (
                         <div className="text-center py-24 rounded-[32px] bg-white transition-all hover:shadow-sm" style={{ border: `2px dashed ${C.outlineVariant}40` }}>
@@ -175,7 +175,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                             <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>Get started by creating a new material document or importing an existing file.</p>
                         </div>
                     ) : viewMode === 'list' ? (
-                        <div className="bg-white rounded-[24px] border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300">
+                        <div className="bg-white rounded-[24px] border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300 min-h-[350px]">
                             <div className="">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
