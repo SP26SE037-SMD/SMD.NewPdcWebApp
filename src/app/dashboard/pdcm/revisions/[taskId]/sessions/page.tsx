@@ -49,7 +49,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
     const { data: sessionDataRes, isLoading: isSessionLoading, isFetching: isFetchingSessions, refetch: refetchSessions } = useQuery({
         queryKey: ['sessions', syllabusId, 'REVISION_REQUESTED'],
-        queryFn: () => syllabusId ? SessionService.getDetailedSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
+        queryFn: () => syllabusId ? SessionService.getSessions(syllabusId, 0, 100) : Promise.reject('No syllabusId'),
         enabled: !!syllabusId
     });
 
@@ -111,7 +111,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                     sessionTitle: apiSess.sessionTitle,
                     teachingMethods: apiSess.teachingMethods,
                     duration: apiSess.duration,
-                    content: JSON.stringify(selectionStates),
+                    content: apiSess.content ? apiSess.content : JSON.stringify(selectionStates),
                     cloIds: apiSess.cloIds || []
                 };
             }).sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
@@ -433,19 +433,19 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         } catch (e) { console.error(e); }
                                     }
                                     const basePayload = {
+                                        syllabusId,
                                         sessionNumber: Number(draftSession.sessionNumber),
                                         sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                         teachingMethods: draftSession.teachingMethods || "Lecture",
                                         duration: Number(draftSession.duration || 50),
-                                        material: Array.from(new Set(selectedMaterialIds)),
-                                        block: Array.from(new Set(selectedBlockIds)),
+                                        content: draftSession.content || "",
                                         cloIds: draftSession.cloIds || []
                                     };
                                     if (draftSession.sessionId) {
-                                        await SessionService.updateSessionBlocks({ ...basePayload, sessionId: draftSession.sessionId });
+                                        await SessionService.updateSession(draftSession.sessionId, basePayload);
                                         dispatch(updateSession({ syllabusId, index: editingIndex, updates: draftSession }));
                                     } else {
-                                        const res = await SessionService.bulkConfigureSession({ ...basePayload, syllabusId }) as any;
+                                        const res = await SessionService.createSession(basePayload) as any;
                                         if (res?.data?.sessionId) {
                                             const createdSession = { ...draftSession, sessionId: res.data.sessionId };
                                             dispatch(addSession({ syllabusId, session: createdSession }));
