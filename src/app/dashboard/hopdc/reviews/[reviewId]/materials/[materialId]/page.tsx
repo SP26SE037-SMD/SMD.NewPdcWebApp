@@ -192,11 +192,11 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
         isLoading: isBlocksLoading 
     } = useInfiniteQuery({
         queryKey: ['hopdc-material-blocks-infinite', materialId],
-        queryFn: ({ pageParam = 1 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
-        initialPageParam: 1,
+        queryFn: ({ pageParam = 0 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => {
             const pagedData = lastPage.data;
-            if (!pagedData || pagedData.page >= pagedData.totalPages || !pagedData.content || pagedData.content.length === 0) {
+            if (!pagedData || pagedData.page >= pagedData.totalPages - 1 || !pagedData.content || pagedData.content.length === 0) {
                 return undefined;
             }
             return pagedData.page + 1;
@@ -345,8 +345,8 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                                     <h4 className="text-[10px] font-black tracking-widest uppercase mb-4" style={{ color: '#adb4a8' }}>On This Page</h4>
                                     <nav className="space-y-1">
                                         {outlineItems.map(item => (
-                                            <button key={item.id} onClick={() => scrollToBlock(item.id)} title={item.content}
-                                                className="w-full text-left text-[11px] font-bold py-2 truncate transition-all rounded-xl px-3 hover:translate-x-1"
+                                            <button key={item.id} onClick={() => scrollToBlock(item.id)} title={item.content.length > 80 ? item.content.substring(0, 80) + '...' : item.content}
+                                                className="w-full text-left py-2 px-3 truncate transition-all rounded-lg relative group overflow-hidden"
                                                 style={{
                                                     background: activeAnchor === item.id ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
                                                     color: activeAnchor === item.id ? 'var(--primary)' : '#5a6157',
@@ -397,12 +397,12 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                     ) : (
                         pages.map((pageBlocks, pageIndex) => (
                             <div key={pageIndex} className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
-                                <div className="flex flex-col gap-y-1">
+                                <div className="flex flex-col gap-y-4">
                                     {pageBlocks.map((block, idx) => {
                                         const globalIndex = parsedBlocks.findIndex(b => b.id === block.id);
                                         return (
                                             <div
-                                                key={block.id}
+                                                key={`${block.id}-${idx}`}
                                                 id={block.id}
                                                 ref={isTriggerItem(globalIndex) ? triggerRef : null}
                                                 className="relative"
@@ -560,24 +560,24 @@ function renderReadOnlyBlock(block: ParsedBlock, allBlocks: ParsedBlock[], globa
         case 'PARAGRAPH':
             return (
                 <div
-                    className={`font-medium py-1 leading-relaxed ${alignClass}`}
+                    className={`font-medium py-2 leading-[1.8] ${alignClass}`}
                     style={{ color: color || '#5a6157', fontSize: fontSize || '16px' }}
                     dangerouslySetInnerHTML={{ __html: content }}
                 />
             );
         case 'BULLET_LIST':
             return (
-                <div className="flex items-start gap-3 py-1">
-                    <div className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#2d342b' }}></div>
-                    <div className="flex-1 font-medium" style={{ color: color || '#5a6157', fontSize: fontSize || '16px' }} dangerouslySetInnerHTML={{ __html: content }} />
+                <div className="flex items-start gap-3 py-1.5">
+                    <div className="mt-2.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#2d342b' }}></div>
+                    <div className="flex-1 font-medium leading-[1.8]" style={{ color: color || '#5a6157', fontSize: fontSize || '16px' }} dangerouslySetInnerHTML={{ __html: content }} />
                 </div>
             );
         case 'ORDERED_LIST': {
             const orderNum = allBlocks.filter((b, i) => b.type === 'ORDERED_LIST' && i <= globalIndex).length;
             return (
-                <div className="flex items-start gap-3 py-1">
-                    <div className="mt-1 text-sm font-bold opacity-30 shrink-0 w-4">{orderNum}.</div>
-                    <div className="flex-1 font-medium" style={{ color: color || '#5a6157', fontSize: fontSize || '16px' }} dangerouslySetInnerHTML={{ __html: content }} />
+                <div className="flex items-start gap-3 py-1.5">
+                    <div className="mt-1.5 text-sm font-bold opacity-30 shrink-0 w-4">{orderNum}.</div>
+                    <div className="flex-1 font-medium leading-[1.8]" style={{ color: color || '#5a6157', fontSize: fontSize || '16px' }} dangerouslySetInnerHTML={{ __html: content }} />
                 </div>
             );
         }
