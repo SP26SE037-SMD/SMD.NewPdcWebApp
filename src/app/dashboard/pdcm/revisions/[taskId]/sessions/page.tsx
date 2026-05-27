@@ -433,19 +433,19 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         } catch (e) { console.error(e); }
                                     }
                                     const basePayload = {
+                                        syllabusId,
                                         sessionNumber: Number(draftSession.sessionNumber),
                                         sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                         teachingMethods: draftSession.teachingMethods || "Lecture",
                                         duration: Number(draftSession.duration || 50),
-                                        material: Array.from(new Set(selectedMaterialIds)),
-                                        block: Array.from(new Set(selectedBlockIds)),
+                                        content: draftSession.content || "",
                                         cloIds: draftSession.cloIds || []
                                     };
                                     if (draftSession.sessionId) {
-                                        await SessionService.updateSessionBlocks({ ...basePayload, sessionId: draftSession.sessionId });
+                                        await SessionService.updateSession(draftSession.sessionId, basePayload);
                                         dispatch(updateSession({ syllabusId, index: editingIndex, updates: draftSession }));
                                     } else {
-                                        const res = await SessionService.bulkConfigureSession({ ...basePayload, syllabusId }) as any;
+                                        const res = await SessionService.createSession(basePayload) as any;
                                         if (res?.data?.sessionId) {
                                             const createdSession = { ...draftSession, sessionId: res.data.sessionId };
                                             dispatch(addSession({ syllabusId, session: createdSession }));
