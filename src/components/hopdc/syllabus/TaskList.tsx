@@ -382,7 +382,7 @@ export function TaskList({ sprintId }: TaskListProps) {
         taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
         description: comment,
         action: "UPDATE",
-        priority: task.priority || "MEDIUM",
+        priority: task.priority || "NORMAL",
         type: "SYLLABUS",
         targetId: task.targetId || task.syllabusId || undefined,
         rootTaskId: task.rootTaskId || undefined,

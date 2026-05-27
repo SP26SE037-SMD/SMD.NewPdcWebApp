@@ -71,7 +71,7 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
     const materialsCount = (materialsRes as any)?.data?.content?.length || (materialsRes as any)?.data?.length || Object.keys(reduxMaterials).length;
 
     // Detection
-    const isReviewTask = taskData?.type === "Curriculum Review" || taskData?.taskName?.toLowerCase().includes('review');
+    const isReviewTask = (taskData?.type as any) === "Curriculum Review" || taskData?.taskName?.toLowerCase().includes('review');
 
     if (isTaskLoading) {
         return (

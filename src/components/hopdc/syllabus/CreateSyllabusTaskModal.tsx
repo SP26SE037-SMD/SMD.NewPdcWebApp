@@ -166,7 +166,7 @@ export function CreateSyllabusTaskModal({
         taskName: taskName.trim(),
         description: description.trim(),
         action: mode,
-        priority,
+        priority: (priority === "MEDIUM" ? "NORMAL" : priority === "CRITICAL" ? "URGENT" : priority) as any,
         type: "SYLLABUS",
         targetId: finalTargetId || undefined,
         rootTaskId,

@@ -87,13 +87,13 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                 console.log("[FinalDecisionCard] API response tasks list:", list);
                 // Prioritize active (not DONE/CANCELLED) syllabus tasks
                 const activeSyllabusTask = list.find(t =>
-                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS') &&
                     t.status !== 'DONE'
                 );
 
                 const matchedTask = activeSyllabusTask
                     || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE')
-                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP')
+                    || list.find(t => t.type === 'SYLLABUS')
                     || list[0]
                     || null;
                 console.log("[FinalDecisionCard] Selected syllabus task:", matchedTask);
@@ -261,7 +261,7 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
                 taskName: updateTaskName,
                 description: chosenComment,
                 action: "UPDATE",
-                priority: createSyllabusTask?.priority || "MEDIUM",
+                priority: createSyllabusTask?.priority || "NORMAL",
                 type: "SYLLABUS",
                 targetId: createSyllabusTask?.targetId || syllabusId || undefined,
                 rootTaskId: createSyllabusTask?.rootTaskId || undefined,
