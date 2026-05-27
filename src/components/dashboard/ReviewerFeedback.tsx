@@ -9,6 +9,7 @@ interface ReviewerFeedbackProps {
         title: string;
         content?: string;
     }[];
+    onClose?: () => void;
 }
 
 const C = {
@@ -21,7 +22,7 @@ const C = {
     primary: "#41683f",
 };
 
-export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, comments }) => {
+export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, comments, onClose }) => {
     // Filter out empty comments
     const activeComments = comments.filter(c => c.content && c.content.trim().length > 0);
 
@@ -47,29 +48,45 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
                     </h3>
                 </div>
 
-                {reviewer && (
-                    <div className="flex items-center gap-3">
-                        {reviewer.avatarUrl ? (
-                            <Image
-                                src={reviewer.avatarUrl}
-                                alt={reviewer.fullName}
-                                width={36}
-                                height={36}
-                                className="rounded-full object-cover shrink-0 border-2"
-                                style={{ borderColor: 'white' }}
-                            />
-                        ) : (
-                            <div className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 font-bold text-sm border-2"
-                                style={{ background: C.surfaceVariant, color: C.primary, borderColor: 'white' }}>
-                                {reviewer.fullName?.charAt(0).toUpperCase() || 'R'}
+                <div className="flex items-center gap-4">
+                    {reviewer && (
+                        <div className="flex items-center gap-3">
+                            {reviewer.avatarUrl ? (
+                                <Image
+                                    src={reviewer.avatarUrl}
+                                    alt={reviewer.fullName}
+                                    width={36}
+                                    height={36}
+                                    className="rounded-full object-cover shrink-0 border-2"
+                                    style={{ borderColor: 'white' }}
+                                />
+                            ) : (
+                                <div className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 font-bold text-sm border-2"
+                                    style={{ background: C.surfaceVariant, color: C.primary, borderColor: 'white' }}>
+                                    {reviewer.fullName?.charAt(0).toUpperCase() || 'R'}
+                                </div>
+                            )}
+                            <div className="text-sm pr-2">
+                                <p className="font-bold leading-none" style={{ color: C.onSurface }}>{reviewer.fullName || 'Reviewer'}</p>
+                                <p className="text-[11px] mt-1" style={{ color: C.onSurfaceVariant }}>{reviewer.email}</p>
                             </div>
-                        )}
-                        <div className="text-sm">
-                            <p className="font-bold leading-none" style={{ color: C.onSurface }}>{reviewer.fullName || 'Reviewer'}</p>
-                            <p className="text-[11px] mt-1" style={{ color: C.onSurfaceVariant }}>{reviewer.email}</p>
                         </div>
-                    </div>
-                )}
+                    )}
+                    {onClose && (
+                        <button 
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors ml-2"
+                            style={{ background: `${C.error}11`, color: C.error }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = `${C.error}22`}
+                            onMouseLeave={(e) => e.currentTarget.style.background = `${C.error}11`}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Comments List */}
