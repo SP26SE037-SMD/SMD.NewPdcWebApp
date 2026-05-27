@@ -182,14 +182,17 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
         isLoading: isBlocksLoading 
     } = useInfiniteQuery({
         queryKey: ['hopdc-monitor-material-blocks-infinite', materialId],
-        queryFn: ({ pageParam = 0 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
-        initialPageParam: 0,
-        getNextPageParam: (lastPage) => {
+        queryFn: ({ pageParam = 1 }) => BlockService.getBlocksByMaterialId(materialId as string, pageParam as number, 20),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) => {
             const pagedData = lastPage.data;
-            if (!pagedData || pagedData.page >= pagedData.totalPages - 1 || !pagedData.content || pagedData.content.length === 0) {
+            if (!pagedData || !pagedData.content || pagedData.content.length === 0) {
                 return undefined;
             }
-            return pagedData.page + 1;
+            if (pagedData.content.length < 20) {
+                return undefined;
+            }
+            return allPages.length + 1;
         },
         enabled: !!materialId,
     });
@@ -348,7 +351,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                             <p className="text-[#64748b] max-w-xs font-medium">This material doesn&apos;t have any structured content blocks yet.</p>
                         </div>
                     ) : (
-                        <div className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
+                        <div className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] h-max shrink-0 px-16 pt-12 pb-20 relative">
                             <div className="flex flex-col gap-y-4">
                                 {parsedBlocks.map((block, idx) => (
                                     <div
