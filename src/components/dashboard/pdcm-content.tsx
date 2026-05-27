@@ -184,7 +184,7 @@ const DevelopCard = ({
             ) : (
               <>
                 <span className="material-symbols-outlined text-[18px]">
-                  Do Task
+                  fact_check
                 </span>
                 Accept
               </>
