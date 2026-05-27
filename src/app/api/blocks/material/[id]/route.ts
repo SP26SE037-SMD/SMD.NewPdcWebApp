@@ -31,7 +31,14 @@ export async function GET(
             }
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (e) {
+            console.warn('Backend response is not JSON:', responseText);
+            data = { message: responseText };
+        }
 
         if (!response.ok) {
             console.error('Backend Error (Blocks General GET):', data);
@@ -72,7 +79,14 @@ export async function POST(
             body: JSON.stringify(body)
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (e) {
+            console.warn('Backend response is not JSON:', responseText);
+            data = { message: responseText };
+        }
 
         if (!response.ok) {
             console.error('Backend Error (Blocks General POST):', data);
@@ -113,7 +127,14 @@ export async function PUT(
             body: JSON.stringify(body)
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (e) {
+            console.warn('Backend response is not JSON:', responseText);
+            data = { message: responseText };
+        }
 
         if (!response.ok) {
             console.error('Backend Error (Blocks General PUT):', data);
