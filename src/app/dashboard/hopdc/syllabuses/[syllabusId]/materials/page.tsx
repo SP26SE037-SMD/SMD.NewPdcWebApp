@@ -216,7 +216,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                                                 <td className="px-6 py-4 text-right pr-8">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
-                                                            onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}`)}
+                                                            onClick={() => router.push(`/dashboard/hopdc/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
                                                             className="p-2 rounded-lg text-zinc-400 hover:text-[#41683f] hover:bg-[#41683f]08 transition-all flex items-center justify-center cursor-pointer"
                                                             title="View"
                                                         >
@@ -260,7 +260,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                                     </h3>
                                     <div className="flex gap-3">
                                         <button
-                                            onClick={() => router.push(`/dashboard/pdcm/materials/${material.materialId}/edit?syllabusId=${syllabusId}`)}
+                                            onClick={() => router.push(`/dashboard/hopdc/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
                                             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                                             style={{ background: `${C.primaryContainer}80`, color: C.primary }}
                                         >
