@@ -13,7 +13,6 @@ import { SyllabusService } from "@/services/syllabus.service";
 import { CloPloService } from "@/services/cloplo.service";
 import {
   TASK_STATUS,
-  TASK_TYPE,
   TaskItem,
   TaskStatus,
   TaskService,
@@ -383,7 +382,7 @@ export function TaskList({ sprintId }: TaskListProps) {
         taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
         description: comment,
         action: "UPDATE",
-        priority: task.priority || "MEDIUM",
+        priority: task.priority || "NORMAL",
         type: "SYLLABUS",
         targetId: task.targetId || task.syllabusId || undefined,
         rootTaskId: task.rootTaskId || undefined,
@@ -802,7 +801,7 @@ export function TaskList({ sprintId }: TaskListProps) {
       />
 
       {/* ─── Create Subtask Modal ─────────────────────────────────────────────── */}
-      {taskModalParentTask?.type === "SUBJECT" || taskModalParentTask?.type === "NEW_SUBJECT" || taskModalParentTask?.type === "REUSED_SUBJECT" ? (
+      {taskModalParentTask?.type === "SUBJECT" ? (
         <CreateSyllabusAdvancedModal
           isOpen={isTaskModalOpen}
           onClose={() => {

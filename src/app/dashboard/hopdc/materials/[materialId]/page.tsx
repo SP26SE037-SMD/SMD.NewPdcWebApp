@@ -131,13 +131,13 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                 console.log("[Material Detail Debug] API response tasks list:", list);
                 // Prioritize active (not DONE/CANCELLED) syllabus tasks
                 const activeSyllabusTask = list.find(t => 
-                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+                    (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS') &&
                     t.status !== 'DONE'
                 );
                 
                 const matchedTask = activeSyllabusTask
                     || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
-                    || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
+                    || list.find(t => t.type === 'SYLLABUS') 
                     || list[0] 
                     || null;
                 console.log("[Material Detail Debug] Selected syllabus task:", matchedTask);

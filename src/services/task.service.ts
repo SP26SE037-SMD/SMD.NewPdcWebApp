@@ -12,11 +12,19 @@ export const TASK_STATUS = {
 
 export type TaskStatus = (typeof TASK_STATUS)[keyof typeof TASK_STATUS];
 
+export const TASK_PRIORITY = {
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT',
+} as const;
+
+export type TaskPriority = (typeof TASK_PRIORITY)[keyof typeof TASK_PRIORITY];
+
 export const TASK_TYPE = {
-  NEW_SUBJECT: "NEW_SUBJECT",
-  REUSED_SUBJECT: "REUSED_SUBJECT",
-  UPDATED_SUBJECT: "UPDATED_SUBJECT",
-  SYLLABUS_DEVELOP: "SYLLABUS_DEVELOP",
+  SUBJECT: "SUBJECT",
+  MAJOR: "MAJOR",
+  SYLLABUS: "SYLLABUS",
 } as const;
 
 export type TaskType = (typeof TASK_TYPE)[keyof typeof TASK_TYPE];
@@ -95,8 +103,8 @@ export interface TaskItem {
   taskName: string;
   description: string;
   status: TaskStatus;
-  priority: string;
-  type: string;
+  priority: TaskPriority;
+  type: TaskType;
   action?: string;
   deadline: string;
   document?: {
@@ -182,8 +190,8 @@ export interface TaskApiItem {
   task_name?: string;
   description: string;
   status: TaskStatus;
-  priority: string;
-  type: string;
+  priority: TaskPriority;
+  type: TaskType;
   action?: string;
   deadline?: string;
   dueDate?: string;
@@ -254,8 +262,8 @@ export interface CreateTaskPayload {
   taskName: string;
   description: string;
   action?: string;
-  priority: string | null;
-  type: string;
+  priority: TaskPriority | null;
+  type: TaskType;
   targetId?: string;
   rootTaskId?: string | null;
   dueDate?: string;
@@ -268,8 +276,8 @@ export interface UpdateTaskPayload {
   action: string;
   isAccepted: boolean | null;
   comment: string;
-  priority: string;
-  type: string;
+  priority: TaskPriority;
+  type: TaskType;
   targetId: string;
   rootTaskId: string;
   dueDate: string;
@@ -573,7 +581,7 @@ export const TaskService = {
 
   deleteTask: async (taskId: string) => {
     return apiClient.delete<{ status: number; message: string }>(
-      `/api/tasks/${taskId}`,
+      `/api/v1/tasks-v2/${taskId}`,
       {
         credentials: "include",
       },

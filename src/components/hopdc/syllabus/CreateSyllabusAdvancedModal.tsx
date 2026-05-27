@@ -287,7 +287,7 @@ export function CreateSyllabusAdvancedModal({
         taskName: taskName.trim(),
         description: description.trim(),
         action,
-        priority,
+        priority: (priority === "MEDIUM" ? "NORMAL" : priority === "CRITICAL" ? "URGENT" : priority) as any,
         type: "SYLLABUS",
         targetId: finalTargetId || undefined,
         rootTaskId,

@@ -107,13 +107,13 @@ export default function HoPDCReviewSynthesisPage({
         }
         
         const activeSyllabusTask = list.find(t => 
-          (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') &&
+          (t.action === 'CREATE' || t.action === 'UPDATE' || t.type === 'SYLLABUS') &&
           t.status !== 'DONE'
         );
         
         return activeSyllabusTask
           || list.find(t => t.action === 'CREATE' || t.action === 'UPDATE') 
-          || list.find(t => t.type === 'SYLLABUS' || t.type === 'SYLLABUS_DEVELOP') 
+          || list.find(t => t.type === 'SYLLABUS') 
           || list[0] 
           || null;
       } catch (err) {

@@ -110,6 +110,10 @@ export const apiClient = {
 
             throw error;
         }
+        // 204 No Content has no body to parse
+        if (response.status === 204) {
+            return null as any;
+        }
         return response.json();
     }
 };

@@ -180,7 +180,7 @@ export function SyllabusTabContent({
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6">
-      {associatedTask?.type === "REUSED_SUBJECT" ? (
+      {(associatedTask?.type === "SUBJECT" && (associatedTask?.subjectStatus === "COMPLETED" || associatedTask?.subject?.status === "COMPLETED")) ? (
         publishedSyllabus ? (
           <>
             <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">

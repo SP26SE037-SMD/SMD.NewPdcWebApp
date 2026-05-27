@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Check,
 } from "lucide-react";
-import { TaskItem, TASK_TYPE, TaskStatus } from "@/services/task.service";
+import { TaskItem, TaskStatus } from "@/services/task.service";
 import { DepartmentAccount } from "@/services/account.service";
 import { getPriorityConfig, getTaskStatusConfig } from "./task-utils";
 
@@ -48,7 +48,7 @@ export function TaskRow({
     if (task.status === "OVERDUE") {
       return false; // Overdue tasks cannot have subtasks added
     }
-    if (task.type === "SUBJECT" || task.type === TASK_TYPE.NEW_SUBJECT || task.type === TASK_TYPE.REUSED_SUBJECT) {
+    if (task.type === "SUBJECT") {
       return true; // Can create syllabus task
     }
     if (task.type === "SYLLABUS" && task.action === "CREATE") {
@@ -60,7 +60,7 @@ export function TaskRow({
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canAddSubtask) return;
-    const mode = (task.type === "SUBJECT" || task.type === TASK_TYPE.NEW_SUBJECT || task.type === TASK_TYPE.REUSED_SUBJECT) ? "CREATE" : "REVIEW";
+    const mode = task.type === "SUBJECT" ? "CREATE" : "REVIEW";
     onOpenTaskModal(mode, task);
   };
 
