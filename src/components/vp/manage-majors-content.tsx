@@ -368,7 +368,7 @@ export default function ManageMajorsContent() {
 
   // Filter mapping
   const statusTabs = [
-    { label: "All Major", value: "" },
+    { label: "All Majors", value: "" },
     { label: "Draft", value: "DRAFT" },
     { label: "Internal Review", value: "INTERNAL_REVIEW" },
     { label: "Published", value: "PUBLISHED" },
@@ -1081,12 +1081,12 @@ export default function ManageMajorsContent() {
                 </div>
 
                 {/* Tabs System */}
-                <div className="flex p-1 bg-[#ebeef0] rounded-xl w-full md:w-auto">
+                <div className="flex p-1 bg-[#ebeef0] rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar">
                   {statusTabs.map((tab) => (
                     <button
                       key={tab.value}
                       onClick={() => setSelectedStatus(tab.value)}
-                      className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+                      className={`px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
                         selectedStatus === tab.value
                           ? "bg-white text-[#1d5c42] shadow-sm"
                           : "text-[#5a6062] hover:text-[#2d3335]"

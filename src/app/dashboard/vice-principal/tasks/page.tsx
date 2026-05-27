@@ -21,6 +21,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import CreateTaskModal from "@/components/vp/create-task-modal";
 
 export default function VPTasksPage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -34,6 +35,7 @@ export default function VPTasksPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const tabs = [
     { id: "ALL", label: "All Tasks" },
@@ -148,16 +150,25 @@ export default function VPTasksPage() {
             </p>
           </div>
 
-          <button
-            onClick={fetchTasks}
-            disabled={loading || !user?.accountId}
-            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCcw
-              className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90 shadow-md shadow-primary/20"
+            >
+              <CheckSquare className="h-4 w-4" />
+              Create Task
+            </button>
+            <button
+              onClick={fetchTasks}
+              disabled={loading || !user?.accountId}
+              className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
         </motion.div>
 
         <motion.div
@@ -178,7 +189,7 @@ export default function VPTasksPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex gap-3 overflow-x-auto pb-4 scrollbar-none mb-6"
+          className="flex p-1 bg-surface-container-highest/30 rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar mb-6"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -200,26 +211,24 @@ export default function VPTasksPage() {
                   setActiveTab(tab.id);
                   setPage(0);
                 }}
-                className={`relative group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-base font-bold transition-all duration-300 whitespace-nowrap
-                ${
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
                   isActive
-                    ? "text-white"
-                    : "bg-white/50 hover:bg-white border border-outline/10 text-on-surface-variant hover:border-primary/20"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50"
                 }`}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
                 <Icon
-                  className={`relative z-10 h-4 w-4 ${isActive ? "text-white" : "text-primary/60 group-hover:text-primary"}`}
+                  className={`h-4 w-4 ${
+                    isActive ? "text-primary" : "text-on-surface-variant/70"
+                  }`}
                 />
-                <span className="relative z-10">{tab.label}</span>
+                <span>{tab.label}</span>
                 <span
-                  className={`relative z-10 py-0.5 px-2 rounded-lg text-[10px] font-black ${isActive ? "bg-white/20 text-white" : "bg-primary/5 text-primary"}`}
+                  className={`py-0.5 px-2 rounded-lg text-[10px] font-black ${
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "bg-outline/10 text-on-surface-variant"
+                  }`}
                 >
                   {statusCounts[tab.id] ?? 0}
                 </span>
@@ -232,7 +241,7 @@ export default function VPTasksPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="rounded-3xl border border-outline/20 bg-surface/40 p-2 shadow-xl shadow-black/5 backdrop-blur-2xl"
+          className="rounded-3xl border border-outline/20 bg-surface p-2 shadow-xl shadow-black/5"
         >
           {error && (
             <div className="m-3 rounded-2xl border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
@@ -452,6 +461,12 @@ export default function VPTasksPage() {
           </div>
         </motion.div>
       </div>
+      
+      <CreateTaskModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchTasks}
+      />
     </div>
   );
 }
