@@ -7,20 +7,26 @@ const BACKEND_URL = process.env.BACKEND_URL;
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/callback/google';
+const NEXTAUTH_URL = process.env.NEXTAUTH_URL;
+
+function getRedirectUrl(path: string, requestUrl: string): URL {
+    const base = NEXTAUTH_URL || new URL(requestUrl).origin;
+    return new URL(path, base);
+}
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
     if (!code) {
-        return NextResponse.redirect(new URL('/login?error=No+code+provided', request.url));
+        return NextResponse.redirect(getRedirectUrl('/login?error=No+code+provided', request.url));
     }
 
     try {
         // Validation: Ensure env vars are loaded
         if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
             console.error('[Google Callback] Missing Environment Variables');
-            return NextResponse.redirect(new URL('/login?error=Configuration+error', request.url));
+            return NextResponse.redirect(getRedirectUrl('/login?error=Configuration+error', request.url));
         }
 
         // 1. Exchange code for Google Tokens
@@ -41,7 +47,7 @@ export async function GET(request: Request) {
 
         if (!tokenResponse.ok) {
             console.error('[Google Callback] Token Exchange Failed:', tokens);
-            return NextResponse.redirect(new URL('/login?error=Google+exchange+failed', request.url));
+            return NextResponse.redirect(getRedirectUrl('/login?error=Google+exchange+failed', request.url));
         }
 
         // 2. Send Google ID Token to Java Backend to perform "Social Login"
@@ -58,7 +64,7 @@ export async function GET(request: Request) {
 
         if (!backendResponse.ok || !data.data?.authenticated) {
             console.error('[Google Callback] Backend Auth Failed:', data);
-            return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(data.message || 'Backend auth failed')}`, request.url));
+            return NextResponse.redirect(getRedirectUrl(`/login?error=${encodeURIComponent(data.message || 'Backend auth failed')}`, request.url));
         }
 
         // 3. Success! Set cookies and redirect to dashboard
@@ -70,7 +76,7 @@ export async function GET(request: Request) {
         if (!user.role || !isSupportedRole(user.role)) {
             console.warn(`[Google Callback] Unsupported role "${user.role}" for user ${user.email}. Access denied.`);
             return NextResponse.redirect(
-                new URL(`/login?error=${encodeURIComponent(`Your account role "${user.role || 'Unknown'}" is not supported. Allowed roles: ${SUPPORTED_ROLES.join(', ')}. Please contact the administrator.`)}`, request.url)
+                getRedirectUrl(`/login?error=${encodeURIComponent(`Your account role "${user.role || 'Unknown'}" is not supported. Allowed roles: ${SUPPORTED_ROLES.join(', ')}. Please contact the administrator.`)}`, request.url)
             );
         }
 
@@ -78,7 +84,7 @@ export async function GET(request: Request) {
         const dashboardPath = `/dashboard/${ROLE_PATHS[user.role]}`;
         console.log(dashboardPath);
 
-        const response = NextResponse.redirect(new URL(dashboardPath, request.url));
+        const response = NextResponse.redirect(getRedirectUrl(dashboardPath, request.url));
         const cookieStore = await cookies();
 
         // HttpOnly Token Cookie
@@ -103,6 +109,6 @@ export async function GET(request: Request) {
 
     } catch (error) {
         console.error('[Google Callback] Critical Error:', error);
-        return NextResponse.redirect(new URL('/login?error=Internal+server+error', request.url));
+        return NextResponse.redirect(getRedirectUrl('/login?error=Internal+server+error', request.url));
     }
 }

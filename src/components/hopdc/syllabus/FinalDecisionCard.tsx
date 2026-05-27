@@ -348,8 +348,71 @@ export function FinalDecisionCard({ syllabusId, taskId }: FinalDecisionCardProps
     }
 
     if (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined) {
-        console.log("[FinalDecisionCard] Hiding card because final decision has already been made (isAccepted !== null)", createSyllabusTask.isAccepted);
-        return null;
+        const isAccepted = createSyllabusTask.isAccepted;
+        const decisionComment = createSyllabusTask.comment;
+
+        return (
+            <div
+                id="floating-decision-panel"
+                className="relative pointer-events-auto w-full p-6 rounded-3xl border border-zinc-200 bg-white/95 backdrop-blur-md text-left shadow-2xl flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300"
+            >
+                {/* Header */}
+                <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
+                    <div className={`p-1.5 rounded-lg ${isAccepted ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        <AlertCircle size={16} />
+                    </div>
+                    <div>
+                        <span className={`text-[10px] font-black uppercase tracking-widest block leading-none ${isAccepted ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {isAccepted ? 'Syllabus Approved' : 'Syllabus Rejected'}
+                        </span>
+                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider mt-0.5 block">
+                            Review Decision Completed
+                        </span>
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    <h4 className="text-sm font-black text-zinc-900 leading-tight">
+                        {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "Syllabus Review"}
+                    </h4>
+                    <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                        A final decision has already been submitted for this syllabus deliverable.
+                    </p>
+                </div>
+
+                <div className="space-y-2">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                        Decision Comment
+                    </span>
+                    <div className="w-full p-3 text-xs font-semibold leading-relaxed text-[#2d342b] border border-zinc-200 bg-zinc-50/50 rounded-xl max-h-40 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                        {decisionComment ? (
+                            decisionComment.split('-').map((item, idx) => {
+                                const trimmed = item.trim();
+                                if (!trimmed) return null;
+                                return (
+                                    <div key={idx} className="flex items-start gap-1">
+                                        <span className="text-zinc-400 font-bold shrink-0 select-none">•</span>
+                                        <span className="whitespace-pre-wrap">{trimmed}</span>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <span className="text-zinc-400 italic">
+                                {isAccepted ? "Approved" : "No comments provided"}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className={`mt-2 p-3 rounded-xl text-center text-xs font-black uppercase tracking-wider border ${
+                    isAccepted
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                }`}>
+                    {isAccepted ? '✓ Status: Completed' : '✗ Status: Undergoing Revision'}
+                </div>
+            </div>
+        );
     }
 
     return (
