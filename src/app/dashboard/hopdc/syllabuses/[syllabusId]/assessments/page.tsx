@@ -1428,7 +1428,7 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
                 <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex items-center gap-3">
                     <span className="material-symbols-outlined text-amber-500 text-lg">info</span>
                     <p className="text-[11px] text-slate-500 font-medium">
-                        Changes here are temporary. Please click "Save Changes" at the top to persist your mappings.
+                        View only. Mappings can only be modified by the person in charge of this syllabus.
                     </p>
                 </div>
             </div>
@@ -1492,51 +1492,40 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                         <div className="max-w-4xl mx-auto space-y-6">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h4 className="text-sm font-bold text-slate-900">Select Course Learning Outcomes</h4>
-                                    <p className="text-xs text-slate-500 mt-0.5">Pick outcomes that are assessed in this component</p>
+                                    <h4 className="text-sm font-bold text-slate-900">Mapped Course Learning Outcomes</h4>
+                                    <p className="text-xs text-slate-500 mt-0.5">Learning outcomes assessed in this component</p>
                                 </div>
                                 <button 
                                     onClick={() => setIsExpanded(false)}
                                     className="text-xs font-bold text-slate-500 hover:text-slate-700"
                                 >
-                                    Close Editor
+                                    Close Viewer
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {subjectClos.map(clo => {
-                                    const isSelected = selectedCloIds.includes(clo.cloId);
-                                    return (
-                                        <button
+                                {subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).length > 0 ? (
+                                    subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).map(clo => (
+                                        <div
                                             key={clo.cloId}
-                                            onClick={() => {
-                                                const newIds = isSelected 
-                                                    ? selectedCloIds.filter(id => id !== clo.cloId) 
-                                                    : [...selectedCloIds, clo.cloId];
-                                                onSelectionChange(newIds);
-                                            }}
-                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${
-                                                isSelected 
-                                                ? 'bg-white border-emerald-400 ring-1 ring-emerald-100 shadow-sm' 
-                                                : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
-                                            }`}
+                                            className="flex items-start gap-4 p-4 rounded-xl border bg-white border-slate-200 text-left transition-all"
                                         >
-                                            <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                                                isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'
-                                            }`}>
-                                                {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
-                                            </div>
                                             <div className="space-y-1">
-                                                <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
                                                     {clo.cloCode}
                                                 </p>
-                                                <p className={`text-xs leading-relaxed ${isSelected ? 'text-emerald-900' : 'text-slate-600'}`}>
+                                                <p className="text-xs leading-relaxed text-slate-600">
                                                     {clo.description}
                                                 </p>
                                             </div>
-                                        </button>
-                                    );
-                                })}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-1 md:col-span-2 py-8 text-center text-slate-500 bg-white rounded-xl border border-dashed border-slate-200">
+                                        <span className="material-symbols-outlined text-3xl opacity-20 mb-2">link_off</span>
+                                        <p className="text-sm font-medium">No learning outcomes mapped</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </td>

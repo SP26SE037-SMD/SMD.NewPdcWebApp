@@ -1263,38 +1263,31 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: {
                     <div className="bg-white/80 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 shadow-inner">
                         <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4 flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm">checklist</span>
-                            Select Course Learning Outcomes
+                            Mapped Course Learning Outcomes
                         </h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {subjectClos.map(clo => (
-                                <label 
-                                    key={clo.cloId}
-                                    className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer group
-                                        ${selectedCloIds.includes(clo.cloId) 
-                                            ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
-                                            : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'}`}
-                                >
-                                    <input 
-                                        type="checkbox"
-                                        className="mt-1 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary transition-all"
-                                        checked={selectedCloIds.includes(clo.cloId)}
-                                        onChange={(e) => {
-                                            const newIds = e.target.checked 
-                                                ? [...selectedCloIds, clo.cloId]
-                                                : selectedCloIds.filter(id => id !== clo.cloId);
-                                            onChange(newIds);
-                                        }}
-                                    />
-                                    <div>
-                                        <p className={`text-xs font-black mb-1 transition-colors ${selectedCloIds.includes(clo.cloId) ? 'text-primary' : 'text-slate-500'}`}>
-                                            {clo.cloCode}
-                                        </p>
-                                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
-                                            {clo.cloName}
-                                        </p>
+                            {subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).length > 0 ? (
+                                subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).map(clo => (
+                                    <div 
+                                        key={clo.cloId}
+                                        className="flex items-start gap-3 p-4 rounded-xl border-2 border-slate-100 bg-slate-50/50 group"
+                                    >
+                                        <div>
+                                            <p className="text-xs font-black mb-1 text-slate-700">
+                                                {clo.cloCode}
+                                            </p>
+                                            <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
+                                                {clo.cloName}
+                                            </p>
+                                        </div>
                                     </div>
-                                </label>
-                            ))}
+                                ))
+                            ) : (
+                                <div className="col-span-1 md:col-span-2 lg:col-span-3 py-6 text-center text-slate-500 rounded-xl border border-dashed border-slate-200">
+                                    <span className="material-symbols-outlined text-2xl opacity-20 mb-1">link_off</span>
+                                    <p className="text-xs font-medium">No learning outcomes mapped</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
