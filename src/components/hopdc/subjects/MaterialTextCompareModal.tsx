@@ -64,16 +64,38 @@ const paginateBlocks = (allBlocks: ParsedBlock[]) => {
     return pages;
 };
 
+const fetchAllBlocks = async (materialId: string) => {
+    let allBlocks: any[] = [];
+    let page = 0;
+    const size = 100;
+    while (true) {
+        try {
+            const res = await BlockService.getBlocksByMaterialId(materialId, page, size);
+            if (res?.data?.content) {
+                allBlocks = [...allBlocks, ...res.data.content];
+            }
+            if (!res?.data?.content || res.data.content.length < size) {
+                break;
+            }
+            page++;
+        } catch (error) {
+            console.error("Error fetching blocks page:", error);
+            break;
+        }
+    }
+    return { data: { content: allBlocks } };
+};
+
 export function MaterialTextCompareModal({ oldId, newId, title, onClose }: MaterialTextCompareModalProps) {
     const { data: oldBlocksRes, isLoading: oldLoading } = useQuery({
         queryKey: ['blocks', oldId],
-        queryFn: () => oldId ? BlockService.getBlocksByMaterialId(oldId, 0, 1000) : Promise.resolve(null),
+        queryFn: () => oldId ? fetchAllBlocks(oldId) : Promise.resolve(null),
         enabled: !!oldId
     });
     
     const { data: newBlocksRes, isLoading: newLoading } = useQuery({
         queryKey: ['blocks', newId],
-        queryFn: () => newId ? BlockService.getBlocksByMaterialId(newId, 0, 1000) : Promise.resolve(null),
+        queryFn: () => newId ? fetchAllBlocks(newId) : Promise.resolve(null),
         enabled: !!newId
     });
 
