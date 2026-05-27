@@ -398,30 +398,20 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
                             <p className="text-[#64748b] max-w-xs font-medium">This material doesn&apos;t have any structured content blocks yet.</p>
                         </div>
                     ) : (
-                        pages.map((pageBlocks, pageIndex) => (
-                            <div key={pageIndex} className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
-                                <div className="flex flex-col gap-y-4">
-                                    {pageBlocks.map((block, idx) => {
-                                        const globalIndex = parsedBlocks.findIndex(b => b.id === block.id);
-                                        return (
-                                            <div
-                                                key={`${block.id}-${idx}`}
-                                                id={block.id}
-                                                ref={isTriggerItem(globalIndex) ? triggerRef : null}
-                                                className="relative"
-                                            >
-                                                {renderReadOnlyBlock(block, parsedBlocks, globalIndex)}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Page number */}
-                                <div className="absolute bottom-6 right-8 text-[10px] font-bold tracking-wider" style={{ color: '#adb4a8' }}>
-                                    {pageIndex + 1} / {pages.length}
-                                </div>
+                        <div className="w-full max-w-[850px] mx-auto bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e6e9e0] rounded-sm min-h-[1100px] px-16 pt-12 pb-20 relative">
+                            <div className="flex flex-col gap-y-4">
+                                {parsedBlocks.map((block, idx) => (
+                                    <div
+                                        key={`${block.id}-${idx}`}
+                                        id={block.id}
+                                        ref={isTriggerItem(idx) ? triggerRef : null}
+                                        className="relative"
+                                    >
+                                        {renderReadOnlyBlock(block, parsedBlocks, idx)}
+                                    </div>
+                                ))}
                             </div>
-                        ))
+                        </div>
                     )}
 
                     {isFetchingNextPage && (
