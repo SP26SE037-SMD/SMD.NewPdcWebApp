@@ -116,98 +116,99 @@ export const SprintCard = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="group relative bg-white border border-zinc-100 hover:border-zinc-300 transition-all rounded-2xl overflow-hidden"
+      className="group relative bg-white border border-zinc-200/60 hover:border-[#409b43]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 rounded-[24px] overflow-hidden"
     >
       <div className="flex flex-col lg:flex-row items-stretch">
         {/* Left Status Bar */}
-        <div className={`w-2 ${config.color}`} />
+        <div className={`w-1.5 ${config.color} group-hover:scale-y-110 transition-transform duration-500`} />
 
         {/* Main Header Info */}
-        <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-gradient-to-r from-transparent to-zinc-50/30">
           {/* Section 1: Title & Dates */}
-          <div className="lg:col-span-5 space-y-2">
+          <div className="lg:col-span-5 space-y-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1 hover:bg-zinc-100 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-700"
                 title={isExpanded ? "Collapse Tasks" : "Expand Tasks"}
               >
                 {isExpanded ? (
-                  <ChevronDown size={14} />
+                  <ChevronDown size={16} strokeWidth={2.5} />
                 ) : (
-                  <ChevronRight size={14} />
+                  <ChevronRight size={16} strokeWidth={2.5} />
                 )}
               </button>
               <span
-                className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${config.bg} ${config.text} border border-current/20 rounded-md`}
+                className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.text} rounded-lg ring-1 ring-current/10`}
               >
-                {sprint.status}
+                {sprint.status.replace("_", " ")}
               </span>
-              <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/80 px-2 py-0.5 rounded-md">
                 #{sprint.sprintId.substring(0, 6)}
               </span>
             </div>
 
             <Link
               href={detailHref}
-              className="block text-xl font-black text-zinc-900 tracking-tight hover:text-primary transition-colors cursor-pointer"
+              className="block text-xl font-extrabold text-[#2d342b] tracking-tight hover:text-[#409b43] transition-colors cursor-pointer"
+              style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
             >
               {sprint.sprintName}
             </Link>
 
-            <div className="flex items-center gap-4 text-xs font-bold text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <Calendar size={14} /> {formatDate(sprint.startDate)}
+            <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
+              <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+                <Calendar size={14} className="text-zinc-400" /> {formatDate(sprint.startDate)}
               </span>
-              <span className="text-zinc-200">/</span>
-              <span className="flex items-center gap-1.5">
-                <Target size={14} /> {formatDate(sprint.endDate)}
+              <span className="text-zinc-300">→</span>
+              <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+                <Target size={14} className="text-zinc-400" /> {formatDate(sprint.endDate)}
               </span>
             </div>
           </div>
 
           {/* Section 2: Timeline & Task Stats (Refined Middle Column) */}
-          <div className="lg:col-span-4 grid grid-cols-2 gap-8 border-l border-zinc-100 pl-6">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+          <div className="lg:col-span-4 grid grid-cols-2 gap-6 lg:border-l border-zinc-100 lg:pl-8">
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Clock size={12} />
                 {sprint.status === SPRINT_STATUS.IN_PROGRESS
                   ? "Remaining Days"
                   : "Total Days"}
               </p>
-              <div className="flex items-end gap-2 text-sans">
-                <span className="text-2xl font-black text-zinc-900 tracking-tighter">
+              <div className="flex items-end gap-1.5">
+                <span className="text-3xl font-black text-zinc-900 tracking-tighter leading-none" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                   {sprint.status === SPRINT_STATUS.IN_PROGRESS
-                    ? `${calculateRemainingDays(sprint.endDate)} Days`
-                    : `${Math.ceil((new Date(sprint.endDate).getTime() - new Date(sprint.startDate).getTime()) / (1000 * 3600 * 24))} Days`}
+                    ? calculateRemainingDays(sprint.endDate)
+                    : Math.ceil((new Date(sprint.endDate).getTime() - new Date(sprint.startDate).getTime()) / (1000 * 3600 * 24))}
                 </span>
-                <span className="text-[9px] font-bold text-zinc-300 uppercase mb-1">
-                  {sprint.status === SPRINT_STATUS.IN_PROGRESS
-                    ? "REMAINING"
-                    : "DURATION"}
+                <span className="text-[10px] font-bold text-zinc-400 uppercase mb-1">
+                  Days
                 </span>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                  Deliverables
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <CheckCircle2 size={12} /> Deliverables
                 </p>
-                <p className="text-[10px] font-black text-zinc-900 uppercase">
-                  {closedTasks} <span className="text-zinc-300">/</span>{" "}
-                  {totalTasks}
+                <p className="text-xs font-black text-zinc-800">
+                  {closedTasks} <span className="text-zinc-300 mx-0.5">/</span> {totalTasks}
                 </p>
               </div>
               {/* Progress Bar (Rounded) */}
-              <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+              <div className="h-2.5 w-full bg-zinc-100 rounded-full overflow-hidden shadow-inner">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
-                  className={`h-full ${config.color} transition-all duration-1000 rounded-full`}
-                />
+                  className={`h-full ${config.color} transition-all duration-1000 rounded-full relative`}
+                >
+                  <div className="absolute inset-0 bg-white/20"></div>
+                </motion.div>
               </div>
-              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest text-right">
-                {closedTasks} CLOSED
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest text-right">
+                {Math.round(progressPercent)}% COMPLETED
               </p>
             </div>
           </div>
@@ -229,49 +230,58 @@ export const SprintCard = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-zinc-50/50 border-t border-zinc-100"
+            className="overflow-hidden bg-[#fafafa] border-t border-zinc-100 relative"
           >
-            <div className="p-6 pt-2 space-y-3">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/[0.02] to-transparent pointer-events-none"></div>
+            <div className="p-8 space-y-4">
               {isTasksLoading ? (
-                <div className="flex items-center gap-2 text-zinc-400 py-4">
-                  <Loader2 size={14} className="animate-spin" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Fetching Tasks...
+                <div className="flex items-center justify-center gap-3 text-zinc-400 py-8">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-[11px] font-black uppercase tracking-widest">
+                    Loading Deliverables...
                   </span>
                 </div>
               ) : tasks.length > 0 ? (
-                <div className="grid grid-cols-1 gap-1">
-                  {tasks.map((task) => (
-                    <div
+                <div className="grid grid-cols-1 gap-2.5">
+                  {tasks.map((task, idx) => (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
                       key={task.taskId}
-                      className="flex items-center justify-between p-3 bg-white border border-zinc-100 group/task hover:border-zinc-300 transition-all hover:translate-x-1 rounded-xl"
+                      className="flex items-center justify-between p-4 bg-white border border-zinc-100 shadow-sm group/task hover:shadow-md hover:border-zinc-300 transition-all rounded-[16px]"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-zinc-300 uppercase">
-                          #{task.taskId.substring(0, 4)}
-                        </span>
-                        <span className="text-sm font-bold text-zinc-600 group-hover/task:text-zinc-900 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-100 shrink-0">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase">
+                            #{task.taskId.substring(0, 4)}
+                          </span>
+                        </div>
+                        <span className="text-[13px] font-bold text-zinc-700 group-hover/task:text-[#409b43] transition-colors">
                           {task.taskName}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 shrink-0">
                         <span
-                          className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded-md ${
+                          className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ring-1 ${
                             task.status === TASK_STATUS.DONE
-                              ? "border-emerald-100 text-emerald-600 bg-emerald-50"
-                              : "border-zinc-200 text-zinc-400 bg-zinc-50"
+                              ? "bg-emerald-50 text-emerald-600 ring-emerald-200"
+                              : "bg-zinc-50 text-zinc-400 ring-zinc-200"
                           }`}
                         >
-                          {task.status}
+                          {task.status.replace("_", " ")}
                         </span>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className="py-6 text-center border-2 border-dashed border-zinc-200">
-                  <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.2em]">
-                    No tasks initialized for this cycle
+                <div className="py-12 text-center bg-white rounded-2xl border border-dashed border-zinc-200">
+                  <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Target size={20} className="text-zinc-300" />
+                  </div>
+                  <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                    No deliverables mapped to this sprint
                   </p>
                 </div>
               )}

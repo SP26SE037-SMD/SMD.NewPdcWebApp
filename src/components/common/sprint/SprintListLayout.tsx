@@ -105,15 +105,15 @@ export const SprintListLayout = ({
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] relative whitespace-nowrap transition-all duration-300 ${
                   isActive
-                    ? "text-[#409b43] bg-[#409b43]/5 border-[#409b43]"
-                    : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50"
+                    ? "text-[#2d342b]"
+                    : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50/50"
                 }`}
               >
                 {tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#409b43] rounded-t-full"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#409b43] rounded-t-full shadow-[0_-2px_10px_rgba(64,155,67,0.4)]"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
