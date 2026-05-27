@@ -97,6 +97,18 @@ export default function RequestsWorkspaceDetailModal({
     }
   };
 
+  const handleViewCurriculum = (curriculumId: string) => {
+    if (!curriculumId) return;
+    onClose();
+    if (role === "VP") {
+      router.push(`/dashboard/vice-principal/curriculums/${curriculumId}/review`);
+    } else if (role === "HoCFDC") {
+      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
+    } else if (role === "HoPDC") {
+      router.push(`/dashboard/hopdc/sprint-management`);
+    }
+  };
+
   const handleUpdateStatus = async (newStatus: "APPROVED" | "REJECTED") => {
     if (!selectedRequest) return;
 
@@ -393,6 +405,19 @@ export default function RequestsWorkspaceDetailModal({
                       {viewTaskLoading ? "Loading..." : "View Task"}
                     </button>
                   )}
+
+                  {selectedRequest.type === "CURRICULUM" && (
+                    <button
+                      onClick={() => {
+                        const cId = selectedRequest.curriculum?.curriculumId || selectedRequest.targetId;
+                        if (cId) handleViewCurriculum(cId);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95 whitespace-nowrap"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View Detail
+                    </button>
+                  )}
                 </div>
 
                 {/* Decision Comment */}
@@ -443,44 +468,48 @@ export default function RequestsWorkspaceDetailModal({
           <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50">
             {selectedRequest?.status === "PENDING" && requestSource === "RECEIVED" ? (
               <div className="space-y-4">
-                <div className="space-y-2 text-left">
-                  <label className={`text-xs font-bold uppercase tracking-widest ml-1 ${
-                    commentError ? "text-rose-500" : "text-zinc-500"
-                  }`}>
-                    Comment <span className={`${commentError ? "text-rose-400" : "text-zinc-400"} normal-case tracking-normal font-medium`}>(required for rejection)</span>
-                  </label>
-                  <textarea
-                    value={detailComment}
-                    onChange={(e) => {
-                      setDetailComment(e.target.value);
-                      if (e.target.value.trim()) {
-                        setCommentError(false);
-                      }
-                    }}
-                    placeholder="Add your comment here..."
-                    rows={3}
-                    className={`w-full rounded-xl border px-5 py-3 text-sm font-medium outline-none transition resize-none ${
-                      commentError
-                        ? "border-rose-500 bg-rose-50/20 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/10"
-                        : "border-zinc-200 bg-zinc-50 focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    }`}
-                  />
-                  {commentError && (
-                    <p className="text-xs text-rose-500 font-bold ml-1 animate-in fade-in duration-200">
-                      Please enter a comment before rejecting this request.
-                    </p>
-                  )}
-                </div>
+                {selectedRequest.type !== "CURRICULUM" && (
+                  <div className="space-y-2 text-left">
+                    <label className={`text-xs font-bold uppercase tracking-widest ml-1 ${
+                      commentError ? "text-rose-500" : "text-zinc-500"
+                    }`}>
+                      Comment <span className={`${commentError ? "text-rose-400" : "text-zinc-400"} normal-case tracking-normal font-medium`}>(required for rejection)</span>
+                    </label>
+                    <textarea
+                      value={detailComment}
+                      onChange={(e) => {
+                        setDetailComment(e.target.value);
+                        if (e.target.value.trim()) {
+                          setCommentError(false);
+                        }
+                      }}
+                      placeholder="Add your comment here..."
+                      rows={3}
+                      className={`w-full rounded-xl border px-5 py-3 text-sm font-medium outline-none transition resize-none ${
+                        commentError
+                          ? "border-rose-500 bg-rose-50/20 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/10"
+                          : "border-zinc-200 bg-zinc-50 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      }`}
+                    />
+                    {commentError && (
+                      <p className="text-xs text-rose-500 font-bold ml-1 animate-in fade-in duration-200">
+                        Please enter a comment before rejecting this request.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center justify-end gap-3">
-                  <button
-                    onClick={() => handleUpdateStatus("REJECTED")}
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-500 bg-rose-50 px-6 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-500 hover:text-white active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-                  >
-                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <XCircle className="h-4 w-4" />
-                    Reject
-                  </button>
+                  {selectedRequest.type !== "CURRICULUM" && (
+                    <button
+                      onClick={() => handleUpdateStatus("REJECTED")}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-500 bg-rose-50 px-6 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-500 hover:text-white active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </button>
+                  )}
                   <button
                     onClick={() => handleUpdateStatus("APPROVED")}
                     disabled={submitting}

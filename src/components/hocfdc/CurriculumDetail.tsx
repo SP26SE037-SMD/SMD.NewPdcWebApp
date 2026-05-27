@@ -314,21 +314,6 @@ export default function CurriculumDetail({ id }: { id: string }) {
                 <>
                   <button
                     onClick={() => {
-                      statusMutation.mutate(CURRICULUM_STATUS.SYLLABUS_DEVELOP);
-                    }}
-                    disabled={statusMutation.isPending}
-                    className="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {statusMutation.isPending ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <RotateCcw size={14} />
-                    )}
-                    Back to Syllabus Develop
-                  </button>
-
-                  <button
-                    onClick={() => {
                       showToast("Exporting curriculum to PDF...", "success");
                       window.open(`/api/curricula/${id}/export-pdf`, "_blank");
                     }}

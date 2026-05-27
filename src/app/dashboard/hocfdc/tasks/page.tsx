@@ -465,7 +465,6 @@ export default function TasksPage() {
                           </span>
                         </div>
                       </td>
-
                       <td className="px-5 py-6 rounded-r-2xl text-right">
                         {task.status === "TO_DO" ? (
                           <button
@@ -480,7 +479,7 @@ export default function TasksPage() {
                             )}
                             START
                           </button>
-                        ) : task.status === "IN_PROGRESS" ? (
+                        ) : (
                           <button
                             onClick={(e) => handleOpenTask(e, task)}
                             disabled={checkingPhaseId === task.taskId}
@@ -491,14 +490,6 @@ export default function TasksPage() {
                             ) : (
                               "OPEN"
                             )}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={(e) => handleOpenTask(e, task)}
-                            className="inline-flex items-center gap-2 rounded-xl border-2 border-tertiary/20 bg-tertiary/5 px-5 py-2.5 text-xs font-black text-tertiary hover:bg-tertiary hover:text-white transition-all active:scale-95"
-                          >
-                            <ClipboardCheck className="h-3.5 w-3.5" />
-                            CHECK REQUEST
                           </button>
                         )}
                       </td>

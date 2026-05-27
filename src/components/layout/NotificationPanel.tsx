@@ -188,7 +188,7 @@ export const NotificationPanel = () => {
                 if (entity.type === 'curriculum') {
                     router.push(`/dashboard/vice-principal/curriculums/${entity.id}/review`);
                 } else {
-                    router.push(`/dashboard/vice-principal/digital-enactment`);
+                    router.push(`/dashboard/vice-principal/requests`);
                 }
                 setLoadingNotifId(null);
                 return;

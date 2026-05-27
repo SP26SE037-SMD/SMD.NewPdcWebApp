@@ -177,6 +177,12 @@ export const RequestService = {
         });
     },
 
+    createRequestVP: async (payload: { title: string; content: string; type: string; targetId: string }) => {
+        return apiClient.post<any>("/api/requests/vp", payload, {
+            credentials: "include",
+        });
+    },
+
     updateRequest: (id: string, data: RequestUpdatePayload) => {
         return apiClient.put<RequestDetailResponse>(`/api/requests/${id}`, data);
     },

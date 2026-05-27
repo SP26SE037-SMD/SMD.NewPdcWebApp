@@ -121,34 +121,6 @@ export default function VPDashboardContent() {
         <div className="lg:col-span-8 space-y-8">
             {/* Heatmap Section */}
             <ActivityHeatmap data={heatmapData} title="Syllabus Creation Velocity" />
-
-            {/* Enactment Queue */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-zinc-900">Enactment Queue</h2>
-                    <Link href="/dashboard/vice-principal/digital-enactment" className="text-xs font-black uppercase tracking-widest text-primary hover:underline">Process All</Link>
-                </div>
-                <div className="bg-white rounded-2xl border border-zinc-100 p-8 shadow-sm divide-y divide-zinc-50">
-                    {enactmentQueue.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-5 first:pt-0 last:pb-0 group">
-                            <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                    <Signature size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="text-base font-bold text-zinc-900">{item.title}</h4>
-                                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                                        Ref: {item.ref} <span className="opacity-30">•</span> {item.time} BY {item.initiator}
-                                    </p>
-                                </div>
-                            </div>
-                            <button className="px-5 py-2 bg-zinc-900 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary transition-all active:scale-95">
-                                Sign
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
 
         {/* Right Column: Strategic Setup & Bottlenecks */}
@@ -227,27 +199,6 @@ export default function VPDashboardContent() {
         </div>
       </div>
 
-      {/* Quick Record Navigation */}
-      <div className="bg-zinc-900 rounded-3xl p-8 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl -mr-16 -mt-16 group-hover:bg-primary/30 transition-colors" />
-          <div className="relative z-10 space-y-6">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                  <History size={24} className="text-primary" />
-              </div>
-              <div className="space-y-2">
-                  <h3 className="text-xl font-black italic uppercase tracking-tight">Record Audit</h3>
-                  <p className="text-sm text-zinc-400 font-medium leading-relaxed">
-                      Access historical digital enactments and verify cross-departmental curriculum handovers.
-                  </p>
-              </div>
-              <Link 
-                  href="/dashboard/vice-principal/digital-enactment"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-primary hover:gap-3 transition-all"
-              >
-                  View Archive <ArrowUpRight size={14} />
-              </Link>
-          </div>
-      </div>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

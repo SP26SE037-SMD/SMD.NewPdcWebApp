@@ -321,18 +321,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const sprint = sprintRes?.data;
   const isLoading = sprintLoading;
 
-  React.useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (sprint?.status === SPRINT_STATUS.PLANNING) {
-        e.preventDefault();
-        e.returnValue = "You haven't started this deliverable package yet. Are you sure you want to leave?";
-        return e.returnValue;
-      }
-    };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [sprint?.status]);
 
   React.useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {
