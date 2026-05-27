@@ -465,16 +465,8 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                             </div>
                             <h3 className="font-bold mt-4 mb-2" style={{ color: '#5a6157', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Sessions Found</h3>
                             <p className="text-sm mb-6" style={{ color: '#adb4a8' }}>
-                                Create your first session manually.<br />
-                                <span className="font-bold text-primary-600">Total Credits: {credit}</span>
+                                This syllabus currently has no sessions.
                             </p>
-                            <button
-                                onClick={handleCreateNew}
-                                className="px-10 py-3 rounded-2xl font-black text-white uppercase tracking-widest text-[10px] shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
-                                style={{ background: 'linear-gradient(135deg, #41683f 0%, #2d452c 100%)' }}
-                            >
-                                Create First Session
-                            </button>
                         </div>
                     )}
 
@@ -594,9 +586,9 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                         <div className="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-bright">
                             <div>
                                 <h2 className="text-2xl font-extrabold text-on-surface">
-                                    {editingIndex === -1 ? 'Create New Session' : `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}`}
+                                    Session {String(draftSession.sessionNumber).padStart(2, '0')}
                                 </h2>
-                                <p className="text-sm text-on-surface-variant">Configure timing, topics, and pedagogical mappings.</p>
+                                <p className="text-sm text-on-surface-variant">View session timing, topics, and details.</p>
                             </div>
                             <button onClick={handleCloseModal}
                                 className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
@@ -631,10 +623,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         pattern="[0-9]*"
                                         placeholder="0"
                                         value={draftSession.sessionNumber || ''}
-                                        onChange={e => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            setDraftSession(prev => prev ? { ...prev, sessionNumber: val === '' ? 0 : Number(val) } : null);
-                                        }}
+                                        readOnly
                                     />
                                 </div>
                                 <div className="md:col-span-7 flex flex-col gap-2">
@@ -643,7 +632,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="text"
                                         value={draftSession.sessionTitle || ''}
-                                        onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTitle: e.target.value } : null)}
+                                        readOnly
                                     />
                                 </div>
                                 <div className="md:col-span-3 flex flex-col gap-2">
@@ -652,7 +641,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="number"
                                         value={draftSession.duration}
-                                        onChange={e => setDraftSession(prev => prev ? { ...prev, duration: Number(e.target.value) } : null)}
+                                        readOnly
                                     />
                                 </div>
                                 <div className="md:col-span-6 flex flex-col gap-2">
@@ -661,7 +650,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         <select
                                             className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
                                             value={draftSession.teachingMethods}
-                                            onChange={e => setDraftSession(prev => prev ? { ...prev, teachingMethods: e.target.value } : null)}
+                                            disabled
                                         >
                                             <option value="Lecture">Lecture</option>
                                             <option value="Laboratory">Laboratory</option>
@@ -680,7 +669,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         <select
                                             className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
                                             value={draftSession.sessionType || 'THEORY'}
-                                            onChange={e => setDraftSession(prev => prev ? { ...prev, sessionType: e.target.value } : null)}
+                                            disabled
                                         >
                                             <option value="THEORY">Theory</option>
                                             <option value="PRACTICE">Practice</option>
@@ -695,7 +684,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none resize-none h-24"
                                         placeholder="Enter the detailed topic for this session..."
                                         value={draftSession.sessionTopic || ''}
-                                        onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTopic: e.target.value } : null)}
+                                        readOnly
                                     />
                                 </div>
                             </section>
@@ -706,119 +695,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                         {/* Modal Footer Actions */}
                         <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end items-center gap-4 bg-surface-bright">
                             <button onClick={handleCloseModal}
-                                className="px-6 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Discard Changes</button>
-                            
-                            {!isSingleValidated ? (
-                                <button
-                                    onClick={async () => {
-                                        if (!draftSession || !syllabusId) return;
-                                        setIsSingleValidating(true);
-                                        try {
-                                            const { SessionService } = await import('@/services/session.service');
-                                            const basePayload = {
-                                                syllabusId,
-                                                sessionNumber: Number(draftSession.sessionNumber),
-                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
-                                                teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
-                                                sessionType: draftSession.sessionType || "THEORY",
-                                                duration: Number(draftSession.duration || 50),
-                                            };
-                                            console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
-                                            const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
-                                            
-                                            setSingleValidationErrors(validateRes?.data?.errors || []);
-                                            setIsSingleValidated(true);
-                                            
-                                            if (!validateRes?.data?.errors || validateRes.data.errors.length === 0) {
-                                                showToast('Session data is valid!', 'success');
-                                            } else {
-                                                showToast('Validation completed with suggestions', 'warning');
-                                            }
-                                        } catch (e: any) {
-                                            console.error("Validation error:", e);
-                                            setSingleValidationErrors(e?.response?.data?.data?.errors || []);
-                                            setIsSingleValidated(true);
-                                            showToast('Validation completed with suggestions', 'warning');
-                                        } finally {
-                                            setIsSingleValidating(false);
-                                        }
-                                    }}
-                                    disabled={isSingleValidating}
-                                    className="bg-blue-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    {isSingleValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">fact_check</span>}
-                                    Validate Session
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={async () => {
-                                        if (!draftSession || !syllabusId) return;
-                                        setIsSaving(true);
-                                        try {
-                                            const { SessionService } = await import('@/services/session.service');
-                                            
-                                            const basePayload = {
-                                                syllabusId,
-                                                sessionNumber: Number(draftSession.sessionNumber),
-                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
-                                                teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
-                                                sessionType: draftSession.sessionType || "THEORY",
-                                                duration: Number(draftSession.duration || 50),
-                                            };
-
-                                            let res: any = null;
-                                            if (draftSession.sessionId) {
-                                                // UPDATE (PUT)
-                                                await SessionService.updateSession(draftSession.sessionId, basePayload);
-                                                // SUCCESS: Update Redux
-                                                dispatch(updateSession({ 
-                                                    syllabusId, 
-                                                    index: editingIndex, 
-                                                    updates: draftSession 
-                                                }));
-                                            } else {
-                                                // CREATE (POST)
-                                                res = await SessionService.createSession(basePayload) as any;
-                                                
-                                                if (res?.data?.sessionId) {
-                                                    const createdSession = { ...draftSession, sessionId: res.data.sessionId };
-                                                    dispatch(addSession({ syllabusId, session: createdSession }));
-                                                }
-                                            }
-
-                                            // Force list sorting after save by reading current state and dispatching sorted version
-                                            setTimeout(() => {
-                                                const currentState = store.getState() as RootState;
-                                                const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
-                                                const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
-                                                dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
-                                            }, 100);
-
-                                            showToast("Session saved successfully!", "success");
-                                            handleCloseModal();
-                                        } catch (e: any) {
-                                            console.error("Save error:", e);
-                                            // Try to parse validation errors from backend
-                                            if (e?.response?.data?.data?.errors?.length > 0) {
-                                                const msg = e.response.data.data.errors[0].errors[0]?.errorMessage || "Validation error";
-                                                showToast(msg, "error");
-                                            } else {
-                                                const msg = e.message || "Failed to save session";
-                                                showToast(msg, "error");
-                                            }
-                                        } finally {
-                                            setIsSaving(false);
-                                        }
-                                    }}
-                                    disabled={isSaving}
-                                    className="bg-primary-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
-                                    {draftSession.sessionId ? 'Update Session' : 'Create Session'}
-                                </button>
-                            )}
+                                className="px-8 py-2.5 rounded-lg text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 transition-colors">Close</button>
                         </div>
                     </div>
                 </div>
