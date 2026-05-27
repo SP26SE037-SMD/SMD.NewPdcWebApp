@@ -7,9 +7,5 @@ export default function HoPDCLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isSyllabusDetail = pathname?.includes("/dashboard/hopdc/syllabuses/");
 
-  if (isSyllabusDetail) {
-    return <>{children}</>;
-  }
-
   return <DashboardLayout>{children}</DashboardLayout>;
 }

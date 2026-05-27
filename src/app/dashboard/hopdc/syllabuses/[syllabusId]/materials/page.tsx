@@ -140,8 +140,6 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                     </h1>
                     <p className="text-xs font-semibold flex items-center gap-2" style={{ color: C.onSurfaceVariant }}>
                         <span>{materials.length} item{materials.length !== 1 ? 's' : ''} total</span>
-                        <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
-                        <span>Drag and drop available</span>
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -172,7 +170,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                                 <span className="material-symbols-outlined text-[48px]" style={{ color: C.primary }}>auto_stories</span>
                             </div>
                             <h3 className="text-lg font-bold mb-2" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No Materials Found</h3>
-                            <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>Get started by creating a new material document or importing an existing file.</p>
+                            <p className="text-sm max-w-sm mx-auto" style={{ color: C.onSurfaceVariant }}>This syllabus currently has no materials.</p>
                         </div>
                     ) : viewMode === 'list' ? (
                         <div className="bg-white rounded-[24px] border border-[#dee1d8]/40 shadow-sm animate-in fade-in duration-300 min-h-[350px]">
