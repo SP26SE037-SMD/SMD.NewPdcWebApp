@@ -194,12 +194,15 @@ export default function HoPDCReviewMaterialBlocksPage({ params }: { params: Prom
         queryKey: ['hopdc-material-blocks-infinite', materialId],
         queryFn: ({ pageParam = 1 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
         initialPageParam: 1,
-        getNextPageParam: (lastPage) => {
+        getNextPageParam: (lastPage, allPages) => {
             const pagedData = lastPage.data;
-            if (!pagedData || pagedData.page >= pagedData.totalPages - 1 || !pagedData.content || pagedData.content.length === 0) {
+            if (!pagedData || !pagedData.content || pagedData.content.length === 0) {
                 return undefined;
             }
-            return pagedData.page + 2;
+            if (pagedData.content.length < 20) {
+                return undefined;
+            }
+            return allPages.length + 1;
         },
         enabled: !!materialId,
     });

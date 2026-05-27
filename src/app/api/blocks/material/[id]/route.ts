@@ -45,7 +45,7 @@ export async function GET(
             return NextResponse.json(data, { status: response.status });
         }
 
-        return NextResponse.json(data);
+        console.log("Blocks API Response:", JSON.stringify(data, null, 2)); return NextResponse.json(data);
     } catch (error: any) {
         console.error('Proxy Error (Blocks General GET):', error);
         return NextResponse.json(
@@ -93,7 +93,7 @@ export async function POST(
             return NextResponse.json(data, { status: response.status });
         }
 
-        return NextResponse.json(data);
+        console.log("Blocks API Response:", JSON.stringify(data, null, 2)); return NextResponse.json(data);
     } catch (error: any) {
         console.error('Proxy Error (Blocks General POST):', error);
         return NextResponse.json(
@@ -141,7 +141,7 @@ export async function PUT(
             return NextResponse.json(data, { status: response.status });
         }
 
-        return NextResponse.json(data);
+        console.log("Blocks API Response:", JSON.stringify(data, null, 2)); return NextResponse.json(data);
     } catch (error: any) {
         console.error('Proxy Error (Blocks General PUT):', error);
         return NextResponse.json(
