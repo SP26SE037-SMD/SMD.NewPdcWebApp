@@ -108,14 +108,14 @@ export default function PDCMReviewMaterialBlocksPage({ params }: { params: Promi
         isLoading: isBlocksLoading 
     } = useInfiniteQuery({
         queryKey: ['pdcm-material-blocks-infinite', materialId],
-        queryFn: ({ pageParam = 0 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
-        initialPageParam: 0,
+        queryFn: ({ pageParam = 1 }) => BlockService.getBlocksByMaterialId(materialId, pageParam as number, 20),
+        initialPageParam: 1,
         getNextPageParam: (lastPage) => {
             const pagedData = lastPage.data;
             if (!pagedData || pagedData.page >= pagedData.totalPages - 1 || !pagedData.content || pagedData.content.length === 0) {
                 return undefined;
             }
-            return pagedData.page + 1;
+            return pagedData.page + 2;
         },
         enabled: !!materialId,
     });
