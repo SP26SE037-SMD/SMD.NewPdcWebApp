@@ -269,11 +269,6 @@ export default function DashboardLayout({
               label: "Requests",
             },
             {
-              href: "/dashboard/vice-principal/digital-enactment",
-              icon: "draw",
-              label: "Digital Enactment",
-            },
-            {
               href: "/dashboard/vice-principal/academic-documents",
               icon: FileText,
               label: "Academic Documents",

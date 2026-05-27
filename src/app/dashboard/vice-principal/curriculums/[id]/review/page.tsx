@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   CurriculumService,
@@ -11,10 +11,7 @@ import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subje
 import { GroupService } from "@/services/group.service";
 import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
-import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
-import { RequestService } from "@/services/request.service";
-import { Loader2, Calendar } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
 export default function VicePrincipalReviewPage() {
@@ -24,7 +21,7 @@ export default function VicePrincipalReviewPage() {
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "info" | "matrix" | "structure" | "review"
+    "overview" | "info" | "matrix" | "structure"
   >("overview");
 
   const searchParams = useSearchParams();
@@ -32,42 +29,8 @@ export default function VicePrincipalReviewPage() {
   const curIdFromUrl = searchParams.get("curriculumId");
 
   const effectiveId = id || curIdFromUrl || "";
-  const [requestId, setRequestId] = useState<string | null>(null);
-  const [reviewComment, setReviewComment] = useState("");
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<
-    "approve" | "reject" | null
-  >(null);
-
-  React.useEffect(() => {
-    const fetchRequestId = async () => {
-      try {
-        const response = await RequestService.getRequests({
-          curriculumId: id,
-          page: 0,
-          size: 1,
-        });
-        const firstRequest = response.data?.content?.[0];
-        if (firstRequest?.requestId) {
-          localStorage.setItem("requestId", firstRequest.requestId);
-          setRequestId(firstRequest.requestId);
-        }
-      } catch (error) {
-        console.error("Failed to fetch request ID:", error);
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      fetchRequestId();
-    }
-
-    return () => {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("requestId");
-      }
-    };
-  }, [id]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Queries
   const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
@@ -113,31 +76,7 @@ export default function VicePrincipalReviewPage() {
     enabled: !!majorId,
   });
 
-  const mutation = useMutation({
-    mutationFn: async (newStatus: string) => {
-      const curRes = await CurriculumService.updateCurriculumStatus(
-        id,
-        newStatus as any,
-      );
-      if (newStatus === CURRICULUM_STATUS.SYLLABUS_DEVELOP) {
-        await SubjectService.updateSubjectStatusesBulk(
-          id,
-          SUBJECT_STATUS.WAITING_SYLLABUS,
-          undefined,
-          SUBJECT_STATUS.DRAFT,
-        );
-        await CurriculumService.updatePloStatusByCurriculum(
-          id,
-          "INTERNAL_REVIEW",
-        );
-      }
-      return curRes;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["curriculum-details", id] });
-      router.push(`/dashboard/vice-principal/digital-enactment`);
-    },
-  });
+
 
   const curriculum = curriculumData?.data || curriculumData;
   const mappings =
@@ -193,84 +132,50 @@ export default function VicePrincipalReviewPage() {
     );
   }
 
-  const handleApprove = () => {
-    setConfirmAction("approve");
-    setShowConfirmModal(true);
-  };
-
-  const handleReject = () => {
-    if (!reviewComment.trim()) {
-      alert("Please provide a comment for requesting revision (rejection).");
+  const handlePublish = async () => {
+    if (!confirm("Are you sure you want to publish this curriculum?")) {
       return;
     }
-    setConfirmAction("reject");
-    setShowConfirmModal(true);
-  };
-
-  const executeApprove = async () => {
-    setIsSubmittingReview(true);
+    setIsPublishing(true);
     try {
-      if (requestId) {
-        await RequestService.updateRequestStatus(
-          requestId,
-          "APPROVED",
-          reviewComment,
-        );
-      }
-
-      // Determine target curriculum status based on current status
-      const currentStatus = curriculum?.status;
-      let targetStatus: string = CURRICULUM_STATUS.SYLLABUS_DEVELOP;
-
-      if (currentStatus === CURRICULUM_STATUS.FINAL_REVIEW) {
-        targetStatus = CURRICULUM_STATUS.PUBLISHED;
-      }
-
-      mutation.mutate(targetStatus as any);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to approve request.");
+      await CurriculumService.updateCurriculumStatus(effectiveId, "PUBLISHED");
+      showToast("Curriculum published successfully!", "success");
+      queryClient.invalidateQueries({ queryKey: ["curriculum-details", effectiveId] });
+      router.refresh();
+    } catch (error: any) {
+      console.error("Failed to publish curriculum:", error);
+      showToast(error?.message || "Failed to publish curriculum. Please try again.", "error");
     } finally {
-      setIsSubmittingReview(false);
-      setShowConfirmModal(false);
+      setIsPublishing(false);
     }
   };
 
-  const executeReject = async () => {
-    if (!requestId || !effectiveId) {
-      showToast("Missing Request ID or Curriculum ID", "error");
-      return;
-    }
-
-    setIsSubmittingReview(true);
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    showToast("Preparing your PDF download...", "success");
     try {
-      if (requestId) {
-        await RequestService.updateRequestStatus(
-          requestId,
-          "REJECTED",
-          reviewComment,
-        );
-      } else {
-        alert("No active request ID found. Cannot reject.");
-        return;
+      const response = await fetch(`/api/curricula/${effectiveId}/export-pdf`);
+      if (!response.ok) {
+        throw new Error("Failed to export PDF");
       }
-
-      // If in FINAL_REVIEW, rejection moves curriculum back to SYLLABUS_DEVELOP
-      if (curriculum?.status === CURRICULUM_STATUS.FINAL_REVIEW) {
-        await CurriculumService.updateCurriculumStatus(
-          effectiveId,
-          CURRICULUM_STATUS.SYLLABUS_DEVELOP,
-        );
-      }
-
-      alert("Request rejected successfully!");
-      router.push(`/dashboard/vice-principal/digital-enactment`);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to reject request.");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `curriculum-${curriculum?.curriculumCode || effectiveId}.pdf`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      showToast("PDF downloaded successfully!", "success");
+    } catch (error: any) {
+      console.error("Failed to export PDF:", error);
+      showToast("Failed to export curriculum to PDF.", "error");
     } finally {
-      setIsSubmittingReview(false);
-      setShowConfirmModal(false);
+      setIsExporting(false);
     }
   };
 
@@ -280,29 +185,80 @@ export default function VicePrincipalReviewPage() {
       style={{ fontFamily: "Inter, sans-serif" }}
     >
       {/* Header */}
-      <div className="mb-10 ml-4">
-        <nav className="flex items-center gap-2 text-xs text-[#5a6062] mb-4 font-medium uppercase tracking-widest">
-          <span
-            className="cursor-pointer hover:underline"
-            onClick={() => router.back()}
+      <div className="mb-10 ml-4 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-[#dee3e6] pb-8">
+        <div>
+          <nav className="flex items-center gap-2 text-xs text-[#5a6062] mb-4 font-medium uppercase tracking-widest">
+            <span
+              className="cursor-pointer hover:underline"
+              onClick={() => router.back()}
+            >
+              Curriculum Proposals
+            </span>
+            <span className="material-symbols-outlined text-[10px]">
+              chevron_right
+            </span>
+            <span className="text-[#2d6a4f]">
+              {curriculum?.curriculumCode || "Loading..."}
+            </span>
+          </nav>
+          <div className="flex items-center gap-4 flex-wrap">
+            <h1
+              className="text-5xl font-extrabold tracking-tighter text-[#2d3335]"
+              style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+            >
+              {curriculum?.major?.majorName ||
+                curriculum?.curriculumName ||
+                "Computer Science"}
+            </h1>
+            {curriculum?.status && (
+              <span className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                curriculum.status === "PUBLISHED"
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  : curriculum.status === "FINAL_REVIEW"
+                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                  : "bg-blue-100 text-blue-800 border border-blue-200"
+              }`}>
+                {curriculum.status.replace("_", " ")}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleExportPDF}
+            disabled={isExporting}
+            className="px-5 py-3 bg-white border border-[#dee3e6] hover:bg-[#f1f4f5] text-[#2d3335] rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
           >
-            Curriculum Proposals
-          </span>
-          <span className="material-symbols-outlined text-[10px]">
-            chevron_right
-          </span>
-          <span className="text-[#2d6a4f]">
-            {curriculum?.curriculumCode || "Loading..."}
-          </span>
-        </nav>
-        <h1
-          className="text-5xl font-extrabold tracking-tighter text-[#2d3335] mb-4"
-          style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-        >
-          {curriculum?.major?.majorName ||
-            curriculum?.curriculumName ||
-            "Computer Science"}
-        </h1>
+            {isExporting ? (
+              <Loader2 size={18} className="animate-spin text-[#2d6a4f]" />
+            ) : (
+              <span className="material-symbols-outlined text-[20px]">download</span>
+            )}
+            {isExporting ? "Exporting..." : "Export PDF"}
+          </button>
+          
+          {curriculum?.status !== "PUBLISHED" ? (
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className="px-6 py-3 bg-[#2d6a4f] text-white hover:bg-[#1d5c42] rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-md disabled:opacity-50"
+            >
+              {isPublishing ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <span className="material-symbols-outlined text-[20px]">publish</span>
+              )}
+              Publish
+            </button>
+          ) : (
+            <div className="px-6 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
+              Published
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sub-navigation Tabs */}
@@ -340,15 +296,6 @@ export default function VicePrincipalReviewPage() {
         >
           Semester Structure
           {activeTab === "structure" && (
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("review")}
-          className={`pb-4 font-semibold transition-colors relative ${activeTab === "review" ? "text-[#2d6a4f] font-bold" : "text-[#5a6062] hover:text-[#2d6a4f]"}`}
-        >
-          Review Request
-          {activeTab === "review" && (
             <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d6a4f] rounded-full"></div>
           )}
         </button>
@@ -684,168 +631,7 @@ export default function VicePrincipalReviewPage() {
             )}
           </div>
         )}
-
-        {activeTab === "review" && (
-          <div className="max-w-4xl mx-auto pt-0 pb-6">
-            <div className="bg-[#ffffff] p-6 md:p-8 rounded-3xl shadow-[0px_4px_20px_rgba(45,51,53,0.04)] border border-[#dee3e6]">
-              <div className="mb-6 pb-4 border-b border-[#dee3e6]">
-                <h2
-                  className="text-2xl font-bold tracking-tight text-[#2d3335]"
-                  style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-                >
-                  Final Curriculum Review
-                </h2>
-                <p className="text-sm text-[#5a6062] mt-2 max-w-2xl leading-relaxed">
-                  Please provide your official feedback below. This comment will
-                  be attached to the request response. Once ready, choose to
-                  either request a revision (reject) or officially approve the
-                  structure.
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-sm font-bold text-[#2d3335] uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px] text-[#2d6a4f]">
-                    history_edu
-                  </span>
-                  Official Feedback
-                </h3>
-                <div className="relative group">
-                  <textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    className="w-full h-32 bg-[#f1f4f5] border-2 border-transparent group-hover:border-[#2d6a4f]/30 rounded-2xl p-6 text-sm focus:bg-white focus:border-[#2d6a4f] transition-all resize-none shadow-inner outline-none"
-                    placeholder="Add detailed feedback, required changes, or general notes for the faculty..."
-                  ></textarea>
-                </div>
-                <div className="mt-3 flex items-center gap-2 px-2 opacity-80">
-                  <span className="material-symbols-outlined text-[#5a6062] text-[16px]">
-                    info
-                  </span>
-                  <p className="text-xs text-[#5a6062] font-medium">
-                    Comment is required for requesting a revision (reject).
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                <button
-                  onClick={handleReject}
-                  disabled={isSubmittingReview || mutation.isPending}
-                  className="w-full sm:w-1/2 py-4 bg-white border-2 border-rose-500/50 text-rose-500 hover:bg-rose-500 hover:border-rose-500 hover:text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50"
-                >
-                  {isSubmittingReview ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <span className="material-symbols-outlined text-[20px]">
-                      assignment_return
-                    </span>
-                  )}
-                  Request Revision
-                </button>
-                <button
-                  onClick={handleApprove}
-                  disabled={isSubmittingReview || mutation.isPending}
-                  className="w-full sm:w-1/2 py-4 bg-[#2d6a4f] text-white border-2 border-[#2d6a4f] hover:bg-[#1d5c42] hover:border-[#1d5c42] rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#2d6a4f]/25 transition-all duration-300 disabled:opacity-50"
-                >
-                  {isSubmittingReview || mutation.isPending ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <span className="material-symbols-outlined text-[20px]">
-                      task_alt
-                    </span>
-                  )}
-                  Approve Structure
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-      <AnimatePresence>
-        {showConfirmModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !isSubmittingReview && setShowConfirmModal(false)}
-              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
-            >
-              <div
-                className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-10 rounded-full -mr-16 -mt-16 ${confirmAction === "approve" ? "bg-[#2d6a4f]" : "bg-rose-500"}`}
-              />
-
-              <div className="relative">
-                <div
-                  className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8 ${confirmAction === "approve" ? "bg-[#2d6a4f]/10 text-[#2d6a4f]" : "bg-rose-500/10 text-rose-500"}`}
-                >
-                  <span className="material-symbols-outlined text-4xl font-bold">
-                    {confirmAction === "approve"
-                      ? "verified_user"
-                      : "assignment_return"}
-                  </span>
-                </div>
-
-                <h3
-                  className="text-3xl font-black text-[#2d3335] tracking-tight mb-4"
-                  style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-                >
-                  {confirmAction === "approve"
-                    ? "Approve Structure?"
-                    : "Request Revision?"}
-                </h3>
-                <p className="text-[#5a6062] text-sm leading-relaxed mb-10 font-medium">
-                  {confirmAction === "approve"
-                    ? "Are you sure you want to officially approve this curriculum structure? This will notify the faculty and allow them to begin syllabus development."
-                    : "Are you sure you want to request a revision? This curriculum will be sent back to the development team for updates based on your feedback."}
-                </p>
-
-                <div className="flex flex-col gap-4">
-                  <button
-                    onClick={
-                      confirmAction === "approve"
-                        ? executeApprove
-                        : executeReject
-                    }
-                    disabled={isSubmittingReview}
-                    className={`w-full py-5 rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all duration-300 active:scale-[0.98] shadow-lg ${
-                      confirmAction === "approve"
-                        ? "bg-[#2d6a4f] text-white shadow-[#2d6a4f]/25 hover:bg-[#1d5c42]"
-                        : "bg-rose-500 text-white shadow-rose-500/25 hover:bg-rose-600"
-                    }`}
-                  >
-                    {isSubmittingReview ? (
-                      <Loader2 className="animate-spin" size={20} />
-                    ) : (
-                      <span className="material-symbols-outlined text-[20px]">
-                        {confirmAction === "approve" ? "check_circle" : "send"}
-                      </span>
-                    )}
-                    {confirmAction === "approve"
-                      ? "Yes, Approve Now"
-                      : "Yes, Request Revision"}
-                  </button>
-                  <button
-                    onClick={() => setShowConfirmModal(false)}
-                    disabled={isSubmittingReview}
-                    className="w-full py-5 rounded-2xl font-bold text-sm text-[#5a6062] hover:bg-[#f1f4f5] transition-colors"
-                  >
-                    Cancel and Review
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

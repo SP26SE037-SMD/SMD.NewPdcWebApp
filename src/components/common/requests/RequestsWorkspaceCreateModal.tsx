@@ -282,13 +282,22 @@ export default function RequestsWorkspaceCreateModal({
 
     setSubmitting(true);
     try {
-      await RequestService.createRequestV2({
-        title: createForm.title.trim(),
-        content: createForm.content.trim(),
-        type: createForm.type,
-        targetId: createForm.targetId,
-        receivedById: createForm.receivedById || null,
-      });
+      if (role === "HoCFDC") {
+        await RequestService.createRequestVP({
+          title: createForm.title.trim(),
+          content: createForm.content.trim(),
+          type: createForm.type,
+          targetId: createForm.targetId,
+        });
+      } else {
+        await RequestService.createRequestV2({
+          title: createForm.title.trim(),
+          content: createForm.content.trim(),
+          type: createForm.type,
+          targetId: createForm.targetId,
+          receivedById: createForm.receivedById || null,
+        });
+      }
 
       handleCloseModal();
       toast.success("Request created successfully!");

@@ -70,7 +70,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     { id: "ALL", label: "All Requests" },
     { id: "PENDING", label: "Pending" },
     { id: "APPROVED", label: "Approved" },
-    { id: "REJECTED", label: "Rejected" },
+    ...(role === "VP" ? [] : [{ id: "REJECTED", label: "Rejected" }]),
   ];
 
   useEffect(() => {
