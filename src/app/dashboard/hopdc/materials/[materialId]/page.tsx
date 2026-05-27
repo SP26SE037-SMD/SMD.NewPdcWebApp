@@ -93,6 +93,17 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
 
     // Final Decision card state managed internally by FinalDecisionCard component
 
+    // Fetch task details by taskIdFromUrl
+    const { data: urlTask } = useQuery({
+        queryKey: ["task-by-id", taskIdFromUrl],
+        queryFn: async () => {
+            if (!taskIdFromUrl) return null;
+            const res = await TaskService.getTaskById(taskIdFromUrl);
+            return res?.data || null;
+        },
+        enabled: !!taskIdFromUrl,
+    });
+
     // Fetch CREATE/UPDATE SYLLABUS task by syllabusId
     const { data: createSyllabusTask, error: taskQueryError, isLoading: isTaskQueryLoading } = useQuery({
         queryKey: ['create-syllabus-task-by-syllabus', syllabusId],
@@ -152,11 +163,8 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
 
     const hasDecisionBeenMade = createSyllabusTask && (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined);
 
-    const showFloatingDecision = !!syllabusId && !hasDecisionBeenMade && (
-        isRevisionRequested ||
-        !createSyllabusTask ||
-        createSyllabusTask.status !== "DONE"
-    );
+    const activeTaskForDecision = taskIdFromUrl ? urlTask : createSyllabusTask;
+    const showFloatingDecision = !!syllabusId && (!!createSyllabusTask || !!taskIdFromUrl) && activeTaskForDecision?.isAccepted !== true;
 
     // 1. Fetch Material details
     const { data: materialRes, isLoading: isMaterialLoading } = useQuery({
@@ -458,7 +466,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                 {showFloatingDecision && (
                     <div className="flex items-start gap-3 pointer-events-auto">
                         {isDecisionOpen && (
-                            <div className="w-96 shadow-2xl rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur-md relative animate-in fade-in slide-in-from-right-4 duration-300 overflow-hidden">
+                            <div className="w-96 relative">
                                 <FinalDecisionCard syllabusId={syllabusId} taskId={taskIdFromUrl || createSyllabusTask?.taskId} />
                             </div>
                         )}

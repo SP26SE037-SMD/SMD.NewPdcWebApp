@@ -25,7 +25,12 @@ interface ViewReviewDetailsModalProps {
 }
 
 interface ParsedReview {
-  materials: Array<{ id: string; name: string; status: "APPROVED" | "REVISION_REQUIRED"; comment: string }>;
+  materials: Array<{
+    id: string;
+    name: string;
+    status: "APPROVED" | "REVISION_REQUIRED";
+    comment: string;
+  }>;
   sessions: { status: "APPROVED" | "REVISION_REQUIRED"; comment: string };
   assessments: { status: "APPROVED" | "REVISION_REQUIRED"; comment: string };
 }
@@ -48,7 +53,7 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
   const defaultResult: ParsedReview = {
     materials: [],
     sessions: { status: "APPROVED", comment: "No comments" },
-    assessments: { status: "APPROVED", comment: "No comments" }
+    assessments: { status: "APPROVED", comment: "No comments" },
   };
 
   if (!comment) return defaultResult;
@@ -66,7 +71,8 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
   const assessIdx = comment.indexOf(assessHeader);
 
   if (matIdx !== -1) {
-    const end = sessIdx !== -1 ? sessIdx : (assessIdx !== -1 ? assessIdx : comment.length);
+    const end =
+      sessIdx !== -1 ? sessIdx : assessIdx !== -1 ? assessIdx : comment.length;
     materialPart = comment.substring(matIdx + matHeader.length, end).trim();
   }
 
@@ -81,7 +87,10 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
 
   const materialsList: ParsedReview["materials"] = [];
   if (materialPart) {
-    const lines = materialPart.split("\n").map(l => l.trim()).filter(Boolean);
+    const lines = materialPart
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     for (const line of lines) {
       if (line.startsWith("+")) {
         const itemStr = line.substring(1).trim();
@@ -92,8 +101,10 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
           materialsList.push({
             id,
             name: `Material ID: ${id}`,
-            status: checkIfApproved(decision) ? "APPROVED" : "REVISION_REQUIRED",
-            comment: decision
+            status: checkIfApproved(decision)
+              ? "APPROVED"
+              : "REVISION_REQUIRED",
+            comment: decision,
           });
         }
       } else {
@@ -101,7 +112,7 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
           id: "general",
           name: "General Material Review",
           status: checkIfApproved(line) ? "APPROVED" : "REVISION_REQUIRED",
-          comment: line
+          comment: line,
         });
       }
     }
@@ -111,12 +122,14 @@ function parseReviewComment(comment: string | null | undefined): ParsedReview {
     materials: materialsList,
     sessions: {
       status: checkIfApproved(sessionPart) ? "APPROVED" : "REVISION_REQUIRED",
-      comment: sessionPart || "No comments"
+      comment: sessionPart || "No comments",
     },
     assessments: {
-      status: checkIfApproved(assessmentPart) ? "APPROVED" : "REVISION_REQUIRED",
-      comment: assessmentPart || "No comments"
-    }
+      status: checkIfApproved(assessmentPart)
+        ? "APPROVED"
+        : "REVISION_REQUIRED",
+      comment: assessmentPart || "No comments",
+    },
   };
 }
 
@@ -127,7 +140,9 @@ export function ViewReviewDetailsModal({
   taskId,
   syllabusId,
 }: ViewReviewDetailsModalProps) {
-  const [activeTab, setActiveTab] = useState<"materials" | "sessions" | "assessments">("materials");
+  const [activeTab, setActiveTab] = useState<
+    "materials" | "sessions" | "assessments"
+  >("materials");
 
   // Fetch reviews using React Query
   const { data: reviewsRes, isLoading: isReviewsLoading } = useQuery({
@@ -145,7 +160,9 @@ export function ViewReviewDetailsModal({
 
   if (!isOpen) return null;
 
-  const reviews = Array.isArray(reviewsRes) ? reviewsRes : (reviewsRes?.data || []);
+  const reviews = Array.isArray(reviewsRes)
+    ? reviewsRes
+    : reviewsRes?.data || [];
   const latestReview = reviews.length > 0 ? reviews[reviews.length - 1] : null;
   const rawComment = latestReview?.comment || "";
 
@@ -153,7 +170,7 @@ export function ViewReviewDetailsModal({
   const dbMaterialsList = materialsRes?.data || [];
 
   // Map parsed materials to their actual names if available
-  const materials = parsedReview.materials.map(mat => {
+  const materials = parsedReview.materials.map((mat) => {
     const found = dbMaterialsList.find((m: any) => m.materialId === mat.id);
     return {
       ...mat,
@@ -232,9 +249,12 @@ export function ViewReviewDetailsModal({
                 <MessageSquare size={28} />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-zinc-800">No Review Details Found</h4>
+                <h4 className="text-sm font-bold text-zinc-800">
+                  No Review Details Found
+                </h4>
                 <p className="text-xs font-medium text-zinc-500 max-w-[280px] mx-auto leading-relaxed">
-                  There are no submitted peer review comments or evaluation details for this task yet.
+                  There are no submitted peer review comments or evaluation
+                  details for this task yet.
                 </p>
               </div>
             </div>
@@ -291,7 +311,10 @@ export function ViewReviewDetailsModal({
                           </span>
                         </div>
                         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                          <MessageSquare size={12} className="text-zinc-400 shrink-0" />
+                          <MessageSquare
+                            size={12}
+                            className="text-zinc-400 shrink-0"
+                          />
                           <span className="text-xs font-medium text-zinc-600">
                             {mat.comment}
                           </span>
@@ -339,10 +362,17 @@ export function ViewReviewDetailsModal({
                       </span>
                     </div>
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <MessageSquare size={14} className="text-zinc-400 shrink-0 mt-0.5" />
-                      <p className={`text-xs font-bold leading-relaxed ${
-                        parsedReview.sessions.status === "APPROVED" ? "text-emerald-700" : "text-rose-700"
-                      }`}>
+                      <MessageSquare
+                        size={14}
+                        className="text-zinc-400 shrink-0 mt-0.5"
+                      />
+                      <p
+                        className={`text-xs font-bold leading-relaxed ${
+                          parsedReview.sessions.status === "APPROVED"
+                            ? "text-emerald-700"
+                            : "text-rose-700"
+                        }`}
+                      >
                         {parsedReview.sessions.comment}
                       </p>
                     </div>
@@ -387,10 +417,17 @@ export function ViewReviewDetailsModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <MessageSquare size={12} className="text-zinc-400 shrink-0" />
-                      <span className={`text-xs font-medium ${
-                        parsedReview.assessments.status === "APPROVED" ? "text-emerald-700" : "text-rose-700"
-                      }`}>
+                      <MessageSquare
+                        size={12}
+                        className="text-zinc-400 shrink-0"
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          parsedReview.assessments.status === "APPROVED"
+                            ? "text-emerald-700"
+                            : "text-rose-700"
+                        }`}
+                      >
                         {parsedReview.assessments.comment}
                       </span>
                     </div>

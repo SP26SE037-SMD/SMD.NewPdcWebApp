@@ -39,7 +39,9 @@ export function SyllabusMaterialsTab({
   onOpenMaterial,
   onUpdateStatus,
 }: SyllabusMaterialsTabProps) {
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [expandedComments, setExpandedComments] = useState<
+    Record<string, boolean>
+  >({});
   const [isCommentOpen, setIsCommentOpen] = useState(false);
 
   const toggleComment = (materialId: string) => {
@@ -51,9 +53,13 @@ export function SyllabusMaterialsTab({
 
   const hasEvaluations = evaluations && Object.keys(evaluations).length > 0;
   const hasRevisions = Object.values(evaluations || {}).some(
-    (ev: any) => ev.status === "REVISION_REQUIRED"
+    (ev: any) => ev.status === "REVISION_REQUIRED",
   );
-  const evalStatus = hasEvaluations ? (hasRevisions ? "REVISION_REQUIRED" : "APPROVED") : null;
+  const evalStatus = hasEvaluations
+    ? hasRevisions
+      ? "REVISION_REQUIRED"
+      : "APPROVED"
+    : null;
 
   if (!materials || materials.length === 0) {
     return (
@@ -88,7 +94,11 @@ export function SyllabusMaterialsTab({
         border: "#10b98133",
       };
     }
-    if (s === "REVISION_REQUIRED" || s === "REJECTED" || s === "REVISION_REQUESTED") {
+    if (
+      s === "REVISION_REQUIRED" ||
+      s === "REJECTED" ||
+      s === "REVISION_REQUESTED"
+    ) {
       return {
         label: "Rejected",
         color: "#ef4444",
@@ -120,7 +130,11 @@ export function SyllabusMaterialsTab({
     }
 
     // Fallback: if not found, but there's only 1 material in total and 1 evaluation in total
-    if (!ev && materials.length === 1 && Object.keys(evaluations).length === 1) {
+    if (
+      !ev &&
+      materials.length === 1 &&
+      Object.keys(evaluations).length === 1
+    ) {
       const firstKey = Object.keys(evaluations)[0];
       ev = evaluations[firstKey];
     }
@@ -145,7 +159,12 @@ export function SyllabusMaterialsTab({
             evaluations?.materials?.[material.materialId]?.note;
 
           // Fallback: if not found, but there's only 1 material in total and 1 evaluation in total
-          if (!currentEvalStatus && materials.length === 1 && evaluations && Object.keys(evaluations).length === 1) {
+          if (
+            !currentEvalStatus &&
+            materials.length === 1 &&
+            evaluations &&
+            Object.keys(evaluations).length === 1
+          ) {
             const firstKey = Object.keys(evaluations)[0];
             const ev = evaluations[firstKey];
             currentEvalStatus = ev?.status;
@@ -242,14 +261,21 @@ export function SyllabusMaterialsTab({
               </div>
 
               {/* Collapsible comment */}
-              {(currentEvalStatus === "REVISION_REQUIRED" || currentEvalStatus === "REJECTED" || currentEvalStatus === "REVISION_REQUESTED") && isExpanded && evaluationComment && (
-                <div className="mt-1 flex items-start gap-2 p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 animate-in slide-in-from-top-1 duration-200">
-                  <MessageSquare size={12} className="text-rose-400 shrink-0 mt-0.5" />
-                  <p className="text-xs font-semibold text-rose-700 leading-normal">
-                    {evaluationComment}
-                  </p>
-                </div>
-              )}
+              {(currentEvalStatus === "REVISION_REQUIRED" ||
+                currentEvalStatus === "REJECTED" ||
+                currentEvalStatus === "REVISION_REQUESTED") &&
+                isExpanded &&
+                evaluationComment && (
+                  <div className="mt-1 flex items-start gap-2 p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 animate-in slide-in-from-top-1 duration-200">
+                    <MessageSquare
+                      size={12}
+                      className="text-rose-400 shrink-0 mt-0.5"
+                    />
+                    <p className="text-xs font-semibold text-rose-700 leading-normal">
+                      {evaluationComment}
+                    </p>
+                  </div>
+                )}
 
               {/* Synthesis Actions (HoPDC Only) */}
               {onUpdateStatus && (
@@ -318,12 +344,14 @@ export const ReviewerFeedbackCard = ({
     feedback.note !== "Approved" &&
     feedback.note !== "No comments";
 
-  const rawLines = hasNote ? feedback.note.split('\n') : [];
-  
+  const rawLines = hasNote ? feedback.note.split("\n") : [];
+
   const lines = rawLines
-    .flatMap(line => line.includes('- ') && rawLines.length === 1 ? line.split('- ') : line)
-    .map(line => line.trim())
-    .filter(line => line !== "" && line !== "-");
+    .flatMap((line) =>
+      line.includes("- ") && rawLines.length === 1 ? line.split("- ") : line,
+    )
+    .map((line) => line.trim())
+    .filter((line) => line !== "" && line !== "-");
 
   return (
     <div className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-900 shadow-sm transition-all animate-in slide-in-from-top-2 duration-300">

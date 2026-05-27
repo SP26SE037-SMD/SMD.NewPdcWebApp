@@ -35,6 +35,8 @@ import {
   BookText,
   Check,
   Loader2,
+  X,
+  ClipboardList,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SYLLABUS_STATUS } from "@/services/syllabus.service";
@@ -119,6 +121,7 @@ export default function NewSubjectContent() {
     useState("");
   const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] =
     useState("");
+  const [isDecisionOpen, setIsDecisionOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -132,7 +135,7 @@ export default function NewSubjectContent() {
     associatedTask?.taskName?.toUpperCase().includes("REVIEW SYLLABUS") ||
     associatedTask?.action === "REVIEW";
 
-  const showFloatingDecision = isReviewTask;
+  const showFloatingDecision = isReviewTask && associatedTask?.isAccepted !== true;
 
   const SYLLABUS_STATUS_STEPS = [
     {
@@ -463,15 +466,36 @@ export default function NewSubjectContent() {
 
         {/* Floating Decision Card - Fixed overlay, rendered outside tab conditions */}
         {showFloatingDecision && (
-          <div className="fixed top-32 right-12 z-[100] w-96 flex flex-col gap-4 pointer-events-none">
-            <FinalDecisionCard
-              syllabusId={syllabusId}
-              taskId={
-                isReviewTask
-                  ? associatedTask?.rootTaskId
-                  : associatedTask?.taskId
-              }
-            />
+          <div className="fixed top-32 right-12 z-[150] flex items-start gap-3 pointer-events-none">
+            {isDecisionOpen && (
+              <div className="w-96 relative pointer-events-auto">
+                <FinalDecisionCard
+                  syllabusId={syllabusId}
+                  taskId={
+                    isReviewTask
+                      ? associatedTask?.rootTaskId
+                      : associatedTask?.taskId
+                  }
+                />
+              </div>
+            )}
+            <button
+              onClick={() => setIsDecisionOpen(!isDecisionOpen)}
+              className={`relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 shrink-0 pointer-events-auto ${
+                isDecisionOpen
+                  ? "bg-amber-600 border-amber-600 text-white hover:bg-amber-700"
+                  : "bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:scale-105 active:scale-95"
+              }`}
+              title="Syllabus Approval Decision"
+            >
+              {isDecisionOpen ? <X size={20} /> : <ClipboardList size={20} />}
+              {!isDecisionOpen && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+              )}
+            </button>
           </div>
         )}
 
