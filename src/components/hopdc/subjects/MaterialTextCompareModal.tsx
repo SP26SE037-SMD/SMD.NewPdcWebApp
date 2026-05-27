@@ -67,7 +67,7 @@ const paginateBlocks = (allBlocks: ParsedBlock[]) => {
 const fetchAllBlocks = async (materialId: string) => {
     let allBlocks: any[] = [];
     let page = 0;
-    const size = 100;
+    const size = 20;
     while (true) {
         try {
             const res = await BlockService.getBlocksByMaterialId(materialId, page, size);
