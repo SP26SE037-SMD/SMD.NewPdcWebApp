@@ -37,14 +37,6 @@ export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
                 className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
                 style={{ maxHeight: '90vh' }}
             >
-                <div className="absolute top-4 right-4 z-10">
-                    <button 
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 transition-colors"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
                 <div className="overflow-y-auto p-2">
                     <ReviewerFeedback 
                         reviewer={reviewer}
@@ -52,6 +44,7 @@ export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
                             { title: 'Task Requirement / Description', content: description },
                             { title: 'Additional Comments', content: comment }
                         ]}
+                        onClose={onClose}
                     />
                 </div>
             </div>
