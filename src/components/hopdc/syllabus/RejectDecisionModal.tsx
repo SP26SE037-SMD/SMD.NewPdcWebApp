@@ -11,15 +11,20 @@ const formatToLocalDateInput = (dateInput?: string | Date | null): string => {
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
 interface RejectDecisionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (assignTo: string, dueDate: string, comment: string) => Promise<void>;
+  onConfirm: (
+    assignTo: string,
+    dueDate: string,
+    comment: string,
+    action?: string,
+  ) => Promise<void>;
   originalTask: TaskItem;
   departmentAccounts: DepartmentAccount[];
   sprintDeadline?: string;
@@ -39,12 +44,13 @@ export function RejectDecisionModal({
 }: RejectDecisionModalProps) {
   const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Form states
   const [comment, setComment] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assigneeType, setAssigneeType] = useState<"old" | "new">("old");
   const [selectedNewAssignee, setSelectedNewAssignee] = useState("");
+  const [subjectAction, setSubjectAction] = useState<"UPDATE" | "MODIFY">("UPDATE");
 
   const hasOldAssignee = Boolean(originalTask?.account?.accountId);
 
@@ -54,6 +60,7 @@ export function RejectDecisionModal({
       setDueDate("");
       setAssigneeType(hasOldAssignee ? "old" : "new");
       setSelectedNewAssignee("");
+      setSubjectAction("UPDATE");
     }
   }, [isOpen, initialComment, hasOldAssignee]);
 
@@ -86,14 +93,18 @@ export function RejectDecisionModal({
     }
 
     let finalAssignee = "";
-    if (assigneeType === "old") {
+    if (originalTask?.type === "SUBJECT") {
       finalAssignee = originalTask?.account?.accountId || "";
     } else {
-      if (!selectedNewAssignee) {
-        showToast("Please select a new assignee", "error");
-        return;
+      if (assigneeType === "old") {
+        finalAssignee = originalTask?.account?.accountId || "";
+      } else {
+        if (!selectedNewAssignee) {
+          showToast("Please select a new assignee", "error");
+          return;
+        }
+        finalAssignee = selectedNewAssignee;
       }
-      finalAssignee = selectedNewAssignee;
     }
 
     if (!finalAssignee) {
@@ -103,7 +114,12 @@ export function RejectDecisionModal({
 
     setIsSubmitting(true);
     try {
-      await onConfirm(finalAssignee, dueDate, comment.trim());
+      await onConfirm(
+        finalAssignee,
+        dueDate,
+        comment.trim(),
+        originalTask?.type === "SUBJECT" ? subjectAction : undefined,
+      );
       onClose();
     } catch (err: any) {
       showToast(err.message || "Failed to confirm rejection", "error");
@@ -119,17 +135,26 @@ export function RejectDecisionModal({
   const renderContent = () => (
     <>
       {/* Header */}
-      <div className={`flex items-center justify-between border-b border-zinc-100 bg-white shrink-0 ${isFloating ? "px-6 py-4" : "px-8 py-6"}`}>
+      <div
+        className={`flex items-center justify-between border-b border-zinc-100 bg-white shrink-0 ${isFloating ? "px-6 py-4" : "px-8 py-6"}`}
+      >
         <div className="flex items-center gap-3">
-          <div className={`rounded-[10px] bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 ${isFloating ? "h-10 w-10" : "h-12 w-12"}`}>
+          <div
+            className={`rounded-[10px] bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 ${isFloating ? "h-10 w-10" : "h-12 w-12"}`}
+          >
             <AlertCircle size={isFloating ? 20 : 24} />
           </div>
           <div>
-            <h3 className={`font-black text-zinc-900 tracking-tight ${isFloating ? "text-sm leading-none" : "text-lg"}`}>
+            <h3
+              className={`font-black text-zinc-900 tracking-tight ${isFloating ? "text-sm leading-none" : "text-lg"}`}
+            >
               Reject & Request Update
             </h3>
-            <p className={`font-bold text-zinc-400 uppercase tracking-widest mt-1.5 leading-none ${isFloating ? "text-[9px]" : "text-xs"}`}>
-              {originalTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "Syllabus Review"}
+            <p
+              className={`font-bold text-zinc-400 uppercase tracking-widest mt-1.5 leading-none ${isFloating ? "text-[9px]" : "text-xs"}`}
+            >
+              {originalTask?.taskName?.replace("CREATE SYLLABUS: ", "") ||
+                "Syllabus Review"}
             </p>
           </div>
         </div>
@@ -143,8 +168,10 @@ export function RejectDecisionModal({
       </div>
 
       {/* Form Body */}
-      <form onSubmit={handleSubmit} className={`flex-1 overflow-y-auto space-y-4 ${isFloating ? "px-6 py-4" : "px-8 py-6 space-y-6"}`}>
-        
+      <form
+        onSubmit={handleSubmit}
+        className={`flex-1 overflow-y-auto space-y-4 ${isFloating ? "px-6 py-4" : "px-8 py-6 space-y-6"}`}
+      >
         {/* Rejection Comment */}
         <div className="space-y-1.5">
           <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
@@ -160,101 +187,166 @@ export function RejectDecisionModal({
           />
         </div>
 
-        {/* Assignee Selection */}
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
-            Assignee Choice
-          </label>
-          <div className="grid grid-cols-2 gap-2.5">
-            {hasOldAssignee && (
+        {/* Assignee Selection (Hidden for SUBJECT tasks) */}
+        {originalTask?.type !== "SUBJECT" && (
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+              Assignee Choice
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              {hasOldAssignee && (
+                <label
+                  className={`flex flex-col rounded-xl border-2 cursor-pointer transition-all ${
+                    isFloating ? "p-3" : "p-4"
+                  } ${
+                    assigneeType === "old"
+                      ? "border-primary bg-emerald-50/5"
+                      : "border-zinc-200 hover:border-zinc-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="assigneeType"
+                      checked={assigneeType === "old"}
+                      onChange={() => setAssigneeType("old")}
+                      className="text-primary focus:ring-primary h-3.5 w-3.5"
+                    />
+                    <span className="text-[10px] font-black text-zinc-800 uppercase tracking-wider">
+                      Keep Old User
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-zinc-500 mt-1.5 line-clamp-1">
+                    {originalTask?.account?.fullName || "Unassigned"}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 font-semibold line-clamp-1 mt-0.5">
+                    {originalTask?.account?.email || ""}
+                  </span>
+                </label>
+              )}
+
               <label
                 className={`flex flex-col rounded-xl border-2 cursor-pointer transition-all ${
                   isFloating ? "p-3" : "p-4"
                 } ${
-                  assigneeType === "old"
+                  assigneeType === "new"
                     ? "border-primary bg-emerald-50/5"
                     : "border-zinc-200 hover:border-zinc-300 bg-white"
-                }`}
+                } ${!hasOldAssignee ? "col-span-2" : ""}`}
               >
                 <div className="flex items-center gap-1.5">
                   <input
                     type="radio"
                     name="assigneeType"
-                    checked={assigneeType === "old"}
-                    onChange={() => setAssigneeType("old")}
+                    checked={assigneeType === "new"}
+                    onChange={() => setAssigneeType("new")}
                     className="text-primary focus:ring-primary h-3.5 w-3.5"
                   />
                   <span className="text-[10px] font-black text-zinc-800 uppercase tracking-wider">
-                    Keep Old User
+                    Assign New User
                   </span>
                 </div>
-                <span className="text-xs font-bold text-zinc-500 mt-1.5 line-clamp-1">
-                  {originalTask?.account?.fullName || "Unassigned"}
+                <span className="text-xs font-bold text-zinc-500 mt-1.5">
+                  Pick assignee
                 </span>
-                <span className="text-[9px] text-zinc-400 font-semibold line-clamp-1 mt-0.5">
-                  {originalTask?.account?.email || ""}
+                <span className="text-[9px] text-zinc-400 font-semibold mt-0.5">
+                  Active dept account
                 </span>
               </label>
-            )}
+            </div>
 
-            <label
-              className={`flex flex-col rounded-xl border-2 cursor-pointer transition-all ${
-                isFloating ? "p-3" : "p-4"
-              } ${
-                assigneeType === "new"
-                  ? "border-primary bg-emerald-50/5"
-                  : "border-zinc-200 hover:border-zinc-300 bg-white"
-              } ${!hasOldAssignee ? "col-span-2" : ""}`}
-            >
-              <div className="flex items-center gap-1.5">
+            {/* New Assignee Select Dropdown */}
+            {assigneeType === "new" && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <UserPlus size={12} />
+                  Select New Assignee
+                </label>
+                <select
+                  value={selectedNewAssignee}
+                  onChange={(e) => setSelectedNewAssignee(e.target.value)}
+                  className={`w-full rounded-[10px] border border-zinc-200 bg-zinc-50/50 px-4 text-sm font-semibold text-zinc-900 outline-none focus:border-primary focus:bg-white transition-all appearance-none ${isFloating ? "h-10" : "h-12"}`}
+                  required
+                >
+                  <option value="">Select Assignee</option>
+                  {filteredAccounts.map((acc) => (
+                    <option key={acc.accountId} value={acc.accountId}>
+                      {acc.fullName} ({acc.roleName || "Collaborator"}) •{" "}
+                      {acc.email}
+                    </option>
+                  ))}
+                </select>
+                {filteredAccounts.length === 0 && (
+                  <p className="text-[10px] font-bold text-amber-600 block mt-1">
+                    No other eligible accounts found.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Choice (Only for SUBJECT tasks) */}
+        {originalTask?.type === "SUBJECT" && (
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+              Action Choice
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <label
+                className={`flex items-start gap-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                  isFloating ? "p-3" : "p-4"
+                } ${
+                  subjectAction === "UPDATE"
+                    ? "border-primary bg-emerald-50/5"
+                    : "border-zinc-200 hover:border-zinc-300 bg-white"
+                }`}
+              >
                 <input
                   type="radio"
-                  name="assigneeType"
-                  checked={assigneeType === "new"}
-                  onChange={() => setAssigneeType("new")}
-                  className="text-primary focus:ring-primary h-3.5 w-3.5"
+                  name="subjectAction"
+                  checked={subjectAction === "UPDATE"}
+                  onChange={() => setSubjectAction("UPDATE")}
+                  className="text-primary focus:ring-primary h-3.5 w-3.5 mt-0.5"
                 />
-                <span className="text-[10px] font-black text-zinc-800 uppercase tracking-wider">
-                  Assign New User
-                </span>
-              </div>
-              <span className="text-xs font-bold text-zinc-500 mt-1.5">
-                Pick collaborator
-              </span>
-              <span className="text-[9px] text-zinc-400 font-semibold mt-0.5">
-                Active dept account
-              </span>
-            </label>
-          </div>
-
-          {/* New Assignee Select Dropdown */}
-          {assigneeType === "new" && (
-            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
-                <UserPlus size={12} />
-                Select New Assignee
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-zinc-800 uppercase tracking-wider">
+                    UPDATE
+                  </span>
+                  <span className="text-[9px] font-bold text-zinc-400 mt-1 leading-tight normal-case">
+                    CLOs are okay, only adjust CLO-PLO mapping
+                  </span>
+                </div>
               </label>
-              <select
-                value={selectedNewAssignee}
-                onChange={(e) => setSelectedNewAssignee(e.target.value)}
-                className={`w-full rounded-[10px] border border-zinc-200 bg-zinc-50/50 px-4 text-sm font-semibold text-zinc-900 outline-none focus:border-primary focus:bg-white transition-all appearance-none ${isFloating ? "h-10" : "h-12"}`}
-                required
+
+              <label
+                className={`flex items-start gap-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                  isFloating ? "p-3" : "p-4"
+                } ${
+                  subjectAction === "MODIFY"
+                    ? "border-primary bg-emerald-50/5"
+                    : "border-zinc-200 hover:border-zinc-300 bg-white"
+                }`}
               >
-                <option value="">Select Collaborator</option>
-                {filteredAccounts.map((acc) => (
-                  <option key={acc.accountId} value={acc.accountId}>
-                    {acc.fullName} ({acc.roleName || "Collaborator"}) • {acc.email}
-                  </option>
-                ))}
-              </select>
-              {filteredAccounts.length === 0 && (
-                <p className="text-[10px] font-bold text-amber-600 block mt-1">
-                  No other eligible accounts found.
-                </p>
-              )}
+                <input
+                  type="radio"
+                  name="subjectAction"
+                  checked={subjectAction === "MODIFY"}
+                  onChange={() => setSubjectAction("MODIFY")}
+                  className="text-primary focus:ring-primary h-3.5 w-3.5 mt-0.5"
+                />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-zinc-800 uppercase tracking-wider">
+                    MODIFY
+                  </span>
+                  <span className="text-[9px] font-bold text-zinc-400 mt-1 leading-tight normal-case">
+                    Requires modifying the CLOs
+                  </span>
+                </div>
+              </label>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Due Date */}
         <div className="space-y-1.5">
@@ -267,21 +359,17 @@ export function RejectDecisionModal({
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             min={formatToLocalDateInput(new Date())}
-            max={formatToLocalDateInput(sprintDeadline)}
+            max={originalTask?.type === "SUBJECT" ? undefined : formatToLocalDateInput(sprintDeadline)}
             className={`w-full rounded-[10px] border border-zinc-200 bg-zinc-50/50 px-4 text-sm font-semibold text-zinc-900 outline-none focus:border-primary focus:bg-white transition-all ${isFloating ? "h-10" : "h-12"}`}
             required
           />
-          {sprintDeadline && !isNaN(new Date(sprintDeadline).getTime()) && (
-            <span className="text-[10px] font-bold text-amber-600 block mt-1">
-              Sprint Deadline: {new Date(sprintDeadline).toLocaleDateString("en-GB")}
-            </span>
-          )}
         </div>
-
       </form>
 
       {/* Footer */}
-      <div className={`flex items-center justify-end gap-3 border-t border-zinc-100 bg-zinc-50/30 shrink-0 ${isFloating ? "px-6 py-4" : "px-8 py-6"}`}>
+      <div
+        className={`flex items-center justify-end gap-3 border-t border-zinc-100 bg-zinc-50/30 shrink-0 ${isFloating ? "px-6 py-4" : "px-8 py-6"}`}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -310,18 +398,12 @@ export function RejectDecisionModal({
   );
 
   if (isFloating) {
-    return (
-      <div className={wrapperClass}>
-        {renderContent()}
-      </div>
-    );
+    return <div className={wrapperClass}>{renderContent()}</div>;
   }
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
-      <div className={wrapperClass}>
-        {renderContent()}
-      </div>
+      <div className={wrapperClass}>{renderContent()}</div>
     </div>
   );
 }
