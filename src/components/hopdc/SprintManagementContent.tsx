@@ -10,6 +10,7 @@ import { CurriculumService } from "@/services/curriculum.service";
 import { TaskItem } from "@/services/task.service";
 import { CurriculumDetail as CurriculumDetailView } from "./curriculum/CurriculumDetail";
 import { SprintsReceive } from "@/components/hopdc/syllabus/SprintList";
+import { TaskList } from "@/components/hopdc/syllabus/TaskList";
 
 export interface SubjectInfo {
   id: string;
@@ -64,6 +65,7 @@ export default function SprintManagementContent() {
     (state: RootState) => state.auth,
   );
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<"single-tasks" | "sprint-tasks">("single-tasks");
 
   useEffect(() => {
     setMounted(true);
@@ -155,8 +157,8 @@ export default function SprintManagementContent() {
 
     router.push(
       isReuseSubject
-        ? `/dashboard/hopdc/sprint-management/reuse-subject?${params.toString()}`
-        : `/dashboard/hopdc/sprint-management/new-subject?${params.toString()}`,
+        ? `/dashboard/hopdc/tasks/reuse-subject?${params.toString()}`
+        : `/dashboard/hopdc/tasks/new-subject?${params.toString()}`,
     );
   };
 
@@ -205,7 +207,7 @@ export default function SprintManagementContent() {
         <CurriculumDetailView
           curriculum={curriculum}
           sprintId={selectedSprintId ?? undefined}
-          onBack={() => router.push("/dashboard/hopdc/sprint-management")}
+          onBack={() => router.push("/dashboard/hopdc/tasks")}
           onOpenTask={handleOpenTask}
         />
       </div>
@@ -238,5 +240,45 @@ export default function SprintManagementContent() {
     );
   }
 
-  return <SprintsReceive accountId={accountId} />;
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
+      {/* Tabs header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-100 pb-4 mb-6">
+        <h1 className="text-4xl font-black text-zinc-900 tracking-tight">
+          Tasks
+        </h1>
+        <div className="flex border border-zinc-100 p-1 bg-zinc-50 rounded-xl">
+          <button
+            onClick={() => setActiveTab("single-tasks")}
+            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap outline-none ${
+              activeTab === "single-tasks"
+                ? "bg-[#2d6a4f] text-white shadow-md shadow-[#2d6a4f]/20"
+                : "text-zinc-500 hover:text-zinc-900"
+            }`}
+          >
+            Single Tasks
+          </button>
+          <button
+            onClick={() => setActiveTab("sprint-tasks")}
+            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap outline-none ${
+              activeTab === "sprint-tasks"
+                ? "bg-[#2d6a4f] text-white shadow-md shadow-[#2d6a4f]/20"
+                : "text-zinc-500 hover:text-zinc-900"
+            }`}
+          >
+            Manage by Sprint
+          </button>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div>
+        {activeTab === "single-tasks" ? (
+          <TaskList sprintId="" isSingleTaskMode={true} />
+        ) : (
+          <SprintsReceive accountId={accountId} hideTitle={true} />
+        )}
+      </div>
+    </div>
+  );
 }

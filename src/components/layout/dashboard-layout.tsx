@@ -289,9 +289,9 @@ export default function DashboardLayout({
               label: "Overview",
             },
             {
-              href: "/dashboard/hopdc/sprint-management",
+              href: "/dashboard/hopdc/tasks",
               icon: "event_available",
-              label: "Curriculum Deliverables",
+              label: "Tasks",
             },
             {
               href: "/dashboard/hopdc/subjects",
