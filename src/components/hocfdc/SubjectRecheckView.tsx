@@ -865,15 +865,15 @@ export default function SubjectRecheckView() {
 
       {/* Floating Decision Card */}
       {showFloatingDecision && (
-        <div className="fixed bottom-8 right-8 z-[80] flex flex-col items-end gap-3 pointer-events-none">
+        <div className="fixed top-32 right-12 z-[150] flex items-start gap-3 pointer-events-none">
           {isDecisionOpen && (
-            <div className="w-96 relative pointer-events-auto mb-2">
+            <div className="w-96 relative pointer-events-auto">
               <FinalDecisionCard syllabusId={syllabusId} taskId={taskId} />
             </div>
           )}
           <button
             onClick={() => setIsDecisionOpen(!isDecisionOpen)}
-            className={`pointer-events-auto relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 ${
+            className={`pointer-events-auto relative flex items-center justify-center w-12 h-12 rounded-full shadow-lg border transition-all duration-300 shrink-0 ${
               isDecisionOpen
                 ? "bg-amber-600 border-amber-600 text-white hover:bg-amber-700"
                 : "bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:scale-105 active:scale-95"

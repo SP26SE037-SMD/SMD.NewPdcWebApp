@@ -314,42 +314,68 @@ export function FinalDecisionCard({
     chosenAssignee: string,
     chosenDueDate: string,
     chosenComment: string,
+    chosenAction?: string,
   ) => {
     if (!createSyllabusTaskId) return;
     setIsSubmittingDecision(true);
     try {
-      const cleanTaskName =
-        createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
-      const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
+      const isSubjectTask = createSyllabusTask?.type === "SUBJECT";
 
-      // 1. Create the new UPDATE SYLLABUS task
-      await TaskService.createTask({
-        sprintId: sprintId || "",
-        assignTo: chosenAssignee,
-        taskName: updateTaskName,
-        description: chosenComment,
-        action: "UPDATE",
-        priority: createSyllabusTask?.priority || "NORMAL",
-        type: "SYLLABUS",
-        targetId: createSyllabusTask?.targetId || syllabusId || undefined,
-        rootTaskId: createSyllabusTask?.rootTaskId || undefined,
-        dueDate: chosenDueDate,
-      });
+      if (isSubjectTask) {
+        const cleanSubjectName =
+          createSyllabusTask?.taskName
+            ?.replace("CREATE SUBJECT: ", "")
+            ?.replace("UPDATE SUBJECT: ", "")
+            ?.replace("MODIFY SUBJECT: ", "") || "";
+        const actionType = chosenAction || "UPDATE";
 
-      // Transition the syllabus to DRAFT status
-      const targetSyllabusId = createSyllabusTask?.targetId || syllabusId;
-      if (targetSyllabusId && user?.accountId) {
-        try {
-          await SyllabusService.updateSyllabusStatus(
-            targetSyllabusId,
-            user.accountId,
-            "DRAFT",
-          );
-        } catch (error) {
-          console.warn(
-            "Soft fail: Unable to update syllabus status to DRAFT",
-            error,
-          );
+        // 1. Create the new UPDATE/MODIFY SUBJECT task
+        await TaskService.createTask({
+          sprintId: sprintId || "",
+          assignTo: chosenAssignee,
+          taskName: `${actionType} SUBJECT: ${cleanSubjectName}`,
+          description: chosenComment,
+          action: actionType as any,
+          priority: createSyllabusTask?.priority || "NORMAL",
+          type: "SUBJECT",
+          targetId: createSyllabusTask?.subjectId || createSyllabusTask?.targetId || undefined,
+          rootTaskId: createSyllabusTask?.rootTaskId || undefined,
+          dueDate: chosenDueDate,
+        });
+      } else {
+        const cleanTaskName =
+          createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+        const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
+
+        // 1. Create the new UPDATE SYLLABUS task
+        await TaskService.createTask({
+          sprintId: sprintId || "",
+          assignTo: chosenAssignee,
+          taskName: updateTaskName,
+          description: chosenComment,
+          action: "UPDATE",
+          priority: createSyllabusTask?.priority || "NORMAL",
+          type: "SYLLABUS",
+          targetId: createSyllabusTask?.targetId || syllabusId || undefined,
+          rootTaskId: createSyllabusTask?.rootTaskId || undefined,
+          dueDate: chosenDueDate,
+        });
+
+        // Transition the syllabus to DRAFT status
+        const targetSyllabusId = createSyllabusTask?.targetId || syllabusId;
+        if (targetSyllabusId && user?.accountId) {
+          try {
+            await SyllabusService.updateSyllabusStatus(
+              targetSyllabusId,
+              user.accountId,
+              "DRAFT",
+            );
+          } catch (error) {
+            console.warn(
+              "Soft fail: Unable to update syllabus status to DRAFT",
+              error,
+            );
+          }
         }
       }
 
@@ -364,7 +390,12 @@ export function FinalDecisionCard({
       }
       setCommentText("");
       setIsRejectMode(false);
-      showToast("Syllabus rejected and update task assigned", "success");
+      showToast(
+        isSubjectTask
+          ? "Subject task rejected and update task assigned"
+          : "Syllabus rejected and update task assigned",
+        "success",
+      );
 
       // Redirect back to assignments page
       const redirectSprintId =
@@ -532,7 +563,7 @@ export function FinalDecisionCard({
             Final Decision Required
           </span>
           <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider mt-0.5 block">
-            Syllabus Approval
+            Task Approval
           </span>
         </div>
       </div>
