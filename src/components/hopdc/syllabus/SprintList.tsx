@@ -17,9 +17,11 @@ import { SprintListLayout } from "@/components/common/sprint/SprintListLayout";
 export const SprintsReceive = ({
   curriculumId,
   accountId,
+  hideTitle = false,
 }: {
   curriculumId?: string;
   accountId?: string;
+  hideTitle?: boolean;
 }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const departmentId = user?.departmentId;
@@ -118,7 +120,7 @@ export const SprintsReceive = ({
         curriculumId: sprint.curriculumId,
         sprintId: sprint.sprintId,
       });
-      return `/dashboard/hopdc/sprint-management?${params.toString()}`;
+      return `/dashboard/hopdc/tasks?${params.toString()}`;
     }
 
     const linkedCurriculumId = curriculumId || sprint.curriculumId;
@@ -135,11 +137,13 @@ export const SprintsReceive = ({
   return (
     <SprintListLayout
       title={
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-            Curriculum Deliverables
-          </h1>
-        </div>
+        hideTitle ? null : (
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
+              Tasks
+            </h1>
+          </div>
+        )
       }
       searchQuery={searchQuery}
       setSearchQuery={(q) => {

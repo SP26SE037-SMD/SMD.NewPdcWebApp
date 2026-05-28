@@ -260,7 +260,7 @@ export function TaskDetailModal({
 
     const isReadOnly = task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE;
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
+      `/dashboard/hopdc/tasks/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&tab=subject${isReadOnly ? "&readOnly=true" : ""}`,
     );
     onClose();
   };
@@ -282,7 +282,7 @@ export function TaskDetailModal({
     const targetSyllabusId =
       task.syllabus?.syllabusId || task.targetId || task.syllabusId || "null";
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${targetSyllabusId}&tab=syllabus${isReadOnly ? "&readOnly=true" : ""}`,
+      `/dashboard/hopdc/tasks/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${targetSyllabusId}&tab=syllabus${isReadOnly ? "&readOnly=true" : ""}`,
     );
     onClose();
   };
@@ -291,7 +291,7 @@ export function TaskDetailModal({
     const targetSyllabusId =
       task.syllabus?.syllabusId || task.targetId || task.syllabusId || "null";
     router.push(
-      `/dashboard/hopdc/sprint-management/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${targetSyllabusId}&tab=syllabus&readOnly=true`,
+      `/dashboard/hopdc/tasks/new-subject?subjectId=${subjectId}&curriculumId=${curriculumId}&sprintId=${sprintId}&taskId=${task.taskId}&syllabusId=${targetSyllabusId}&tab=syllabus&readOnly=true`,
     );
     onClose();
   };

@@ -105,7 +105,7 @@ export default function RequestsWorkspaceDetailModal({
     } else if (role === "HoCFDC") {
       router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
     } else if (role === "HoPDC") {
-      router.push(`/dashboard/hopdc/sprint-management`);
+      router.push(`/dashboard/hopdc/tasks`);
     }
   };
 
@@ -207,10 +207,10 @@ export default function RequestsWorkspaceDetailModal({
             toast.error("Original task not found.", { id: toastId });
           }
         } else {
-          toast.success("Navigating to curriculum deliverables...", {
+          toast.success("Navigating to tasks...", {
             id: toastId,
           });
-          router.push(`/dashboard/hopdc/sprint-management`);
+          router.push(`/dashboard/hopdc/tasks`);
         }
       }
     } catch (err) {
