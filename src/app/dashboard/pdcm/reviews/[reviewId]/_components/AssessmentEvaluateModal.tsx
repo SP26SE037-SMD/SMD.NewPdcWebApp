@@ -102,8 +102,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
     };
 
     const statTypeStyle = (type: string) => ({
-        wrapper: type === 'error' ? 'bg-rose-50 border-rose-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
-        value: type === 'error' ? 'text-rose-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
+        wrapper: type === 'error' ? 'bg-amber-50 border-amber-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
+        value: type === 'error' ? 'text-amber-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
         label: 'text-gray-500',
     });
 
