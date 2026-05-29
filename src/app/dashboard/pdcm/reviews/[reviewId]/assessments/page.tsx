@@ -48,7 +48,8 @@ export default function PDCMReviewAssessmentsPage({
     staleTime: 5 * 60 * 1000,
   });
 
-  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId || (routeTaskData?.data as any)?.syllabusId;
+  const taskData = routeTaskData?.data;
+  const syllabusId = taskData?.syllabus?.syllabusId || (taskData as any)?.syllabusId || taskData?.targetId || (taskData as any)?.target_id;
 
   const { data: syllabusData } = useQuery({
     queryKey: ["syllabus", syllabusId],
