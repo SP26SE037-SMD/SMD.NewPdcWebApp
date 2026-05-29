@@ -7,20 +7,6 @@ import {
     TrendingDown, TrendingUp, Minus
 } from 'lucide-react';
 
-const translateAssessmentType = (type: string): string => {
-    if (!type) return type;
-    const t = type.toLowerCase();
-    if (t.includes("trắc nghiệm khách quan") || t.includes("trắc nghiệm")) return "Multiple Choice";
-    if (t.includes("tự luận ngắn")) return "Short Essay";
-    if (t.includes("tự luận dài") || t.includes("tự luận")) return "Essay";
-    if (t.includes("phân tích mô hình tổng hợp") || t.includes("tổng hợp")) return "Comprehensive Analysis";
-    if (t.includes("thực hành")) return "Practical";
-    if (t.includes("vấn đáp")) return "Oral Exam";
-    if (t.includes("đồ án") || t.includes("dự án")) return "Project";
-    if (t.includes("bài tập lớn")) return "Assignment";
-    return type;
-};
-
 interface AssessmentAISuggestionModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -44,9 +30,9 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
     const StatCard = ({ stat }: { stat: { label: string; value: string; type: string } }) => {
         const Icon = stat.type === 'error' ? TrendingDown : stat.type === 'ok' ? TrendingUp : Minus;
         const styles = {
-            error: { bg: 'bg-rose-50 border-rose-200',      val: 'text-rose-600',    icon: 'text-rose-400',    label: 'text-rose-400'    },
-            ok:    { bg: 'bg-emerald-50 border-emerald-200', val: 'text-emerald-600', icon: 'text-emerald-400', label: 'text-emerald-500' },
-            info:  { bg: 'bg-gray-50 border-gray-200',      val: 'text-gray-800',    icon: 'text-gray-400',    label: 'text-gray-400'    },
+            error: { bg: 'bg-rose-50 border-rose-200', val: 'text-rose-600', icon: 'text-rose-400', label: 'text-rose-400' },
+            ok: { bg: 'bg-emerald-50 border-emerald-200', val: 'text-emerald-600', icon: 'text-emerald-400', label: 'text-emerald-500' },
+            info: { bg: 'bg-gray-50 border-gray-200', val: 'text-gray-800', icon: 'text-gray-400', label: 'text-gray-400' },
         };
         const s = styles[stat.type as keyof typeof styles] || styles.info;
         return (
@@ -112,20 +98,18 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                             {/* Card header */}
                             <button
                                 onClick={() => setExpanded(p => ({ ...p, [section.id]: !p[section.id] }))}
-                                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${
-                                    section.status === 'FAIL' ? 'bg-rose-50/60 hover:bg-rose-50' : 'bg-emerald-50/40 hover:bg-emerald-50/60'
-                                }`}
+                                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${section.status === 'FAIL' ? 'bg-rose-50/60 hover:bg-rose-50' : 'bg-emerald-50/40 hover:bg-emerald-50/60'
+                                    }`}
                             >
                                 <div className="flex items-center gap-2.5">
                                     <SectionIcon id={section.id} />
                                     <p className="text-sm font-bold text-gray-800">{section.title}</p>
                                 </div>
                                 <div className="flex items-center gap-2.5">
-                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${
-                                        section.status === 'FAIL'
+                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${section.status === 'FAIL'
                                             ? 'bg-rose-100 text-rose-600 border-rose-200'
                                             : 'bg-emerald-100 text-emerald-600 border-emerald-200'
-                                    }`}>
+                                        }`}>
                                         {section.status === 'FAIL' ? '✗  Issues found' : '✓  Looks good'}
                                     </span>
                                     {expanded[section.id]
@@ -189,7 +173,7 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                                 <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3 bg-rose-50 border border-rose-200">
                                                     <span className="text-[10px] font-black text-rose-500 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
                                                     <div>
-                                                        <p className="text-xs font-bold text-rose-700">{translateAssessmentType(a.questionType) || `Assessment ${i + 1}`}</p>
+                                                        <p className="text-xs font-bold text-rose-700">{a.questionType || `Assessment ${i + 1}`}</p>
                                                         <p className="text-[11px] text-rose-600 mt-0.5">{a.suggestion}</p>
                                                     </div>
                                                 </div>

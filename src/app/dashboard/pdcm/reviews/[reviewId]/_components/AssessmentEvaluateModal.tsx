@@ -5,20 +5,6 @@ import { X, Loader2, CheckCircle2, XCircle, AlertTriangle, BookOpen, Link2, Spar
 import { useReview } from '../ReviewContext';
 import { useToast } from '@/components/ui/Toast';
 
-const translateAssessmentType = (type: string): string => {
-    if (!type) return type;
-    const t = type.toLowerCase();
-    if (t.includes("trắc nghiệm khách quan") || t.includes("trắc nghiệm")) return "Multiple Choice";
-    if (t.includes("tự luận ngắn")) return "Short Essay";
-    if (t.includes("tự luận dài") || t.includes("tự luận")) return "Essay";
-    if (t.includes("phân tích mô hình tổng hợp") || t.includes("tổng hợp")) return "Comprehensive Analysis";
-    if (t.includes("thực hành")) return "Practical";
-    if (t.includes("vấn đáp")) return "Oral Exam";
-    if (t.includes("đồ án") || t.includes("dự án")) return "Project";
-    if (t.includes("bài tập lớn")) return "Assignment";
-    return type;
-};
-
 interface AssessmentEvaluateModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -72,9 +58,9 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
         const noteToSave = aiResult
             ? JSON.stringify({ aiResult, reviewerComment })
             : reviewerComment || (status === 'PASS' ? 'All assessments accepted.' : '');
-        
+
         const reviewData = { status: status as any, note: noteToSave };
-        
+
         setAssessmentsReview(reviewData);
         localStorage.setItem(`pdcm-review-assessments-summary-${taskId}`, JSON.stringify(reviewData));
 
@@ -156,8 +142,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${section.status === 'FAIL'
-                                                    ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                                    : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                                ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                                 }`}>
                                                 {section.status === 'FAIL' ? '✗  Invalid' : '✓  Valid'}
                                             </span>
@@ -235,7 +221,7 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                                                             <div key={i} className="flex items-start gap-3 border border-rose-100 rounded-xl px-3.5 py-3 bg-rose-50">
                                                                 <span className="text-[10px] font-black text-rose-400 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
                                                                 <div>
-                                                                    <p className="text-xs font-bold text-rose-800">{translateAssessmentType(a.questionType) || `Assessment ${i+1}`}</p>
+                                                                    <p className="text-xs font-bold text-rose-800">{a.questionType || `Assessment ${i + 1}`}</p>
                                                                     <p className="text-[11px] text-rose-600 mt-0.5">{a.suggestion}</p>
                                                                 </div>
                                                             </div>
@@ -265,8 +251,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                             <button
                                 onClick={() => setStatus('PASS')}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${status === 'PASS'
-                                        ? 'border-emerald-500 bg-emerald-50 shadow-sm shadow-emerald-100'
-                                        : 'border-gray-200 bg-white hover:border-gray-300'
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-sm shadow-emerald-100'
+                                    : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}
                             >
                                 <div className="flex items-center gap-2 mb-1.5">
@@ -281,8 +267,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                             <button
                                 onClick={() => setStatus('FAIL')}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${status === 'FAIL'
-                                        ? 'border-rose-500 bg-rose-50 shadow-sm shadow-rose-100'
-                                        : 'border-gray-200 bg-white hover:border-gray-300'
+                                    ? 'border-rose-500 bg-rose-50 shadow-sm shadow-rose-100'
+                                    : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}
                             >
                                 <div className="flex items-center gap-2 mb-1.5">
@@ -307,8 +293,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                             placeholder={status === 'PASS' ? 'Add notes if needed...' : 'Enter detailed reason for rejection...'}
                             rows={3}
                             className={`w-full p-3.5 rounded-xl border outline-none text-sm transition-all resize-none leading-relaxed ${status === 'FAIL' && !reviewerComment.trim() && !aiResult
-                                    ? 'border-rose-300 bg-rose-50/30 focus:border-rose-400'
-                                    : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'
+                                ? 'border-rose-300 bg-rose-50/30 focus:border-rose-400'
+                                : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'
                                 }`}
                         />
                     </div>
@@ -326,8 +312,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                         onClick={handleSave}
                         disabled={status === 'PENDING' || isSaving}
                         className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-2 shadow-md ${status === 'FAIL'
-                                ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
-                                : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
+                            ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
+                            : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
                             }`}
                     >
                         {isSaving ? <Loader2 size={15} className="animate-spin" /> : (status === 'FAIL' ? <XCircle size={15} /> : <CheckCircle2 size={15} />)}
