@@ -681,7 +681,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                            {isSingleValidated && singleValidationErrors.length > 0 && (
+                            {isSingleValidated && singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
                                 <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
                                     <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                     <div>
