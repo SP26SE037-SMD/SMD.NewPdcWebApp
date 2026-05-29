@@ -30,7 +30,7 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
     const StatCard = ({ stat }: { stat: { label: string; value: string; type: string } }) => {
         const Icon = stat.type === 'error' ? TrendingDown : stat.type === 'ok' ? TrendingUp : Minus;
         const styles = {
-            error: { bg: 'bg-rose-50 border-rose-200', val: 'text-rose-600', icon: 'text-rose-400', label: 'text-rose-400' },
+            error: { bg: 'bg-amber-50 border-amber-200', val: 'text-amber-600', icon: 'text-amber-500', label: 'text-amber-600' },
             ok: { bg: 'bg-emerald-50 border-emerald-200', val: 'text-emerald-600', icon: 'text-emerald-400', label: 'text-emerald-500' },
             info: { bg: 'bg-gray-50 border-gray-200', val: 'text-gray-800', icon: 'text-gray-400', label: 'text-gray-400' },
         };
@@ -110,7 +110,7 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                             ? 'bg-amber-100 text-amber-600 border-amber-200'
                                             : 'bg-emerald-100 text-emerald-600 border-emerald-200'
                                         }`}>
-                                        {section.status === 'FAIL' ? '⚠  Issues found' : '✓  Looks good'}
+                                        {section.status === 'FAIL' ? '⚠  Warning' : '✓  Looks good'}
                                     </span>
                                     {expanded[section.id]
                                         ? <ChevronUp size={14} className="text-gray-400" />

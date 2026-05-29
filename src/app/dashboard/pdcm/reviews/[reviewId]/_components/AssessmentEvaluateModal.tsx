@@ -102,8 +102,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
     };
 
     const statTypeStyle = (type: string) => ({
-        wrapper: type === 'error' ? 'bg-rose-50 border-rose-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
-        value: type === 'error' ? 'text-rose-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
+        wrapper: type === 'error' ? 'bg-amber-50 border-amber-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
+        value: type === 'error' ? 'text-amber-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
         label: 'text-gray-500',
     });
 
@@ -179,7 +179,7 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                                                 ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                                 : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                                 }`}>
-                                                {section.status === 'FAIL' ? '⚠  Issues Found' : '✓  Valid'}
+                                                {section.status === 'FAIL' ? '⚠  Warning' : '✓  Valid'}
                                             </span>
                                             {expandedSections[section.id]
                                                 ? <ChevronUp size={14} className="text-gray-400" />
