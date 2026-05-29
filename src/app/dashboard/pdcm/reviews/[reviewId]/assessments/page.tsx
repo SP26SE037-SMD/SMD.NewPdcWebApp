@@ -543,7 +543,7 @@ function AssessmentViewModal({
     enabled: !!subjectId,
   });
 
-  const { data: mappingRes, isLoading: isMappingLoading } = useQuery({
+  const { data: mappingRes, isLoading: isMappingLoading, error: mappingError } = useQuery({
     queryKey: ["syllabus-assessment-mappings", syllabusId],
     queryFn: () =>
       syllabusId ? MappingService.getSyllabusAssessmentMappings(syllabusId) : null,
@@ -551,7 +551,13 @@ function AssessmentViewModal({
   });
 
   const clos = closRes?.data?.content || [];
-  const allMappings = Array.isArray(mappingRes?.data) ? mappingRes.data : [];
+  
+  const allMappings = Array.isArray(mappingRes?.data) 
+    ? mappingRes.data 
+    : (mappingRes?.data as any)?.content 
+      ? (mappingRes?.data as any).content 
+      : [];
+      
   const mappings = allMappings.filter((m: any) => m.assessmentId === assessment?.assessmentId);
   const mappedCloIds = mappings.map((m: any) => m.cloId);
 
@@ -687,9 +693,11 @@ function AssessmentViewModal({
                 <div className="w-2 h-5 bg-slate-900 rounded-full"></div>
                 Learning Outcomes (CLO)
               </h3>
-              <span className="text-xs font-black text-slate-500 py-1.5 px-3 bg-slate-100 rounded-lg border border-slate-200">
-                {mappings.length} Linked
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-500 py-1.5 px-3 bg-slate-100 rounded-lg border border-slate-200">
+                  {mappings.length} Linked
+                </span>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -698,29 +706,35 @@ function AssessmentViewModal({
                   <Loader2 size={20} className="animate-spin" />
                   Syncing data...
                 </div>
-              ) : mappedCloIds.length > 0 ? (
-                clos
-                  .filter((clo: any) => mappedCloIds.includes(clo.cloId))
-                  .map((clo: any) => (
+              ) : mappings.length > 0 ? (
+                mappings.map((mapping: any) => {
+                  const detailedClo = clos.find((c: any) => c.cloId === mapping.cloId);
+                  return (
                     <div
-                      key={clo.cloId}
+                      key={mapping.id || mapping.cloId}
                       className="p-6 rounded-2xl border border-slate-200 bg-slate-50/30 hover:bg-slate-50/80 transition-colors shadow-sm"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-black text-slate-900 bg-slate-200 px-3 py-1 rounded-md uppercase tracking-widest">
-                          {clo.cloCode}
+                          {mapping.cloCode || detailedClo?.cloCode || 'CLO'}
                         </span>
-                        {clo.bloomLevel && (
+                        {detailedClo?.bloomLevel && (
                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                            Bloom {clo.bloomLevel}
+                            Bloom {detailedClo.bloomLevel}
                           </span>
                         )}
                       </div>
                       <p className="text-base font-bold text-slate-900 leading-relaxed">
-                        {clo.description}
+                        {mapping.cloName || detailedClo?.description || 'Mapped CLO'}
                       </p>
+                      {detailedClo?.description && mapping.cloName && mapping.cloName !== detailedClo.description && (
+                         <p className="text-sm text-slate-600 italic mt-3 border-l-3 border-slate-200 pl-4 leading-relaxed font-medium">
+                           {detailedClo.description}
+                         </p>
+                      )}
                     </div>
-                  ))
+                  );
+                })
               ) : (
                 <div className="p-10 border-2 border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50">
                   <p className="text-base text-slate-500 font-bold">
