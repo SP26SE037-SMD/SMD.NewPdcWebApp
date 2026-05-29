@@ -66,17 +66,17 @@ function SectionCard({ section }: { section: any }) {
     const isFail = section.status === 'FAIL';
 
     return (
-        <div className={`rounded-2xl border overflow-hidden ${isFail ? 'border-rose-200 bg-white' : 'border-emerald-200 bg-white'}`}>
+        <div className={`rounded-2xl border overflow-hidden ${isFail ? 'border-amber-200 bg-white' : 'border-emerald-200 bg-white'}`}>
             <button
                 onClick={() => setExpanded(!expanded)}
-                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${isFail ? 'bg-rose-50/50 hover:bg-rose-50' : 'bg-emerald-50/30 hover:bg-emerald-50/60'}`}
+                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${isFail ? 'bg-amber-50/50 hover:bg-amber-50' : 'bg-emerald-50/30 hover:bg-emerald-50/60'}`}
             >
                 <div className="flex items-center gap-3">
-                    {section.id === 'assessments' ? <BookOpen size={16} className={isFail ? "text-rose-400" : "text-emerald-400"} /> : <Link2 size={16} className={isFail ? "text-rose-400" : "text-emerald-400"} />}
-                    <p className={`text-sm font-bold ${isFail ? "text-rose-900" : "text-emerald-900"}`}>{section.title}</p>
+                    {section.id === 'assessments' ? <BookOpen size={16} className={isFail ? "text-amber-500" : "text-emerald-400"} /> : <Link2 size={16} className={isFail ? "text-amber-500" : "text-emerald-400"} />}
+                    <p className={`text-sm font-bold ${isFail ? "text-amber-900" : "text-emerald-900"}`}>{section.title}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${isFail ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${isFail ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-600'}`}>
                         {isFail ? 'Issues Found' : 'Passed'}
                     </span>
                     {expanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
@@ -100,24 +100,38 @@ function SectionCard({ section }: { section: any }) {
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unmapped CLOs</p>
                             <div className="grid gap-2">
                                 {section.unmappedClos.map((c: any, i: number) => (
-                                    <div key={i} className="flex gap-3 bg-rose-50/50 rounded-xl p-3 border border-rose-100 items-start">
-                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{c.code}</span>
-                                        <p className="text-xs text-rose-700 leading-relaxed font-medium">{c.suggestion}</p>
+                                    <div key={i} className="flex gap-3 bg-amber-50/50 rounded-xl p-3 border border-amber-200 items-start">
+                                        <span className="text-[10px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{c.code}</span>
+                                        <p className="text-xs text-amber-800 leading-relaxed font-medium">{c.suggestion}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Unmapped Assessments */}
+                    {/* Unmapped Assessments / Sessions */}
                     {section.unmappedAssessments?.length > 0 && (
                         <div className="space-y-2">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unmapped Assessments</p>
                             <div className="grid gap-2">
                                 {section.unmappedAssessments.map((a: any, i: number) => (
-                                    <div key={i} className="flex gap-3 bg-rose-50/50 rounded-xl p-3 border border-rose-100 items-start">
-                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{a.questionType || `Assessment ${i+1}`}</span>
-                                        <p className="text-xs text-rose-700 leading-relaxed font-medium">{a.suggestion}</p>
+                                    <div key={i} className="flex gap-3 bg-amber-50/50 rounded-xl p-3 border border-amber-200 items-start">
+                                        <span className="text-[10px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{a.questionType || `Assessment ${i+1}`}</span>
+                                        <p className="text-xs text-amber-800 leading-relaxed font-medium">{a.suggestion}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {section.unmappedSessions?.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unmapped Sessions</p>
+                            <div className="grid gap-2">
+                                {section.unmappedSessions.map((s: any, i: number) => (
+                                    <div key={i} className="flex gap-3 bg-amber-50/50 rounded-xl p-3 border border-amber-200 items-start">
+                                        <span className="text-[10px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">#{i+1}</span>
+                                        <p className="text-xs text-amber-800 leading-relaxed font-medium">{s.title}: {s.suggestion}</p>
                                     </div>
                                 ))}
                             </div>
@@ -134,9 +148,9 @@ function StatCard({ stat }: { stat: any }) {
     const isOk = stat.type === 'ok';
 
     return (
-        <div className={`p-3 rounded-xl border ${isError ? 'bg-rose-50 border-rose-100' : isOk ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
-            <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isError ? 'text-rose-400' : isOk ? 'text-emerald-500' : 'text-gray-400'}`}>{stat.label}</p>
-            <p className={`text-lg font-black ${isError ? 'text-rose-600' : isOk ? 'text-emerald-600' : 'text-gray-700'}`}>{stat.value}</p>
+        <div className={`p-3 rounded-xl border ${isError ? 'bg-amber-50 border-amber-200' : isOk ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isError ? 'text-amber-600' : isOk ? 'text-emerald-500' : 'text-gray-400'}`}>{stat.label}</p>
+            <p className={`text-lg font-black ${isError ? 'text-amber-700' : isOk ? 'text-emerald-600' : 'text-gray-700'}`}>{stat.value}</p>
         </div>
     );
 }
