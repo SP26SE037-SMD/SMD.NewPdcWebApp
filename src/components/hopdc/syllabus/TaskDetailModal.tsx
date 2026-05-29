@@ -29,6 +29,7 @@ import {
   TaskService,
 } from "@/services/task.service";
 import { SubjectService } from "@/services/subject.service";
+import { SyllabusService } from "@/services/syllabus.service";
 import { DepartmentAccount } from "@/services/account.service";
 import { RequestService } from "@/services/request.service";
 import { User } from "@/lib/auth";
@@ -178,6 +179,16 @@ export function TaskDetailModal({
     }
     setIsDeletingTask(true);
     try {
+      if (task.type === "SYLLABUS" && task.action === "CREATE") {
+        const syllabusId = task.targetId || task.syllabus?.syllabusId;
+        if (!syllabusId) {
+          throw new Error("Cannot find syllabus ID associated with this task.");
+        }
+        if (!currentUser?.accountId) {
+          throw new Error("User session not found.");
+        }
+        await SyllabusService.archiveSyllabusByAccount(syllabusId, currentUser.accountId);
+      }
       await TaskService.deleteTask(task.taskId);
       showToast("Task deleted successfully", "success");
       
