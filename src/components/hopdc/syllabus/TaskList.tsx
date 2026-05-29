@@ -413,7 +413,7 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
       dueDate: string;
       comment: string;
     }) => {
-      const cleanTaskName = task.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+      const cleanTaskName = task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
       await TaskService.createTask({
         sprintId: sprintId || "",
         assignTo,
@@ -882,7 +882,7 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           sprintId={sprintId}
           rootTaskId={taskModalParentTask?.taskId || null}
           subjectId={taskModalParentTask?.subjectId}
-          subjectName={taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "")}
+          subjectName={taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "")}
           targetId={
             taskModalParentTask?.targetId ||
             taskModalParentTask?.syllabus?.syllabusId ||
@@ -894,7 +894,7 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           initialData={
             taskModalMode === "UPDATE"
               ? {
-                  taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  taskName: `UPDATE SYLLABUS: ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
                   description:
                     (
                       document.getElementById(
@@ -907,8 +907,8 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
                 }
               : taskModalMode === "REVIEW"
               ? {
-                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
                   priority: "MEDIUM",
                   dueDate: taskModalParentTask?.deadline,
                   excludeAccountId: taskModalParentTask?.account?.accountId,

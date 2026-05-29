@@ -51,7 +51,7 @@ export function TaskRow({
     if (task.type === "SUBJECT") {
       return true; // Can create syllabus task
     }
-    if (task.type === "SYLLABUS" && task.action === "CREATE") {
+    if (task.type === "SYLLABUS" && (task.action === "CREATE" || task.action === "UPDATE")) {
       return true; // Can create review task
     }
     return false; // Type SYLLABUS, action REVIEW cannot add task

@@ -216,7 +216,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       dueDate: string;
       comment: string;
     }) => {
-      const cleanTaskName = task.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+      const cleanTaskName = task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
       await TaskService.createTask({
         sprintId: sprintId || "",
         assignTo,
@@ -642,7 +642,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         initialData={
           subtaskModalMode === "UPDATE"
             ? {
-                taskName: `UPDATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                taskName: `UPDATE SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
                 description: "",
                 priority: subtaskParentTask?.priority,
                 dueDate: subtaskParentTask?.deadline,
@@ -650,8 +650,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               }
             : subtaskModalMode === "REVIEW"
             ? {
-                taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
-                description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SYLLABUS: ", "") || ""}`,
+                 taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                 description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
                 priority: "MEDIUM",
                 dueDate: subtaskParentTask?.deadline,
                 excludeAccountId: subtaskParentTask?.account?.accountId,

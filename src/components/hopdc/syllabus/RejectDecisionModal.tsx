@@ -153,7 +153,7 @@ export function RejectDecisionModal({
             <p
               className={`font-bold text-zinc-400 uppercase tracking-widest mt-1.5 leading-none ${isFloating ? "text-[9px]" : "text-xs"}`}
             >
-              {originalTask?.taskName?.replace("CREATE SYLLABUS: ", "") ||
+              {originalTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") ||
                 "Syllabus Review"}
             </p>
           </div>
