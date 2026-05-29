@@ -47,6 +47,40 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
     const toggleSection = (id: string) =>
         setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
 
+    const fillCommentWithAI = () => {
+        if (!aiResult) return;
+        
+        let text = `${aiResult.conclusion}\n\n`;
+        
+        aiResult.sections?.forEach((section: any) => {
+            if (section.status === 'FAIL' || section.warnings?.length > 0 || section.unmappedClos?.length > 0 || section.unmappedMaterials?.length > 0) {
+                text += `--- ${section.title} ---\n`;
+                
+                section.warnings?.forEach((w: any) => {
+                    text += `⚠️ Warning: ${w.label}\n`;
+                    if (w.detail) text += `   ${w.detail}\n`;
+                });
+                
+                if (section.unmappedClos?.length > 0) {
+                    text += `❌ Unmapped CLOs:\n`;
+                    section.unmappedClos.forEach((c: any) => {
+                        text += `   - ${c.code}: ${c.suggestion}\n`;
+                    });
+                }
+                
+                if (section.unmappedMaterials?.length > 0) {
+                    text += `❌ Unmapped Materials:\n`;
+                    section.unmappedMaterials.forEach((m: any, i: number) => {
+                        text += `   - ${m.title || `Material ${i+1}`}: ${m.suggestion}\n`;
+                    });
+                }
+                text += '\n';
+            }
+        });
+        
+        setReviewerComment(text.trim());
+    };
+
     const handleSave = () => {
         if (status === 'FAIL' && !reviewerComment.trim() && !aiResult) {
             showToast("Please provide a reason for rejection.", "error");
@@ -280,9 +314,20 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
 
                     {/* ── Reviewer Comment ─────────────────── */}
                     <div id="session-reviewer-comment">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                            {status === 'PASS' ? 'Additional Notes (Optional)' : 'Reason for Rejection *'}
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+                                {status === 'PASS' ? 'Additional Notes (Optional)' : 'Reason for Rejection *'}
+                            </label>
+                            {status === 'FAIL' && aiResult && (
+                                <button
+                                    onClick={fillCommentWithAI}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-md transition-colors uppercase tracking-wider"
+                                >
+                                    <Sparkles size={12} />
+                                    Use AI Feedback
+                                </button>
+                            )}
+                        </div>
                         <textarea
                             value={reviewerComment}
                             onChange={(e) => setReviewerComment(e.target.value)}
