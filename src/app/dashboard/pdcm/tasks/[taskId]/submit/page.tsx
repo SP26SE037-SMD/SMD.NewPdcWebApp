@@ -18,6 +18,7 @@ import { AssessmentService } from '@/services/assessment.service';
 import { SyllabusService } from '@/services/syllabus.service';
 import { RequestService } from '@/services/request.service';
 import { useToast } from '@/components/ui/Toast';
+import { ReviewerFeedback } from './ReviewerFeedback';
 
 export default function SubmitPage({ params }: { params: Promise<{ taskId: string }> }) {
     const { taskId } = use(params);
@@ -108,6 +109,11 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                 <h1 className="text-4xl font-black text-zinc-900 tracking-tight">Final Syllabus Submission</h1>
                 <p className="text-zinc-500 max-w-xl mx-auto font-medium">Please review the checklist below to ensure all syllabus components meet the required standards before submitting to HoPDC.</p>
             </div>
+
+            {/* Reviewer Feedback Section (If Rejected) */}
+            {taskData?.comment && (
+                <ReviewerFeedback feedbackJson={taskData.comment} />
+            )}
 
             {/* Component Summary Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
