@@ -694,9 +694,6 @@ function AssessmentViewModal({
                 Learning Outcomes (CLO)
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-rose-500 bg-rose-50 py-1.5 px-3 rounded-lg border border-rose-200" title={mappingError ? String(mappingError) : ''}>
-                  DEBUG: Syl={syllabusId ? syllabusId.substring(0,6) : 'none'}, Sub={subjectId ? subjectId.substring(0,6) : 'none'}, Ass={assessment?.assessmentId ? assessment.assessmentId.substring(0,6) : 'none'}, allMap={allMappings.length}, clos={clos.length}, Err={mappingError ? 'Yes' : 'No'}
-                </span>
                 <span className="text-xs font-black text-slate-500 py-1.5 px-3 bg-slate-100 rounded-lg border border-slate-200">
                   {mappings.length} Linked
                 </span>
