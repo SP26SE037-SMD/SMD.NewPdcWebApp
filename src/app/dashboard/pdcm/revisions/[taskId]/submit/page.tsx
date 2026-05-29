@@ -223,8 +223,8 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                 const requestPayload = {
                                     title: isUpdate ? "Request to review revised syllabus" : "Request to review syllabus",
                                     content: isUpdate ? "The syllabus has been revised as requested and resubmitted for review." : "The syllabus has been completed and submitted for review.",
-                                    type: "REVIEW",
-                                    targetId: syllabusId,
+                                    type: "TASK",
+                                    targetId: taskId,
                                     receivedById: taskData?.createdBy?.accountId || null
                                 };
                                 console.log("=== CREATE REQUEST PAYLOAD ===", requestPayload);
