@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { Sparkles, BookOpen, Link2, ChevronUp, ChevronDown } from 'lucide-react';
 
+const translateAssessmentType = (type: string): string => {
+    if (!type) return type;
+    const t = type.toLowerCase();
+    if (t.includes("trắc nghiệm khách quan") || t.includes("trắc nghiệm")) return "Multiple Choice";
+    if (t.includes("tự luận ngắn")) return "Short Essay";
+    if (t.includes("tự luận dài") || t.includes("tự luận")) return "Essay";
+    if (t.includes("phân tích mô hình tổng hợp") || t.includes("tổng hợp")) return "Comprehensive Analysis";
+    if (t.includes("thực hành")) return "Practical";
+    if (t.includes("vấn đáp")) return "Oral Exam";
+    if (t.includes("đồ án") || t.includes("dự án")) return "Project";
+    if (t.includes("bài tập lớn")) return "Assignment";
+    return type;
+};
+
 export function ReviewerFeedback({ feedbackJson }: { feedbackJson: string }) {
     let feedback: any = null;
     try {
@@ -116,7 +130,7 @@ function SectionCard({ section }: { section: any }) {
                             <div className="grid gap-2">
                                 {section.unmappedAssessments.map((a: any, i: number) => (
                                     <div key={i} className="flex gap-3 bg-rose-50/50 rounded-xl p-3 border border-rose-100 items-start">
-                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{a.questionType}</span>
+                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{translateAssessmentType(a.questionType) || `Assessment ${i+1}`}</span>
                                         <p className="text-xs text-rose-700 leading-relaxed font-medium">{a.suggestion}</p>
                                     </div>
                                 ))}
