@@ -48,7 +48,8 @@ export default function PDCMReviewAssessmentsPage({
     staleTime: 5 * 60 * 1000,
   });
 
-  const syllabusId = routeTaskData?.data?.syllabus?.syllabusId || (routeTaskData?.data as any)?.syllabusId;
+  const taskData = routeTaskData?.data;
+  const syllabusId = taskData?.syllabus?.syllabusId || (taskData as any)?.syllabusId || taskData?.targetId || (taskData as any)?.target_id;
 
   const { data: syllabusData } = useQuery({
     queryKey: ["syllabus", syllabusId],
@@ -477,7 +478,8 @@ export default function PDCMReviewAssessmentsPage({
         <AssessmentViewModal
           assessment={assessments[expandedIndex]}
           onClose={() => setExpandedIndex(null)}
-          subjectId={syllabusData?.data?.subjectId}
+          subjectId={syllabusData?.data?.subjectId || taskData?.syllabus?.subjectId}
+          syllabusId={syllabusId}
         />
       )}
 
@@ -527,10 +529,12 @@ function AssessmentViewModal({
   assessment,
   onClose,
   subjectId,
+  syllabusId,
 }: {
   assessment: any;
   onClose: () => void;
   subjectId?: string;
+  syllabusId?: string;
 }) {
   const { data: closRes, isLoading: isClosLoading } = useQuery({
     queryKey: ["clos", subjectId],
@@ -540,14 +544,15 @@ function AssessmentViewModal({
   });
 
   const { data: mappingRes, isLoading: isMappingLoading } = useQuery({
-    queryKey: ["assessment-mappings", assessment?.assessmentId],
+    queryKey: ["syllabus-assessment-mappings", syllabusId],
     queryFn: () =>
-      MappingService.getAssessmentMappings(assessment?.assessmentId || ""),
-    enabled: !!assessment?.assessmentId,
+      syllabusId ? MappingService.getSyllabusAssessmentMappings(syllabusId) : null,
+    enabled: !!syllabusId,
   });
 
   const clos = closRes?.data?.content || [];
-  const mappings = mappingRes?.data || [];
+  const allMappings = Array.isArray(mappingRes?.data) ? mappingRes.data : [];
+  const mappings = allMappings.filter((m: any) => m.assessmentId === assessment?.assessmentId);
   const mappedCloIds = mappings.map((m: any) => m.cloId);
 
   return (
