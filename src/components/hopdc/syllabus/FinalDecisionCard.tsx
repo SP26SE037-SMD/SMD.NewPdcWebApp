@@ -344,7 +344,7 @@ export function FinalDecisionCard({
         });
       } else {
         const cleanTaskName =
-          createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") || "";
+          createSyllabusTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
         const updateTaskName = `UPDATE SYLLABUS: ${cleanTaskName}`;
 
         // 1. Create the new UPDATE SYLLABUS task
@@ -510,7 +510,7 @@ export function FinalDecisionCard({
 
         <div className="space-y-1">
           <h4 className="text-sm font-black text-zinc-900 leading-tight">
-            {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") ||
+            {createSyllabusTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") ||
               "Syllabus Review"}
           </h4>
           <p className="text-xs text-zinc-500 font-medium leading-relaxed">
@@ -570,7 +570,7 @@ export function FinalDecisionCard({
 
       <div className="space-y-1">
         <h4 className="text-sm font-black text-zinc-900 leading-tight">
-          {createSyllabusTask?.taskName?.replace("CREATE SYLLABUS: ", "") ||
+          {createSyllabusTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") ||
             "Syllabus Review"}
         </h4>
         <p className="text-xs text-zinc-500 font-medium leading-relaxed">

@@ -301,7 +301,7 @@ export function TaskDetailModal({
     task.action === "CREATE" ||
     task.action === "UPDATE";
   const isCreateSyllabusTask =
-    task.type === "SYLLABUS" && task.action === "CREATE";
+    task.type === "SYLLABUS" && (task.action === "CREATE" || task.action === "UPDATE");
 
   const children = task.children || [];
   const doneChildrenCount = children.filter(
