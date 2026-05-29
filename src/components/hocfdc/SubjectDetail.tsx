@@ -273,20 +273,19 @@ export default function SubjectDetail({
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/80 border border-white rounded-[10px] shadow-sm">
               <div
-                className={`w-2 h-2 rounded-full animate-pulse ${
-                  subject.status === SUBJECT_STATUS.COMPLETED
+                className={`w-2 h-2 rounded-full animate-pulse ${subject.status === SUBJECT_STATUS.COMPLETED
                     ? "bg-emerald-500"
                     : subject.status === SUBJECT_STATUS.PENDING_REVIEW
                       ? "bg-amber-500"
                       : "bg-zinc-400"
-                }`}
+                  }`}
               />
               <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
                 {subject.status.replace("_", " ")}
               </span>
             </div>
 
-            <div className="h-8 w-px bg-zinc-200/60 mx-2" />
+            {/* <div className="h-8 w-px bg-zinc-200/60 mx-2" /> */}
 
             <div className="flex items-center gap-3">
               {viewMode === "DETAIL" && subject.status === SUBJECT_STATUS.DRAFT && (
@@ -311,12 +310,8 @@ export default function SubjectDetail({
                   )}
                   Commit
                 </button>
-              ) : viewMode === "DETAIL" ? (
-                <button className="px-5 py-2.5 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-primary transition-all shadow-lg shadow-zinc-200 active:scale-95">
-                  Publish
-                </button>
-              ) : (
-                <select 
+              ) : viewMode === "DETAIL" ? null : (
+                <select
                   value={selectedSyllabus.id}
                   onChange={(e) => setSelectedSyllabus(MOCK_SYLLABUSES.find(s => s.id === e.target.value))}
                   className="px-4 py-2 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] border-none focus:ring-2 focus:ring-primary outline-none cursor-pointer"
@@ -516,7 +511,7 @@ export default function SubjectDetail({
                           </h3>
                         </div>
                         {selectedMajorForMapping && (
-                          <button 
+                          <button
                             onClick={() => setSelectedMajorForMapping(null)}
                             className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
                           >
@@ -577,7 +572,7 @@ export default function SubjectDetail({
                       <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700" />
                       <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-80">Management Actions</h4>
                       <div className="space-y-2 relative z-10">
-                        <button 
+                        <button
                           onClick={() => setViewMode("SYLLABUS")}
                           className="w-full py-3 bg-white text-primary rounded-[10px] text-sm font-black uppercase tracking-widest hover:shadow-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
                         >
@@ -624,10 +619,10 @@ export default function SubjectDetail({
                       <p className="text-sm font-black text-zinc-900 mb-1">{m.name}</p>
                       <p className="text-xs text-zinc-500 font-medium leading-relaxed">{m.desc}</p>
                       <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-between">
-                         <span className={`text-[10px] font-black uppercase tracking-widest ${m.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                           {m.status}
-                         </span>
-                         <button className="text-xs font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">View File</button>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${m.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                          {m.status}
+                        </span>
+                        <button className="text-xs font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">View File</button>
                       </div>
                     </div>
                   ))}
@@ -653,9 +648,9 @@ export default function SubjectDetail({
                       </div>
                       <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-2">
-                           <span className="text-xs font-black text-primary uppercase tracking-widest">{s.type}</span>
-                           <div className="w-1 h-1 rounded-full bg-white/20" />
-                           <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{s.duration}</span>
+                          <span className="text-xs font-black text-primary uppercase tracking-widest">{s.type}</span>
+                          <div className="w-1 h-1 rounded-full bg-white/20" />
+                          <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{s.duration}</span>
                         </div>
                         <p className="text-sm font-black mb-1 group-hover:text-primary transition-colors">{s.title}</p>
                         <p className="text-xs text-white/50 font-medium mb-4 italic">"{s.topic}"</p>
@@ -689,9 +684,9 @@ export default function SubjectDetail({
                         <div>
                           <p className="text-sm font-black text-zinc-900 mb-0.5">{a.category}</p>
                           <div className="flex items-center gap-2">
-                             <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.type}</span>
-                             <div className="w-1 h-1 rounded-full bg-zinc-200" />
-                             <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.duration}</span>
+                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.type}</span>
+                            <div className="w-1 h-1 rounded-full bg-zinc-200" />
+                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.duration}</span>
                           </div>
                         </div>
                       </div>
@@ -700,8 +695,8 @@ export default function SubjectDetail({
                   ))}
                 </div>
                 <div className="p-6 bg-zinc-50 rounded-[10px] border border-dashed border-zinc-200 text-center">
-                   <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Grading Policy</p>
-                   <p className="text-xs text-zinc-500 font-medium leading-relaxed italic">"Must achieve min score of {subject.minToPass} on all summative components."</p>
+                  <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Grading Policy</p>
+                  <p className="text-xs text-zinc-500 font-medium leading-relaxed italic">"Must achieve min score of {subject.minToPass} on all summative components."</p>
                 </div>
               </div>
             </div>

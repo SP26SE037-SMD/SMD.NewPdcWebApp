@@ -317,6 +317,7 @@ export default function AcademicDocumentsContent() {
               fileName: fileName,
               date: new Date(doc.createdAt).toLocaleDateString(),
               status: "Waiting for HoCFDC",
+              documentUrl: doc.documentUrl,
             };
           });
         setPendingDocs(pending);
@@ -468,6 +469,8 @@ export default function AcademicDocumentsContent() {
         );
       }
 
+      showToast("Document added successfully!", "success");
+      resetModal();
       if (activeTab === "pending") {
         fetchPendingDocs();
       }
@@ -700,8 +703,15 @@ export default function AcademicDocumentsContent() {
                                 size={18}
                                 className="text-zinc-400 group-hover:text-[#1d5c42] transition-colors shrink-0 mt-0.5"
                               />
-                              <span className="capitalize break-words break-all whitespace-normal leading-tight flex-1 min-w-0">
+                              <span
+                                onClick={() => doc.documentUrl && window.open(doc.documentUrl, "_blank")}
+                                className="capitalize break-words break-all whitespace-normal leading-tight flex-1 min-w-0 cursor-pointer hover:underline hover:text-[#144330] inline-flex items-center gap-1"
+                              >
                                 {doc.title}
+                                <ExternalLink
+                                  size={12}
+                                  className="inline opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-zinc-400 shrink-0"
+                                />
                               </span>
                             </div>
                           </td>
