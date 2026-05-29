@@ -77,7 +77,7 @@ function SectionCard({ section }: { section: any }) {
                 </div>
                 <div className="flex items-center gap-3">
                     <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${isFail ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-600'}`}>
-                        {isFail ? 'Issues Found' : 'Passed'}
+                        {isFail ? 'Warning' : 'Passed'}
                     </span>
                     {expanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
                 </div>

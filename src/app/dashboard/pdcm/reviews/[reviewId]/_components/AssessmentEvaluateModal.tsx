@@ -179,7 +179,7 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
                                                 ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                                 : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                                 }`}>
-                                                {section.status === 'FAIL' ? '⚠  Issues Found' : '✓  Valid'}
+                                                {section.status === 'FAIL' ? '⚠  Warning' : '✓  Valid'}
                                             </span>
                                             {expandedSections[section.id]
                                                 ? <ChevronUp size={14} className="text-gray-400" />

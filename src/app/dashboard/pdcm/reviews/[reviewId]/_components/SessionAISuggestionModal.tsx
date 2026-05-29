@@ -108,7 +108,7 @@ export function SessionAISuggestionModal({ isOpen, onClose, aiResult }: SessionA
                                             ? 'bg-amber-100 text-amber-600 border-amber-200'
                                             : 'bg-emerald-100 text-emerald-600 border-emerald-200'
                                     }`}>
-                                        {section.status === 'FAIL' ? '⚠  Issues found' : '✓  Looks good'}
+                                        {section.status === 'FAIL' ? '⚠  Warning' : '✓  Looks good'}
                                     </span>
                                     {expanded[section.id]
                                         ? <ChevronUp size={14} className="text-gray-400" />
