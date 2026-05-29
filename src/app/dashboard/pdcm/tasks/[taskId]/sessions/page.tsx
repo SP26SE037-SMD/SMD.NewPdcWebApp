@@ -1473,7 +1473,7 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: {
                                             {clo.cloCode}
                                         </p>
                                         <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
-                                            {clo.cloName}
+                                            {clo.description}
                                         </p>
                                     </div>
                                 </label>
