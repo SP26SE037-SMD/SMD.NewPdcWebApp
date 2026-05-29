@@ -138,6 +138,114 @@ export function TaskDetailModal({
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [extendedDeadline, setExtendedDeadline] = useState("");
 
+  // Edit & Delete Task states for HoPDC role
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTaskName, setEditTaskName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPriority, setEditPriority] = useState("");
+  const [editAssignTo, setEditAssignTo] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [isSavingTask, setIsSavingTask] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
+
+  // Filter accounts for assignee selector
+  const filteredAccounts = useMemo(() => {
+    return pdcmAccounts.filter((acc) => {
+      const role = acc.roleName?.toUpperCase();
+      return role === "PDCM" || role === "COLLABORATOR";
+    });
+  }, [pdcmAccounts]);
+
+  // Reset editing mode when modal is toggled or task changes
+  useEffect(() => {
+    setIsEditing(false);
+  }, [isOpen, task?.taskId]);
+
+  // Populate edit fields
+  useEffect(() => {
+    if (task) {
+      setEditTaskName(task.taskName || "");
+      setEditDescription(task.description || "");
+      setEditPriority(task.priority || "NORMAL");
+      setEditAssignTo(task.account?.accountId || "");
+      setEditDueDate(task.deadline ? toInputDate(task.deadline) : "");
+    }
+  }, [task, isEditing]);
+
+  const handleDeleteTask = async () => {
+    if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+      return;
+    }
+    setIsDeletingTask(true);
+    try {
+      await TaskService.deleteTask(task.taskId);
+      showToast("Task deleted successfully", "success");
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["single-tasks"] });
+      
+      onClose();
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete task", "error");
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    const isTodo = task.status === "TO_DO";
+    if (isTodo) {
+      if (!editTaskName.trim()) {
+        showToast("Task title is required", "error");
+        return;
+      }
+      if (!editAssignTo) {
+        showToast("Assignee is required", "error");
+        return;
+      }
+      if (!editDueDate) {
+        showToast("Due date is required", "error");
+        return;
+      }
+    }
+    if (!editDescription.trim()) {
+      showToast("Description is required", "error");
+      return;
+    }
+
+    setIsSavingTask(true);
+    try {
+      const payload: any = {
+        assignTo: isTodo ? editAssignTo : (task.account?.accountId || ""),
+        taskName: isTodo ? editTaskName.trim() : task.taskName,
+        description: editDescription.trim(),
+        action: task.action,
+        isAccepted: task.isAccepted !== undefined && task.isAccepted !== null ? task.isAccepted : null,
+        comment: task.comment || "",
+        priority: editPriority,
+        type: task.type,
+        targetId: task.targetId || task.syllabus?.syllabusId || task.syllabusId || "",
+        rootTaskId: task.rootTaskId || "",
+        dueDate: isTodo ? editDueDate : (task.deadline ? toInputDate(task.deadline) : ""),
+      };
+
+      await TaskService.updateTask(task.taskId, payload);
+      showToast("Task updated successfully", "success");
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["single-tasks"] });
+      
+      setIsEditing(false);
+      onClose();
+    } catch (err: any) {
+      showToast(err.message || "Failed to update task", "error");
+    } finally {
+      setIsSavingTask(false);
+    }
+  };
+
   useEffect(() => {
     if (task?.deadline) {
       setExtendedDeadline(toInputDate(task.deadline));
@@ -379,12 +487,63 @@ export function TaskDetailModal({
             </span>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && (
+              <>
+                {isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={isSavingTask}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-lg transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                    >
+                      {isSavingTask && <Loader2 size={12} className="animate-spin" />}
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      disabled={isSavingTask}
+                      className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[10px] font-black uppercase rounded-lg transition-colors border border-zinc-200"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {(task.status === "TO_DO" || task.status === "IN_PROGRESS") && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {task.status === "TO_DO" && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteTask}
+                        disabled={isDeletingTask}
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase rounded-lg transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                      >
+                        {isDeletingTask && <Loader2 size={12} className="animate-spin" />}
+                        Delete
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -430,9 +589,18 @@ export function TaskDetailModal({
               )}
             </div>
 
-            <h2 className="text-2xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+            <h2 className="text-2xl font-black text-zinc-900 tracking-tight flex items-center gap-2 w-full">
               <BookText size={24} className="text-zinc-600 shrink-0" />
-              <span>{task.taskName || "N/A"}</span>
+              {isEditing && task.status === "TO_DO" ? (
+                <input
+                  type="text"
+                  value={editTaskName}
+                  onChange={(e) => setEditTaskName(e.target.value)}
+                  className="flex-1 px-3 py-1.5 border border-zinc-200 rounded-lg text-lg font-semibold outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-white"
+                />
+              ) : (
+                <span>{task.taskName || "N/A"}</span>
+              )}
             </h2>
           </div>
 
@@ -538,7 +706,16 @@ export function TaskDetailModal({
                   <Calendar size={16} className="text-zinc-400" />
                   <span>Deadline</span>
                 </div>
-                {currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && task.status === TASK_STATUS.OVERDUE ? (
+                {isEditing && task.status === "TO_DO" ? (
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    min={new Date().toISOString().slice(0, 10)}
+                    max={sprintDeadline ? new Date(sprintDeadline).toISOString().slice(0, 10) : undefined}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="px-3 py-1 text-xs border border-zinc-200 rounded-lg font-semibold text-zinc-800 outline-none focus:border-emerald-500 bg-white focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                ) : currentUser?.role === "HOPDC" && task.type === "SYLLABUS" && task.status === TASK_STATUS.OVERDUE ? (
                   <input
                     type="date"
                     value={extendedDeadline}
@@ -568,28 +745,43 @@ export function TaskDetailModal({
                   <UserIcon size={16} className="text-zinc-400" />
                   <span>Assignees</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-7 w-7 rounded-full ${getAvatarColor(task.account?.fullName || "")} flex items-center justify-center text-[10px] font-bold text-white border border-white shadow-sm shrink-0`}
+                {isEditing && task.status === "TO_DO" ? (
+                  <select
+                    value={editAssignTo}
+                    onChange={(e) => setEditAssignTo(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer bg-white"
                   >
-                    {task.account?.fullName
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase() || "??"}
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="font-bold text-zinc-700 text-xs">
-                      {task.account?.fullName || "Unassigned"}
-                    </span>
-                    {task.account?.email && (
-                      <span className="text-[10px] text-zinc-400 font-medium">
-                        {task.account.email}
+                    <option value="">Select Assignee</option>
+                    {filteredAccounts.map((acc) => (
+                      <option key={acc.accountId} value={acc.accountId}>
+                        {acc.fullName} ({acc.roleName})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`h-7 w-7 rounded-full ${getAvatarColor(task.account?.fullName || "")} flex items-center justify-center text-[10px] font-bold text-white border border-white shadow-sm shrink-0`}
+                    >
+                      {task.account?.fullName
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase() || "??"}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-zinc-700 text-xs">
+                        {task.account?.fullName || "Unassigned"}
                       </span>
-                    )}
+                      {task.account?.email && (
+                        <span className="text-[10px] text-zinc-400 font-medium">
+                          {task.account.email}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Priority */}
@@ -598,20 +790,45 @@ export function TaskDetailModal({
                   <FlagIcon size={16} className="text-zinc-400" />
                   <span>Priority</span>
                 </div>
-                <div className="flex items-center gap-1.5 font-bold text-xs">
-                  <FlagIcon
-                    size={14}
-                    className={priorityConfig.color}
-                    fill={priorityConfig.fill}
-                  />
-                  <span className="text-zinc-700">{priorityConfig.label}</span>
-                </div>
+                {isEditing ? (
+                  <select
+                    value={editPriority}
+                    onChange={(e) => setEditPriority(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer bg-white"
+                  >
+                    <option value="LOW">LOW</option>
+                    <option value="NORMAL">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="URGENT">CRITICAL</option>
+                  </select>
+                ) : (
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <FlagIcon
+                      size={14}
+                      className={priorityConfig.color}
+                      fill={priorityConfig.fill}
+                    />
+                    <span className="text-zinc-700">{priorityConfig.label}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Description */}
-          {task.description && (
+          {isEditing ? (
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                Description
+              </h3>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-600/10 focus:border-emerald-600 transition-all resize-none text-zinc-800 animate-in fade-in"
+              />
+            </div>
+          ) : task.description ? (
             <div className="space-y-2">
               <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">
                 Description
@@ -620,7 +837,7 @@ export function TaskDetailModal({
                 {task.description}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Fields table */}
           <div className="space-y-3">

@@ -368,7 +368,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                         </button>
                       )}
 
-                      {sprintStatus === SPRINT_STATUS.PLANNING && task.status !== "IN_PROGRESS" && (
+                      {task.status !== "IN_PROGRESS" && (
                         <button
                           onClick={() => {
                             if (confirm("Confirm task removal?")) {
@@ -430,11 +430,14 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                       extend task
                     </button>
                   )}
-                  {sprintStatus !== SPRINT_STATUS.PLANNING && task.status !== TASK_STATUS.DONE && task.status !== TASK_STATUS.OVERDUE && (
-                    <button className="p-2 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200">
-                      <MoreVertical size={16} />
-                    </button>
-                  )}
+                  {sprintStatus !== SPRINT_STATUS.PLANNING &&
+                    task.status !== TASK_STATUS.DONE &&
+                    task.status !== TASK_STATUS.OVERDUE &&
+                    task.status !== TASK_STATUS.TO_DO && (
+                      <button className="p-2 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200">
+                        <MoreVertical size={16} />
+                      </button>
+                    )}
                 </div>
               </td>
             </tr>
