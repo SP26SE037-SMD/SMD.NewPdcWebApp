@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, BookOpen, Link2, ChevronUp, ChevronDown } from 'lucide-react';
 
-const translateAssessmentType = (type: string): string => {
-    if (!type) return type;
-    const t = type.toLowerCase();
-    if (t.includes("trắc nghiệm khách quan") || t.includes("trắc nghiệm")) return "Multiple Choice";
-    if (t.includes("tự luận ngắn")) return "Short Essay";
-    if (t.includes("tự luận dài") || t.includes("tự luận")) return "Essay";
-    if (t.includes("phân tích mô hình tổng hợp") || t.includes("tổng hợp")) return "Comprehensive Analysis";
-    if (t.includes("thực hành")) return "Practical";
-    if (t.includes("vấn đáp")) return "Oral Exam";
-    if (t.includes("đồ án") || t.includes("dự án")) return "Project";
-    if (t.includes("bài tập lớn")) return "Assignment";
-    return type;
-};
-
 export function ReviewerFeedback({ feedbackJson }: { feedbackJson: string }) {
     let feedback: any = null;
     try {
@@ -58,7 +44,7 @@ export function ReviewerFeedback({ feedbackJson }: { feedbackJson: string }) {
                             <Sparkles size={18} className="text-indigo-500" />
                             <p className="text-sm font-black text-indigo-900 uppercase tracking-widest">AI Audit Details</p>
                         </div>
-                        
+
                         <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100">
                             <p className="text-indigo-900 font-medium leading-relaxed">{aiResult.conclusion}</p>
                         </div>
@@ -78,10 +64,10 @@ export function ReviewerFeedback({ feedbackJson }: { feedbackJson: string }) {
 function SectionCard({ section }: { section: any }) {
     const [expanded, setExpanded] = useState(section.status === 'FAIL');
     const isFail = section.status === 'FAIL';
-    
+
     return (
         <div className={`rounded-2xl border overflow-hidden ${isFail ? 'border-rose-200 bg-white' : 'border-emerald-200 bg-white'}`}>
-            <button 
+            <button
                 onClick={() => setExpanded(!expanded)}
                 className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${isFail ? 'bg-rose-50/50 hover:bg-rose-50' : 'bg-emerald-50/30 hover:bg-emerald-50/60'}`}
             >
@@ -130,7 +116,7 @@ function SectionCard({ section }: { section: any }) {
                             <div className="grid gap-2">
                                 {section.unmappedAssessments.map((a: any, i: number) => (
                                     <div key={i} className="flex gap-3 bg-rose-50/50 rounded-xl p-3 border border-rose-100 items-start">
-                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{translateAssessmentType(a.questionType) || `Assessment ${i+1}`}</span>
+                                        <span className="text-[10px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg h-fit shrink-0 mt-0.5">{a.questionType || `Assessment ${i+1}`}</span>
                                         <p className="text-xs text-rose-700 leading-relaxed font-medium">{a.suggestion}</p>
                                     </div>
                                 ))}
@@ -146,7 +132,7 @@ function SectionCard({ section }: { section: any }) {
 function StatCard({ stat }: { stat: any }) {
     const isError = stat.type === 'error';
     const isOk = stat.type === 'ok';
-    
+
     return (
         <div className={`p-3 rounded-xl border ${isError ? 'bg-rose-50 border-rose-100' : isOk ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
             <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isError ? 'text-rose-400' : isOk ? 'text-emerald-500' : 'text-gray-400'}`}>{stat.label}</p>

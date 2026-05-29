@@ -478,7 +478,7 @@ export default function PDCMReviewAssessmentsPage({
         <AssessmentViewModal
           assessment={assessments[expandedIndex]}
           onClose={() => setExpandedIndex(null)}
-          subjectId={syllabusData?.data?.subjectId || taskData?.syllabus?.subjectId}
+          subjectId={syllabusData?.data?.subjectId || (taskData?.syllabus as any)?.subjectId}
           syllabusId={syllabusId}
         />
       )}
