@@ -791,9 +791,14 @@ export default function MajorDetailContent() {
                         curriculums.map((curr) => (
                           <tr
                             key={curr.curriculumId}
-                            className="hover:bg-[#f8f9fa] transition-colors"
+                            className="hover:bg-[#f8f9fa] transition-colors cursor-pointer group"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`,
+                              )
+                            }
                           >
-                            <td className="px-8 py-5 text-sm font-bold text-[#1d5c42]">
+                            <td className="px-8 py-5 text-sm font-bold text-[#1d5c42] group-hover:underline">
                               {curr.curriculumCode}
                             </td>
                             <td className="px-8 py-5 text-sm font-semibold text-[#2d3335]">
@@ -819,26 +824,27 @@ export default function MajorDetailContent() {
                                 {curr.status?.replace(/_/g, " ")}
                               </span>
                             </td>
-                            <td className="px-8 py-5 text-right">
+                            <td className="px-8 py-5 text-right flex items-center justify-end">
                               {curr.status === "FINAL_REVIEW" ? (
                                 <button
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     router.push(
                                       `/dashboard/vice-principal/curriculums/${curr.curriculumId}/review`,
-                                    )
-                                  }
+                                    );
+                                  }}
                                   className="inline-flex items-center gap-2 px-5 py-2 bg-purple-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-sm active:scale-95"
                                 >
                                   Final Review
                                   <ChevronRight size={14} strokeWidth={2.5} />
                                 </button>
                               ) : (
-                                <button
-                                  className="text-[#adb3b5] p-2 rounded-lg cursor-default"
-                                  disabled
-                                >
-                                  <ChevronRight size={18} />
-                                </button>
+                                <div className="p-2">
+                                  <ChevronRight
+                                    size={18}
+                                    className="text-[#adb3b5] group-hover:text-[#2d6a4f] group-hover:translate-x-1 transition-all"
+                                  />
+                                </div>
                               )}
                             </td>
                           </tr>
