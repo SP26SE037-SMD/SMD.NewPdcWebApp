@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Save, FileText, Calendar, Tag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { MajorService, Major } from "@/services/major.service";
+
 import { DocumentService, DocumentDetail } from "@/services/document.service";
 import { TaskService } from "@/services/task.service";
 
@@ -20,7 +20,6 @@ export default function CreateTaskModal({
   onSuccess,
 }: CreateTaskModalProps) {
   const [loading, setLoading] = useState(false);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [documents, setDocuments] = useState<DocumentDetail[]>([]);
   
   const [taskName, setTaskName] = useState("");
@@ -29,27 +28,16 @@ export default function CreateTaskModal({
   const [action, setAction] = useState("CREATE");
   const [priority, setPriority] = useState("HIGH");
   const [type, setType] = useState("CURRICULUM");
-  const [selectedMajorId, setSelectedMajorId] = useState("");
   const [targetId, setTargetId] = useState("");
 
   const assignTo = "a7e97b05-4fce-4f65-9b01-bd8cafaf3a9a"; // Hardcoded VP assignment
 
   useEffect(() => {
     if (isOpen) {
-      fetchMajors();
+      fetchDocuments();
       resetForm();
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (selectedMajorId) {
-      fetchDocuments(selectedMajorId);
-      setTargetId(""); // Reset document selection when major changes
-    } else {
-      setDocuments([]);
-      setTargetId("");
-    }
-  }, [selectedMajorId]);
 
   const resetForm = () => {
     setTaskName("");
@@ -58,22 +46,12 @@ export default function CreateTaskModal({
     setAction("CREATE");
     setPriority("HIGH");
     setType("CURRICULUM");
-    setSelectedMajorId("");
     setTargetId("");
   };
 
-  const fetchMajors = async () => {
+  const fetchDocuments = async () => {
     try {
-      const response = await MajorService.getMajors({ searchBy: "all", size: 100 });
-      setMajors(response.data?.content || []);
-    } catch (error) {
-      toast.error("Failed to load majors.");
-    }
-  };
-
-  const fetchDocuments = async (majorId: string) => {
-    try {
-      const response = await DocumentService.getAllDocuments({ majorId, status: "ACTIVE" });
+      const response = await DocumentService.getAllDocuments({ status: "ACTIVE" });
       setDocuments(response.data || []);
     } catch (error) {
       toast.error("Failed to load documents.");
@@ -238,39 +216,19 @@ export default function CreateTaskModal({
                       <span className="text-sm font-bold text-on-surface-variant">Target Document Selection</span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                          1. Select Major <span className="text-error">*</span>
+                          Select Document <span className="text-error">*</span>
                         </label>
                         <select
                           required
-                          value={selectedMajorId}
-                          onChange={(e) => setSelectedMajorId(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-outline/20 focus:border-primary outline-none transition-all text-sm font-medium bg-white"
-                        >
-                          <option value="" disabled>-- Select a major --</option>
-                          {majors.map((major) => (
-                            <option key={major.majorId} value={major.majorId}>
-                              {major.majorCode} - {major.majorName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                          2. Select Document <span className="text-error">*</span>
-                        </label>
-                        <select
-                          required
-                          disabled={!selectedMajorId}
                           value={targetId}
                           onChange={(e) => setTargetId(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-outline/20 focus:border-primary outline-none transition-all text-sm font-medium bg-white disabled:bg-outline/5 disabled:cursor-not-allowed"
+                          className="w-full px-3 py-2 rounded-lg border border-outline/20 focus:border-primary outline-none transition-all text-sm font-medium bg-white"
                         >
                           <option value="" disabled>
-                            {selectedMajorId ? "-- Select a document --" : "Select major first"}
+                            -- Select a document --
                           </option>
                           {documents.map((doc) => (
                             <option key={doc.documentId} value={doc.documentId}>

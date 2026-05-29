@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { X, Check, ArrowRight, ShieldAlert, AlertTriangle, FileText, CalendarDays, ClipboardCheck, AlignLeft } from "lucide-react";
+import { X, Check, ArrowRight, ShieldAlert, AlertTriangle, FileText, CalendarDays, ClipboardCheck, AlignLeft, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { SyllabusService, CompareResult } from "@/services/syllabus.service";
 import { MaterialTextCompareModal } from './MaterialTextCompareModal';
 import { MaterialService, MaterialItem } from "@/services/material.service";
@@ -164,6 +165,33 @@ export default function SyllabusCompareModal({
       return aPart - bPart;
     });
   }, [oldAssessmentsRes, newAssessmentsRes]);
+
+  const assessmentResultPayload = useMemo(() => {
+    return {
+      addedAssessments: assessmentPairs.filter(p => p.status === 'ADDED').map(p => `${p.new?.categoryName}-${p.new?.part}`),
+      removedAssessments: assessmentPairs.filter(p => p.status === 'REMOVED').map(p => `${p.old?.categoryName}-${p.old?.part}`),
+      changedAssessments: assessmentPairs.filter(p => p.status === 'MODIFIED').map(p => {
+        const changes = [];
+        if (p.old?.weight !== p.new?.weight) changes.push(`Weight changed from ${p.old?.weight} to ${p.new?.weight}`);
+        if (p.old?.completionCriteria !== p.new?.completionCriteria) changes.push(`Completion Criteria changed`);
+        return {
+          assessmentIdentifier: `${p.old?.categoryName}-${p.old?.part}`,
+          detailChanges: changes
+        };
+      })
+    };
+  }, [assessmentPairs]);
+
+  const { mutate: saveCompare, isPending: isSaving } = useMutation({
+    mutationFn: () => SyllabusService.saveCompareVersion(oldSyllabusId, newSyllabusId, assessmentResultPayload, compareResult),
+    onSuccess: () => {
+      toast.success("Comparison saved successfully");
+      onClose();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to save comparison");
+    }
+  });
 
 
   if (!isOpen) return null;
@@ -399,12 +427,21 @@ export default function SyllabusCompareModal({
           </div>
 
           {/* Footer */}
-          <div className="px-8 py-5 border-t border-zinc-100 bg-zinc-50/50 flex justify-end shrink-0">
+          <div className="px-8 py-5 border-t border-zinc-100 bg-zinc-50/50 flex justify-end gap-3 shrink-0">
             <button
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors shadow-sm"
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors shadow-sm disabled:opacity-50"
             >
               Close
+            </button>
+            <button
+              onClick={() => saveCompare()}
+              disabled={isSaving || !compareResult}
+              className="px-6 py-2.5 rounded-xl bg-primary border border-transparent text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving && <Loader2 size={16} className="animate-spin" />}
+              Save Compare
             </button>
           </div>
         </motion.div>

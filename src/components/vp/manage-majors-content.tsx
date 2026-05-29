@@ -88,8 +88,8 @@ export default function ManageMajorsContent() {
 
   // Fetch Majors
   const { data: majorResponse, isLoading: isMajorsLoading } = useQuery({
-    queryKey: ["majors", search, selectedStatus],
-    queryFn: () => MajorService.getMajors({ search, status: selectedStatus }),
+    queryKey: ["majors", search],
+    queryFn: () => MajorService.getMajors({ search, size: 1000 }),
   });
 
   // Fetch all Curriculums to count them per major
@@ -391,6 +391,16 @@ export default function ManageMajorsContent() {
     underReview: majors.filter((m) => m.status === "INTERNAL_REVIEW").length,
     complianceRate: "94.2%",
   };
+
+  const statusCounts = useMemo(() => {
+    return {
+      "": majors.length,
+      "DRAFT": majors.filter((m) => m.status === "DRAFT").length,
+      "INTERNAL_REVIEW": majors.filter((m) => m.status === "INTERNAL_REVIEW").length,
+      "PUBLISHED": majors.filter((m) => m.status === "PUBLISHED").length,
+      "ARCHIVED": majors.filter((m) => m.status === "ARCHIVED").length,
+    };
+  }, [majors]);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#2d3335]">
@@ -1082,19 +1092,31 @@ export default function ManageMajorsContent() {
 
                 {/* Tabs System */}
                 <div className="flex p-1 bg-[#ebeef0] rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar">
-                  {statusTabs.map((tab) => (
-                    <button
-                      key={tab.value}
-                      onClick={() => setSelectedStatus(tab.value)}
-                      className={`px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                        selectedStatus === tab.value
-                          ? "bg-white text-[#1d5c42] shadow-sm"
-                          : "text-[#5a6062] hover:text-[#2d3335]"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+                  {statusTabs.map((tab) => {
+                    const isActive = selectedStatus === tab.value;
+                    return (
+                      <button
+                        key={tab.value}
+                        onClick={() => setSelectedStatus(tab.value)}
+                        className={`px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${
+                          isActive
+                            ? "bg-white text-[#1d5c42] shadow-sm"
+                            : "text-[#5a6062] hover:text-[#2d3335]"
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span
+                          className={`py-0.5 px-2 rounded-lg text-[10px] font-black ${
+                            isActive
+                              ? "bg-[#1d5c42]/10 text-[#1d5c42]"
+                              : "bg-[#adb3b5]/20 text-[#5a6062]"
+                          }`}
+                        >
+                          {statusCounts[tab.value as keyof typeof statusCounts] ?? 0}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1230,9 +1252,7 @@ export default function ManageMajorsContent() {
                                   }}
                                   className="text-[#2d6a4f] hover:bg-[#b1f0ce]/30 p-2 rounded-lg transition-colors"
                                 >
-                                  <span className="material-symbols-outlined">
-                                    more_vert
-                                  </span>
+                                  <Eye size={20} />
                                 </button>
                               </div>
                             </td>
