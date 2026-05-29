@@ -318,4 +318,33 @@ export const SyllabusService = {
 
     return response.json();
   },
+
+  async saveCompareVersion(
+    oldId: string,
+    newId: string,
+    assessmentResult: any,
+    analysis: any
+  ): Promise<ApiResponse<unknown>> {
+    const searchParams = new URLSearchParams();
+    searchParams.append("oldId", oldId);
+    searchParams.append("newId", newId);
+    searchParams.append("assessmentResult", JSON.stringify(assessmentResult));
+    searchParams.append("analysis", JSON.stringify(analysis));
+
+    const response = await fetch(
+      `/api/syllabus/save-compare-version?${searchParams.toString()}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { accept: "*/*" },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to save compare version");
+    }
+
+    return response.json();
+  },
 };

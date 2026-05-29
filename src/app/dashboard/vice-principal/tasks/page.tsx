@@ -284,7 +284,7 @@ export default function VPTasksPage() {
                   </tr>
                 ) : tasks.length > 0 ? (
                   tasks.map((task, idx) => {
-                    const assignTo = (task as any).assignTo;
+                    const assignTo = task.account?.accountId ? task.account : null;
                     return (
                     <motion.tr
                       key={task.taskId}
