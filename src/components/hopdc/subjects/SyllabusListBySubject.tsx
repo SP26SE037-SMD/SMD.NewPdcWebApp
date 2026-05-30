@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -21,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
   ARCHIVED: "bg-zinc-100 text-zinc-500 border-zinc-200",
 };
 import SyllabusCompareModal from "./SyllabusCompareModal";
+import SyllabusCompareHistoryModal from "./SyllabusCompareHistoryModal";
 
 export default function SyllabusListBySubject({ subjectId, hideHeader = false }: { subjectId: string; hideHeader?: boolean }) {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [selectedSyllabusIds, setSelectedSyllabusIds] = useState<string[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Fetch Subject details
   const { data: subjectResp, isLoading: subjectLoading } = useQuery({
@@ -47,10 +49,50 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   const syllabuses = useMemo(() => syllabiResp?.data || [], [syllabiResp?.data]);
 
+  useEffect(() => {
+    if (syllabuses.length > 0 && selectedSyllabusIds.length === 0 && !isCompareMode) {
+      const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
+      if (pubSyllabus) {
+        const archivedSyllabuses = syllabuses.filter((s) => s.status === "ARCHIVED");
+        if (archivedSyllabuses.length > 0) {
+          const pubDate = new Date(pubSyllabus.approvedDate || pubSyllabus.createdAt || 0).getTime();
+          const closestArchived = archivedSyllabuses.reduce((prev, curr) => {
+            const prevDate = new Date(prev.approvedDate || prev.createdAt || 0).getTime();
+            const currDate = new Date(curr.approvedDate || curr.createdAt || 0).getTime();
+            return Math.abs(currDate - pubDate) < Math.abs(prevDate - pubDate) ? curr : prev;
+          });
+          setSelectedSyllabusIds([pubSyllabus.syllabusId, closestArchived.syllabusId]);
+          setIsCompareMode(true);
+        }
+      }
+    }
+  }, [syllabuses, isCompareMode, selectedSyllabusIds.length]);
+
   const filteredSyllabuses = useMemo(() => {
-    if (statusFilter === "ALL") return syllabuses;
-    return syllabuses.filter((s) => s.status === statusFilter);
+    let result = syllabuses;
+    if (statusFilter !== "ALL") {
+      result = result.filter((s) => s.status === statusFilter);
+    }
+    return result.sort((a, b) => {
+      const dateA = new Date(a.approvedDate || a.createdAt || 0).getTime();
+      const dateB = new Date(b.approvedDate || b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
   }, [syllabuses, statusFilter]);
+
+  const { canGetPrompts, publishedSyllabusId } = useMemo(() => {
+    if (selectedSyllabusIds.length !== 2) return { canGetPrompts: false, publishedSyllabusId: null };
+    const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
+    const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
+    if (!s1 || !s2) return { canGetPrompts: false, publishedSyllabusId: null };
+
+    const statuses = [s1.status, s2.status];
+    if (statuses.includes("PUBLISHED") && statuses.includes("ARCHIVED")) {
+      const pubId = s1.status === "PUBLISHED" ? s1.syllabusId : s2.syllabusId;
+      return { canGetPrompts: true, publishedSyllabusId: pubId };
+    }
+    return { canGetPrompts: false, publishedSyllabusId: null };
+  }, [selectedSyllabusIds, syllabuses]);
 
   const handleToggleSelect = (id: string) => {
     setSelectedSyllabusIds((prev) => {
@@ -106,19 +148,16 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
-          <button
-            onClick={() => {
-              setIsCompareMode(!isCompareMode);
-              if (isCompareMode) setSelectedSyllabusIds([]);
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all border ${isCompareMode
-                ? "bg-zinc-100 border-zinc-200 text-zinc-700"
-                : "bg-primary text-white border-primary shadow-lg shadow-primary/25 hover:bg-primary/90"
-              }`}
-          >
-            <GitCompare size={16} />
-            {isCompareMode ? "Cancel Compare" : "Compare"}
-          </button>
+
+          {!isCompareMode && (
+            <button
+              onClick={() => setIsCompareMode(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all border bg-primary text-white border-primary shadow-lg shadow-primary/25 hover:bg-primary/90"
+            >
+              <GitCompare size={16} />
+              Compare
+            </button>
+          )}
         </div>
       </div>
 
@@ -135,13 +174,23 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
               <p className="text-sm font-bold text-blue-800">
                 Select exactly 2 syllabuses to compare ({selectedSyllabusIds.length}/2 selected)
               </p>
-              <button
-                onClick={handleCompareClick}
-                disabled={selectedSyllabusIds.length !== 2}
-                className="px-6 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                Compare Selected
-              </button>
+              <div className="flex items-center gap-3">
+                {canGetPrompts && (
+                  <button
+                    onClick={() => setIsHistoryModalOpen(true)}
+                    className="px-6 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    Get Compare Prompts
+                  </button>
+                )}
+                <button
+                  onClick={handleCompareClick}
+                  disabled={selectedSyllabusIds.length !== 2}
+                  className="px-6 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Compare Selected
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -232,7 +281,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
-                    {syllabus.minAvgGrade ?? "N/A"}
+                    {syllabus.minAvgGrade ?? syllabus.minAvgMarkToPass ?? "N/A"}
                   </span>
                 </div>
 
@@ -262,6 +311,14 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           newSyllabusId={selectedSyllabusIds[1]}
           oldSyllabusName={getSyllabusName(selectedSyllabusIds[0])}
           newSyllabusName={getSyllabusName(selectedSyllabusIds[1])}
+        />
+      )}
+
+      {isHistoryModalOpen && publishedSyllabusId && (
+        <SyllabusCompareHistoryModal
+          isOpen={isHistoryModalOpen}
+          onClose={() => setIsHistoryModalOpen(false)}
+          newSyllabusId={publishedSyllabusId}
         />
       )}
     </div>
