@@ -48,6 +48,9 @@ export function TaskRow({
     if (task.status === "OVERDUE") {
       return false; // Overdue tasks cannot have subtasks added
     }
+    if (task.isAccepted === true || task.isAccepted === false) {
+      return false; // Cannot add subtask if task is accepted or rejected (isAccepted is true/false)
+    }
     if (task.type === "SUBJECT") {
       return true; // Can create syllabus task
     }
@@ -55,7 +58,7 @@ export function TaskRow({
       return true; // Can create review task
     }
     return false; // Type SYLLABUS, action REVIEW cannot add task
-  }, [task.type, task.action, task.status]);
+  }, [task.type, task.action, task.status, task.isAccepted]);
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -249,13 +252,27 @@ export function TaskRow({
             </div>
           )}
 
-          {/* Clickable Name */}
-          <span
-            className="font-semibold text-zinc-800 hover:text-emerald-600 transition-colors truncate max-w-full"
-            title={task.taskName}
-          >
-            {task.taskName}
-          </span>
+          {/* Clickable Name & Badges */}
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0 max-w-full">
+            <span
+              className="font-semibold text-zinc-800 hover:text-emerald-600 transition-colors truncate"
+              title={task.taskName}
+            >
+              {task.taskName}
+            </span>
+            {task.isAccepted === true && (
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md uppercase tracking-wider shrink-0">
+                <Check size={8} className="stroke-[3]" />
+                Accepted
+              </span>
+            )}
+            {task.isAccepted === false && (
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[8px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-md uppercase tracking-wider shrink-0">
+                <AlertCircle size={8} />
+                Rejected
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Assignee */}

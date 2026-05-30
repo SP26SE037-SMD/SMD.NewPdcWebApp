@@ -53,7 +53,7 @@ export default function SyllabusWorkspaceLayout({
                     <AlertCircle size={48} className="mx-auto mb-4 text-red-500/80" />
                     <h2 className="text-xl font-bold mb-2 text-zinc-900">Syllabus Not Found</h2>
                     <p className="text-sm mb-8 text-zinc-500">The syllabus does not exist or you don&apos;t have access.</p>
-                    <button onClick={() => router.push('/dashboard/hopdc/subjects')}
+                    <button onClick={() => router.push('/dashboard/hopdc')}
                         className="w-full py-3 rounded-xl font-bold text-sm bg-[#2d6a4f] text-white hover:bg-[#1d5c42] transition-colors">
                         Return to Subjects
                     </button>

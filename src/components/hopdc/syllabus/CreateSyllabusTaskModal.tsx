@@ -65,7 +65,7 @@ export function CreateSyllabusTaskModal({
   const [description, setDescription] = useState(
     initialData?.description || "",
   );
-  const [priority, setPriority] = useState(initialData?.priority || "MEDIUM");
+  const [priority, setPriority] = useState(initialData?.priority || "NORMAL");
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
   const [assignTo, setAssignTo] = useState(initialData?.assignTo || "");
   const cleanSubjectName = useMemo(() => {
@@ -87,7 +87,7 @@ export function CreateSyllabusTaskModal({
     if (isOpen) {
       setTaskName(initialData?.taskName || "");
       setDescription(initialData?.description || "");
-      setPriority(initialData?.priority || "MEDIUM");
+      setPriority(initialData?.priority || "NORMAL");
       setDueDate(initialData?.dueDate || "");
       setAssignTo(initialData?.assignTo || "");
       setSyllabusName(defaultSyllabusName);
@@ -107,11 +107,13 @@ export function CreateSyllabusTaskModal({
   const filteredAccounts = useMemo(() => {
     return accounts.filter((acc) => {
       const role = acc.roleName?.toUpperCase();
-      const isAllowedRole = role === "PDCM" || role === "COLLABORATOR";
+      // Exclude Collaborators if mode is REVIEW
+      const isAllowedRole =
+        mode === "REVIEW" ? role === "PDCM" : (role === "PDCM" || role === "COLLABORATOR");
       const isNotExcluded = acc.accountId !== initialData?.excludeAccountId;
       return isAllowedRole && isNotExcluded;
     });
-  }, [accounts, initialData?.excludeAccountId]);
+  }, [accounts, initialData?.excludeAccountId, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +168,7 @@ export function CreateSyllabusTaskModal({
         taskName: taskName.trim(),
         description: description.trim(),
         action: mode,
-        priority: (priority === "MEDIUM" ? "NORMAL" : priority === "CRITICAL" ? "URGENT" : priority) as any,
+        priority: priority as any,
         type: "SYLLABUS",
         targetId: finalTargetId || undefined,
         rootTaskId,
@@ -428,9 +430,9 @@ export function CreateSyllabusTaskModal({
             <div className="flex gap-2">
               {[
                 { id: "LOW", color: "emerald" },
-                { id: "MEDIUM", color: "blue" },
+                { id: "NORMAL", color: "blue" },
                 { id: "HIGH", color: "amber" },
-                { id: "CRITICAL", color: "rose" },
+                { id: "URGENT", color: "rose" },
               ].map((p) => (
                 <button
                   key={p.id}

@@ -218,7 +218,7 @@ export default function SubjectDetail({
             </p>
           </div>
           <button
-            onClick={() => router.push("/dashboard/hopdc/subjects")}
+            onClick={() => router.push("/dashboard/hopdc")}
             className="w-full py-4 bg-zinc-900 text-white text-xs font-black uppercase tracking-widest rounded-[10px] hover:bg-primary transition-all shadow-lg shadow-zinc-200"
           >
             Back to Warehouse
@@ -243,7 +243,7 @@ export default function SubjectDetail({
             <button
               onClick={() => {
                 if (viewMode === "SYLLABUS") setViewMode("DETAIL");
-                else router.push("/dashboard/hopdc/subjects");
+                else router.push("/dashboard/hopdc");
               }}
               className="w-11 h-11 flex items-center justify-center bg-white border border-zinc-100 rounded-[10px] text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group active:scale-95"
             >

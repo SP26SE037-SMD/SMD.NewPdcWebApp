@@ -26,7 +26,7 @@ export default function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [action, setAction] = useState("CREATE");
-  const [priority, setPriority] = useState("HIGH");
+  const [priority, setPriority] = useState("NORMAL");
   const [type, setType] = useState("CURRICULUM");
   const [targetId, setTargetId] = useState("");
 
@@ -44,7 +44,7 @@ export default function CreateTaskModal({
     setDescription("");
     setDueDate("");
     setAction("CREATE");
-    setPriority("HIGH");
+    setPriority("NORMAL");
     setType("CURRICULUM");
     setTargetId("");
   };
@@ -173,8 +173,9 @@ export default function CreateTaskModal({
                     onChange={(e) => setPriority(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-outline/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm font-medium bg-white"
                   >
+                    <option value="URGENT">Urgent</option>
                     <option value="HIGH">High</option>
-                    <option value="MEDIUM">Medium</option>
+                    <option value="NORMAL">Normal</option>
                     <option value="LOW">Low</option>
                   </select>
                 </div>
