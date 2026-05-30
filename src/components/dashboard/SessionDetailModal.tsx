@@ -17,6 +17,8 @@ interface SessionItem {
     content?: string;
     material?: any[];
     block?: any[];
+    sessionTopic?: string;
+    sessionType?: string;
 }
 
 interface SessionDetailModalProps {
@@ -46,52 +48,7 @@ export function SessionDetailModal({ isOpen, onClose, session, subjectId }: Sess
     const mappings = mappingRes?.data || [];
     const subjectClos = subjectClosRes?.data?.content || [];
 
-    // Parse content summary
-    let contentParts: Array<{ heading: string; detail: string }> = [];
 
-    // Priority 1: New API structure with material and block arrays
-    if (Array.isArray(session.material) && session.material.length > 0) {
-        contentParts = session.material.map((mat: any) => {
-            const blocksForMat = Array.isArray(session.block)
-                ? session.block
-                    .map((b: any) => ({ content: b.content || b.blockName || 'Value', idx: b.idx }))
-                    .sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0))
-                : [];
-
-            return {
-                heading: mat.materialName || 'Chapter',
-                detail: blocksForMat.map(b => b.content).join('\n') || 'Selected'
-            };
-        });
-    }
-    // Priority 2: Fallback to single block list if no material but blocks exist
-    else if (Array.isArray(session.block) && session.block.length > 0) {
-        contentParts = [{
-            heading: 'Session Content',
-            detail: session.block
-                .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
-                .map(b => b.content || b.blockName)
-                .join('\n')
-        }];
-    }
-    // Priority 3: Legacy JSON content field
-    else if (session.content) {
-        try {
-            const parsed = JSON.parse(session.content);
-            if (Array.isArray(parsed)) {
-                contentParts = parsed.map((item: any) => ({
-                    heading: item.materialTitle || 'Section',
-                    detail: (item.blockNames && item.blockNames.length > 0)
-                        ? item.blockNames.join(', ')
-                        : (item.blockName || 'Selected')
-                }));
-            }
-        } catch {
-            if (session.content.trim()) {
-                contentParts = [{ heading: 'Content', detail: session.content.substring(0, 500) }];
-            }
-        }
-    }
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
@@ -140,7 +97,13 @@ export function SessionDetailModal({ isOpen, onClose, session, subjectId }: Sess
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6 border-t border-slate-100">
-                        <div className="md:col-span-3 space-y-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Session Type</label>
+                            <div className="text-base text-slate-900 font-bold px-5 py-3 bg-slate-50 rounded-xl border border-slate-200 uppercase tracking-widest">
+                                {session.sessionType || 'Theory'}
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Teaching Method</label>
                             <div className="text-base text-slate-900 font-bold px-5 py-3 bg-slate-50 rounded-xl border border-slate-200">
                                 {session.teachingMethods || 'Lecture'}
@@ -148,27 +111,18 @@ export function SessionDetailModal({ isOpen, onClose, session, subjectId }: Sess
                         </div>
                     </div>
 
-                    {/* Instructional Content */}
-                    <section className="space-y-5">
-                        <h3 className="text-base font-black text-slate-900 flex items-center gap-3 uppercase tracking-wider">
-                            <div className="w-2 h-5 bg-slate-900 rounded-full"></div>
-                            Instructional Content
-                        </h3>
-                        <div className="space-y-4">
-                            {contentParts.length > 0 ? (
-                                contentParts.map((part, idx) => (
-                                    <div key={idx} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-colors">
-                                        <h4 className="text-sm font-black text-slate-900 uppercase mb-3 tracking-wide">{part.heading}</h4>
-                                        <p className="text-base text-slate-800 leading-relaxed whitespace-pre-line font-medium">{part.detail}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-base italic text-slate-500 bg-slate-50 p-6 rounded-xl text-center border border-dashed border-slate-200">
-                                    No specific content blocks assigned.
-                                </p>
-                            )}
-                        </div>
-                    </section>
+                    {/* Topic */}
+                    {session.sessionTopic && (
+                        <section className="space-y-4">
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-3 uppercase tracking-wider">
+                                <div className="w-2 h-5 bg-slate-900 rounded-full"></div>
+                                Topic
+                            </h3>
+                            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm text-base text-slate-800 leading-relaxed font-medium whitespace-pre-line">
+                                {session.sessionTopic}
+                            </div>
+                        </section>
+                    )}
 
                     {/* Description */}
                     {session.description && (
