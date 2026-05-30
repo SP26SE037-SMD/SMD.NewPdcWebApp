@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SubjectDetail } from "@/components/hopdc/subject/SubjectDetail";
+import  SubjectDetail  from "@/components/hopdc/subject/SubjectDetail";
 import { CloPloMapping } from "@/components/hopdc/subject/CloPloMapping";
 import { useSubjectMappingLogic } from "@/components/hopdc/hook/CloPloMappingLogic";
 import { ArrowLeft } from "lucide-react";

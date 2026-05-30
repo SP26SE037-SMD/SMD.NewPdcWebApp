@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { SubjectDetail } from "@/components/hopdc/subject/SubjectDetail";
+import  SubjectDetail from "@/components/hopdc/subject/SubjectDetail";
 import { CreateCloModal } from "@/components/hopdc/subject/CreateCloModal";
 import { UpdateCloModal } from "@/components/hopdc/subject/UpdateCloModal";
 import { CreateSyllabusModal } from "@/components/hopdc/subject/CreateSyllabusModal";
