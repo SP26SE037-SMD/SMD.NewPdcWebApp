@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  ArrowLeft, BookOpen, Filter, Search, Plus, 
+import {
+  BookOpen, Filter,
   GitCompare, CheckSquare, Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 import SyllabusCompareModal from "./SyllabusCompareModal";
 
-export default function SyllabusListBySubject({ subjectId }: { subjectId: string }) {
+export default function SyllabusListBySubject({ subjectId, hideHeader = false }: { subjectId: string; hideHeader?: boolean }) {
   const router = useRouter();
 
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -44,8 +44,8 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
     queryFn: () => SyllabusService.getSyllabiBySubject(subjectId),
     enabled: !!subjectId,
   });
-  
-  const syllabuses = syllabiResp?.data || [];
+
+  const syllabuses = useMemo(() => syllabiResp?.data || [], [syllabiResp?.data]);
 
   const filteredSyllabuses = useMemo(() => {
     if (statusFilter === "ALL") return syllabuses;
@@ -75,37 +75,21 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] bg-background">
-      {/* Header */}
-      <div className="px-8 py-6 border-b border-border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/dashboard/hopdc/subjects")}
-            className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
+    <div className="flex flex-col h-full bg-transparent">
+      <div className="px-8 pt-6 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {!hideHeader ? (
           <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-              {subjectLoading ? (
-                <span className="w-32 h-6 bg-zinc-100 rounded animate-pulse" />
-              ) : (
-                subject?.subjectName || "Subject Details"
-              )}
-            </h1>
-            <p className="text-sm font-bold text-muted uppercase tracking-widest mt-1">
-              {subjectLoading ? (
-                <span className="w-20 h-4 bg-zinc-100 rounded inline-block animate-pulse" />
-              ) : (
-                subject?.subjectCode || ""
-              )}
-            </p>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400">Subject</p>
+            <h2 className="mt-2 text-2xl font-black text-zinc-900">
+              {subjectLoading ? "Loading subject..." : subject ? `${subject.subjectCode} - ${subject.subjectName}` : subjectId}
+            </h2>
           </div>
-        </div>
+        ) : (
+          <div />
+        )}
 
         <div className="flex items-center gap-3">
-          {/* Status Filter */}
-          <div className="flex items-center gap-2 bg-zinc-50 rounded-xl p-1 border border-zinc-100">
+          <div className="flex items-center gap-2 bg-white rounded-xl p-1 border border-zinc-100 shadow-sm">
             <Filter size={14} className="ml-2 text-zinc-400" />
             <select
               value={statusFilter}
@@ -122,17 +106,15 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
-
           <button
             onClick={() => {
               setIsCompareMode(!isCompareMode);
               if (isCompareMode) setSelectedSyllabusIds([]);
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all border ${
-              isCompareMode
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all border ${isCompareMode
                 ? "bg-zinc-100 border-zinc-200 text-zinc-700"
                 : "bg-primary text-white border-primary shadow-lg shadow-primary/25 hover:bg-primary/90"
-            }`}
+              }`}
           >
             <GitCompare size={16} />
             {isCompareMode ? "Cancel Compare" : "Compare"}
@@ -175,7 +157,7 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                 Select
               </div>
             )}
-            <div className={`${isCompareMode ? 'col-span-4' : 'col-span-5'} text-xs font-black uppercase tracking-widest text-zinc-500`}>
+            <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
               Syllabus Name
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
@@ -190,7 +172,6 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
             <div className="col-span-1" />
           </div>
 
-          {/* Table Body */}
           {syllabiLoading ? (
             <div className="py-20 text-center flex flex-col items-center">
               <div className="w-8 h-8 border-4 border-zinc-200 border-t-primary rounded-full animate-spin mb-4" />
@@ -203,11 +184,10 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${
-                  isCompareMode && selectedSyllabusIds.includes(syllabus.syllabusId)
+                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${isCompareMode && selectedSyllabusIds.includes(syllabus.syllabusId)
                     ? "bg-blue-50/30"
                     : "hover:bg-zinc-50/60"
-                }`}
+                  }`}
                 onClick={() => {
                   if (isCompareMode) {
                     handleToggleSelect(syllabus.syllabusId);
@@ -224,11 +204,10 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                         handleToggleSelect(syllabus.syllabusId);
                       }}
                       disabled={selectedSyllabusIds.length === 2 && !selectedSyllabusIds.includes(syllabus.syllabusId)}
-                      className={`transition-colors ${
-                        selectedSyllabusIds.includes(syllabus.syllabusId)
+                      className={`transition-colors ${selectedSyllabusIds.includes(syllabus.syllabusId)
                           ? "text-blue-600"
                           : "text-zinc-300 hover:text-zinc-500 disabled:opacity-30"
-                      }`}
+                        }`}
                     >
                       {selectedSyllabusIds.includes(syllabus.syllabusId) ? (
                         <CheckSquare size={20} />
@@ -238,25 +217,25 @@ export default function SyllabusListBySubject({ subjectId }: { subjectId: string
                     </button>
                   </div>
                 )}
-                
-                <div className={`${isCompareMode ? 'col-span-4' : 'col-span-5'} space-y-0.5`}>
+
+                <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} space-y-0.5`}>
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
                 </div>
-                
+
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
                     {syllabus.createdAt ? new Date(syllabus.createdAt).toLocaleDateString() : "N/A"}
                   </span>
                 </div>
-                
+
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
                     {syllabus.minAvgGrade ?? "N/A"}
                   </span>
                 </div>
-                
+
                 <div className="col-span-2">
                   <span
                     className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border whitespace-nowrap shadow-sm ${STATUS_COLORS[syllabus.status || "DRAFT"] || STATUS_COLORS.DRAFT}`}
