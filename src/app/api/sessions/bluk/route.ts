@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok && data) {
             data._debug_raw = text;
-            if (!data.message) {
+            if (response.status === 400 && Array.isArray(data.errors)) {
+                const fieldErrors = data.errors.map((e: any) => `${e.field}: ${e.defaultMessage}`).join(', ');
+                data.message = `Validation Error: ${fieldErrors}`;
+            } else if (!data.message) {
                 data.message = `Backend Error ${response.status}: ${text.slice(0, 100)}`;
             }
         }

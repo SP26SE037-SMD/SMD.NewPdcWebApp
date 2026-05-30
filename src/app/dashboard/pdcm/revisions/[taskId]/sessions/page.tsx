@@ -806,9 +806,10 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
+                                                cloIds: draftSession.cloIds || [],
                                             };
                                             console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
@@ -849,9 +850,10 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
+                                                cloIds: draftSession.cloIds || [],
                                             };
 
                                             let res: any = null;

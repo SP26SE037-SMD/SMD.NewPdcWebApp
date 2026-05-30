@@ -779,9 +779,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
+                                                cloIds: draftSession.cloIds || [],
                                             };
                                             console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
@@ -822,9 +823,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
+                                                cloIds: draftSession.cloIds || [],
                                             };
 
                                             let res: any = null;
@@ -1047,11 +1049,12 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                         _rowNum: index + 1,
                                                         syllabusId,
                                                         sessionNumber: rawNumber,
-                                                        sessionTitle: rawTitle,
+                                                        sessionTitle: rawTitle || `Session ${rawNumber}`,
                                                         duration: rawDuration,
-                                                        teachingMethods: rawMethods,
-                                                        sessionTopic: rawTopic,
-                                                        sessionType: rawType,
+                                                        teachingMethods: rawMethods || 'Lecture',
+                                                        sessionTopic: rawTopic || 'General Topic',
+                                                        sessionType: rawType || 'THEORY',
+                                                        cloIds: [],
                                                         content: "[]",
                                                     };
                                                 });
