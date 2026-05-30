@@ -30,6 +30,7 @@ export interface Account {
         createdAt?: string;
       };
   departmentId?: string;
+  avatarUrl?: string | null;
   isActive: boolean;
   createdAt: string;
   lastLogin: string;
@@ -43,6 +44,7 @@ export interface User {
   fullName: string;
   role: string;
   departmentId?: string;
+  avatarUrl?: string | null;
   permissions?: string[];
 }
 
@@ -100,6 +102,7 @@ export function accountToUser(account: Account): User {
     fullName: account.fullName,
     role: roleString,
     departmentId: account.departmentId,
+    avatarUrl: account.avatarUrl || null,
   };
 }
 

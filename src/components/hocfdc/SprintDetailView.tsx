@@ -650,16 +650,16 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               }
             : subtaskModalMode === "REVIEW"
             ? {
-                 taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                 description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                priority: "MEDIUM",
+                taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                priority: "NORMAL",
                 dueDate: subtaskParentTask?.deadline,
                 excludeAccountId: subtaskParentTask?.account?.accountId,
               }
             : {
                 taskName: `CREATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
                 description: `Draft syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                priority: "MEDIUM",
+                priority: "NORMAL",
               }
         }
       />

@@ -55,7 +55,7 @@ export function CreateSingleTaskModal({
   // Base Form State
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("MEDIUM");
+  const [priority, setPriority] = useState("NORMAL");
   const [dueDate, setDueDate] = useState("");
   const [assignTo, setAssignTo] = useState("");
 
@@ -126,7 +126,7 @@ export function CreateSingleTaskModal({
       setSyllabusName("");
       setTaskName("");
       setDescription("");
-      setPriority("MEDIUM");
+      setPriority("NORMAL");
       setDueDate("");
       setAssignTo("");
       setError("");
@@ -288,7 +288,7 @@ export function CreateSingleTaskModal({
         taskName: taskName.trim(),
         description: description.trim(),
         action,
-        priority: (priority === "MEDIUM" ? "NORMAL" : priority === "CRITICAL" ? "URGENT" : priority) as any,
+        priority: priority as any,
         type: "SYLLABUS",
         targetId: finalTargetId || undefined,
         rootTaskId: null,
@@ -630,7 +630,7 @@ export function CreateSingleTaskModal({
                   Priority
                 </label>
                 <div className="grid grid-cols-4 gap-2">
-                  {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((p) => (
+                  {["LOW", "NORMAL", "HIGH", "URGENT"].map((p) => (
                     <button
                       key={p}
                       type="button"

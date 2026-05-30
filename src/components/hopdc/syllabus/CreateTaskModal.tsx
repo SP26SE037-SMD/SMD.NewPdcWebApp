@@ -37,7 +37,7 @@ export const CreateTaskModal = ({
   const [taskData, setTaskData] = useState<CreateTaskModalForm>({
     taskName: "",
     description: "",
-    priority: "MEDIUM",
+    priority: "NORMAL",
     status: "DRAFT",
     deadline: new Date().toISOString().split("T")[0],
     type: "TASK",
@@ -275,7 +275,7 @@ export const CreateTaskModal = ({
                 Priority
               </span>
               <div className="flex gap-2">
-                {["LOW", "MEDIUM", "HIGH"].map((p) => (
+                {["LOW", "NORMAL", "HIGH", "URGENT"].map((p) => (
                   <button
                     key={p}
                     onClick={() => setTaskData({ ...taskData, priority: p })}

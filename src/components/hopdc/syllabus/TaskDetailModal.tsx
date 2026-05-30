@@ -153,9 +153,23 @@ export function TaskDetailModal({
   const filteredAccounts = useMemo(() => {
     return pdcmAccounts.filter((acc) => {
       const role = acc.roleName?.toUpperCase();
-      return role === "PDCM" || role === "COLLABORATOR";
+      const isReviewSyllabus = task?.type === "SYLLABUS" && task?.action === "REVIEW";
+      
+      let isAllowedRole = isReviewSyllabus ? role === "PDCM" : (role === "PDCM" || role === "COLLABORATOR");
+      
+      if (isReviewSyllabus) {
+        // Exclude assignee of the parent task
+        const parentTask = taskHistory && taskHistory.length > 0
+          ? taskHistory[taskHistory.length - 1]
+          : null;
+        if (parentTask && parentTask.account?.accountId) {
+          isAllowedRole = isAllowedRole && acc.accountId !== parentTask.account.accountId;
+        }
+      }
+      
+      return isAllowedRole;
     });
-  }, [pdcmAccounts]);
+  }, [pdcmAccounts, task?.type, task?.action, taskHistory]);
 
   // Reset editing mode when modal is toggled or task changes
   useEffect(() => {
@@ -443,8 +457,11 @@ export function TaskDetailModal({
 
   // Workflow action restrictions
   const canAddSubtask = useMemo(() => {
-    if (task.status === TASK_STATUS.DONE || task.status === TASK_STATUS.OVERDUE) {
-      return false; // Cannot add subtask if task is already Done or Overdue
+    if (task.status === TASK_STATUS.OVERDUE) {
+      return false; // Cannot add subtask if task is Overdue
+    }
+    if (task.isAccepted === true || task.isAccepted === false) {
+      return false; // Cannot add subtask if task is accepted or rejected (isAccepted is true/false)
     }
     if (currentUser?.role === "HOCFDC") {
       return false; // HoCFDC cannot add task
@@ -458,7 +475,7 @@ export function TaskDetailModal({
       return true; // Can create review task
     }
     return false; // Type SYLLABUS, action REVIEW cannot add task
-  }, [task.type, task.action, task.status, currentUser?.role]);
+  }, [task.type, task.action, task.status, currentUser?.role, task.isAccepted]);
 
   const handleAddSubtask = () => {
     if (!canAddSubtask) return;
@@ -808,9 +825,9 @@ export function TaskDetailModal({
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer bg-white"
                   >
                     <option value="LOW">LOW</option>
-                    <option value="NORMAL">MEDIUM</option>
+                    <option value="NORMAL">NORMAL</option>
                     <option value="HIGH">HIGH</option>
-                    <option value="URGENT">CRITICAL</option>
+                    <option value="URGENT">URGENT</option>
                   </select>
                 ) : (
                   <div className="flex items-center gap-1.5 font-bold text-xs">
