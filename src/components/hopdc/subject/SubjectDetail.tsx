@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
   Target,
   Layers,
   GraduationCap,
@@ -16,8 +15,6 @@ import {
   Edit2,
   Info,
   BookOpen,
-  Users,
-  CheckSquare,
   Building2,
   FileText,
 } from "lucide-react";
