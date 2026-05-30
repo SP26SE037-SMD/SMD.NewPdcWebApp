@@ -12,7 +12,6 @@ import { RegulationService } from '@/services/regulation.service';
 import { CloPloService } from '@/services/cloplo.service';
 import { MaterialService, MaterialItem } from '@/services/material.service';
 import { MappingService, CloSessionMapping } from '@/services/mapping.service';
-import { SessionContentSelector } from './session-content-selector';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import * as XLSX from 'xlsx';
@@ -666,7 +665,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                            {isSingleValidated && singleValidationErrors.length > 0 && (
+                            {isSingleValidated && singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
                                 <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
                                     <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                     <div>

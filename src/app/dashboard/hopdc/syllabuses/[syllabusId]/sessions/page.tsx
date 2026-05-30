@@ -12,7 +12,6 @@ import { RegulationService } from '@/services/regulation.service';
 import { CloPloService } from '@/services/cloplo.service';
 import { MaterialService, MaterialItem } from '@/services/material.service';
 import { MappingService, CloSessionMapping } from '@/services/mapping.service';
-import { SessionContentSelector } from './session-content-selector';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import * as XLSX from 'xlsx';

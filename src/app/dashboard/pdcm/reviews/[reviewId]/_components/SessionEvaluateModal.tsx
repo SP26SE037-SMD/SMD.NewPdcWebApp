@@ -47,6 +47,40 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
     const toggleSection = (id: string) =>
         setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
 
+    const fillCommentWithAI = () => {
+        if (!aiResult) return;
+        
+        let text = `${aiResult.conclusion}\n\n`;
+        
+        aiResult.sections?.forEach((section: any) => {
+            if (section.status === 'FAIL' || section.warnings?.length > 0 || section.unmappedClos?.length > 0 || section.unmappedMaterials?.length > 0) {
+                text += `--- ${section.title} ---\n`;
+                
+                section.warnings?.forEach((w: any) => {
+                    text += `⚠️ Warning: ${w.label}\n`;
+                    if (w.detail) text += `   ${w.detail}\n`;
+                });
+                
+                if (section.unmappedClos?.length > 0) {
+                    text += `❌ Unmapped CLOs:\n`;
+                    section.unmappedClos.forEach((c: any) => {
+                        text += `   - ${c.code}: ${c.suggestion}\n`;
+                    });
+                }
+                
+                if (section.unmappedMaterials?.length > 0) {
+                    text += `❌ Unmapped Materials:\n`;
+                    section.unmappedMaterials.forEach((m: any, i: number) => {
+                        text += `   - ${m.title || `Material ${i+1}`}: ${m.suggestion}\n`;
+                    });
+                }
+                text += '\n';
+            }
+        });
+        
+        setReviewerComment(text.trim());
+    };
+
     const handleSave = () => {
         if (status === 'FAIL' && !reviewerComment.trim() && !aiResult) {
             showToast("Please provide a reason for rejection.", "error");
@@ -64,8 +98,8 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
     };
 
     const statTypeStyle = (type: string) => ({
-        wrapper: type === 'error' ? 'bg-rose-50 border-rose-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
-        value: type === 'error' ? 'text-rose-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
+        wrapper: type === 'error' ? 'bg-amber-50 border-amber-200' : type === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200',
+        value: type === 'error' ? 'text-amber-600' : type === 'ok' ? 'text-emerald-600' : 'text-slate-700',
         label: 'text-gray-500',
     });
 
@@ -127,21 +161,21 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                                     {/* Section Header — clickable to expand/collapse */}
                                     <button
                                         onClick={() => toggleSection(section.id)}
-                                        className={`w-full px-4 py-3 flex items-center justify-between transition-colors ${section.status === 'FAIL' ? 'bg-rose-50 hover:bg-rose-100' : 'bg-gray-50 hover:bg-gray-100'
+                                        className={`w-full px-4 py-3 flex items-center justify-between transition-colors ${section.status === 'FAIL' ? 'bg-amber-50 hover:bg-amber-100' : 'bg-gray-50 hover:bg-gray-100'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <span className={`${section.status === 'FAIL' ? 'text-rose-500' : 'text-gray-400'}`}>
+                                            <span className={`${section.status === 'FAIL' ? 'text-amber-600' : 'text-gray-400'}`}>
                                                 {sectionIcon(section.id)}
                                             </span>
                                             <p className="text-sm font-bold text-gray-800">{section.title}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${section.status === 'FAIL'
-                                                    ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                                    ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                                     : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                                 }`}>
-                                                {section.status === 'FAIL' ? '✗  Invalid' : '✓  Valid'}
+                                                {section.status === 'FAIL' ? '⚠  Warning' : '✓  Valid'}
                                             </span>
                                             {expandedSections[section.id]
                                                 ? <ChevronUp size={14} className="text-gray-400" />
@@ -190,15 +224,15 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                                             {section.unmappedClos?.length > 0 && (
                                                 <div>
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                                        Unmapped CLOs <span className="text-rose-500">({section.unmappedClos.length})</span>
+                                                        Unmapped CLOs <span className="text-amber-600">({section.unmappedClos.length})</span>
                                                     </p>
                                                     <div className="space-y-1.5">
                                                         {section.unmappedClos.map((c: any, i: number) => (
-                                                            <div key={i} className="flex items-start gap-3 border border-rose-100 rounded-xl px-3.5 py-3 bg-rose-50">
-                                                                <span className="text-[10px] font-black text-rose-400 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0 uppercase">CLO</span>
+                                                            <div key={i} className="flex items-start gap-3 border border-amber-200 rounded-xl px-3.5 py-3 bg-amber-50/50">
+                                                                <span className="text-[10px] font-black text-amber-600 bg-amber-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0 uppercase">CLO</span>
                                                                 <div>
-                                                                    <p className="text-xs font-bold text-rose-800">{c.code}</p>
-                                                                    <p className="text-[11px] text-rose-600 mt-0.5">{c.suggestion}</p>
+                                                                    <p className="text-xs font-bold text-amber-900">{c.code}</p>
+                                                                    <p className="text-[11px] text-amber-700 mt-0.5">{c.suggestion}</p>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -210,15 +244,15 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                                             {section.unmappedSessions?.length > 0 && (
                                                 <div>
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                                        Unmapped Sessions <span className="text-rose-500">({section.unmappedSessions.length})</span>
+                                                        Unmapped Sessions <span className="text-amber-600">({section.unmappedSessions.length})</span>
                                                     </p>
                                                     <div className="space-y-1.5">
                                                         {section.unmappedSessions.map((s: any, i: number) => (
-                                                            <div key={i} className="flex items-start gap-3 border border-rose-100 rounded-xl px-3.5 py-3 bg-rose-50">
-                                                                <span className="text-[10px] font-black text-rose-400 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
+                                                            <div key={i} className="flex items-start gap-3 border border-amber-200 rounded-xl px-3.5 py-3 bg-amber-50/50">
+                                                                <span className="text-[10px] font-black text-amber-600 bg-amber-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
                                                                 <div>
-                                                                    <p className="text-xs font-bold text-rose-800">{s.title}</p>
-                                                                    <p className="text-[11px] text-rose-600 mt-0.5">{s.suggestion}</p>
+                                                                    <p className="text-xs font-bold text-amber-900">{s.title}</p>
+                                                                    <p className="text-[11px] text-amber-700 mt-0.5">{s.suggestion}</p>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -280,9 +314,20 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
 
                     {/* ── Reviewer Comment ─────────────────── */}
                     <div id="session-reviewer-comment">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                            {status === 'PASS' ? 'Additional Notes (Optional)' : 'Reason for Rejection *'}
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+                                {status === 'PASS' ? 'Additional Notes (Optional)' : 'Reason for Rejection *'}
+                            </label>
+                            {status === 'FAIL' && aiResult && (
+                                <button
+                                    onClick={fillCommentWithAI}
+                                    className="text-[10px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shadow-sm uppercase tracking-wider"
+                                >
+                                    <Sparkles size={12} />
+                                    Use AI Feedback
+                                </button>
+                            )}
+                        </div>
                         <textarea
                             value={reviewerComment}
                             onChange={(e) => setReviewerComment(e.target.value)}

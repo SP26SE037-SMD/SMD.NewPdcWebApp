@@ -30,9 +30,9 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
     const StatCard = ({ stat }: { stat: { label: string; value: string; type: string } }) => {
         const Icon = stat.type === 'error' ? TrendingDown : stat.type === 'ok' ? TrendingUp : Minus;
         const styles = {
-            error: { bg: 'bg-rose-50 border-rose-200',      val: 'text-rose-600',    icon: 'text-rose-400',    label: 'text-rose-400'    },
-            ok:    { bg: 'bg-emerald-50 border-emerald-200', val: 'text-emerald-600', icon: 'text-emerald-400', label: 'text-emerald-500' },
-            info:  { bg: 'bg-gray-50 border-gray-200',      val: 'text-gray-800',    icon: 'text-gray-400',    label: 'text-gray-400'    },
+            error: { bg: 'bg-amber-50 border-amber-200', val: 'text-amber-600', icon: 'text-amber-500', label: 'text-amber-600' },
+            ok: { bg: 'bg-emerald-50 border-emerald-200', val: 'text-emerald-600', icon: 'text-emerald-400', label: 'text-emerald-500' },
+            info: { bg: 'bg-gray-50 border-gray-200', val: 'text-gray-800', icon: 'text-gray-400', label: 'text-gray-400' },
         };
         const s = styles[stat.type as keyof typeof styles] || styles.info;
         return (
@@ -98,21 +98,19 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                             {/* Card header */}
                             <button
                                 onClick={() => setExpanded(p => ({ ...p, [section.id]: !p[section.id] }))}
-                                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${
-                                    section.status === 'FAIL' ? 'bg-rose-50/60 hover:bg-rose-50' : 'bg-emerald-50/40 hover:bg-emerald-50/60'
-                                }`}
+                                className={`w-full px-5 py-4 flex items-center justify-between transition-colors ${section.status === 'FAIL' ? 'bg-amber-50/60 hover:bg-amber-50' : 'bg-emerald-50/40 hover:bg-emerald-50/60'
+                                    }`}
                             >
                                 <div className="flex items-center gap-2.5">
                                     <SectionIcon id={section.id} />
                                     <p className="text-sm font-bold text-gray-800">{section.title}</p>
                                 </div>
                                 <div className="flex items-center gap-2.5">
-                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${
-                                        section.status === 'FAIL'
-                                            ? 'bg-rose-100 text-rose-600 border-rose-200'
+                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${section.status === 'FAIL'
+                                            ? 'bg-amber-100 text-amber-600 border-amber-200'
                                             : 'bg-emerald-100 text-emerald-600 border-emerald-200'
-                                    }`}>
-                                        {section.status === 'FAIL' ? '✗  Issues found' : '✓  Looks good'}
+                                        }`}>
+                                        {section.status === 'FAIL' ? '⚠  Warning' : '✓  Looks good'}
                                     </span>
                                     {expanded[section.id]
                                         ? <ChevronUp size={14} className="text-gray-400" />
@@ -151,14 +149,14 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                     {section.unmappedClos?.length > 0 && (
                                         <div className="space-y-2">
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                Unmapped CLOs <span className="text-rose-500">({section.unmappedClos.length})</span>
+                                                Unmapped CLOs <span className="text-amber-600">({section.unmappedClos.length})</span>
                                             </p>
                                             {section.unmappedClos.map((c: any, i: number) => (
-                                                <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3 bg-rose-50 border border-rose-200">
-                                                    <span className="text-[10px] font-black text-rose-500 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">CLO</span>
+                                                <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3 bg-amber-50 border border-amber-200">
+                                                    <span className="text-[10px] font-black text-amber-600 bg-amber-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">CLO</span>
                                                     <div>
-                                                        <p className="text-xs font-bold text-rose-700">{c.code}</p>
-                                                        <p className="text-[11px] text-rose-600 mt-0.5">{c.suggestion}</p>
+                                                        <p className="text-xs font-bold text-amber-800">{c.code}</p>
+                                                        <p className="text-[11px] text-amber-700 mt-0.5">{c.suggestion}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -169,14 +167,14 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                     {section.unmappedAssessments?.length > 0 && (
                                         <div className="space-y-2">
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                Unmapped Assessments <span className="text-rose-500">({section.unmappedAssessments.length})</span>
+                                                Unmapped Assessments <span className="text-amber-600">({section.unmappedAssessments.length})</span>
                                             </p>
                                             {section.unmappedAssessments.map((a: any, i: number) => (
-                                                <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3 bg-rose-50 border border-rose-200">
-                                                    <span className="text-[10px] font-black text-rose-500 bg-rose-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
+                                                <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3 bg-amber-50 border border-amber-200">
+                                                    <span className="text-[10px] font-black text-amber-600 bg-amber-100 rounded-md px-1.5 py-0.5 mt-0.5 shrink-0">#{i + 1}</span>
                                                     <div>
-                                                        <p className="text-xs font-bold text-rose-700">{a.questionType || `Assessment ${i + 1}`}</p>
-                                                        <p className="text-[11px] text-rose-600 mt-0.5">{a.suggestion}</p>
+                                                        <p className="text-xs font-bold text-amber-800">{a.questionType || `Assessment ${i + 1}`}</p>
+                                                        <p className="text-[11px] text-amber-700 mt-0.5">{a.suggestion}</p>
                                                     </div>
                                                 </div>
                                             ))}
