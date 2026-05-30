@@ -14,7 +14,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { SPRINT_STATUS, SprintItem, SprintStatus } from "@/services/sprint.service";
+import {
+  SPRINT_STATUS,
+  SprintItem,
+  SprintStatus,
+} from "@/services/sprint.service";
 import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 
 // Helper for conditional timeline
@@ -72,7 +76,13 @@ interface SprintCardProps {
   departmentId?: string;
   formatDate: (d: string) => string;
   detailHref: string;
-  actions?: React.ReactNode | ((totalTasks: number, closedTasks: number, isLoading: boolean) => React.ReactNode);
+  actions?:
+    | React.ReactNode
+    | ((
+        totalTasks: number,
+        closedTasks: number,
+        isLoading: boolean,
+      ) => React.ReactNode);
   type?: string;
 }
 
@@ -120,7 +130,9 @@ export const SprintCard = ({
     >
       <div className="flex flex-col lg:flex-row items-stretch">
         {/* Left Status Bar */}
-        <div className={`w-1.5 ${config.color} group-hover:scale-y-110 transition-transform duration-500`} />
+        <div
+          className={`w-1.5 ${config.color} group-hover:scale-y-110 transition-transform duration-500`}
+        />
 
         {/* Main Header Info */}
         <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-gradient-to-r from-transparent to-zinc-50/30">
@@ -151,18 +163,20 @@ export const SprintCard = ({
             <Link
               href={detailHref}
               className="block text-xl font-extrabold text-[#2d342b] tracking-tight hover:text-[#409b43] transition-colors cursor-pointer"
-              style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+              style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
             >
               {sprint.sprintName}
             </Link>
 
             <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
               <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
-                <Calendar size={14} className="text-zinc-400" /> {formatDate(sprint.startDate)}
+                <Calendar size={14} className="text-zinc-400" />{" "}
+                {formatDate(sprint.startDate)}
               </span>
               <span className="text-zinc-300">→</span>
               <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
-                <Target size={14} className="text-zinc-400" /> {formatDate(sprint.endDate)}
+                <Target size={14} className="text-zinc-400" />{" "}
+                {formatDate(sprint.endDate)}
               </span>
             </div>
           </div>
@@ -177,10 +191,17 @@ export const SprintCard = ({
                   : "Total Days"}
               </p>
               <div className="flex items-end gap-1.5">
-                <span className="text-3xl font-black text-zinc-900 tracking-tighter leading-none" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                <span
+                  className="text-3xl font-black text-zinc-900 tracking-tighter leading-none"
+                  style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+                >
                   {sprint.status === SPRINT_STATUS.IN_PROGRESS
                     ? calculateRemainingDays(sprint.endDate)
-                    : Math.ceil((new Date(sprint.endDate).getTime() - new Date(sprint.startDate).getTime()) / (1000 * 3600 * 24))}
+                    : Math.ceil(
+                        (new Date(sprint.endDate).getTime() -
+                          new Date(sprint.startDate).getTime()) /
+                          (1000 * 3600 * 24),
+                      )}
                 </span>
                 <span className="text-[10px] font-bold text-zinc-400 uppercase mb-1">
                   Days
@@ -191,10 +212,11 @@ export const SprintCard = ({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <CheckCircle2 size={12} /> Deliverables
+                  <CheckCircle2 size={12} /> Department Tasks
                 </p>
                 <p className="text-xs font-black text-zinc-800">
-                  {closedTasks} <span className="text-zinc-300 mx-0.5">/</span> {totalTasks}
+                  {closedTasks} <span className="text-zinc-300 mx-0.5">/</span>{" "}
+                  {totalTasks}
                 </p>
               </div>
               {/* Progress Bar (Rounded) */}
@@ -215,10 +237,9 @@ export const SprintCard = ({
 
           {/* Section 3: Actions */}
           <div className="lg:col-span-3 flex justify-end items-center gap-2">
-            {typeof actions === "function" 
-              ? actions(totalTasks, closedTasks, isTasksLoading) 
-              : actions
-            }
+            {typeof actions === "function"
+              ? actions(totalTasks, closedTasks, isTasksLoading)
+              : actions}
           </div>
         </div>
       </div>
@@ -238,7 +259,7 @@ export const SprintCard = ({
                 <div className="flex items-center justify-center gap-3 text-zinc-400 py-8">
                   <Loader2 size={16} className="animate-spin" />
                   <span className="text-[11px] font-black uppercase tracking-widest">
-                    Loading Deliverables...
+                    Loading Department Tasks...
                   </span>
                 </div>
               ) : tasks.length > 0 ? (
@@ -281,7 +302,7 @@ export const SprintCard = ({
                     <Target size={20} className="text-zinc-300" />
                   </div>
                   <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                    No deliverables mapped to this sprint
+                    No department tasks mapped to this phase
                   </p>
                 </div>
               )}

@@ -284,7 +284,7 @@ export function FinalDecisionCard({
             `/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`,
           );
         } else {
-          router.push("/dashboard/hopdc/tasks");
+          router.push("/dashboard/hopdc/department-tasks");
         }
       }
 
@@ -482,7 +482,7 @@ export function FinalDecisionCard({
             `/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`,
           );
         } else {
-          router.push("/dashboard/hopdc/tasks");
+          router.push("/dashboard/hopdc/department-tasks");
         }
       }
 

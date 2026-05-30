@@ -120,7 +120,7 @@ export const SprintsReceive = ({
         curriculumId: sprint.curriculumId,
         sprintId: sprint.sprintId,
       });
-      return `/dashboard/hopdc/tasks?${params.toString()}`;
+      return `/dashboard/hopdc/department-tasks?${params.toString()}`;
     }
 
     const linkedCurriculumId = curriculumId || sprint.curriculumId;
@@ -140,7 +140,7 @@ export const SprintsReceive = ({
         hideTitle ? null : (
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-              Tasks
+              Department Tasks
             </h1>
           </div>
         )
