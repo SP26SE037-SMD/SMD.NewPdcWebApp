@@ -1,6 +1,6 @@
 "use client";
 
-import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySubject";
+import SubjectDetail from "@/components/hopdc/subject/SubjectDetail";
 import { useParams } from "next/navigation";
 
 export default function SubjectSyllabusPage() {
@@ -9,7 +9,7 @@ export default function SubjectSyllabusPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SyllabusListBySubject subjectId={subjectId} />
+      <SubjectDetail id={subjectId} />
     </div>
   );
 }
