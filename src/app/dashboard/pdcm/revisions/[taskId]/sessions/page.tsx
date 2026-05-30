@@ -809,7 +809,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
-                                                cloIds: draftSession.cloIds || [],
                                             };
                                             console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
@@ -853,7 +852,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
-                                                cloIds: draftSession.cloIds || [],
                                             };
 
                                             let res: any = null;
