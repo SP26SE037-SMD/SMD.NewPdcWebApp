@@ -841,8 +841,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 // CREATE (POST)
                                                 res = await SessionService.createSession(basePayload) as any;
                                                 
-                                                if (res?.data?.sessionId) {
-                                                    const createdSession = { ...draftSession, sessionId: res.data.sessionId };
+                                                if (res?.data?.sessionId || (Array.isArray(res?.data) && res.data[0]?.sessionId)) {
+                                                    const sessionId = res.data.sessionId || res.data[0].sessionId;
+                                                    const createdSession = { ...draftSession, sessionId };
                                                     dispatch(addSession({ syllabusId, session: createdSession }));
                                                 }
                                             }

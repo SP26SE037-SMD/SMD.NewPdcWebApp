@@ -101,7 +101,7 @@ export class SessionService {
     }
 
     static async bulkCreateSessions(payload: any[]) {
-        return apiClient.post('/api/sessions/bulk', payload);
+        return apiClient.post('/api/sessions/bluk', payload);
     }
 
     static async getSessions(syllabusId: string, page = 0, size = 100) {
@@ -109,7 +109,7 @@ export class SessionService {
     }
 
     static async createSession(payload: any) {
-        return apiClient.post('/api/sessions', payload);
+        return apiClient.post('/api/sessions/bluk', [payload]);
     }
 
     static async updateSession(sessionId: string, payload: any) {
