@@ -786,7 +786,10 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     const rawCategory = String(row['Category'] || row['category'] || '').trim();
                                                     const rawType = String(row['Type'] || row['type'] || '').trim();
                                                     const rawPart = Number(row['Part'] || row['part'] || 1);
-                                                    const rawWeight = Number(row['Weight'] || row['weight'] || 0);
+                                                    let rawWeight = Number(row['Weight'] || row['weight'] || 0);
+                                                    if (rawWeight > 0 && rawWeight <= 1) {
+                                                        rawWeight = Math.round(rawWeight * 100);
+                                                    }
                                                     const rawCriteria = String(row['Completion Criteria'] || row['completionCriteria'] || '').trim();
                                                     const rawDuration = Number(row['Duration'] || row['duration'] || 0);
                                                     const rawQuestionType = String(row['Question Type'] || row['questionType'] || '').trim();

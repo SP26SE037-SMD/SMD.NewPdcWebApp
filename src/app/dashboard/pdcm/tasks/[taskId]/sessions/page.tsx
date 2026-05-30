@@ -792,13 +792,13 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             if (!validateRes?.data?.errors || validateRes.data.errors.length === 0) {
                                                 showToast('Session data is valid!', 'success');
                                             } else {
-                                                showToast('Validation completed with suggestions', 'warning');
+                                                showToast('Validation completed with suggestions', 'success');
                                             }
                                         } catch (e: any) {
                                             console.error("Validation error:", e);
                                             setSingleValidationErrors(e?.response?.data?.data?.errors || []);
                                             setIsSingleValidated(true);
-                                            showToast('Validation completed with suggestions', 'warning');
+                                            showToast('Validation completed with suggestions', 'success');
                                         } finally {
                                             setIsSingleValidating(false);
                                         }
@@ -1029,7 +1029,15 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const firstSheetName = workbook.SheetNames[0];
                                                 const worksheet = workbook.Sheets[firstSheetName];
                                                 const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                                                const rows = rawRows.filter((r: any) => Object.keys(r).some((k: any) => r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== ''));
+                                                const rows = rawRows.filter((r: any) => {
+                                                    const hasData = Object.keys(r).some((k: any) => r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '');
+                                                    if (!hasData) return false;
+                                                    const title = String(r['Title'] || r['title'] || '').trim();
+                                                    const topic = String(r['Topic'] || r['topic'] || '').trim();
+                                                    // Require at least a title or a topic to consider it a valid session row
+                                                    if (!title && !topic) return false;
+                                                    return true;
+                                                });
 
                                                 if (!syllabusId) return;
 
@@ -1188,8 +1196,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                     <tr key={idx} className={`transition-colors ${hasError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-primary/5'}`}>
                                                         <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
                                                         <td className="px-4 py-3 font-bold text-slate-800">
-                                                            <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                            <textarea 
+                                                                rows={2}
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
                                                                 value={item.sessionTitle} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1225,8 +1234,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3 text-slate-600 text-xs">
-                                                            <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                            <textarea 
+                                                                rows={3}
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
                                                                 value={item.sessionTopic || ''} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1324,19 +1334,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 delete p.content; // Exclude internal state
                                                 return p;
                                             });
-
-                                            // Auto-download payload for debugging
-                                            try {
-                                                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `sessions_payload_${new Date().getTime()}.json`;
-                                                a.click();
-                                                URL.revokeObjectURL(url);
-                                            } catch (e) {
-                                                console.error("Failed to download payload", e);
-                                            }
 
                                             console.log("BULK CREATE PAYLOAD:", payload);
                                             await SessionService.bulkCreateSessions(payload);
