@@ -58,7 +58,6 @@ export function FinalDecisionCard({
     queryKey: ["create-syllabus-task-by-id-or-syllabus", taskId, syllabusId],
     queryFn: async () => {
       if (taskId) {
-        console.log("[FinalDecisionCard] Fetching task by taskId:", taskId);
         try {
           const res = await TaskService.getTaskById(taskId);
           const task = res?.data || null;
@@ -69,10 +68,6 @@ export function FinalDecisionCard({
               task.taskName?.toUpperCase().includes("REVIEW SYLLABUS")
             ) {
               if (task.rootTaskId) {
-                console.log(
-                  "[FinalDecisionCard] Task is a review task, fetching root task:",
-                  task.rootTaskId,
-                );
                 const rootRes = await TaskService.getTaskById(task.rootTaskId);
                 return rootRes?.data || null;
               }
@@ -84,10 +79,6 @@ export function FinalDecisionCard({
         }
       }
 
-      console.log(
-        "[FinalDecisionCard] Fetching tasks for syllabusId:",
-        syllabusId,
-      );
       if (!syllabusId) return null;
       try {
         // Try querying by syllabusId first via getTasks
@@ -99,9 +90,6 @@ export function FinalDecisionCard({
 
         // Fallback to targetId if syllabusId returned nothing
         if (list.length === 0) {
-          console.log(
-            "[FinalDecisionCard] No tasks found by syllabusId, trying targetId...",
-          );
           res = await TaskService.getTasks({
             targetId: syllabusId,
             size: 50,
@@ -109,7 +97,6 @@ export function FinalDecisionCard({
           list = res?.content || [];
         }
 
-        console.log("[FinalDecisionCard] API response tasks list:", list);
         // Prioritize active (not DONE/CANCELLED) syllabus tasks
         const activeSyllabusTask = list.find(
           (t) =>
@@ -125,7 +112,6 @@ export function FinalDecisionCard({
           list.find((t) => t.type === "SYLLABUS") ||
           list[0] ||
           null;
-        console.log("[FinalDecisionCard] Selected syllabus task:", matchedTask);
         return matchedTask;
       } catch (err) {
         console.error("[FinalDecisionCard] Error fetching tasks:", err);

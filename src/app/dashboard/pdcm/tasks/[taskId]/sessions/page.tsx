@@ -103,8 +103,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             
             const rawData = sessionDataRes?.data as any;
             const apiSessions: any[] = Array.isArray(rawData?.content) ? rawData.content : [];
-            
-            console.log('API Sessions Data received:', apiSessions);
 
             const finalSessions: SessionItem[] = apiSessions.map(apiSess => {
                 // Reconstruct content JSON from material/block mappings
@@ -176,7 +174,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         let isMounted = true;
         const fetchSessionMappings = async () => {
             if (draftSession?.sessionId && editingIndex !== null) {
-                console.log(`[FE] Fetching CLO mappings for Session: ${draftSession.sessionId}`);
                 try {
                     const res = await MappingService.getSessionMappings(draftSession.sessionId);
                     if (isMounted && res.data) {
@@ -254,7 +251,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             );
             const res = await MappingService.validateSessionMappings(syllabusId, payload);
             if (res.data) {
-                console.log("✅ Session mapping validation result received:", res.data);
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
                 showToast("Mapping validation complete", "success");
@@ -292,13 +288,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
             // 3. Execute Deletions
             if (deletions.length > 0) {
-                console.log(`🗑️ Deleting ${deletions.length} session mappings...`);
                 await Promise.all(deletions.map(m => MappingService.deleteSessionMapping(m.id)));
             }
 
             // 4. Execute Additions
             if (additions.length > 0) {
-                console.log(`➕ Adding ${additions.length} session mappings...`);
                 await MappingService.createSessionMappingsBatch(additions);
             }
             
@@ -447,7 +441,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             {mappingValidationResult && (
                                 <button
                                     onClick={() => {
-                                        console.log("🖱️ View Result clicked");
                                         setIsMappingResultModalOpen(true);
                                     }}
                                     className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d]/30 text-[#00966d] bg-[#00966d]/5 hover:bg-[#00966d]/10 relative z-50"
@@ -783,7 +776,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
                                             };
-                                            console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
                                             
                                             setSingleValidationErrors(validateRes?.data?.errors || []);
@@ -1118,9 +1110,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                 delete p.content; // Exclude internal state
                                                                 return p;
                                                             });
-                                                            console.log("VALIDATE PAYLOAD:", payload);
                                                             const res = await SessionService.validateSessions(syllabusId!, payload) as any;
-                                                            console.log("🔍 Session Validation Response:", res);
                                                             setValidationErrors(res?.data?.errors || []);
                                                             setRemainingQuotas(res?.data?.remainingQuotas || []);
                                                             setIsValidated(true);
@@ -1130,7 +1120,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                 showToast('Validation completed with suggestions', 'success');
                                                             }
                                                         } catch (error: any) {
-                                                            console.error("Validation Error:", error);
                                                             // Our apiClient throws error with .data property containing the JSON response
                                                             const errorData = error.data?.data || {};
                                                             setValidationErrors(errorData.errors || []);
@@ -1335,7 +1324,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 return p;
                                             });
 
-                                            console.log("BULK CREATE PAYLOAD:", payload);
                                             await SessionService.bulkCreateSessions(payload);
 
                                             showToast(`Successfully saved ${previewData.length} sessions`, 'success');
@@ -1503,7 +1491,6 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
     clos: any[],
     onClose: () => void 
 }) {
-    console.log("📦 Rendering SessionMappingValidationModal with result:", result);
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div 

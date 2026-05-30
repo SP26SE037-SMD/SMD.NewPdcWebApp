@@ -227,7 +227,6 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
                                     targetId: taskId,
                                     receivedById: taskData?.createdBy?.accountId || null
                                 };
-                                console.log("=== CREATE REQUEST PAYLOAD ===", requestPayload);
                                 await RequestService.createRequestV2(requestPayload);
 
                                 showToast("Syllabus configuration submitted to HoPDC successfully!", "success");

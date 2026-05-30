@@ -224,7 +224,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             );
             const res = await MappingService.validateAssessmentMappings(syllabusId, payload);
             if (res.data) {
-                console.log("✅ Mapping validation result received:", res.data);
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
                 showToast("Mapping validation complete", "success");
@@ -262,13 +261,11 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
             // 3. Execute Deletions
             if (deletions.length > 0) {
-                console.log(`🗑️ Deleting ${deletions.length} mappings...`);
                 await Promise.all(deletions.map(m => MappingService.deleteAssessmentMapping(m.id)));
             }
 
             // 4. Execute Additions
             if (additions.length > 0) {
-                console.log(`➕ Adding ${additions.length} mappings...`);
                 await MappingService.createAssessmentMappingsBatch(additions);
             }
             
@@ -431,7 +428,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                             {mappingValidationResult && (
                                 <button
                                     onClick={() => {
-                                        console.log("🖱️ View Result clicked");
                                         setIsMappingResultModalOpen(true);
                                     }}
                                     className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d]/30 text-[#00966d] bg-[#00966d]/5 hover:bg-[#00966d]/10 relative z-50"
@@ -778,10 +774,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
                                                 if (!syllabusId) return;
 
-                                                // Log available categories and types from API
-                                                console.log("📋 ASSESSMENT_CATEGORIES from API:", ASSESSMENT_CATEGORIES);
-                                                console.log("📋 ASSESSMENT_TYPES from API:", ASSESSMENT_TYPES);
-
                                                 const parsedAssessments = rows.map((row, index) => {
                                                     const rawCategory = String(row['Category'] || row['category'] || '').trim();
                                                     const rawType = String(row['Type'] || row['type'] || '').trim();
@@ -804,9 +796,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     // Match type: exact → includes → first fallback
                                                     const matchedType = ASSESSMENT_TYPES.find((t: any) => t.typeName.toLowerCase() === rawType.toLowerCase())
                                                         || ASSESSMENT_TYPES.find((t: any) => t.typeName.toLowerCase().includes(rawType.toLowerCase()) || rawType.toLowerCase().includes(t.typeName.toLowerCase()));
-
-                                                    if (!matchedCategory) console.warn(`⚠️ Row ${index + 1}: Category "${rawCategory}" not found in API`);
-                                                    if (!matchedType) console.warn(`⚠️ Row ${index + 1}: Type "${rawType}" not found in API`);
 
                                                     const finalCategoryName = matchedCategory?.categoryName || rawCategory || ASSESSMENT_CATEGORIES[0]?.categoryName || "";
                                                     const finalTypeName = matchedType?.typeName || rawType || ASSESSMENT_TYPES[0]?.typeName || "";
@@ -859,7 +848,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     };
                                                 });
                                                 
-                                                console.log("✅ PARSED ASSESSMENTS (preview):", parsedAssessments);
                                                 setPreviewData(parsedAssessments);
                                                 setIsValidated(false);
                                                 setValidationErrors([]);
@@ -910,7 +898,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                             delete p.typeName;
                                                             return p;
                                                         });
-                                                        console.log("VALIDATE ASSESSMENT PAYLOAD:", payload);
                                                         const res = await AssessmentService.validateAssessments(syllabusId, payload) as any;
                                                         setValidationErrors(res?.data?.errors || []);
                                                         setValidationSummary(res?.data?.summary || null);
@@ -1121,7 +1108,6 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 delete p.typeName;
                                                 return p;
                                             });
-                                            console.log("BULK CREATE ASSESSMENT PAYLOAD:", payload);
                                             await AssessmentService.bulkCreateAssessments(payload);
                                             showToast(`Successfully saved ${previewData.length} assessments`, 'success');
                                             setTimeout(() => { window.location.reload(); }, 500);
@@ -1198,14 +1184,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
         let isMounted = true;
         const fetchMappings = async () => {
             if (assessment.assessmentId) {
-                console.log(`[FE] Fetching CLO mappings for Assessment: ${assessment.assessmentId}`);
                 try {
                     const res = await MappingService.getAssessmentMappings(assessment.assessmentId);
                     if (isMounted && res.data) {
                         const dbMappings = res.data;
                         const dbCloIds = dbMappings.map(m => m.cloId);
-
-                        console.log(`[FE] Found ${dbCloIds.length} mappings in DB:`, dbCloIds);
 
                         setExistingMappings(dbMappings);
                         // Always sync CLO IDs from the database when opening the modal for an existing assessment
@@ -1232,7 +1215,6 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
     const handleSave = async () => {
         const url = assessment.assessmentId ? `/api/assessments/${assessment.assessmentId}` : '/api/assessments';
-        console.log("ASSESSMENT MODAL SAVE ATTEMPT - URL:", url, "Data:", assessment);
 
         if (!assessment.weight || Number(assessment.weight) <= 0) {
             showToast("Assessment weight is required and must be greater than 0%", "warning");
@@ -1486,7 +1468,6 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                                 gradingGuide: assessment.gradingGuide || "",
                                                 note: assessment.note || "",
                                             };
-                                            console.log("VALIDATE SINGLE ASSESSMENT PAYLOAD:", [validatePayload]);
                                             const res = await AssessmentService.validateAssessments(syllabusId, [validatePayload]) as any;
                                             setSingleValidationErrors(res?.data?.errors || []);
                                             setSingleValidationSummary(res?.data?.summary || null);
@@ -1706,7 +1687,6 @@ function MappingValidationModal({ result, assessments, onClose }: {
     assessments: AssessmentItem[],
     onClose: () => void 
 }) {
-    console.log("📦 Rendering MappingValidationModal with result:", result);
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div 
