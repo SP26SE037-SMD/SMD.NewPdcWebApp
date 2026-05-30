@@ -424,17 +424,17 @@ export default function CurriculumImportStep({ majorId, majorCode, onImportSucce
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-start gap-3 p-3 bg-red-50 text-red-700 rounded-xl border border-red-200">
-                        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-600" />
+                      <div className="flex items-start gap-3 p-3 bg-amber-50 text-amber-800 rounded-xl border border-amber-200">
+                        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
                         <div>
                           <h5 className="font-bold text-sm mb-0.5">Validation Failed</h5>
-                          <p className="text-xs opacity-90">Please fix the errors below and try uploading again.</p>
+                          <p className="text-xs opacity-90 text-amber-700">Please fix the errors below and try uploading again.</p>
                         </div>
                       </div>
                     )}
 
                     {!validationResult.isValid && validationResult.errors.length > 0 && !workbookData && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                         <ul className="list-disc pl-5 space-y-1">
                           {validationResult.errors.map((err, idx) => (
                             <li key={idx}><strong>{err.column}:</strong> {err.message}</li>
@@ -467,11 +467,11 @@ export default function CurriculumImportStep({ majorId, majorCode, onImportSucce
           className="w-full mt-4"
         >
           {validationResult && !validationResult.isValid && (
-            <div className="bg-red-50 text-red-700 px-6 py-4 rounded-t-2xl border border-red-200 flex items-center gap-2 mb-[-1px] relative z-10">
-              <AlertTriangle className="w-5 h-5 shrink-0 text-red-600" />
+            <div className="bg-amber-50 text-amber-800 px-6 py-4 rounded-t-2xl border border-amber-200 flex items-center gap-2 mb-[-1px] relative z-10">
+              <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600" />
               <div>
                 <h3 className="font-bold">Validation Errors Detected</h3>
-                <p className="text-sm opacity-90">Please review the highlighted cells below, correct them in your Excel file, and upload again.</p>
+                <p className="text-sm opacity-90 text-amber-700">Please review the highlighted cells below, correct them in your Excel file, and upload again.</p>
               </div>
             </div>
           )}
