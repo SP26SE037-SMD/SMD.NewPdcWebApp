@@ -40,7 +40,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
 
     const { data: sessionsRes, isLoading: isSessionsLoading } = useQuery({
         queryKey: ['pdcm-sessions', syllabusId],
-        queryFn: () => SessionService.getSessionsBySyllabusId(syllabusId || ""),
+        queryFn: () => SessionService.getSessions(syllabusId || "", 0, 100),
         enabled: !!syllabusId,
         staleTime: 5 * 60 * 1000,
     });
@@ -54,7 +54,8 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         );
     }
 
-    const sessions: any[] = Array.isArray((sessionsRes as any)?.data) ? (sessionsRes as any).data : [];
+    const rawData = sessionsRes?.data as any;
+    const sessions: any[] = Array.isArray(rawData?.content) ? rawData.content : (Array.isArray(rawData) ? rawData : []);
     console.log("=== SESSIONS DATA ===", sessionsRes, sessions);
     const sortedSessions = [...sessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
@@ -283,49 +284,16 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                     <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
                         <div className="col-span-1">ID</div>
                         <div className="col-span-3">Session Title</div>
-                        <div className="col-span-4">Content Summary</div>
+                        <div className="col-span-3">Topic</div>
+                        <div className="col-span-2">Type & Duration</div>
                         <div className="col-span-2">Teaching Method</div>
-                        <div className="col-span-2 text-right">View</div>
+                        <div className="col-span-1 text-right">View</div>
                     </div>
 
                     {/* Scrollable Sessions List Container */}
                     <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-2 custom-scrollbar space-y-2">
                         {sortedSessions.map((session: any) => {
                             const badge = getEvalBadge(session.sessionId);
-
-                            // Parse content summary from content field
-                            let contentParts: Array<{ heading: string; detail: string }> = [];
-
-                            if (Array.isArray(session.material) && session.material.length > 0) {
-                                // Extract materials and their corresponding blocks if any
-                                contentParts = session.material.map((mat: any) => {
-                                    const blocksForMat = Array.isArray(session.block)
-                                        ? session.block.map((b: any) => b.content || b.blockName || 'Value').join(', ')
-                                        : '';
-
-                                    return {
-                                        heading: mat.materialName || 'Chapter',
-                                        detail: blocksForMat || 'Selected'
-                                    };
-                                });
-                            } else if (session.content) {
-                                // Fallback to legacy content field
-                                try {
-                                    const parsed = JSON.parse(session.content);
-                                    if (Array.isArray(parsed)) {
-                                        contentParts = parsed.slice(0, 3).map((item: any) => ({
-                                            heading: item.materialTitle || 'Section',
-                                            detail: (item.blockNames && item.blockNames.length > 0)
-                                                ? item.blockNames.join(', ')
-                                                : (item.blockName || 'Selected')
-                                        }));
-                                    }
-                                } catch {
-                                    if (session.content.trim()) {
-                                        contentParts = [{ heading: 'Content', detail: session.content.substring(0, 120) }];
-                                    }
-                                }
-                            }
 
                             return (
                                 <div key={session.sessionId}
@@ -337,38 +305,30 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                                     <div className="col-span-1 font-mono text-sm font-bold" style={{ color: '#5a6157' }}>
                                         {session.sessionNumber}
                                     </div>
-                                    <div className="col-span-3">
-                                        <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                    <div className="col-span-3 pr-4">
+                                        <h4 className="text-sm font-black leading-tight uppercase tracking-tight line-clamp-2" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                             {session.sessionTitle || `Session ${session.sessionNumber}`}
                                         </h4>
-                                        <div className="flex items-center gap-2 mt-1" style={{ color: '#5a6157' }}>
-                                            <span className="text-[9px] font-bold text-slate-400">• {session.duration || 50} MIN</span>
-                                        </div>
                                     </div>
-                                    <div className="col-span-4 pr-8">
-                                        {contentParts.length > 0 ? (
-                                            <div className="space-y-2">
-                                                {contentParts.map((part, pi) => (
-                                                    <div key={pi}>
-                                                        <h5 className="text-[10px] font-black uppercase tracking-tighter mb-0.5" style={{ color: '#41683f' }}>
-                                                            {part.heading}
-                                                        </h5>
-                                                        <p className="text-sm line-clamp-2" style={{ color: 'rgba(90,97,87,0.8)' }}>
-                                                            {part.detail}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm italic" style={{ color: '#adb4a8' }}>No content assigned.</p>
-                                        )}
+                                    <div className="col-span-3 pr-4">
+                                        <p className="text-[13px] line-clamp-3 leading-snug whitespace-pre-line" style={{ color: 'rgba(90,97,87,0.8)' }}>
+                                            {session.sessionTopic || <span className="italic text-slate-300">No topic</span>}
+                                        </p>
+                                    </div>
+                                    <div className="col-span-2 flex flex-col gap-0.5 justify-center">
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+                                            {session.sessionType || 'Theory'}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                            {session.duration || 50} MIN
+                                        </span>
                                     </div>
                                     <div className="col-span-2">
-                                        <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded text-[9px] font-black uppercase tracking-widest">
+                                        <span className="px-2.5 py-1 bg-primary-100 text-primary-700 rounded-md text-[9px] font-black uppercase tracking-widest line-clamp-1 w-fit">
                                             {session.teachingMethods || 'Lecture'}
                                         </span>
                                     </div>
-                                    <div className="col-span-2 flex items-center justify-end">
+                                    <div className="col-span-1 flex items-center justify-end">
                                         <button
                                             onClick={() => {
                                                 setSelectedSession(session);
