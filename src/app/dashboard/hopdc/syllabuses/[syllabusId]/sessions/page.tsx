@@ -935,7 +935,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                             if (!res?.data?.errors || res.data.errors.length === 0) {
                                                                 showToast('All sessions are valid!', 'success');
                                                             } else {
-                                                                showToast('Validation completed with issues', 'error');
+                                                                showToast('Validation completed with suggestions', 'success');
                                                             }
                                                         } catch (error: any) {
                                                             console.error("Validation Error:", error);
