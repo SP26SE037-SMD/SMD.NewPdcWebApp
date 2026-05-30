@@ -32,6 +32,8 @@ interface Block {
     align?: 'left' | 'center' | 'right' | 'justify';
     color?: string;
     fontSize?: string;
+    listStyle?: 'decimal' | 'lower-alpha' | 'upper-roman';
+    indent?: number;
     originalContent?: string; // snapshot at load time to detect changes
     originalType?: BlockType;
 }
@@ -1321,6 +1323,14 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
         const doc = parser.parseFromString(html, 'text/html');
         const body = doc.body;
         const resultBlocks: Block[] = [];
+        let h2Count = 0;
+
+        const checkFullyBold = (element: Element, text: string) => {
+            if (!text) return false;
+            const boldNodes = Array.from(element.querySelectorAll('strong, b'));
+            const boldText = boldNodes.map(n => n.textContent).join('').trim();
+            return text.replace(/\s+/g, '') === boldText.replace(/\s+/g, '');
+        };
 
         const processNode = (node: Node) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -1329,7 +1339,7 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
 
             let type: BlockType = 'PARAGRAPH';
             let align: Block['align'] = 'left';
-            const content = el.innerHTML;
+            let content = el.innerHTML;
 
             // Extract alignment from style or classes (mapped via mammoth)
             if (el.style.textAlign) {
@@ -1346,19 +1356,20 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
             else if (tag === 'p') {
                 const text = typeof el.innerText === 'string' ? el.innerText.trim() : (el.textContent || '').trim();
                 if (text.length > 0) {
-                    const innerHtml = el.innerHTML.trim();
-                    const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace('<strong>', '').replace('</strong>', '').trim() === text) ||
-                        (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace('<b>', '').replace('</b>', '').trim() === text);
+                    const isFullyBold = checkFullyBold(el, text);
                     
                     const isChapter = /^Chapter\s+\d+/i.test(text) || /^Chương\s+\d+/i.test(text);
                     
                     // Nhận diện đánh số thủ công kiểu "1.", "a.", "I." 
                     const listMatch = text.match(/^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+(.*)/);
+                    const isRomanOrUpper = text.match(/^([IVX]+\.|[A-Z]\.)\s+(.*)/);
                     const bulletMatch = text.match(/^([\-\*•])\s+(.*)/);
 
                     if (isChapter) {
                         type = 'H1';
                     } else if (isFullyBold && text.length < 150) {
+                        type = 'H2';
+                    } else if (isRomanOrUpper) {
                         type = 'H2';
                     } else if (listMatch) {
                         type = 'ORDERED_LIST';
@@ -1376,26 +1387,68 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
             }
             else if (tag === 'ul' || tag === 'ol') {
                 const listType: BlockType = tag === 'ul' ? 'BULLET_LIST' : 'ORDERED_LIST';
+                const hasNestedLists = el.querySelector('ol, ul') !== null;
                 const items = el.querySelectorAll('li');
                 items.forEach(li => {
-                    const text = typeof li.innerText === 'string' ? li.innerText.trim() : (li.textContent || '').trim();
-                    const innerHtml = li.innerHTML.trim();
-                    const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace(/<strong>/g, '').replace(/<\/strong>/g, '').trim() === text) ||
-                        (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace(/<b>/g, '').replace(/<\/b>/g, '').trim() === text);
+                    let depth = 0;
+                    let curr = li.parentElement;
+                    while (curr && curr !== el) {
+                        if (curr.tagName === 'OL' || curr.tagName === 'UL') depth++;
+                        curr = curr.parentElement;
+                    }
+
+                    const clone = li.cloneNode(true) as HTMLElement;
+                    clone.querySelectorAll('ul, ol').forEach(nested => nested.remove());
+                    
+                    const text = (clone.textContent || '').trim();
+                    const isFullyBold = checkFullyBold(clone, text);
 
                     let liType: BlockType = listType;
+                    let listStyle: 'decimal' | 'lower-alpha' | 'upper-roman' = 'decimal';
+
                     if (resultBlocks.length === 0 && text.length > 0) {
                         liType = 'H1';
                     } else if (isFullyBold && text.length < 150) {
                         liType = 'H2';
+                    } else if (depth === 0 && hasNestedLists) {
+                        liType = 'H2';
                     }
 
+                    if (liType === 'ORDERED_LIST') {
+                        if (depth === 0 && !hasNestedLists) listStyle = 'decimal';
+                        else if (depth === 1) listStyle = 'decimal';
+                        else if (depth >= 2) listStyle = 'lower-alpha';
+                    }
+
+                    const innerHtml = clone.innerHTML.trim();
                     if (text.length > 0 || innerHtml.length > 0) {
+                        let finalContent = sanitizeBlockContent(clone.innerHTML);
+
+                        if (liType === 'H2') {
+                            h2Count++;
+                            const plainText = stripHtml(finalContent).trim();
+                            if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
+                                const toRoman = (num: number) => {
+                                    const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                                    let str = '';
+                                    for (let i of Object.keys(roman)) {
+                                        let q = Math.floor(num / roman[i as keyof typeof roman]);
+                                        num -= q * roman[i as keyof typeof roman];
+                                        str += i.repeat(q);
+                                    }
+                                    return str;
+                                };
+                                finalContent = `${toRoman(h2Count)}. ${finalContent}`;
+                            }
+                        }
+
                         resultBlocks.push({
                             id: crypto.randomUUID(),
                             type: liType,
-                            content: sanitizeBlockContent(li.innerHTML),
-                            align: align
+                            content: finalContent,
+                            align: align,
+                            listStyle,
+                            indent: depth
                         });
                     }
                 });
@@ -1438,11 +1491,60 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                 type = 'H1';
             }
 
+            let listStyleP: 'decimal' | 'lower-alpha' | 'upper-roman' = 'decimal';
+            let indentP = 0;
+
+            if (type === 'ORDERED_LIST') {
+                const plainText = stripHtml(content).trim();
+                const alphaMatch = plainText.match(/^([a-z]\.)\s+(.*)/);
+                const decimalMatch = plainText.match(/^(\d+[.)])\s+(.*)/);
+                
+                if (alphaMatch) {
+                    listStyleP = 'lower-alpha';
+                    indentP = 1; // Tab in once for a. b. c.
+                    // Strip the "a. " part
+                    content = content.replace(/^<[^>]+>/, '').replace(/^[a-z]\.\s/, '').trim();
+                } else if (decimalMatch) {
+                    listStyleP = 'decimal';
+                    indentP = 0;
+                    content = content.replace(/^<[^>]+>/, '').replace(/^\d+[.)]\s/, '').trim();
+                }
+            } else if (type === 'BULLET_LIST') {
+                const plainText = stripHtml(content).trim();
+                if (/^([\-\*•])\s+/.test(plainText)) {
+                    content = content.replace(/^<[^>]+>/, '').replace(/^([\-\*•])\s+/, '').trim();
+                }
+            }
+
+            let finalContent = sanitizeBlockContent(content);
+
+            // Handle H2 numbering
+            if (type === 'H2') {
+                h2Count++;
+                const plainText = stripHtml(finalContent).trim();
+                // Only prepend if it doesn't already start with a number like "1. "
+                if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
+                    const toRoman = (num: number) => {
+                        const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                        let str = '';
+                        for (let i of Object.keys(roman)) {
+                            let q = Math.floor(num / roman[i as keyof typeof roman]);
+                            num -= q * roman[i as keyof typeof roman];
+                            str += i.repeat(q);
+                        }
+                        return str;
+                    };
+                    finalContent = `${toRoman(h2Count)}. ${finalContent}`;
+                }
+            }
+
             resultBlocks.push({
                 id: crypto.randomUUID(),
                 type,
-                content: sanitizeBlockContent(content),
-                align: align
+                content: finalContent,
+                align: align,
+                listStyle: type === 'ORDERED_LIST' ? listStyleP : undefined,
+                indent: (type === 'ORDERED_LIST' || type === 'BULLET_LIST') ? indentP : undefined
             });
         };
 
@@ -1510,48 +1612,52 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
+                    {!(blocks.length > 1 || (blocks.length === 1 && stripHtml(blocks[0].content).trim() !== '')) && (
+                        <>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
 
-                        disabled={isImporting}
-                        className="px-6 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-[0.96] flex items-center gap-2 disabled:opacity-50"
-                        style={{
-                            background: '#ebf0e5',
-                            color: '#41683f',
-                            border: '1px solid #dee5d8'
-                        }}
-                        onMouseEnter={e => {
-                            if (!isImporting) {
-                                e.currentTarget.style.background = '#e1e8db';
-                                e.currentTarget.style.transform = 'translateY(-1px)';
-                            }
-                        }}
-                        onMouseLeave={e => {
-                            if (!isImporting) {
-                                e.currentTarget.style.background = '#ebf0e5';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }
-                        }}
-                    >
-                        {isImporting ? (
-                            <>
-                                <Loader2 size={16} className="animate-spin" />
-                                <span>Importing...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Upload size={16} />
-                                <span>Import Word</span>
-                            </>
-                        )}
-                    </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleWordImport}
-                        accept=".docx"
-                        className="hidden"
-                    />
+                                disabled={isImporting}
+                                className="px-6 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-[0.96] flex items-center gap-2 disabled:opacity-50"
+                                style={{
+                                    background: '#ebf0e5',
+                                    color: '#41683f',
+                                    border: '1px solid #dee5d8'
+                                }}
+                                onMouseEnter={e => {
+                                    if (!isImporting) {
+                                        e.currentTarget.style.background = '#e1e8db';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!isImporting) {
+                                        e.currentTarget.style.background = '#ebf0e5';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                    }
+                                }}
+                            >
+                                {isImporting ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span>Importing...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} />
+                                        <span>Import Word</span>
+                                    </>
+                                )}
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleWordImport}
+                                accept=".docx"
+                                className="hidden"
+                            />
+                        </>
+                    )}
                     <button
                         onClick={() => handleSaveDraft()}
                         disabled={isSaving}
@@ -1935,7 +2041,7 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                                                             />
                                                         )}
                                                         {block.type === 'BULLET_LIST' && (
-                                                            <div className="flex items-start gap-3 py-1 group relative">
+                                                            <div className="flex items-start gap-3 py-1 group relative" style={{ marginLeft: block.indent ? `${block.indent * 1.5}rem` : undefined }}>
                                                                 <div className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#2d342b' }}></div>
                                                                 <EditableBlock
                                                                     id={block.id}
@@ -1951,9 +2057,31 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                                                             </div>
                                                         )}
                                                         {block.type === 'ORDERED_LIST' && (
-                                                            <div className="flex items-start gap-3 py-1 group relative">
+                                                            <div className="flex items-start gap-3 py-1 group relative" style={{ marginLeft: block.indent ? `${block.indent * 1.5}rem` : undefined }}>
                                                                 <div className="mt-1 text-sm font-bold opacity-30 shrink-0 w-4">
-                                                                    {blocks.filter((b, i) => b.type === 'ORDERED_LIST' && i <= globalIndex).length}.
+                                                                    {(() => {
+                                                                        let count = 1;
+                                                                        for (let i = globalIndex - 1; i >= 0; i--) {
+                                                                            if (blocks[i].type === 'ORDERED_LIST') count++;
+                                                                            else break;
+                                                                        }
+                                                                        
+                                                                        if (block.listStyle === 'lower-alpha') {
+                                                                            return String.fromCharCode(96 + count);
+                                                                        }
+                                                                        if (block.listStyle === 'upper-roman') {
+                                                                            const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                                                                            let num = count;
+                                                                            let str = '';
+                                                                            for (let i of Object.keys(roman)) {
+                                                                                let q = Math.floor(num / roman[i as keyof typeof roman]);
+                                                                                num -= q * roman[i as keyof typeof roman];
+                                                                                str += i.repeat(q);
+                                                                            }
+                                                                            return str;
+                                                                        }
+                                                                        return count;
+                                                                    })()}.
                                                                 </div>
                                                                 <EditableBlock
                                                                     id={block.id}
