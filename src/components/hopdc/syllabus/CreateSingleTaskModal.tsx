@@ -19,6 +19,7 @@ import { SubjectService } from "@/services/subject.service";
 import { TaskService } from "@/services/task.service";
 import { DepartmentAccount } from "@/services/account.service";
 import { useToast } from "@/components/ui/Toast";
+import { CloPloService } from "@/services/cloplo.service";
 
 interface CreateSingleTaskModalProps {
   isOpen: boolean;
@@ -294,6 +295,15 @@ export function CreateSingleTaskModal({
         rootTaskId: null,
         dueDate,
       });
+
+      // Automatically transition subject's CLOs to INTERNAL_REVIEW when type is SYLLABUS
+      if (selectedSubjectId) {
+        try {
+          await CloPloService.updateSubjectClosStatus(selectedSubjectId, "INTERNAL_REVIEW");
+        } catch (cloStatusErr) {
+          console.warn("Soft fail: Failed to update CLOs status to INTERNAL_REVIEW", cloStatusErr);
+        }
+      }
 
       showToast(`Standalone ${action} SYLLABUS task assigned successfully`, "success");
 

@@ -14,6 +14,8 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   SyllabusService,
   SubjectSyllabusOption,
@@ -21,6 +23,7 @@ import {
 import { TaskService, TASK_STATUS, TASK_TYPE } from "@/services/task.service";
 import { DepartmentAccount } from "@/services/account.service";
 import { useToast } from "@/components/ui/Toast";
+import { CloPloService } from "@/services/cloplo.service";
 
 interface CreateSyllabusAdvancedModalProps {
   isOpen: boolean;
@@ -49,6 +52,7 @@ export function CreateSyllabusAdvancedModal({
 }: CreateSyllabusAdvancedModalProps) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -76,22 +80,6 @@ export function CreateSyllabusAdvancedModal({
     return subjectName;
   }, [subjectName]);
 
-  const defaultSyllabusName = useMemo(() => {
-    return cleanSubjectName ? `${cleanSubjectName} Syllabus.v1` : "";
-  }, [cleanSubjectName]);
-
-  const [syllabusName, setSyllabusName] = useState(defaultSyllabusName);
-
-  // Fetch syllabi for the current subject to populate the dropdowns
-  const { data: syllabiRes, isLoading: isLoadingSyllabi } = useQuery({
-    queryKey: ["subject-syllabi-dropdown", subjectId],
-    queryFn: () => SyllabusService.getSyllabiBySubject(subjectId || ""),
-    enabled: !!subjectId && isOpen,
-    staleTime: 0,
-  });
-
-  const syllabiList = useMemo(() => syllabiRes?.data || [], [syllabiRes]);
-
   // Version increment logic helper
   const suggestVersionIncrement = (name: string): string => {
     const match = name.match(/v(\d+)(?:\.(\d+))?$/i);
@@ -108,6 +96,52 @@ export function CreateSyllabusAdvancedModal({
     }
     return name + ".v2";
   };
+
+  // Fetch syllabi for the current subject to populate the dropdowns
+  const { data: syllabiRes, isLoading: isLoadingSyllabi } = useQuery({
+    queryKey: ["subject-syllabi-dropdown", subjectId],
+    queryFn: () => SyllabusService.getSyllabiBySubject(subjectId || ""),
+    enabled: !!subjectId && isOpen,
+    staleTime: 0,
+  });
+
+  const syllabiList = useMemo(() => syllabiRes?.data || [], [syllabiRes]);
+
+  const defaultSyllabusName = useMemo(() => {
+    if (!cleanSubjectName) return "";
+    if (syllabiList && syllabiList.length > 0) {
+      let maxMajor = 0;
+      let matchedName = "";
+      
+      for (const s of syllabiList) {
+        const name = s.syllabusName || "";
+        const match = name.match(/v(\d+)(?:\.(\d+))?$/i);
+        if (match) {
+          const major = parseInt(match[1], 10);
+          if (major > maxMajor) {
+            maxMajor = major;
+            matchedName = name;
+          }
+        } else {
+          const dotMatch = name.match(/\.v(\d+)$/i);
+          if (dotMatch) {
+            const major = parseInt(dotMatch[1], 10);
+            if (major > maxMajor) {
+              maxMajor = major;
+              matchedName = name;
+            }
+          }
+        }
+      }
+      
+      if (maxMajor > 0 && matchedName) {
+        return suggestVersionIncrement(matchedName);
+      }
+    }
+    return `${cleanSubjectName} Syllabus.v1`;
+  }, [cleanSubjectName, syllabiList]);
+
+  const [syllabusName, setSyllabusName] = useState(defaultSyllabusName);
 
   // Sync state when modal opens or toggles
   useEffect(() => {
@@ -132,13 +166,16 @@ export function CreateSyllabusAdvancedModal({
     if (!isOpen) return;
 
     if (action === "UPDATE") {
-      setTaskName(`UPDATE SYLLABUS: ${cleanSubjectName}`);
-      setDescription(`Update syllabus content for ${cleanSubjectName}`);
-      // Default select the first available syllabus if exists
-      if (syllabiList.length > 0) {
-        setSelectedSyllabusId(syllabiList[0].syllabusId);
+      const updateList = syllabiList.filter((s) => s.status !== "PUBLISHED");
+      if (updateList.length > 0) {
+        const first = updateList[0];
+        setSelectedSyllabusId(first.syllabusId);
+        setTaskName(`UPDATE SYLLABUS: ${first.syllabusName}`);
+        setDescription(`Update syllabus content for ${first.syllabusName}`);
       } else {
         setSelectedSyllabusId("");
+        setTaskName(`UPDATE SYLLABUS: ${cleanSubjectName}`);
+        setDescription(`Update syllabus content for ${cleanSubjectName}`);
       }
     } else {
       // action === "CREATE"
@@ -294,6 +331,28 @@ export function CreateSyllabusAdvancedModal({
         dueDate,
       });
 
+      // Automatically transition syllabus status to DRAFT for UPDATE action
+      if (action === "UPDATE" && finalTargetId && user?.accountId) {
+        try {
+          await SyllabusService.updateSyllabusStatus(
+            finalTargetId,
+            user.accountId,
+            "DRAFT"
+          );
+        } catch (statusErr) {
+          console.warn("Soft fail: Unable to update syllabus status to DRAFT", statusErr);
+        }
+      }
+
+      // Automatically transition subject's CLOs to INTERNAL_REVIEW when type is SYLLABUS
+      if (subjectId) {
+        try {
+          await CloPloService.updateSubjectClosStatus(subjectId, "INTERNAL_REVIEW");
+        } catch (cloStatusErr) {
+          console.warn("Soft fail: Failed to update CLOs status to INTERNAL_REVIEW", cloStatusErr);
+        }
+      }
+
       showToast(`${action} SYLLABUS task created successfully`, "success");
 
       if (rootTaskId && typeof window !== "undefined") {
@@ -391,9 +450,9 @@ export function CreateSyllabusAdvancedModal({
                   <RefreshCw size={14} className="animate-spin" /> Loading
                   syllabi...
                 </div>
-              ) : syllabiList.length === 0 ? (
+              ) : syllabiList.filter((s) => s.status !== "PUBLISHED").length === 0 ? (
                 <div className="p-4 rounded-[10px] bg-rose-50 border border-rose-100 flex items-center gap-2 text-xs font-bold text-rose-700">
-                  <AlertCircle size={14} /> No syllabi found for this subject.
+                  <AlertCircle size={14} /> No non-published syllabi found for this subject.
                   You cannot perform an Update action.
                 </div>
               ) : (
@@ -407,11 +466,13 @@ export function CreateSyllabusAdvancedModal({
                   } px-4 text-sm font-bold text-zinc-900 outline-none focus:border-primary focus:bg-white transition-all`}
                   required
                 >
-                  {syllabiList.map((s) => (
-                    <option key={s.syllabusId} value={s.syllabusId}>
-                      {s.syllabusName} ({s.status || "DRAFT"})
-                    </option>
-                  ))}
+                  {syllabiList
+                    .filter((s) => s.status !== "PUBLISHED")
+                    .map((s) => (
+                      <option key={s.syllabusId} value={s.syllabusId}>
+                        {s.syllabusName} ({s.status || "DRAFT"})
+                      </option>
+                    ))}
                 </select>
               )}
               {fieldErrors.selectedSyllabusId && (
@@ -754,7 +815,7 @@ export function CreateSyllabusAdvancedModal({
             onClick={handleSubmit}
             className="h-12 px-8 rounded-[10px] bg-primary text-[11px] font-black uppercase tracking-widest text-white hover:brightness-95 disabled:opacity-60 shadow-xl shadow-primary/20 transition-all flex items-center gap-2"
             disabled={
-              isSubmitting || (action === "UPDATE" && syllabiList.length === 0)
+              isSubmitting || (action === "UPDATE" && syllabiList.filter((s) => s.status !== "PUBLISHED").length === 0)
             }
           >
             {isSubmitting ? (

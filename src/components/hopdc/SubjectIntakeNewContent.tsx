@@ -273,9 +273,13 @@ export default function NewSubjectContent() {
       <div className="space-y-6">
         {/* Tab 0: Subject Information */}
         {activeTab === "subject" && (
-          <div className="animate-in fade-in duration-300">
-            <SubjectDetail id={subject.subjectId} initialSubject={subject as any} />
-          </div>
+            <SubjectDetail
+              id={subject.subjectId}
+              initialSubject={subject as any}
+              hideBackBtn={true}
+              hideCurriculumMapping={true}
+              hideManagementActions={true}
+            />
         )}
 
         {/* Tab 1: Curriculum & CLO-PLO Mapping */}

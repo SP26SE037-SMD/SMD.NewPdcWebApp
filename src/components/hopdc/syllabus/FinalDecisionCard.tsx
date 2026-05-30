@@ -10,6 +10,8 @@ import { TaskService } from "@/services/task.service";
 import { AccountService } from "@/services/account.service";
 import { SprintService } from "@/services/sprint.service";
 import { SyllabusService } from "@/services/syllabus.service";
+import { SubjectService } from "@/services/subject.service";
+import { CloPloService } from "@/services/cloplo.service";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { RejectDecisionModal } from "./RejectDecisionModal";
 
@@ -342,6 +344,43 @@ export function FinalDecisionCard({
           rootTaskId: createSyllabusTask?.rootTaskId || undefined,
           dueDate: chosenDueDate,
         });
+
+        // 2. If actionType is MODIFY, transition subject to WAITING_SYLLABUS and its CLOs to DRAFT
+        const targetSubjectId = createSyllabusTask?.subjectId || createSyllabusTask?.targetId;
+        if (actionType === "MODIFY" && targetSubjectId) {
+          try {
+            await SubjectService.updateSubjectStatus(targetSubjectId, "WAITING_SYLLABUS");
+          } catch (statusErr) {
+            console.warn("Failed to update subject status to WAITING_SYLLABUS:", statusErr);
+          }
+
+          try {
+            const closRes = await CloPloService.getSubjectClos(targetSubjectId, 0, 100);
+            const responseData = closRes.data;
+            const closList = Array.isArray(responseData?.content)
+              ? responseData.content
+              : Array.isArray(responseData)
+              ? responseData
+              : Array.isArray(closRes)
+              ? closRes
+              : [];
+
+            for (const clo of closList) {
+              if (clo?.cloId) {
+                await CloPloService.updateClo(clo.cloId, {
+                  cloCode: clo.cloCode,
+                  cloName: clo.cloCode,
+                  description: clo.description,
+                  bloomLevel: String(clo.bloomLevel),
+                  subjectId: targetSubjectId,
+                  status: "DRAFT",
+                });
+              }
+            }
+          } catch (cloErr) {
+            console.warn("Failed to update CLOs to DRAFT:", cloErr);
+          }
+        }
       } else {
         const cleanTaskName =
           createSyllabusTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
@@ -375,6 +414,15 @@ export function FinalDecisionCard({
               "Soft fail: Unable to update syllabus status to DRAFT",
               error,
             );
+          }
+        }
+
+        const targetSubjectId = createSyllabusTask?.subjectId || createSyllabusTask?.subject?.subjectId || createSyllabusTask?.syllabus?.subjectId;
+        if (targetSubjectId) {
+          try {
+            await CloPloService.updateSubjectClosStatus(targetSubjectId, "INTERNAL_REVIEW");
+          } catch (cloStatusErr) {
+            console.warn("Soft fail: Failed to update CLOs status to INTERNAL_REVIEW", cloStatusErr);
           }
         }
       }
