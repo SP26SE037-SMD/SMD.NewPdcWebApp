@@ -417,7 +417,7 @@ export function FinalDecisionCard({
           }
         }
 
-        const targetSubjectId = createSyllabusTask?.subjectId || createSyllabusTask?.subject?.subjectId || createSyllabusTask?.syllabus?.subjectId;
+        const targetSubjectId = createSyllabusTask?.subjectId || createSyllabusTask?.subject?.subjectId;
         if (targetSubjectId) {
           try {
             await CloPloService.updateSubjectClosStatus(targetSubjectId, "INTERNAL_REVIEW");

@@ -436,7 +436,7 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
         }
       }
 
-      const targetSubjectId = task.subjectId || task.subject?.subjectId || task.syllabus?.subjectId;
+      const targetSubjectId = task.subjectId || task.subject?.subjectId;
       if (targetSubjectId) {
         try {
           await CloPloService.updateSubjectClosStatus(targetSubjectId, "INTERNAL_REVIEW");
