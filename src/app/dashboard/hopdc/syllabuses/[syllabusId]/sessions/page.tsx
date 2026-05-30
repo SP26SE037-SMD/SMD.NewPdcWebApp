@@ -935,7 +935,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                             if (!res?.data?.errors || res.data.errors.length === 0) {
                                                                 showToast('All sessions are valid!', 'success');
                                                             } else {
-                                                                showToast('Validation completed with issues', 'error');
+                                                                showToast('Validation completed with suggestions', 'success');
                                                             }
                                                         } catch (error: any) {
                                                             console.error("Validation Error:", error);
@@ -959,8 +959,8 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                     </div>
                                     
                                     {isValidated && validationErrors.length > 0 && (
-                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3">
-                                            <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3">
+                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <h4 className="font-bold text-sm">Validation Issues Found</h4>
                                                 <ul className="text-xs mt-1 list-disc list-inside space-y-1">
@@ -973,7 +973,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                     )}
 
                                     {saveError && (
-                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
+                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
                                             <span className="material-symbols-outlined text-red-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <p className="text-xs font-medium">{saveError}</p>

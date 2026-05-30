@@ -779,7 +779,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
                                             };
@@ -822,7 +822,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
                                             };
@@ -841,8 +841,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 // CREATE (POST)
                                                 res = await SessionService.createSession(basePayload) as any;
                                                 
-                                                if (res?.data?.sessionId) {
-                                                    const createdSession = { ...draftSession, sessionId: res.data.sessionId };
+                                                if (res?.data?.sessionId || (Array.isArray(res?.data) && res.data[0]?.sessionId)) {
+                                                    const sessionId = res.data.sessionId || res.data[0].sessionId;
+                                                    const createdSession = { ...draftSession, sessionId };
                                                     dispatch(addSession({ syllabusId, session: createdSession }));
                                                 }
                                             }
@@ -1046,11 +1047,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                         _rowNum: index + 1,
                                                         syllabusId,
                                                         sessionNumber: rawNumber,
-                                                        sessionTitle: rawTitle,
+                                                        sessionTitle: rawTitle || `Session ${rawNumber}`,
                                                         duration: rawDuration,
-                                                        teachingMethods: rawMethods,
-                                                        sessionTopic: rawTopic,
-                                                        sessionType: rawType,
+                                                        teachingMethods: rawMethods || 'Lecture',
+                                                        sessionTopic: rawTopic || 'General Topic',
+                                                        sessionType: rawType || 'THEORY',
                                                         content: "[]",
                                                     };
                                                 });
@@ -1118,7 +1119,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                             if (!res?.data?.errors || res.data.errors.length === 0) {
                                                                 showToast('All sessions are valid!', 'success');
                                                             } else {
-                                                                showToast('Validation completed with issues', 'error');
+                                                                showToast('Validation completed with suggestions', 'success');
                                                             }
                                                         } catch (error: any) {
                                                             console.error("Validation Error:", error);
@@ -1142,8 +1143,8 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     </div>
                                     
                                     {isValidated && validationErrors.length > 0 && (
-                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3">
-                                            <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3">
+                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <h4 className="font-bold text-sm">Validation Issues Found</h4>
                                                 <ul className="text-xs mt-1 list-disc list-inside space-y-1">
@@ -1156,7 +1157,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     )}
 
                                     {saveError && (
-                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
+                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
                                             <span className="material-symbols-outlined text-red-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <p className="text-xs font-medium">{saveError}</p>
@@ -1323,6 +1324,19 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 delete p.content; // Exclude internal state
                                                 return p;
                                             });
+
+                                            // Auto-download payload for debugging
+                                            try {
+                                                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `sessions_payload_${new Date().getTime()}.json`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            } catch (e) {
+                                                console.error("Failed to download payload", e);
+                                            }
 
                                             console.log("BULK CREATE PAYLOAD:", payload);
                                             await SessionService.bulkCreateSessions(payload);
