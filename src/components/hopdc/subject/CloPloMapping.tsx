@@ -557,7 +557,7 @@ export function CloPloMapping({
                             })()}
                             <div className="flex items-center gap-1.5">
                               <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200">
-                                B{clo.bloomLevel}
+                                Bloom: {formatBloomLevel(clo.bloomLevel)}
                               </span>
                               {onEditClo && (
                                 <button
