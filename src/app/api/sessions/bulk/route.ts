@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
         const cookieStore = request.cookies;
         const token = cookieStore.get("smd-token")?.value;
 
-        const backendUrl = `${API_BASE_URL}/api/sessions/bluk`;
+        const backendUrl = `${API_BASE_URL}/api/sessions/bulk`;
         console.log(`[Bulk Create Proxy] Calling Backend: ${backendUrl}`);
         console.log(`[Bulk Create Proxy] Token present: ${!!token}`);
 
