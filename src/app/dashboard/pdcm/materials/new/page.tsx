@@ -29,6 +29,8 @@ interface Block {
     align?: 'left' | 'center' | 'right' | 'justify';
     color?: string;
     fontSize?: string;
+    listStyle?: 'decimal' | 'lower-alpha' | 'upper-roman';
+    indent?: number;
 }
 
 const BLOCK_TYPES: { id: BlockType; label: string; icon: any; shortcut: string }[] = [
@@ -580,30 +582,61 @@ function NewMaterialPageInner() {
             }
             else if (tag === 'ul' || tag === 'ol') {
                 const listType: BlockType = tag === 'ul' ? 'BULLET_LIST' : 'ORDERED_LIST';
+                const hasNestedLists = el.querySelector('ol, ul') !== null;
                 const items = el.querySelectorAll('li');
                 items.forEach(li => {
-                    const text = typeof li.innerText === 'string' ? li.innerText.trim() : (li.textContent || '').trim();
-                    const innerHtml = li.innerHTML.trim();
+                    let depth = 0;
+                    let curr = li.parentElement;
+                    while (curr && curr !== el) {
+                        if (curr.tagName === 'OL' || curr.tagName === 'UL') depth++;
+                        curr = curr.parentElement;
+                    }
+
+                    const clone = li.cloneNode(true) as HTMLElement;
+                    clone.querySelectorAll('ul, ol').forEach(nested => nested.remove());
+
+                    const text = (clone.textContent || '').trim();
+                    const innerHtml = clone.innerHTML.trim();
                     const isFullyBold = (innerHtml.startsWith('<strong>') && innerHtml.endsWith('</strong>') && innerHtml.replace(/<strong>/g, '').replace(/<\/strong>/g, '').trim() === text) ||
                         (innerHtml.startsWith('<b>') && innerHtml.endsWith('</b>') && innerHtml.replace(/<b>/g, '').replace(/<\/b>/g, '').trim() === text);
 
                     let liType: BlockType = listType;
+                    let listStyle: 'decimal' | 'lower-alpha' | 'upper-roman' = 'decimal';
+
                     if (resultBlocks.length === 0 && text.length > 0) {
                         liType = 'H1';
                     } else if (isFullyBold && text.length < 150) {
                         liType = 'H2';
+                    } else if (depth === 0 && hasNestedLists) {
+                        liType = 'H2';
+                    }
+
+                    if (liType === 'ORDERED_LIST') {
+                        if (depth === 0 && !hasNestedLists) listStyle = 'decimal';
+                        else if (depth === 1) listStyle = 'decimal';
+                        else if (depth >= 2) listStyle = 'lower-alpha';
                     }
 
                     if (text.length > 0 || innerHtml.length > 0) {
-                        let finalContent = sanitizeBlockContent(li.innerHTML);
+                        let finalContent = sanitizeBlockContent(clone.innerHTML);
 
                         // Handle H2 numbering
                         if (liType === 'H2') {
                             h2Count++;
                             const plainText = stripHtml(finalContent).trim();
                             // Only prepend if it doesn't already start with a number like "1. "
-                            if (!/^\d+\.\s/.test(plainText)) {
-                                finalContent = `${h2Count}. ${finalContent}`;
+                            if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
+                                const toRoman = (num: number) => {
+                                    const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                                    let str = '';
+                                    for (let i of Object.keys(roman)) {
+                                        let q = Math.floor(num / roman[i as keyof typeof roman]);
+                                        num -= q * roman[i as keyof typeof roman];
+                                        str += i.repeat(q);
+                                    }
+                                    return str;
+                                };
+                                finalContent = `${toRoman(h2Count)}. ${finalContent}`;
                             }
                         }
 
@@ -611,7 +644,9 @@ function NewMaterialPageInner() {
                             id: crypto.randomUUID(),
                             type: liType,
                             content: finalContent,
-                            align: align
+                            align: align,
+                            listStyle,
+                            indent: depth
                         });
                     }
                 });
@@ -653,6 +688,30 @@ function NewMaterialPageInner() {
                 type = 'H1';
             }
 
+            let listStyleP: 'decimal' | 'lower-alpha' | 'upper-roman' = 'decimal';
+            let indentP = 0;
+
+            if (type === 'ORDERED_LIST') {
+                const plainText = stripHtml(content).trim();
+                const alphaMatch = plainText.match(/^([a-z]\.)\s+(.*)/);
+                const decimalMatch = plainText.match(/^(\d+[.)])\s+(.*)/);
+                
+                if (alphaMatch) {
+                    listStyleP = 'lower-alpha';
+                    indentP = 1;
+                    content = content.replace(/^<[^>]+>/, '').replace(/^[a-z]\.\s/, '').trim();
+                } else if (decimalMatch) {
+                    listStyleP = 'decimal';
+                    indentP = 0;
+                    content = content.replace(/^<[^>]+>/, '').replace(/^\d+[.)]\s/, '').trim();
+                }
+            } else if (type === 'BULLET_LIST') {
+                const plainText = stripHtml(content).trim();
+                if (/^([\-\*•])\s+/.test(plainText)) {
+                    content = content.replace(/^<[^>]+>/, '').replace(/^([\-\*•])\s+/, '').trim();
+                }
+            }
+
             let finalContent = sanitizeBlockContent(content);
 
             // Handle H2 numbering
@@ -660,8 +719,18 @@ function NewMaterialPageInner() {
                 h2Count++;
                 const plainText = stripHtml(finalContent).trim();
                 // Only prepend if it doesn't already start with a number like "1. "
-                if (!/^\d+\.\s/.test(plainText)) {
-                    finalContent = `${h2Count}. ${finalContent}`;
+                if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
+                    const toRoman = (num: number) => {
+                        const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                        let str = '';
+                        for (let i of Object.keys(roman)) {
+                            let q = Math.floor(num / roman[i as keyof typeof roman]);
+                            num -= q * roman[i as keyof typeof roman];
+                            str += i.repeat(q);
+                        }
+                        return str;
+                    };
+                    finalContent = `${toRoman(h2Count)}. ${finalContent}`;
                 }
             }
 
@@ -669,7 +738,9 @@ function NewMaterialPageInner() {
                 id: crypto.randomUUID(),
                 type,
                 content: finalContent,
-                align: align
+                align: align,
+                listStyle: type === 'ORDERED_LIST' ? listStyleP : undefined,
+                indent: (type === 'ORDERED_LIST' || type === 'BULLET_LIST') ? indentP : undefined
             });
         };
 
@@ -1539,12 +1610,12 @@ function NewMaterialPageInner() {
                                                                 onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
                                                                 shouldFocus={false}
                                                                 className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} leading-relaxed bg-transparent outline-none py-1 min-h-[1.5em] whitespace-pre-wrap`}
-                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px' }}
+                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '18px', marginLeft: block.indent ? `${block.indent * 1.5}rem` : undefined }}
                                                             />
                                                         )}
                                                         {block.type === 'BULLET_LIST' && (
-                                                            <div className="flex items-start gap-4 py-1">
-                                                                <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+                                                            <div className="flex items-start gap-4 py-1" style={{ marginLeft: block.indent ? `${block.indent * 1.5}rem` : undefined }}>
+                                                                <div className="mt-2.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#2d342b' }}></div>
                                                                 <EditableBlock
                                                                     id={block.id}
                                                                     html={block.content}
@@ -1559,9 +1630,31 @@ function NewMaterialPageInner() {
                                                             </div>
                                                         )}
                                                         {block.type === 'ORDERED_LIST' && (
-                                                            <div className="flex items-start gap-4 py-1">
+                                                            <div className="flex items-start gap-4 py-1" style={{ marginLeft: block.indent ? `${block.indent * 1.5}rem` : undefined }}>
                                                                 <span className="mt-1 text-lg font-bold min-w-[1.5em] text-black">
-                                                                    {blocks.slice(0, globalIndex + 1).filter(b => b.type === 'ORDERED_LIST').length}.
+                                                                    {(() => {
+                                                                        let count = 1;
+                                                                        for (let i = globalIndex - 1; i >= 0; i--) {
+                                                                            if (blocks[i].type === 'ORDERED_LIST') count++;
+                                                                            else break;
+                                                                        }
+                                                                        
+                                                                        if (block.listStyle === 'lower-alpha') {
+                                                                            return String.fromCharCode(96 + count);
+                                                                        }
+                                                                        if (block.listStyle === 'upper-roman') {
+                                                                            const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+                                                                            let num = count;
+                                                                            let str = '';
+                                                                            for (let i of Object.keys(roman)) {
+                                                                                let q = Math.floor(num / roman[i as keyof typeof roman]);
+                                                                                num -= q * roman[i as keyof typeof roman];
+                                                                                str += i.repeat(q);
+                                                                            }
+                                                                            return str;
+                                                                        }
+                                                                        return count;
+                                                                    })()}.
                                                                 </span>
                                                                 <EditableBlock
                                                                     id={block.id}
