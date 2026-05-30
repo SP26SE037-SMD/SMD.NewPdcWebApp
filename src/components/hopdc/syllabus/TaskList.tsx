@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { AccountService } from "@/services/account.service";
 import { SprintService } from "@/services/sprint.service";
@@ -93,7 +89,10 @@ const PRIORITY_OPTIONS = [
   { value: "LOW", label: "Low", color: "text-zinc-400" },
 ];
 
-export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) {
+export function TaskList({
+  sprintId,
+  isSingleTaskMode = false,
+}: TaskListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -105,17 +104,24 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
   // ─── Modal States ──────────────────────────────────────────────────────────
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSingleTaskModalOpen, setIsSingleTaskModalOpen] = useState(false);
-  const [taskModalMode, setTaskModalMode] = useState<"CREATE" | "UPDATE" | "REVIEW">("CREATE");
-  const [taskModalParentTask, setTaskModalParentTask] = useState<TaskItem | null>(null);
+  const [taskModalMode, setTaskModalMode] = useState<
+    "CREATE" | "UPDATE" | "REVIEW"
+  >("CREATE");
+  const [taskModalParentTask, setTaskModalParentTask] =
+    useState<TaskItem | null>(null);
   const [validatingTaskId, setValidatingTaskId] = useState<string | null>(null);
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<(TaskItem & { children?: TaskItem[] }) | null>(null);
+  const [selectedTask, setSelectedTask] = useState<
+    (TaskItem & { children?: TaskItem[] }) | null
+  >(null);
   const [taskHistory, setTaskHistory] = useState<TaskItem[]>([]);
 
   const [isSourcesModalOpen, setIsSourcesModalOpen] = useState(false);
-  const [selectedSyllabusIdForSources, setSelectedSyllabusIdForSources] = useState("");
-  const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] = useState("");
+  const [selectedSyllabusIdForSources, setSelectedSyllabusIdForSources] =
+    useState("");
+  const [selectedSyllabusNameForSources, setSelectedSyllabusNameForSources] =
+    useState("");
 
   // ─── Filter States ─────────────────────────────────────────────────────────
   const [showDone, setShowDone] = useState(false);
@@ -123,7 +129,9 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
   const [filterPriorities, setFilterPriorities] = useState<string[]>([]);
 
   // ─── Collapsed group state ─────────────────────────────────────────────────
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   const toggleGroup = (status: string) => {
     setCollapsedGroups((prev) => {
@@ -146,12 +154,14 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["sprints"] }),
       queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-      queryClient.invalidateQueries({ queryKey: ["hopdc-receive-task-curriculum-detail"] }),
+      queryClient.invalidateQueries({
+        queryKey: ["hopdc-receive-task-curriculum-detail"],
+      }),
       queryClient.invalidateQueries({ queryKey: ["syllabus"] }),
       queryClient.invalidateQueries({ queryKey: ["assignments"] }),
     ]);
     router.refresh();
-    router.push("/dashboard/hopdc/tasks");
+    router.push("/dashboard/hopdc/department-tasks");
   };
 
   // ─── Open Subtask Creation Modal with CLO/PLO validation ──────────────────
@@ -191,11 +201,12 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
   };
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
-  const { data: departmentAccounts = [], isLoading: isAccountsLoading } = useQuery({
-    queryKey: ["assignments-department-accounts", departmentId],
-    queryFn: () => AccountService.getAccountsByDepartment(departmentId),
-    enabled: !!departmentId,
-  });
+  const { data: departmentAccounts = [], isLoading: isAccountsLoading } =
+    useQuery({
+      queryKey: ["assignments-department-accounts", departmentId],
+      queryFn: () => AccountService.getAccountsByDepartment(departmentId),
+      enabled: !!departmentId,
+    });
 
   const {
     data: tasksRes,
@@ -203,7 +214,9 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
     isError: isTasksError,
     error: tasksError,
   } = useQuery({
-    queryKey: isSingleTaskMode ? ["single-tasks", user?.accountId] : ["assignments", sprintId],
+    queryKey: isSingleTaskMode
+      ? ["single-tasks", user?.accountId]
+      : ["assignments", sprintId],
     queryFn: async () => {
       if (isSingleTaskMode) {
         if (!user?.accountId) return { content: [] };
@@ -212,8 +225,11 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           TaskService.getTasksV2({ assignTo: user.accountId, size: 200 }),
         ]);
 
-        const merged = [...(createdRes?.content || []), ...(assignedRes?.content || [])];
-        
+        const merged = [
+          ...(createdRes?.content || []),
+          ...(assignedRes?.content || []),
+        ];
+
         // Remove duplicates by taskId
         const uniqueTasksMap = new Map<string, TaskItem>();
         merged.forEach((t) => {
@@ -224,7 +240,7 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
 
         // Filter for tasks that do not have sprintId
         const filteredTasks = Array.from(uniqueTasksMap.values()).filter(
-          (t) => !t.sprintId
+          (t) => !t.sprintId,
         );
 
         return { content: filteredTasks };
@@ -291,7 +307,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
         for (const node of list) {
           if (node.taskId === id) return node;
           if (node.children) {
-            const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+            const found = findInTree(
+              node.children as (TaskItem & { children?: TaskItem[] })[],
+              id,
+            );
             if (found) return found;
           }
         }
@@ -345,7 +364,11 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
             comment: originalTask.comment || "",
             priority: originalTask.priority || "NORMAL",
             type: originalTask.type,
-            targetId: originalTask.targetId || originalTask.syllabusId || originalTask.syllabus?.syllabusId || "",
+            targetId:
+              originalTask.targetId ||
+              originalTask.syllabusId ||
+              originalTask.syllabus?.syllabusId ||
+              "",
             rootTaskId: originalTask.rootTaskId || "",
             dueDate: deadline,
           };
@@ -373,14 +396,24 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
 
   const invalidateAssignments = async () => {
     if (isSingleTaskMode) {
-      await queryClient.invalidateQueries({ queryKey: ["single-tasks", user?.accountId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["single-tasks", user?.accountId],
+      });
     } else {
-      await queryClient.invalidateQueries({ queryKey: ["assignments", sprintId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["assignments", sprintId],
+      });
     }
   };
 
   const acceptSyllabusMutation = useMutation({
-    mutationFn: async ({ taskId, comment }: { taskId: string; comment: string }) => {
+    mutationFn: async ({
+      taskId,
+      comment,
+    }: {
+      taskId: string;
+      comment: string;
+    }) => {
       await TaskService.acceptTask(taskId, true, comment);
       return TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
     },
@@ -413,7 +446,8 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
       dueDate: string;
       comment: string;
     }) => {
-      const cleanTaskName = task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
+      const cleanTaskName =
+        task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
       await TaskService.createTask({
         sprintId: sprintId || "",
         assignTo,
@@ -427,21 +461,35 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
         dueDate,
       });
 
-      const syllabusId = task.targetId || task.syllabusId || task.syllabus?.syllabusId;
+      const syllabusId =
+        task.targetId || task.syllabusId || task.syllabus?.syllabusId;
       if (syllabusId && user?.accountId) {
         try {
-          await SyllabusService.updateSyllabusStatus(syllabusId, user.accountId, "DRAFT");
+          await SyllabusService.updateSyllabusStatus(
+            syllabusId,
+            user.accountId,
+            "DRAFT",
+          );
         } catch (error) {
-          console.warn("Soft fail: Unable to update syllabus status to DRAFT", error);
+          console.warn(
+            "Soft fail: Unable to update syllabus status to DRAFT",
+            error,
+          );
         }
       }
 
       const targetSubjectId = task.subjectId || task.subject?.subjectId;
       if (targetSubjectId) {
         try {
-          await CloPloService.updateSubjectClosStatus(targetSubjectId, "INTERNAL_REVIEW");
+          await CloPloService.updateSubjectClosStatus(
+            targetSubjectId,
+            "INTERNAL_REVIEW",
+          );
         } catch (cloStatusErr) {
-          console.warn("Soft fail: Failed to update CLOs status to INTERNAL_REVIEW", cloStatusErr);
+          console.warn(
+            "Soft fail: Failed to update CLOs status to INTERNAL_REVIEW",
+            cloStatusErr,
+          );
         }
       }
 
@@ -449,7 +497,9 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
     },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
-        localStorage.removeItem(`final_decision_comment_${variables.task.taskId}`);
+        localStorage.removeItem(
+          `final_decision_comment_${variables.task.taskId}`,
+        );
         window.dispatchEvent(
           new CustomEvent("final-decision-comment-updated", {
             detail: { taskId: variables.task.taskId, comment: "" },
@@ -515,7 +565,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           onClick={goToReceiveTasks}
           className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-zinc-600 hover:text-[#0b7a47] hover:border-emerald-200 transition-colors w-fit"
         >
-          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft
+            size={14}
+            className="group-hover:-translate-x-1 transition-transform"
+          />
           Back to Tasks
         </button>
       )}
@@ -524,10 +577,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-black tracking-tight text-zinc-900">
-            {isSingleTaskMode ? "Single Tasks Management" : "Deliverable Execution"}
+            {isSingleTaskMode ? "" : "Department Tasks Execution"}
           </h1>
           <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider">
-            {isSingleTaskMode ? "Independent Tasks" : (sprint?.sprintName || "Tasks")}
+            {isSingleTaskMode ? "" : sprint?.sprintName || "Tasks"}
           </p>
         </div>
 
@@ -537,17 +590,18 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">
-                  Deliverable Deadline
+                  Department Task Deadline
                 </span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-200/50 text-[9px] font-black text-amber-700 uppercase tracking-tight">
                   {(() => {
-                    const diff = new Date(sprint.endDate).getTime() - new Date().getTime();
+                    const diff =
+                      new Date(sprint.endDate).getTime() - new Date().getTime();
                     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
                     return days > 0
                       ? `${days} days remaining`
                       : days === 0
-                      ? "Ends today"
-                      : "Expired";
+                        ? "Ends today"
+                        : "Expired";
                   })()}
                 </span>
               </div>
@@ -586,7 +640,9 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
               <FlagIcon size={11} className={cfg.color} fill={cfg.fill} />
               {cfg.label}
               <button
-                onClick={() => setFilterPriorities((prev) => prev.filter((x) => x !== p))}
+                onClick={() =>
+                  setFilterPriorities((prev) => prev.filter((x) => x !== p))
+                }
                 className="text-zinc-400 hover:text-zinc-600"
               >
                 <X size={11} />
@@ -594,7 +650,6 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
             </div>
           );
         })}
-
 
         {/* Done Toggle */}
         <button
@@ -677,7 +732,11 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
                                 : "hover:bg-zinc-50 text-zinc-700"
                             }`}
                           >
-                            <FlagIcon size={13} className={cfg.color} fill={isSelected ? "currentColor" : "none"} />
+                            <FlagIcon
+                              size={13}
+                              className={cfg.color}
+                              fill={isSelected ? "currentColor" : "none"}
+                            />
                             {opt.label}
                           </button>
                         );
@@ -723,11 +782,19 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
                 className={`w-full flex items-center gap-3 px-6 py-2.5 border-b border-t text-left transition-colors ${headerClass}`}
               >
                 <span className="flex items-center gap-1.5">
-                  {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                  {isCollapsed ? (
+                    <ChevronRight size={14} />
+                  ) : (
+                    <ChevronDown size={14} />
+                  )}
                   <Icon size={14} />
-                  <span className="text-xs font-black uppercase tracking-wider">{label}</span>
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {label}
+                  </span>
                 </span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${badgeClass}`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${badgeClass}`}
+                >
                   {count}
                 </span>
               </button>
@@ -764,8 +831,6 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
                         />
                       ))
                     )}
-
-
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -795,10 +860,18 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           isUpdatingStatus={updateStatusMutation.isPending}
           onOpenTaskModal={onOpenTaskModal}
           onAcceptSyllabus={async (t, comment) => {
-            await acceptSyllabusMutation.mutateAsync({ taskId: t.taskId, comment });
+            await acceptSyllabusMutation.mutateAsync({
+              taskId: t.taskId,
+              comment,
+            });
           }}
           onRejectSyllabus={async (t, assignTo, dueDate, comment) => {
-            await rejectSyllabusMutation.mutateAsync({ task: t, assignTo, dueDate, comment });
+            await rejectSyllabusMutation.mutateAsync({
+              task: t,
+              assignTo,
+              dueDate,
+              comment,
+            });
           }}
           onResetDecision={async (t) => {
             await resetDecisionMutation.mutateAsync(t);
@@ -814,7 +887,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
               for (const node of list) {
                 if (node.taskId === id) return node;
                 if (node.children) {
-                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  const found = findInTree(
+                    node.children as (TaskItem & { children?: TaskItem[] })[],
+                    id,
+                  );
                   if (found) return found;
                 }
               }
@@ -835,7 +911,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
               for (const node of list) {
                 if (node.taskId === id) return node;
                 if (node.children) {
-                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  const found = findInTree(
+                    node.children as (TaskItem & { children?: TaskItem[] })[],
+                    id,
+                  );
                   if (found) return found;
                 }
               }
@@ -872,7 +951,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           sprintId={sprintId}
           rootTaskId={taskModalParentTask?.taskId || null}
           subjectId={taskModalParentTask?.subjectId}
-          subjectName={taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
+          subjectName={taskModalParentTask?.taskName?.replace(
+            "CREATE SUBJECT: ",
+            "",
+          )}
           accounts={departmentAccounts}
           currentUserEmail={user?.email || ""}
           sprintDeadline={sprint?.endDate}
@@ -891,7 +973,10 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           sprintId={sprintId}
           rootTaskId={taskModalParentTask?.taskId || null}
           subjectId={taskModalParentTask?.subjectId}
-          subjectName={taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "")}
+          subjectName={taskModalParentTask?.taskName?.replace(
+            /^(CREATE|UPDATE) SYLLABUS: /,
+            "",
+          )}
           targetId={
             taskModalParentTask?.targetId ||
             taskModalParentTask?.syllabus?.syllabusId ||
@@ -915,18 +1000,18 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
                   assignTo: taskModalParentTask?.account?.accountId,
                 }
               : taskModalMode === "REVIEW"
-              ? {
-                  taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                  description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                  priority: "NORMAL",
-                  dueDate: taskModalParentTask?.deadline,
-                  excludeAccountId: taskModalParentTask?.account?.accountId,
-                }
-              : {
-                  taskName: `CREATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                  description: `Draft syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                  priority: "NORMAL",
-                }
+                ? {
+                    taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                    description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                    priority: "NORMAL",
+                    dueDate: taskModalParentTask?.deadline,
+                    excludeAccountId: taskModalParentTask?.account?.accountId,
+                  }
+                : {
+                    taskName: `CREATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                    description: `Draft syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                    priority: "NORMAL",
+                  }
           }
         />
       )}
@@ -936,7 +1021,9 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
           isOpen={isSingleTaskModalOpen}
           onClose={() => setIsSingleTaskModalOpen(false)}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["single-tasks", user?.accountId] });
+            queryClient.invalidateQueries({
+              queryKey: ["single-tasks", user?.accountId],
+            });
           }}
           accounts={departmentAccounts}
           currentUserEmail={user?.email || ""}

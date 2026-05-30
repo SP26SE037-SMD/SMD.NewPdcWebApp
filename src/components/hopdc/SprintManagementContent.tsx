@@ -65,7 +65,9 @@ export default function SprintManagementContent() {
     (state: RootState) => state.auth,
   );
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"single-tasks" | "sprint-tasks">("single-tasks");
+  const [activeTab, setActiveTab] = useState<"single-tasks" | "sprint-tasks">(
+    "single-tasks",
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -82,8 +84,11 @@ export default function SprintManagementContent() {
     queryClient.invalidateQueries({ queryKey: ["sprints"] });
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
     if (selectedCurriculumId) {
-      queryClient.invalidateQueries({ 
-        queryKey: ["hopdc-receive-task-curriculum-detail", selectedCurriculumId] 
+      queryClient.invalidateQueries({
+        queryKey: [
+          "hopdc-receive-task-curriculum-detail",
+          selectedCurriculumId,
+        ],
       });
     }
   }, [queryClient, selectedCurriculumId]);
@@ -157,8 +162,8 @@ export default function SprintManagementContent() {
 
     router.push(
       isReuseSubject
-        ? `/dashboard/hopdc/tasks/reuse-subject?${params.toString()}`
-        : `/dashboard/hopdc/tasks/new-subject?${params.toString()}`,
+        ? `/dashboard/hopdc/department-tasks/reuse-subject?${params.toString()}`
+        : `/dashboard/hopdc/department-tasks/new-subject?${params.toString()}`,
     );
   };
 
@@ -207,7 +212,7 @@ export default function SprintManagementContent() {
         <CurriculumDetailView
           curriculum={curriculum}
           sprintId={selectedSprintId ?? undefined}
-          onBack={() => router.push("/dashboard/hopdc/tasks")}
+          onBack={() => router.push("/dashboard/hopdc/department-tasks")}
           onOpenTask={handleOpenTask}
         />
       </div>
@@ -245,7 +250,7 @@ export default function SprintManagementContent() {
       {/* Tabs header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-100 pb-4 mb-6">
         <h1 className="text-4xl font-black text-zinc-900 tracking-tight">
-          Tasks
+          Tasks Management
         </h1>
         <div className="flex border border-zinc-100 p-1 bg-zinc-50 rounded-xl">
           <button
@@ -266,7 +271,7 @@ export default function SprintManagementContent() {
                 : "text-zinc-500 hover:text-zinc-900"
             }`}
           >
-            Manage by Sprint
+            Manage by Phase
           </button>
         </div>
       </div>

@@ -147,7 +147,7 @@ export const StandardInputContent = () => {
       queryClient.invalidateQueries({
         queryKey: ["syllabus-action-logs", syllabusId],
       });
-      router.push("/dashboard/hopdc/tasks");
+      router.push("/dashboard/hopdc/department-tasks");
     },
     onError: (error) => {
       showTimedNotice(
@@ -211,7 +211,7 @@ export const StandardInputContent = () => {
       <button
         onClick={() =>
           router.push(
-            `/dashboard/hopdc/tasks/new-subject?subjectId=${subjectId}`,
+            `/dashboard/hopdc/department-tasks/new-subject?subjectId=${subjectId}`,
           )
         }
         className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-zinc-600 hover:text-[#0b7a47] hover:border-emerald-200 transition-colors"
