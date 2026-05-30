@@ -346,7 +346,7 @@ export default function BulkImportMaterialModal({
                 style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}30` }}
               >
                 {isRunning ? (
-                  <><Loader2 size={18} className="animate-spin" /> Importing ({files.filter(f => f.status === "processing").length}/{files.length})...</>
+                  <><Loader2 size={18} className="animate-spin" /> Importing ({files.filter(f => f.status !== "pending").length}/{files.length})...</>
                 ) : (
                   <><UploadCloud size={18} /> Import {pendingCount} file{pendingCount !== 1 ? "s" : ""}</>
                 )}
