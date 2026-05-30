@@ -3,8 +3,9 @@
 import React from "react";
 import { X, Clock, CheckCircle2, Circle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/Toast";
 import { SyllabusService } from "@/services/syllabus.service";
 
 interface SyllabusCompareHistoryModalProps {
@@ -74,6 +75,12 @@ export default function SyllabusCompareHistoryModal({
   newSyllabusId,
 }: SyllabusCompareHistoryModalProps) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { data: historyRes, isLoading } = useQuery({
     queryKey: ["compare-history", newSyllabusId],
@@ -84,21 +91,21 @@ export default function SyllabusCompareHistoryModal({
   const { mutate: selectCompare, isPending } = useMutation({
     mutationFn: (historyId: string) => SyllabusService.selectCompareSyllabus(historyId),
     onSuccess: () => {
-      toast.success("Select compare syllabus successfully");
+      showToast("Select compare syllabus successfully", "success");
       queryClient.invalidateQueries({ queryKey: ["compare-history", newSyllabusId] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to select compare syllabus");
+      showToast(error.message || "Failed to select compare syllabus", "error");
     },
   });
 
   const histories = historyRes?.data || [];
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40">
+      <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/40">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -208,6 +215,7 @@ export default function SyllabusCompareHistoryModal({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
