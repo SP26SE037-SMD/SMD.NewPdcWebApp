@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   Wand2,
+  Cpu,
   Loader2,
   CheckCircle2,
   Circle,
@@ -226,20 +227,29 @@ const CourseMappingItem = ({
           </div>
         </div>
         <div className="grid grid-cols-5 gap-2">
-          {["sem", "tc", "lt", "th", "self"].map((field) => (
-            <div key={field}>
-              <label className="text-[9px] font-bold text-primary/60 uppercase">
-                {field === "self" ? "Self" : field}
-              </label>
-              <input
-                className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-primary outline-none"
-                value={(formData as any)[field]}
-                onChange={(e) =>
-                  setFormData({ ...formData, [field]: e.target.value })
-                }
-              />
-            </div>
-          ))}
+          {["sem", "tc", "lt", "th", "self"].map((field) => {
+            let label = field;
+            if (field === "tc") label = "Cre";
+            else if (field === "lt") label = "Theory";
+            else if (field === "th") label = "Prac";
+            else if (field === "self") label = "Self";
+            else if (field === "sem") label = "Sem";
+
+            return (
+              <div key={field}>
+                <label className="text-[9px] font-bold text-primary/60 uppercase">
+                  {label}
+                </label>
+                <input
+                  className="w-full bg-white border border-outline/20 rounded-lg px-2 py-1.5 text-xs text-center focus:border-primary outline-none"
+                  value={(formData as any)[field]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [field]: e.target.value })
+                  }
+                />
+              </div>
+            );
+          })}
         </div>
         <div className="flex justify-end gap-2 mt-1">
           <button
@@ -419,7 +429,7 @@ const SourceDocumentItem = ({
             placeholder="Enter document title..."
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-3">
           <div>
             <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
               Author
@@ -433,21 +443,26 @@ const SourceDocumentItem = ({
               placeholder="Author name"
             />
           </div>
-          <div>
-            <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
-              Publisher & Year
-            </label>
-            <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+                Publisher
+              </label>
               <input
-                className="flex-1 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
+                className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-medium focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.publisher}
                 onChange={(e) =>
                   setFormData({ ...formData, publisher: e.target.value })
                 }
                 placeholder="Publisher"
               />
+            </div>
+            <div>
+              <label className="text-[9px] font-bold text-emerald-700/60 uppercase tracking-wider">
+                Year
+              </label>
               <input
-                className="w-20 bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-black text-center focus:border-emerald-600 outline-none shadow-sm"
+                className="w-full bg-white border border-outline/20 rounded-lg px-2.5 py-2 text-xs font-black text-center focus:border-emerald-600 outline-none shadow-sm"
                 value={formData.year}
                 onChange={(e) =>
                   setFormData({ ...formData, year: e.target.value })
@@ -939,58 +954,12 @@ export default function PdfExtractionStep({
     const savedMajorId = sessionStorage.getItem(
       `extracted_major_${documentId}`,
     );
-    const isProcessing =
-      sessionStorage.getItem(`extraction_status_${documentId}`) ===
-      "extracting";
 
     if (savedMajorId && extractionState === "idle") {
       setExtractionState("extracting");
       fetchFinalData(savedMajorId);
-    } else if (isProcessing && extractionState === "idle") {
-      setExtractionState("extracting");
-      const savedStartTime = sessionStorage.getItem(
-        `extraction_start_time_${documentId}`,
-      );
-      if (savedStartTime) setStartTime(Number(savedStartTime));
     }
   }, [documentId, extractionState, fetchFinalData]);
-
-  // Watch for WebSocket status to handle FAIL and SUCCESS specifically
-  useEffect(() => {
-    if (extractionState === "extracting") {
-      if (aiProcessingStatus === "IMPORT_SUCCESS") {
-        const majorId = aiProcessingMessage;
-        sessionStorage.removeItem(`extraction_status_${documentId}`);
-        sessionStorage.removeItem(`extraction_start_time_${documentId}`);
-        // UUID usually looks like a long string. If it's valid, fetch.
-        if (majorId && majorId.length > 10) {
-          sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
-          fetchFinalData(majorId);
-        } else {
-          setExtractionState("review");
-          toast.success("Extraction completed successfully!");
-          dispatch(clearAiProcessingMessage());
-        }
-      } else if (aiProcessingStatus === "PDF_PROCESS_FAIL") {
-        setExtractionState("idle");
-        sessionStorage.removeItem(`extraction_status_${documentId}`);
-        sessionStorage.removeItem(`extraction_start_time_${documentId}`);
-        const errMsg =
-          aiProcessingMessage ||
-          "AI failed to generate valid content, please try again!";
-        setExtractionError(errMsg);
-        toast.error(errMsg);
-        dispatch(clearAiProcessingMessage());
-      }
-    }
-  }, [
-    aiProcessingStatus,
-    extractionState,
-    dispatch,
-    aiProcessingMessage,
-    documentId,
-    fetchFinalData,
-  ]);
 
   // 1. Fetch document URL
   useEffect(() => {
@@ -1017,18 +986,13 @@ export default function PdfExtractionStep({
     fetchDoc();
   }, [documentId]);
 
-  // 2. Real AI Extraction
+  // 2. Real System Extraction
   const handleExtract = async () => {
     if (!documentUrl) return;
     setExtractionState("extracting");
     setExtractionError(null);
     const now = Date.now();
     setStartTime(now);
-    sessionStorage.setItem(`extraction_status_${documentId}`, "extracting");
-    sessionStorage.setItem(
-      `extraction_start_time_${documentId}`,
-      now.toString(),
-    );
 
     try {
       // 1. Fetch the PDF file as a Blob from the Supabase URL
@@ -1042,48 +1006,32 @@ export default function PdfExtractionStep({
       formData.append("file", pdfBlob, "document.pdf");
 
       // 3. Call the extraction API proxy
-      const apiRes = await fetch("/api/regulations/extract", {
+      const apiRes = await fetch("/api/curriculums/extract-pdf", {
         method: "POST",
         body: formData,
       });
 
       const result = await apiRes.json();
 
-      if (!apiRes.ok) {
-        throw new Error(result.error || result.message || "Extraction failed");
+      if (!apiRes.ok || result.status !== 1000) {
+        throw new Error(result.message || result.error || "Extraction failed");
       }
 
-      // 4. Parse response (adapt to whatever structure the backend returns)
-      const data = result.data || result;
-
-      // Xử lý mapping data (nếu API trả về data)
-      // Việc chuyển state sang "review" sẽ do useEffect của WebSocket đảm nhiệm
-      if (data) {
-        setMajorForm({
-          majorCode: data.majorCode || "",
-          majorName: data.majorName || "",
-          description: data.description || "",
-        });
-
-        // Handle regulations array mapping
-        if (Array.isArray(data.regulations) && data.regulations.length > 0) {
-          setRegulations(
-            data.regulations.map((r: any, idx: number) => ({
-              id: r.id || `reg-${Date.now()}-${idx}`,
-              type: r.type || "Regulation",
-              code: r.code || r.type || "Regulation",
-              content: r.content || r.description || JSON.stringify(r),
-            })),
-          );
-        }
+      const majorId = result.data;
+      if (!majorId) {
+        throw new Error("No majorId returned from extraction process.");
       }
+
+      // Save extracted majorId in session storage
+      sessionStorage.setItem(`extracted_major_${documentId}`, majorId);
+
+      // Fetch the major details and regulations
+      await fetchFinalData(majorId);
     } catch (err: any) {
       console.error("Extraction error:", err);
-      toast.error(
-        err.message || "An error occurred during extraction API call.",
-      );
+      setExtractionError(err.message || "An error occurred during extraction API call.");
+      toast.error(err.message || "An error occurred during extraction API call.");
       setExtractionState("idle");
-      dispatch(clearAiProcessingMessage());
     }
   };
 
@@ -1299,13 +1247,13 @@ export default function PdfExtractionStep({
               className="flex-1 flex flex-col items-center justify-center p-8 text-center"
             >
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <Wand2 className="h-10 w-10 text-primary" />
+                <Cpu className="h-10 w-10 text-primary" />
               </div>
               <h2 className="text-2xl font-black text-on-surface mb-3">
-                AI Document Extraction
+                System Document Extraction
               </h2>
               <p className="text-on-surface-variant max-w-md mb-6">
-                Our AI will scan the PDF proposal, extract the Major details,
+                The system will automatically scan the PDF proposal, extract the Major details,
                 and identify all curriculum regulations and constraints.
               </p>
 
@@ -1335,34 +1283,17 @@ export default function PdfExtractionStep({
               exit={{ opacity: 0 }}
               className="flex-1 flex flex-col items-center justify-center p-8 text-center"
             >
-              <div className="relative w-24 h-24 mb-8">
-                <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+              <div className="relative w-20 h-20 mb-6 flex items-center justify-center">
+                <div className="absolute inset-0 border-4 border-primary/10 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
-                <Wand2 className="absolute inset-0 m-auto h-8 w-8 text-primary animate-pulse" />
+                <Cpu className="h-8 w-8 text-primary animate-pulse" />
               </div>
-              <h2 className="text-xl font-bold text-on-surface mb-2">
-                Analyzing Proposal...
+              <h2 className="text-lg font-black text-on-surface mb-2">
+                Extracting Proposal Data
               </h2>
-              <p className="text-on-surface-variant text-sm text-primary font-medium max-w-sm flex items-center justify-center">
-                {aiProcessingStatus === "IMPORT_SUCCESS" ? (
-                  <span>
-                    Extract success, importing Major{" "}
-                    <Timer startTime={startTime} />
-                  </span>
-                ) : aiProcessingMessage ? (
-                  <span>
-                    {aiProcessingMessage} <Timer startTime={startTime} />
-                  </span>
-                ) : (
-                  <span>
-                    Reading sections and parsing regulations{" "}
-                    <Timer startTime={startTime} />
-                  </span>
-                )}
+              <p className="text-on-surface-variant text-xs font-semibold uppercase tracking-wider bg-primary/10 px-4 py-1.5 rounded-full text-primary">
+                System Processing... <Timer startTime={startTime} />
               </p>
-
-              {/* Fake Progress List to simulate heavy background AI task */}
-              <SimulatedExtractionProgress startTime={startTime} />
             </motion.div>
           )}
 
