@@ -67,8 +67,8 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                 
                 {hasError && (
                   <span className="flex h-2 w-2 relative ml-1">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   </span>
                 )}
                 
@@ -89,11 +89,11 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
       <div className="flex-1 overflow-auto bg-white relative excel-scrollbar">
         {/* General Sheet Errors Banner */}
         {currentSheetErrors[-1] && (
-          <div className="sticky top-0 left-0 right-0 z-30 bg-red-50 border-b border-red-200 p-3 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div className="sticky top-0 left-0 right-0 z-30 bg-amber-50 border-b border-amber-200 p-3 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h4 className="text-[10px] font-black text-red-800 uppercase tracking-widest mb-1">Sheet Validation Error</h4>
-              <p className="text-xs text-red-700 font-bold whitespace-pre-wrap leading-relaxed">
+              <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-1">Sheet Validation Error</h4>
+              <p className="text-xs text-amber-700 font-bold whitespace-pre-wrap leading-relaxed">
                 {currentSheetErrors[-1]}
               </p>
             </div>
@@ -140,16 +140,16 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                       isHeaderRow 
                         ? 'font-bold' 
                         : isErrorRow 
-                          ? 'bg-red-50 hover:bg-red-100 relative' 
+                          ? 'bg-amber-50 hover:bg-amber-100 relative' 
                           : 'hover:bg-surface-variant/20'
                     }`}
                   >
                     <td className={`border border-outline/10 p-1 text-xs font-medium text-on-surface-variant/60 select-none sticky left-0 z-10 ${
-                      isErrorRow ? 'bg-red-100 text-red-600 font-bold' : 'bg-surface-container/20 group-hover:bg-surface-variant/40'
+                      isErrorRow ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-surface-container/20 group-hover:bg-surface-variant/40'
                     }`}>
                       <div className="flex items-center justify-center gap-1">
                         {isErrorRow && (
-                          <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                          <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
                         )}
                         <span>{rowIndex + 1}</span>
                       </div>
@@ -181,7 +181,7 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                           className={`border border-outline/10 px-3 py-2 relative text-xs align-top ${
                             isHighlighted ? 'bg-emerald-100 font-bold text-emerald-800 text-center' : 'text-left font-normal text-on-surface'
                           } ${
-                            isErrorRow ? 'text-red-700' : ''
+                            isErrorRow ? 'text-amber-800' : ''
                           }`}
                           title={cellValue !== undefined && cellValue !== null ? String(cellValue) : ""}
                         >
@@ -191,7 +191,7 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                           
                           {/* Only show error tooltip on the first data column if row has error */}
                           {isErrorRow && colIndex === 0 && (
-                            <div className="absolute z-50 left-0 top-full mt-1 hidden group-hover:flex w-max max-w-sm p-3 bg-red-600 text-white text-xs rounded-lg shadow-xl shadow-red-900/20 font-medium">
+                            <div className="absolute z-50 left-0 top-full mt-1 hidden group-hover:flex w-max max-w-sm p-3 bg-amber-600 text-white text-xs rounded-lg shadow-xl shadow-amber-900/20 font-medium">
                               <AlertCircle className="w-4 h-4 mr-2 shrink-0 text-white" />
                               <span className="whitespace-normal leading-relaxed">{errorMsg}</span>
                             </div>
@@ -214,8 +214,8 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
           <span>{currentSheetData.length} rows in {activeSheet}</span>
         </div>
         {Object.keys(currentSheetErrors).length > 0 && (
-          <div className="text-error font-bold flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5" />
+          <div className="text-amber-600 font-bold flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
             {Object.keys(currentSheetErrors).length} errors in this sheet
           </div>
         )}
