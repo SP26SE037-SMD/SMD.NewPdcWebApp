@@ -44,7 +44,7 @@ export const SprintListLayout = ({
   errorMessage,
   pagination,
   children,
-  emptyMessage = "No sprints found.",
+  emptyMessage = "No department tasks found.",
   itemCount = 0,
 }: SprintListLayoutProps) => {
   return (
@@ -66,7 +66,7 @@ export const SprintListLayout = ({
           />
           <input
             type="text"
-            placeholder="Search by sprint name..."
+            placeholder="Search by department task name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-zinc-50 border-none outline-none font-bold text-sm text-zinc-900 placeholder:text-zinc-300 transition-all rounded-xl"
@@ -140,7 +140,7 @@ export const SprintListLayout = ({
                 API Connection Error
               </h3>
               <p className="text-sm font-medium text-rose-300">
-                {errorMessage || "Failed to fetch sprints"}
+                {errorMessage || "Failed to fetch department tasks"}
               </p>
             </div>
           </div>

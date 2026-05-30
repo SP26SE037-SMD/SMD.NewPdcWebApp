@@ -20,6 +20,7 @@ import {
   SprintService,
   SPRINT_STATUS,
   SprintStatus,
+  SprintPayload,
 } from "@/services/sprint.service";
 import { CurriculumService, CURRICULUM_STATUS } from "@/services/curriculum.service";
 import { CreateSprintModal } from "@/components/hocfdc/CreateSprintModal";
@@ -76,7 +77,7 @@ export const SprintsManagement = ({
       SprintService.updateSprintStatus(sprintId, status),
     onSuccess: (res) => {
       if (res.status === 1000) {
-        showToast(`Sprint updated to ${res.data?.status}`, "success");
+        showToast(`Department Task updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprints"] });
         
         if (res.data?.status === SPRINT_STATUS.COMPLETED) {
@@ -90,11 +91,26 @@ export const SprintsManagement = ({
       showToast(err.message || "Connection error", "error"),
   });
 
+  const updateSprintMutation = useMutation({
+    mutationFn: ({ sprintId, payload }: { sprintId: string; payload: SprintPayload }) =>
+      SprintService.updateSprint(sprintId, payload),
+    onSuccess: (res) => {
+      if (res.status === 1000) {
+        showToast("Department Task updated successfully", "success");
+        queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      } else {
+        showToast(res.message || "Update failed", "error");
+      }
+    },
+    onError: (err: any) =>
+      showToast(err.message || "Connection error", "error"),
+  });
+
   const deleteSprintMutation = useMutation({
     mutationFn: (sprintId: string) => SprintService.deleteSprint(sprintId),
     onSuccess: (res) => {
       if (res.status === 1000) {
-        showToast("Sprint deleted successfully", "success");
+        showToast("Department Task deleted successfully", "success");
         queryClient.invalidateQueries({ queryKey: ["sprints"] });
       } else {
         showToast(res.message || "Delete failed", "error");
@@ -142,7 +158,7 @@ export const SprintsManagement = ({
               </button>
               <div className="space-y-1">
                 <h1 className="text-4xl font-black text-zinc-900 tracking-tight flex items-baseline gap-3">
-                  Manage Sprints
+                  Manage Department Tasks
                   <span className="text-4xl font-black text-zinc-400">
                     for {curriculum?.curriculumName || "..."}
                   </span>
@@ -162,7 +178,7 @@ export const SprintsManagement = ({
               className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
             >
               <Plus size={16} strokeWidth={3} />
-              Create Sprint
+              Create Department Task
             </button>
             {curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5 bg-amber-50/50 px-3 py-1 rounded-lg border border-amber-100">
@@ -200,7 +216,11 @@ export const SprintsManagement = ({
             index={idx}
             formatDate={formatDate}
             type="SUBJECT"
-            detailHref={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
+            detailHref={`/dashboard/hocfdc/framework-execution/${curriculumId}/department-tasks/${sprint.sprintId}`}
+            onStatusChange={(newStatus) => handleStatusChange(sprint.sprintId, newStatus)}
+            onEditSprint={async (sprintId, payload) => {
+              await updateSprintMutation.mutateAsync({ sprintId, payload });
+            }}
             actions={(total, closed, tasksLoading) => (
               <>
                 {sprint.status === SPRINT_STATUS.PLANNING && (
@@ -208,7 +228,7 @@ export const SprintsManagement = ({
                     onClick={() => {
                       if (
                         confirm(
-                          "DANGEROUS: Permanent Sprint Deletion? This will erase all planning data for this cycle.",
+                          "DANGEROUS: Permanent Department Task Deletion? This will erase all planning data for this cycle.",
                         )
                       ) {
                         deleteSprintMutation.mutate(sprint.sprintId);
@@ -216,7 +236,7 @@ export const SprintsManagement = ({
                     }}
                     disabled={deleteSprintMutation.isPending}
                     className="p-3 bg-white border border-zinc-100 text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all rounded-xl shadow-sm disabled:opacity-50"
-                    title="Delete Sprint"
+                    title="Delete Department Task"
                   >
                     {deleteSprintMutation.isPending ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -231,7 +251,7 @@ export const SprintsManagement = ({
                 )}
 
                 <Link
-                  href={`/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${sprint.sprintId}`}
+                  href={`/dashboard/hocfdc/framework-execution/${curriculumId}/department-tasks/${sprint.sprintId}`}
                   className="flex items-center gap-2 bg-zinc-100 text-zinc-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 rounded-xl"
                 >
                   VIEW DETAILS <KanbanSquare size={14} />

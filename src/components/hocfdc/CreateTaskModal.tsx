@@ -265,7 +265,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       const isAlreadyAdded = err.status === 400 && err.data?.status === 25006;
       showToast(
         isAlreadyAdded
-          ? "All subjects already have tasks in this sprint"
+          ? "All subjects already have tasks in this department task"
           : err.message || "Sync error",
         "error",
       );
@@ -418,7 +418,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Provide context for this deliverable..."
+                  placeholder="Provide context for this department task..."
                   className="w-full bg-zinc-50 border border-zinc-200 p-4 font-medium text-zinc-900 focus:border-zinc-900 transition-all outline-none rounded-xl resize-none"
                 />
               </div>

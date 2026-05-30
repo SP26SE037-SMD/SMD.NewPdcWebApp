@@ -84,7 +84,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     mutationFn: (data: SprintPayload) => SprintService.createSprint(data),
     onSuccess: (response) => {
       if (response.status === 1000) {
-        showToast("Sprint created successfully", "success");
+        showToast("Department Task created successfully", "success");
         queryClient.invalidateQueries({ queryKey: ["sprints"] });
         router.refresh(); // Revalidate the path to update server components
         onClose();
@@ -98,11 +98,11 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
         });
         setSelectedDeptId("");
       } else {
-        showToast(response.message || "Failed to create sprint", "error");
+        showToast(response.message || "Failed to create department task", "error");
       }
     },
     onError: (error: any) => {
-      showToast(error.message || "An error occurred while creating the sprint", "error");
+      showToast(error.message || "An error occurred while creating the department task", "error");
     }
   });
 
@@ -110,7 +110,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     e.preventDefault();
 
     if (!formData.sprintName.trim()) {
-      showToast("Sprint name is required", "warning");
+      showToast("Department Task name is required", "warning");
       return;
     }
 
@@ -120,7 +120,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
     }
 
     if (!selectedDeptId) {
-      showToast("Please select a department for this sprint", "warning");
+      showToast("Please select a department for this department task", "warning");
       return;
     }
 
@@ -168,7 +168,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
             {/* Modal Header */}
             <div className="flex items-center justify-between p-8 border-b border-zinc-100 bg-zinc-50/50">
               <div className="space-y-1">
-                 <h2 className="text-3xl font-black text-primary tracking-tighter uppercase">Create Sprint</h2>
+                 <h2 className="text-3xl font-black text-primary tracking-tighter uppercase">Create Department Task</h2>
                  <div className="flex items-center gap-2">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                         <GraduationCap size={14} className="text-primary"/> 
@@ -198,7 +198,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                <div className="space-y-8">
                   <div className="space-y-3">
                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                        <Target size={14} className="text-primary" /> Sprint Name / Campaign
+                        <Target size={14} className="text-primary" /> Department Task Name / Campaign
                      </label>
                      <input 
                        type="text" 
@@ -213,7 +213,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                    <div className="grid grid-cols-1 gap-8">
                       <div className="space-y-3">
                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                            <Building2 size={14} className="text-primary" /> Academic Department (Sprint Owner)
+                            <Building2 size={14} className="text-primary" /> Academic Department (Task Owner)
                          </label>
                          <select
                            required
@@ -231,7 +231,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                          {filteredDepts.length === 0 && depts.length > 0 && (
                            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-2 flex items-center gap-1.5">
                              <X size={12} />
-                             All involved departments already have an active sprint.
+                             All involved departments already have an active department task.
                            </p>
                          )}
                       </div>
@@ -269,7 +269,7 @@ export const CreateSprintModal = ({ isOpen, onClose, curriculumId }: CreateSprin
                   <div className="flex-1 p-4 bg-sky-50 rounded-lg border-l-4 border-sky-400">
                      <p className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1">Status: {formData.status}</p>
                      <p className="text-xs text-sky-600 font-medium leading-relaxed">
-                        Newly created sprints default to Planning status.
+                        Newly created department tasks default to Planning status.
                      </p>
                   </div>
                   <div className="flex gap-4">

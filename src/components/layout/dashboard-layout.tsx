@@ -289,7 +289,7 @@ export default function DashboardLayout({
               label: "Subjects",
             },
             {
-              href: "/dashboard/hopdc/tasks",
+              href: "/dashboard/hopdc/department-tasks",
               icon: "event_available",
               label: "Tasks",
             },

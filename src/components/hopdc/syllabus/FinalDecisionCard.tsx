@@ -273,7 +273,7 @@ export function FinalDecisionCard({
           rawTask?.curriculumId;
         if (effectiveSprintId && effectiveCurrId) {
           router.push(
-            `/dashboard/hocfdc/framework-execution/${effectiveCurrId}/sprints/${effectiveSprintId}`,
+            `/dashboard/hocfdc/framework-execution/${effectiveCurrId}/department-tasks/${effectiveSprintId}`,
           );
         } else {
           router.back();
@@ -471,7 +471,7 @@ export function FinalDecisionCard({
           rawTask?.curriculumId;
         if (effectiveSprintId && effectiveCurrId) {
           router.push(
-            `/dashboard/hocfdc/framework-execution/${effectiveCurrId}/sprints/${effectiveSprintId}`,
+            `/dashboard/hocfdc/framework-execution/${effectiveCurrId}/department-tasks/${effectiveSprintId}`,
           );
         } else {
           router.back();

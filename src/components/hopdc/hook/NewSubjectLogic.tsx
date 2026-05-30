@@ -205,7 +205,7 @@ export function useNewSubjectLogic() {
     }
 
     router.push(
-      `/dashboard/hopdc/tasks/new-subject/standard-input?${params.toString()}`,
+      `/dashboard/hopdc/department-tasks/new-subject/standard-input?${params.toString()}`,
     );
   };
 

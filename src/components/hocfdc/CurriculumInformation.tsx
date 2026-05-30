@@ -341,7 +341,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 }
                 className="px-6 py-3 bg-zinc-100 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2.5"
               >
-                <Rocket size={16} /> Sprints
+                <Rocket size={16} /> Department Tasks
               </button>
             )}
 

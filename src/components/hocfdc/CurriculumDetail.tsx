@@ -44,7 +44,7 @@ const TABS = [
   { id: "plo", label: "PLOs", icon: Target },
   { id: "mapping", label: "PO-PLO Mapping", icon: Network },
   { id: "semester", label: "Semester Structure", icon: Layout },
-  { id: "sprints", label: "Sprints", icon: KanbanSquare },
+  { id: "department-tasks", label: "Department Tasks", icon: KanbanSquare },
 ] as const;
 
 type TabType = (typeof TABS)[number]["id"];
@@ -418,7 +418,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
               {activeTab === "semester" && (
                 <CurriculumInformation id={id} isEmbedded={true} />
               )}
-              {activeTab === "sprints" && (
+              {activeTab === "department-tasks" && (
                 <SprintsManagement curriculumId={id} isEmbedded={true} />
               )}
             </motion.div>
