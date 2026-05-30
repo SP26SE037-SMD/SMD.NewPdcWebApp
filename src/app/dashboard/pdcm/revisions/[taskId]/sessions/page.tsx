@@ -1056,7 +1056,15 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 const firstSheetName = workbook.SheetNames[0];
                                                 const worksheet = workbook.Sheets[firstSheetName];
                                                 const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                                                const rows = rawRows.filter((r: any) => Object.keys(r).some((k: any) => r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== ''));
+                                                const rows = rawRows.filter((r: any) => {
+                                                    const hasData = Object.keys(r).some((k: any) => r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '');
+                                                    if (!hasData) return false;
+                                                    const title = String(r['Title'] || r['title'] || '').trim();
+                                                    const topic = String(r['Topic'] || r['topic'] || '').trim();
+                                                    // Require at least a title or a topic to consider it a valid session row
+                                                    if (!title && !topic) return false;
+                                                    return true;
+                                                });
 
                                                 if (!syllabusId) return;
 
@@ -1351,19 +1359,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 delete p.content; // Exclude internal state
                                                 return p;
                                             });
-
-                                            // Auto-download payload for debugging
-                                            try {
-                                                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `sessions_payload_revisions_${new Date().getTime()}.json`;
-                                                a.click();
-                                                URL.revokeObjectURL(url);
-                                            } catch (e) {
-                                                console.error("Failed to download payload", e);
-                                            }
 
                                             console.log("BULK CREATE PAYLOAD:", payload);
                                             await SessionService.bulkCreateSessions(payload);
