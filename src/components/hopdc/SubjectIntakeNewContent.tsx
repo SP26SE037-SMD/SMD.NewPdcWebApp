@@ -274,7 +274,7 @@ export default function NewSubjectContent() {
         {/* Tab 0: Subject Information */}
         {activeTab === "subject" && (
           <div className="animate-in fade-in duration-300">
-            <SubjectDetail subject={subject} />
+            <SubjectDetail id={subject.subjectId} initialSubject={subject as any} />
           </div>
         )}
 
