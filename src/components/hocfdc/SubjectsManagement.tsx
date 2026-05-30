@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -83,6 +83,14 @@ export default function SubjectsManagement({
   // For smooth typing without immediate re-renders
   const [localSearch, setLocalSearch] = useState(currentSearch);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [isDebouncing, setIsDebouncing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +155,9 @@ export default function SubjectsManagement({
       params.set("page", changes.page.toString());
     }
 
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   };
 
   const handleFilterChange = (status: string) => {
@@ -164,7 +174,10 @@ export default function SubjectsManagement({
     setLocalSearch(val);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
+    setIsDebouncing(true);
+
     debounceTimerRef.current = setTimeout(() => {
+      setIsDebouncing(false);
       updateUrlParams({ search: val, page: 0 });
     }, 500);
   };
@@ -234,10 +247,13 @@ export default function SubjectsManagement({
           <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
             {/* Search */}
             <div className="relative w-full sm:w-80">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300"
-                size={18}
-              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 flex items-center justify-center pointer-events-none">
+                {isDebouncing || isPending ? (
+                  <Loader2 className="animate-spin text-primary" size={18} />
+                ) : (
+                  <Search size={18} />
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="Search code, name, department..."

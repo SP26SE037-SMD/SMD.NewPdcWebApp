@@ -386,6 +386,8 @@ export default function CurriculumImportStep({ majorId, majorCode, onImportSucce
                   onClick={() => {
                     setFile(null);
                     setValidationResult(null);
+                    setErrorMap({});
+                    setWorkbookData(null);
                   }}
                   className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition"
                   title="Remove file"

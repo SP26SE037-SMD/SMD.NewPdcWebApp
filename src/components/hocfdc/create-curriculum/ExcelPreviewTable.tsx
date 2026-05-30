@@ -166,7 +166,7 @@ export default function ExcelPreviewTable({ workbookData, errorMap, hideTabs }: 
                       } else if (activeSheet === "Curriculum") {
                         isHighlighted = (rowIndex === 0 && colIndex < 5) || (rowIndex === 3 && colIndex < 3);
                       } else if (activeSheet === "Subject") {
-                        isHighlighted = (rowIndex === 0 && colIndex < 15);
+                        isHighlighted = (rowIndex === 0 && colIndex < 16);
                       } else if (activeSheet === "Group") {
                         isHighlighted = (rowIndex === 0 && colIndex < 4);
                       } else if (activeSheet === "Semester Mapping") {

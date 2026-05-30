@@ -1156,17 +1156,15 @@ export default function AcademicDocumentsContent() {
                     <button
                       disabled={!file || !documentTitle || uploading}
                       onClick={handleDirectUpload}
-                      className="px-6 py-3 font-bold text-sm text-zinc-500 hover:text-[#1d5c42] hover:bg-[#1d5c42]/5 rounded-xl transition-all disabled:opacity-50"
+                      className="px-8 py-3 bg-[#1d5c42] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#1d5c42]/20 hover:bg-[#144330] transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
                     >
-                      {uploading ? <Loader2 size={18} className="animate-spin" /> : "Skip & Add"}
-                    </button>
-                    <button
-                      disabled={!file || !documentTitle || uploading}
-                      onClick={handleValidate}
-                      className="px-8 py-3 bg-[#1d5c42] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#1d5c42]/20 hover:bg-[#144330] transition-all disabled:opacity-50 flex items-center gap-2 active:scale-95"
-                    >
-                      <FileSearch size={18} />
-                      Validate PDF Content
+                      {uploading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" /> Adding...
+                        </>
+                      ) : (
+                        "Add Proposal"
+                      )}
                     </button>
                   </>
                 ) : validationState === "success" ? (
