@@ -14,7 +14,6 @@ import {
   X,
   Edit2,
   Info,
-  BookOpen,
   Building2,
   FileText,
 } from "lucide-react";
@@ -268,7 +267,7 @@ export default function SubjectDetail({
                   </span>
                   <div className="w-1 h-1 rounded-full bg-zinc-200" />
                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                    {viewMode === "SYLLABUS" ? "SYLLABUS EXPLORER" : subject.department?.departmentName}
+                    {viewMode === "SYLLABUS" ? "SYLLABUS LIST" : subject.department?.departmentName}
                   </span>
                 </div>
                 <h1 className="text-2xl font-black text-zinc-900 tracking-tight leading-none">
@@ -466,19 +465,26 @@ export default function SubjectDetail({
                       </div>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-10 shadow-sm space-y-8">
-                      <div className="flex items-center justify-between">
+                    <div className="relative overflow-hidden rounded-[10px] border border-white bg-white/85 p-8 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] backdrop-blur-xl space-y-4">
+                      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
+                      <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-[10px] flex items-center justify-center">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-indigo-50 text-indigo-500 shadow-sm">
                             <Layers size={20} />
                           </div>
-                          <h3 className="text-lg font-black text-zinc-900 uppercase tracking-widest">Prerequisites Hub</h3>
+                          <div>
+                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">Prerequisites Hub</h3>
+                          </div>
                         </div>
-                        <button onClick={() => router.push("/dashboard/hopdc/prerequisites")} className="px-4 py-2 bg-zinc-900 text-[10px] font-black text-white uppercase tracking-widest rounded-[10px] hover:bg-primary transition-all active:scale-95">
+                        <button
+                          onClick={() => router.push("/dashboard/hopdc/prerequisites")}
+                          className="rounded-[12px] bg-zinc-900 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-zinc-900/10 transition-all hover:-translate-y-0.5 hover:bg-primary active:scale-95"
+                        >
                           Manage Engine
                         </button>
                       </div>
-                      <div className="h-[450px] w-full bg-zinc-900 rounded-[10px] overflow-hidden relative border-4 border-white shadow-inner">
+
+                      <div className="relative h-112.5 w-full overflow-hidden">
                         <SubjectPrerequisiteRoadmap initialSubjectId={subject.subjectId} />
                       </div>
                     </div>
@@ -585,12 +591,8 @@ export default function SubjectDetail({
                             onClick={() => setViewMode("SYLLABUS")}
                             className="w-full py-3 bg-white text-primary rounded-[10px] text-sm font-black uppercase tracking-widest hover:shadow-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
                           >
-                            <BookOpen size={14} />
-                            Explore Syllabus Versions
-                          </button>
-                          <button className="w-full py-3 bg-white/20 backdrop-blur-md rounded-[10px] text-sm font-black uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10 flex items-center justify-center gap-2">
                             <FileText size={14} />
-                            Generate Full Report
+                            Explore Syllabus Versions
                           </button>
                         </div>
                       </div>

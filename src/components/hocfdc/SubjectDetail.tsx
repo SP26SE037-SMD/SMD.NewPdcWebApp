@@ -16,10 +16,7 @@ import {
   X,
   Edit2,
   Info,
-  BookOpen,
   FileText,
-  Users,
-  CheckSquare,
 } from "lucide-react";
 import {
   Subject,
@@ -29,6 +26,7 @@ import {
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubjectPrerequisiteRoadmap } from "./SubjectPrerequisiteRoadmap";
+import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySubject";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -41,60 +39,6 @@ const STATUS_COLORS: Record<string, string> = {
     "text-emerald-600 bg-emerald-50 border-emerald-100",
   [SUBJECT_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
 };
-
-// --- MOCK DATA ---
-const MOCK_CURRICULUMS = [
-  {
-    id: "curr-1",
-    majorName: "Software Engineering",
-    majorCode: "SE",
-    mappings: [
-      { clo: "CLO1: Understand basic concepts", plo: "PLO1.1: Foundations" },
-      { clo: "CLO2: Design patterns", plo: "PLO2.3: System Design" },
-      { clo: "CLO3: Teamwork", plo: "PLO5.1: Professional Ethics" },
-    ],
-  },
-  {
-    id: "curr-2",
-    majorName: "Digital Marketing",
-    majorCode: "DM",
-    mappings: [
-      { clo: "CLO1: Understand basic concepts", plo: "PLO3.2: Analytics" },
-      { clo: "CLO4: Market research", plo: "PLO4.1: Strategic Planning" },
-    ],
-  },
-];
-
-const MOCK_SYLLABUSES = [
-  {
-    id: "syll-v2",
-    versionName: "Syllabus 2024 - Standard",
-    status: "ACTIVE",
-    version: "2.0",
-    materials: [
-      { id: "m1", name: "Core Banking Systems", type: "PDF", date: "2024-01-15", desc: "Main textbook for the course", status: "VERIFIED" },
-      { id: "m2", name: "Financial Risk Management", type: "Slides", date: "2024-02-10", desc: "Lecture slides for week 1-5", status: "PENDING" },
-    ],
-    sessions: [
-      { id: "s1", number: 1, title: "Introduction to Banking", method: "Lecture", duration: "90 min", type: "Theory", topic: "Basic operations" },
-      { id: "s2", number: 2, title: "Credit Risk Analysis", method: "Workshop", duration: "120 min", type: "Practical", topic: "Scoring models" },
-    ],
-    assessments: [
-      { id: "a1", category: "Quiz", weight: "10%", criteria: "MCQ Test", duration: "15 min", type: "Formative" },
-      { id: "a2", category: "Midterm", weight: "30%", criteria: "Essay + Project", duration: "90 min", type: "Summative" },
-      { id: "a3", category: "Final Exam", weight: "60%", criteria: "Problem Solving", duration: "120 min", type: "Summative" },
-    ],
-  },
-  {
-    id: "syll-v1",
-    versionName: "Syllabus 2023 - Archive",
-    status: "ARCHIVED",
-    version: "1.0",
-    materials: [],
-    sessions: [],
-    assessments: [],
-  },
-];
 
 export default function SubjectDetail({
   id,
@@ -118,8 +62,6 @@ export default function SubjectDetail({
 
   // New UI states
   const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">("DETAIL");
-  const [selectedMajorForMapping, setSelectedMajorForMapping] = useState<any>(null);
-  const [selectedSyllabus, setSelectedSyllabus] = useState<any>(MOCK_SYLLABUSES[0]);
 
   const fetchSubject = async (showLoading = true) => {
     try {
@@ -260,9 +202,9 @@ export default function SubjectDetail({
                   {subject.subjectCode}
                 </span>
                 <div className="w-1 h-1 rounded-full bg-zinc-200" />
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                  {viewMode === "SYLLABUS" ? "SYLLABUS EXPLORER" : subject.department?.departmentName}
-                </span>
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                    {viewMode === "SYLLABUS" ? "SYLLABUS LIST" : subject.department?.departmentName}
+                  </span>
               </div>
               <h1 className="text-2xl font-black text-zinc-900 tracking-tight leading-none">
                 {subject.subjectName}
@@ -311,15 +253,9 @@ export default function SubjectDetail({
                   Commit
                 </button>
               ) : viewMode === "DETAIL" ? null : (
-                <select
-                  value={selectedSyllabus.id}
-                  onChange={(e) => setSelectedSyllabus(MOCK_SYLLABUSES.find(s => s.id === e.target.value))}
-                  className="px-4 py-2 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] border-none focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                >
-                  {MOCK_SYLLABUSES.map(s => (
-                    <option key={s.id} value={s.id}>{s.versionName}</option>
-                  ))}
-                </select>
+                <div className="px-4 py-2 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] border border-white/10">
+                  Subject syllabus list
+                </div>
               )}
             </div>
           </div>
@@ -460,19 +396,26 @@ export default function SubjectDetail({
                       </div>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-10 shadow-sm space-y-8">
-                      <div className="flex items-center justify-between">
+                    <div className="relative overflow-hidden rounded-[10px] border border-white bg-white/85 p-8 shadow-[0_20px_70px_-30px_rgba(15,23,42,0.25)] backdrop-blur-xl space-y-4">
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                      <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-[10px] flex items-center justify-center">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-indigo-50 text-indigo-500 shadow-sm">
                             <Layers size={20} />
                           </div>
-                          <h3 className="text-lg font-black text-zinc-900 uppercase tracking-widest">Prerequisites Hub</h3>
+                          <div>
+                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">Prerequisites Hub</h3>
+                          </div>
                         </div>
-                        <button onClick={() => router.push("/dashboard/hocfdc/prerequisites")} className="px-4 py-2 bg-zinc-900 text-[10px] font-black text-white uppercase tracking-widest rounded-[10px] hover:bg-primary transition-all active:scale-95">
+                        <button
+                          onClick={() => router.push("/dashboard/hocfdc/prerequisites")}
+                          className="rounded-[12px] bg-zinc-900 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-zinc-900/10 transition-all hover:-translate-y-0.5 hover:bg-primary active:scale-95"
+                        >
                           Manage Engine
                         </button>
                       </div>
-                      <div className="h-[450px] w-full bg-zinc-900 rounded-[10px] overflow-hidden relative border-4 border-white shadow-inner">
+
+                      <div className="relative h-[450px] w-full overflow-hidden">
                         <SubjectPrerequisiteRoadmap initialSubjectId={subject.subjectId} />
                       </div>
                     </div>
@@ -507,65 +450,17 @@ export default function SubjectDetail({
                             <Layers size={16} />
                           </div>
                           <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest">
-                            {selectedMajorForMapping ? "Mapping Details" : "Curriculum Mapping"}
+                            Curriculum Mapping
                           </h3>
                         </div>
-                        {selectedMajorForMapping && (
-                          <button
-                            onClick={() => setSelectedMajorForMapping(null)}
-                            className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
-                          >
-                            Back
-                          </button>
-                        )}
                       </div>
 
-                      <AnimatePresence mode="wait">
-                        {selectedMajorForMapping ? (
-                          <motion.div
-                            key="mapping-detail"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="space-y-4"
-                          >
-                            <div className="p-4 bg-zinc-900 rounded-[10px] mb-4">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{selectedMajorForMapping.majorCode}</p>
-                              <p className="text-sm font-bold text-white">{selectedMajorForMapping.majorName}</p>
-                            </div>
-                            <div className="space-y-3">
-                              {selectedMajorForMapping.mappings.map((m: any, idx: number) => (
-                                <div key={idx} className="p-3 bg-zinc-50 border border-zinc-100 rounded-[10px]">
-                                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{m.clo}</p>
-                                  <p className="text-xs font-bold text-zinc-900 tracking-tight">{m.plo}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="major-list"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-3"
-                          >
-                            {MOCK_CURRICULUMS.map((major) => (
-                              <button
-                                key={major.id}
-                                onClick={() => setSelectedMajorForMapping(major)}
-                                className="w-full flex items-center justify-between p-4 bg-white border border-zinc-100 rounded-[10px] hover:border-primary transition-all group shadow-sm"
-                              >
-                                <div className="text-left">
-                                  <p className="text-xs font-black text-primary uppercase tracking-widest mb-0.5">{major.majorCode}</p>
-                                  <p className="text-sm font-bold text-zinc-800">{major.majorName}</p>
-                                </div>
-                                <ChevronRight size={16} className="text-zinc-300 group-hover:text-primary transition-colors" />
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <div className="space-y-3">
+                        <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-[10px]">
+                          <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-1">Current subject</p>
+                          <p className="text-sm font-bold text-zinc-900">{subject.subjectCode}</p>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="p-8 bg-gradient-to-br from-primary to-emerald-600 rounded-[10px] text-white shadow-lg shadow-primary/20 relative overflow-hidden group">
@@ -576,12 +471,8 @@ export default function SubjectDetail({
                           onClick={() => setViewMode("SYLLABUS")}
                           className="w-full py-3 bg-white text-primary rounded-[10px] text-sm font-black uppercase tracking-widest hover:shadow-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
                         >
-                          <BookOpen size={14} />
-                          Explore Syllabus Versions
-                        </button>
-                        <button className="w-full py-3 bg-white/20 backdrop-blur-md rounded-[10px] text-sm font-black uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10 flex items-center justify-center gap-2">
                           <FileText size={14} />
-                          Generate Full Report
+                          Explore Syllabus Versions
                         </button>
                       </div>
                     </div>
@@ -597,108 +488,8 @@ export default function SubjectDetail({
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-12 gap-8"
           >
-            <div className="col-span-12 grid grid-cols-3 gap-8">
-              {/* Materials Column */}
-              <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
-                  <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-[10px] flex items-center justify-center">
-                    <FileText size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">Materials</h3>
-                    <p className="text-xs text-zinc-400 font-bold uppercase">{selectedSyllabus.materials.length} resources</p>
-                  </div>
-                </div>
-                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {selectedSyllabus.materials.map((m: any) => (
-                    <div key={m.id} className="p-5 bg-zinc-50 border border-zinc-100 rounded-[10px] group hover:bg-white hover:border-primary/20 transition-all">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="px-2 py-1 bg-zinc-900 text-[10px] font-black text-white rounded-[10px]">{m.type}</span>
-                        <span className="text-xs font-bold text-zinc-400">{m.date}</span>
-                      </div>
-                      <p className="text-sm font-black text-zinc-900 mb-1">{m.name}</p>
-                      <p className="text-xs text-zinc-500 font-medium leading-relaxed">{m.desc}</p>
-                      <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-between">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${m.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                          {m.status}
-                        </span>
-                        <button className="text-xs font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">View File</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sessions Column */}
-              <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
-                  <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-[10px] flex items-center justify-center">
-                    <Users size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">Sessions</h3>
-                    <p className="text-xs text-zinc-400 font-bold uppercase">{selectedSyllabus.sessions.length} modules</p>
-                  </div>
-                </div>
-                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {selectedSyllabus.sessions.map((s: any) => (
-                    <div key={s.id} className="p-5 bg-zinc-900 text-white rounded-[10px] relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <span className="text-4xl font-black">{s.number}</span>
-                      </div>
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-black text-primary uppercase tracking-widest">{s.type}</span>
-                          <div className="w-1 h-1 rounded-full bg-white/20" />
-                          <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{s.duration}</span>
-                        </div>
-                        <p className="text-sm font-black mb-1 group-hover:text-primary transition-colors">{s.title}</p>
-                        <p className="text-xs text-white/50 font-medium mb-4 italic">"{s.topic}"</p>
-                        <div className="flex items-center gap-2">
-                          <div className="px-3 py-1 bg-white/10 rounded-[10px] text-[10px] font-black uppercase tracking-widest">{s.method}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Assessments Column */}
-              <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
-                  <div className="w-10 h-10 bg-primary/10 text-primary rounded-[10px] flex items-center justify-center">
-                    <CheckSquare size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-zinc-900 uppercase tracking-widest">Assessments</h3>
-                    <p className="text-xs text-zinc-400 font-bold uppercase">Weight: 100%</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {selectedSyllabus.assessments.map((a: any) => (
-                    <div key={a.id} className="p-5 border border-zinc-100 rounded-[10px] hover:border-primary/30 transition-all flex items-center justify-between bg-white shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-zinc-50 rounded-[10px] flex flex-col items-center justify-center border border-zinc-100">
-                          <span className="text-[10px] font-black text-zinc-900 tracking-tighter">{a.weight}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-zinc-900 mb-0.5">{a.category}</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.type}</span>
-                            <div className="w-1 h-1 rounded-full bg-zinc-200" />
-                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{a.duration}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-zinc-300" />
-                    </div>
-                  ))}
-                </div>
-                <div className="p-6 bg-zinc-50 rounded-[10px] border border-dashed border-zinc-200 text-center">
-                  <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Grading Policy</p>
-                  <p className="text-xs text-zinc-500 font-medium leading-relaxed italic">"Must achieve min score of {subject.minToPass} on all summative components."</p>
-                </div>
-              </div>
+            <div className="col-span-12 bg-white/80 backdrop-blur-xl rounded-[10px] border border-white shadow-sm overflow-hidden">
+              <SyllabusListBySubject subjectId={id} hideHeader={true} />
             </div>
           </motion.div>
         )}
