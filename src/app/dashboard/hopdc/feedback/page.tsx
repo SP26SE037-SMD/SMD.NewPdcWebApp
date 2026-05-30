@@ -40,16 +40,12 @@ import { FeedbackReport } from "./_components/FeedbackReport";
 
 const DEFAULT_FORM_TYPES = ["MIDTERM", "FINAL", "GENERAL", "WEEKLY"];
 const QUESTION_TYPES: FeedbackCreateQuestionPayload["type"][] = [
-  "TEXT",
   "SHORT_TEXT",
   "PARAGRAPH",
   "RADIO",
   "CHECKBOX",
   "DROPDOWN",
-  "SCALE",
   "LINEAR_SCALE",
-  "DATE",
-  "TIME",
 ];
 
 type SectionAction = "NEXT" | "SUBMIT" | "GO_TO_SECTION";
@@ -483,11 +479,11 @@ export default function HopdcFeedbackPage() {
   const [addingQuestion, setAddingQuestion] = useState(false);
   const [questionForm, setQuestionForm] = useState<{
     content: string;
-    type: FeedbackCreateQuestionPayload["type"];
+    type: FeedbackCreateQuestionPayload["type"] | "";
     isRequired: boolean;
   }>({
     content: "",
-    type: "TEXT",
+    type: "",
     isRequired: true,
   });
   const [questionOptions, setQuestionOptions] = useState<QuestionOptionDraft[]>(
@@ -536,7 +532,9 @@ export default function HopdcFeedbackPage() {
     return ["ALL", ...Array.from(types)];
   }, [forms]);
 
-  const questionNeedsOptions = isOptionQuestionType(questionForm.type);
+  const questionNeedsOptions = isOptionQuestionType(
+    questionForm.type as FeedbackCreateQuestionPayload["type"],
+  );
 
   useEffect(() => {
     if (questionNeedsOptions && questionOptions.length === 0) {
@@ -575,7 +573,7 @@ export default function HopdcFeedbackPage() {
     setEditingQuestionId(null);
     setQuestionForm({
       content: "",
-      type: "TEXT",
+      type: "",
       isRequired: true,
     });
     setQuestionOptions([]);
@@ -977,6 +975,11 @@ export default function HopdcFeedbackPage() {
 
     if (!questionForm.content.trim()) {
       setError("Question content is required.");
+      return;
+    }
+
+    if (!questionForm.type) {
+      setError("Please choose a question type.");
       return;
     }
 
@@ -1515,11 +1518,9 @@ export default function HopdcFeedbackPage() {
                               <div>
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                   <div>
-                                    <p className="text-xs font-black uppercase tracking-wider text-primary">
-                                      {form.formType}
-                                    </p>
+                                    
                                     <p className="mt-1 break-all text-sm font-bold text-on-surface group-hover:text-primary transition-colors duration-300">
-                                      {form.id}
+                                      {form.formType}
                                     </p>
                                   </div>
 
@@ -1588,21 +1589,6 @@ export default function HopdcFeedbackPage() {
                                   >
                                     <BarChart className="h-3.5 w-3.5" />
                                     View Results
-                                  </button>
-                                )}
-
-                                {!form.isActive && (
-                                  <button
-                                    onClick={() => handlePublish(form.id)}
-                                    disabled={publishingFormId === form.id}
-                                    className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-primary/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-primary/10 transition duration-300 hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {publishingFormId === form.id ? (
-                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Send className="h-3.5 w-3.5" />
-                                    )}
-                                    Publish
                                   </button>
                                 )}
                               </div>
@@ -2080,6 +2066,7 @@ export default function HopdcFeedbackPage() {
                                       }
                                       className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
                                     >
+                                      <option value="">Choose type...</option>
                                       {QUESTION_TYPES.map((type) => (
                                         <option key={type} value={type}>
                                           {type}
