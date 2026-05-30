@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
 
         const text = await response.text();
         console.log(`[Bulk Create Proxy] Backend Status: ${response.status}`);
+        
+        try {
+            const fs = require('fs');
+            fs.writeFileSync('last_backend_bulk_error.log', `Status: ${response.status}\nBody: ${text}\nPayload sent: ${JSON.stringify(body)}`);
+        } catch(err) {
+            console.error("Failed to write log", err);
+        }
 
         let data;
         try {
