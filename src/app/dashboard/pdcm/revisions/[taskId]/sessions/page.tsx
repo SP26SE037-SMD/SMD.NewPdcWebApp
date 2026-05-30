@@ -1354,6 +1354,19 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 return p;
                                             });
 
+                                            // Auto-download payload for debugging
+                                            try {
+                                                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `sessions_payload_revisions_${new Date().getTime()}.json`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            } catch (e) {
+                                                console.error("Failed to download payload", e);
+                                            }
+
                                             console.log("BULK CREATE PAYLOAD:", payload);
                                             await SessionService.bulkCreateSessions(payload);
 
