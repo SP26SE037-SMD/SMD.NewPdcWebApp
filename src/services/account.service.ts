@@ -120,4 +120,14 @@ export const AccountService = {
       .map((item) => toAccount(item))
       .filter((item) => !!item.accountId);
   },
+
+  async updateAccount(
+    accountId: string,
+    payload: { fullName: string; phoneNumber: string; avatarUrl: string },
+  ): Promise<any> {
+    return apiClient.put<any>(
+      `/api/accounts?id=${accountId}&status=true`,
+      payload,
+    );
+  },
 };

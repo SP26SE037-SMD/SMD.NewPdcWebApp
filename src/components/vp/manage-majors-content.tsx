@@ -71,7 +71,7 @@ export default function ManageMajorsContent() {
     description: "",
     deadline: "",
     type: "CREATE_CURRICULUM",
-    priority: "HIGH",
+    priority: "NORMAL",
   });
 
   // Step 2: Program Outcomes State
@@ -992,8 +992,9 @@ export default function ManageMajorsContent() {
                             }
                             className="w-full bg-[#f1f4f5] border border-transparent focus:border-[#4caf50]/30 rounded-lg px-4 py-2 text-[#2d3335] text-sm outline-none transition-all appearance-none"
                           >
+                            <option value="URGENT">Urgent</option>
                             <option value="HIGH">High</option>
-                            <option value="MEDIUM">Medium</option>
+                            <option value="NORMAL">Normal</option>
                             <option value="LOW">Low</option>
                           </select>
                         </div>

@@ -909,14 +909,14 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
               ? {
                   taskName: `REVIEW SYLLABUS: ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
                   description: `Review syllabus content for ${taskModalParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                  priority: "MEDIUM",
+                  priority: "NORMAL",
                   dueDate: taskModalParentTask?.deadline,
                   excludeAccountId: taskModalParentTask?.account?.accountId,
                 }
               : {
                   taskName: `CREATE SYLLABUS: ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
                   description: `Draft syllabus content for ${taskModalParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                  priority: "MEDIUM",
+                  priority: "NORMAL",
                 }
           }
         />

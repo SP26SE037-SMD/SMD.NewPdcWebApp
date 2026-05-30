@@ -202,7 +202,7 @@ export default function AcademicDocumentsContent() {
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0],
-    priority: "HIGH",
+    priority: "NORMAL",
   });
 
   const dispatch = useDispatch();
@@ -1290,8 +1290,9 @@ export default function AcademicDocumentsContent() {
                       }
                       className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#1d5c42] focus:ring-2 focus:ring-[#1d5c42]/20 outline-none transition-all font-medium appearance-none"
                     >
+                      <option value="URGENT">Urgent</option>
                       <option value="HIGH">High</option>
-                      <option value="MEDIUM">Medium</option>
+                      <option value="NORMAL">Normal</option>
                       <option value="LOW">Low</option>
                     </select>
                   </div>

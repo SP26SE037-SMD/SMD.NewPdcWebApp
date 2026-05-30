@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { SubjectDetail } from "@/components/hopdc/subject/SubjectDetail";
+import  SubjectDetail from "@/components/hopdc/subject/SubjectDetail";
 import { CreateCloModal } from "@/components/hopdc/subject/CreateCloModal";
 import { UpdateCloModal } from "@/components/hopdc/subject/UpdateCloModal";
 import { CreateSyllabusModal } from "@/components/hopdc/subject/CreateSyllabusModal";
@@ -274,7 +274,7 @@ export default function NewSubjectContent() {
         {/* Tab 0: Subject Information */}
         {activeTab === "subject" && (
           <div className="animate-in fade-in duration-300">
-            <SubjectDetail subject={subject} />
+            <SubjectDetail id={subject.subjectId} initialSubject={subject as any} />
           </div>
         )}
 

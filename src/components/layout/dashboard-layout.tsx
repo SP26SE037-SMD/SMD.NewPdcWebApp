@@ -285,18 +285,13 @@ export default function DashboardLayout({
           items: [
             {
               href: "/dashboard/hopdc",
-              icon: "dashboard",
-              label: "Overview",
+              icon: BookOpen,
+              label: "Subjects",
             },
             {
               href: "/dashboard/hopdc/tasks",
               icon: "event_available",
               label: "Tasks",
-            },
-            {
-              href: "/dashboard/hopdc/subjects",
-              icon: BookOpen,
-              label: "Subjects",
             },
             {
               href: "/dashboard/hopdc/requests",
