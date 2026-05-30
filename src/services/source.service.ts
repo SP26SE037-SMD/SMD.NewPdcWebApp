@@ -41,6 +41,21 @@ export const SourceService = {
     return response.json();
   },
 
+  async getProposedSubjectSources(
+    subjectId: string,
+  ): Promise<ApiResponse<any[]>> {
+    const response = await fetch(`/api/proposed-sources/subject/${subjectId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { accept: "*/*" },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to fetch proposed subject sources");
+    }
+    return response.json();
+  },
+
   async createSource(payload: SourcePayload): Promise<ApiResponse<unknown>> {
     const response = await fetch("/api/sources", {
       method: "POST",

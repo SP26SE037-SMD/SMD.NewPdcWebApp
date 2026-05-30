@@ -116,7 +116,7 @@ export default function PDCMReviewInformationPage({
         ];
 
         if (sourcesReference.length === 0) {
-          promises.push(SourceService.getSubjectSources(subjectId));
+          promises.push(SourceService.getProposedSubjectSources(subjectId));
         }
 
         const results = await Promise.allSettled(promises);
