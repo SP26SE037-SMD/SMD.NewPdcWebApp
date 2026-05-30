@@ -436,6 +436,15 @@ export function TaskList({ sprintId, isSingleTaskMode = false }: TaskListProps) 
         }
       }
 
+      const targetSubjectId = task.subjectId || task.subject?.subjectId;
+      if (targetSubjectId) {
+        try {
+          await CloPloService.updateSubjectClosStatus(targetSubjectId, "INTERNAL_REVIEW");
+        } catch (cloStatusErr) {
+          console.warn("Soft fail: Failed to update CLOs status to INTERNAL_REVIEW", cloStatusErr);
+        }
+      }
+
       return TaskService.acceptTask(task.taskId, false, comment);
     },
     onSuccess: async (_, variables) => {

@@ -98,10 +98,16 @@ export default function SubjectDetail({
   id,
   initialSubject,
   initialError,
+  hideBackBtn = false,
+  hideCurriculumMapping = false,
+  hideManagementActions = false,
 }: {
   id: string;
   initialSubject?: Subject | null;
   initialError?: string | null;
+  hideBackBtn?: boolean;
+  hideCurriculumMapping?: boolean;
+  hideManagementActions?: boolean;
 }) {
   const router = useRouter();
   const [subject, setSubject] = useState<Subject | null>(
@@ -237,86 +243,90 @@ export default function SubjectDetail({
       </div>
 
       {/* Sticky Glass Header */}
-      <div className="sticky top-0 z-40 w-full px-8 py-4 bg-white/60 backdrop-blur-xl border-b border-white/20 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => {
-                if (viewMode === "SYLLABUS") setViewMode("DETAIL");
-                else router.push("/dashboard/hopdc");
-              }}
-              className="w-11 h-11 flex items-center justify-center bg-white border border-zinc-100 rounded-[10px] text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group active:scale-95"
-            >
-              <ChevronLeft
-                className="group-hover:-translate-x-0.5 transition-transform"
-                size={22}
-              />
-            </button>
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-xs font-black text-primary/60 uppercase tracking-[0.2em]">
-                  {subject.subjectCode}
-                </span>
-                <div className="w-1 h-1 rounded-full bg-zinc-200" />
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                  {viewMode === "SYLLABUS" ? "SYLLABUS EXPLORER" : subject.department?.departmentName}
+      <div className="sticky top-0 z-40 w-full pt-4">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="bg-white/60 backdrop-blur-xl border border-zinc-200/80 rounded-2xl shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              {(!hideBackBtn || viewMode === "SYLLABUS") && (
+                <button
+                  onClick={() => {
+                    if (viewMode === "SYLLABUS") setViewMode("DETAIL");
+                    else router.push("/dashboard/hopdc");
+                  }}
+                  className="w-11 h-11 flex items-center justify-center bg-white border border-zinc-100 rounded-[10px] text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group active:scale-95"
+                >
+                  <ChevronLeft
+                    className="group-hover:-translate-x-0.5 transition-transform"
+                    size={22}
+                  />
+                </button>
+              )}
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-xs font-black text-primary/60 uppercase tracking-[0.2em]">
+                    {subject.subjectCode}
+                  </span>
+                  <div className="w-1 h-1 rounded-full bg-zinc-200" />
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                    {viewMode === "SYLLABUS" ? "SYLLABUS EXPLORER" : subject.department?.departmentName}
+                  </span>
+                </div>
+                <h1 className="text-2xl font-black text-zinc-900 tracking-tight leading-none">
+                  {subject.subjectName}
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/80 border border-white rounded-[10px] shadow-sm">
+                <div
+                  className={`w-2 h-2 rounded-full animate-pulse ${subject.status === SUBJECT_STATUS.COMPLETED
+                    ? "bg-emerald-500"
+                    : subject.status === SUBJECT_STATUS.PENDING_REVIEW
+                      ? "bg-amber-500"
+                      : "bg-zinc-400"
+                    }`}
+                />
+                <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                  {subject.status.replace("_", " ")}
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-zinc-900 tracking-tight leading-none">
-                {subject.subjectName}
-              </h1>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/80 border border-white rounded-[10px] shadow-sm">
-              <div
-                className={`w-2 h-2 rounded-full animate-pulse ${subject.status === SUBJECT_STATUS.COMPLETED
-                  ? "bg-emerald-500"
-                  : subject.status === SUBJECT_STATUS.PENDING_REVIEW
-                    ? "bg-amber-500"
-                    : "bg-zinc-400"
-                  }`}
-              />
-              <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                {subject.status.replace("_", " ")}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {viewMode === "DETAIL" && subject.status === SUBJECT_STATUS.DRAFT && (
-                <button
-                  onClick={handleEditToggle}
-                  className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
-                >
-                  {isEditing ? <X size={14} /> : <Edit2 size={14} />}
-                  {isEditing ? "Discard" : "Modify"}
-                </button>
-              )}
-              {isEditing ? (
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-5 py-2.5 bg-primary text-white text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-zinc-900 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 active:scale-95"
-                >
-                  {isSaving ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Save size={14} />
-                  )}
-                  Commit
-                </button>
-              ) : viewMode === "DETAIL" ? null : (
-                <select
-                  value={selectedSyllabus.id}
-                  onChange={(e) => setSelectedSyllabus(MOCK_SYLLABUSES.find(s => s.id === e.target.value))}
-                  className="px-4 py-2 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] border-none focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                >
-                  {MOCK_SYLLABUSES.map(s => (
-                    <option key={s.id} value={s.id}>{s.versionName}</option>
-                  ))}
-                </select>
-              )}
+              <div className="flex items-center gap-3">
+                {viewMode === "DETAIL" && subject.status === SUBJECT_STATUS.DRAFT && (
+                  <button
+                    onClick={handleEditToggle}
+                    className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                  >
+                    {isEditing ? <X size={14} /> : <Edit2 size={14} />}
+                    {isEditing ? "Discard" : "Modify"}
+                  </button>
+                )}
+                {isEditing ? (
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-5 py-2.5 bg-primary text-white text-sm font-black uppercase tracking-widest rounded-[10px] hover:bg-zinc-900 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                  >
+                    {isSaving ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    Commit
+                  </button>
+                ) : viewMode === "DETAIL" ? null : (
+                  <select
+                    value={selectedSyllabus.id}
+                    onChange={(e) => setSelectedSyllabus(MOCK_SYLLABUSES.find(s => s.id === e.target.value))}
+                    className="px-4 py-2 bg-zinc-900 text-white text-sm font-black uppercase tracking-widest rounded-[10px] border-none focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                  >
+                    {MOCK_SYLLABUSES.map(s => (
+                      <option key={s.id} value={s.id}>{s.versionName}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -496,91 +506,95 @@ export default function SubjectDetail({
                     </div>
 
                     {/* PLO Mapping Section */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-8 shadow-sm">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
-                            <Layers size={16} />
+                    {!hideCurriculumMapping && (
+                      <div className="bg-white/80 backdrop-blur-xl rounded-[10px] border border-white p-8 shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                              <Layers size={16} />
+                            </div>
+                            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest">
+                              {selectedMajorForMapping ? "Mapping Details" : "Curriculum Mapping"}
+                            </h3>
                           </div>
-                          <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest">
-                            {selectedMajorForMapping ? "Mapping Details" : "Curriculum Mapping"}
-                          </h3>
+                          {selectedMajorForMapping && (
+                            <button
+                              onClick={() => setSelectedMajorForMapping(null)}
+                              className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
+                            >
+                              Back
+                            </button>
+                          )}
                         </div>
-                        {selectedMajorForMapping && (
-                          <button
-                            onClick={() => setSelectedMajorForMapping(null)}
-                            className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
-                          >
-                            Back
-                          </button>
-                        )}
-                      </div>
 
-                      <AnimatePresence mode="wait">
-                        {selectedMajorForMapping ? (
-                          <motion.div
-                            key="mapping-detail"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="space-y-4"
-                          >
-                            <div className="p-4 bg-zinc-900 rounded-[10px] mb-4">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{selectedMajorForMapping.majorCode}</p>
-                              <p className="text-sm font-bold text-white">{selectedMajorForMapping.majorName}</p>
-                            </div>
-                            <div className="space-y-3">
-                              {selectedMajorForMapping.mappings.map((m: any, idx: number) => (
-                                <div key={idx} className="p-3 bg-zinc-50 border border-zinc-100 rounded-[10px]">
-                                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{m.clo}</p>
-                                  <p className="text-xs font-bold text-zinc-900 tracking-tight">{m.plo}</p>
-                                </div>
+                        <AnimatePresence mode="wait">
+                          {selectedMajorForMapping ? (
+                            <motion.div
+                              key="mapping-detail"
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              className="space-y-4"
+                            >
+                              <div className="p-4 bg-zinc-900 rounded-[10px] mb-4">
+                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{selectedMajorForMapping.majorCode}</p>
+                                <p className="text-sm font-bold text-white">{selectedMajorForMapping.majorName}</p>
+                              </div>
+                              <div className="space-y-3">
+                                {selectedMajorForMapping.mappings.map((m: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-zinc-50 border border-zinc-100 rounded-[10px]">
+                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{m.clo}</p>
+                                    <p className="text-xs font-bold text-zinc-900 tracking-tight">{m.plo}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="major-list"
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              className="space-y-3"
+                            >
+                              {MOCK_CURRICULUMS.map((major) => (
+                                <button
+                                  key={major.id}
+                                  onClick={() => setSelectedMajorForMapping(major)}
+                                  className="w-full flex items-center justify-between p-4 bg-white border border-zinc-100 rounded-[10px] hover:border-primary transition-all group shadow-sm"
+                                >
+                                  <div className="text-left">
+                                    <p className="text-xs font-black text-primary uppercase tracking-widest mb-0.5">{major.majorCode}</p>
+                                    <p className="text-sm font-bold text-zinc-800">{major.majorName}</p>
+                                  </div>
+                                  <ChevronRight size={16} className="text-zinc-300 group-hover:text-primary transition-colors" />
+                                </button>
                               ))}
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="major-list"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-3"
-                          >
-                            {MOCK_CURRICULUMS.map((major) => (
-                              <button
-                                key={major.id}
-                                onClick={() => setSelectedMajorForMapping(major)}
-                                className="w-full flex items-center justify-between p-4 bg-white border border-zinc-100 rounded-[10px] hover:border-primary transition-all group shadow-sm"
-                              >
-                                <div className="text-left">
-                                  <p className="text-xs font-black text-primary uppercase tracking-widest mb-0.5">{major.majorCode}</p>
-                                  <p className="text-sm font-bold text-zinc-800">{major.majorName}</p>
-                                </div>
-                                <ChevronRight size={16} className="text-zinc-300 group-hover:text-primary transition-colors" />
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    <div className="p-8 bg-gradient-to-br from-primary to-emerald-600 rounded-[10px] text-white shadow-lg shadow-primary/20 relative overflow-hidden group">
-                      <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700" />
-                      <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-80">Management Actions</h4>
-                      <div className="space-y-2 relative z-10">
-                        <button
-                          onClick={() => setViewMode("SYLLABUS")}
-                          className="w-full py-3 bg-white text-primary rounded-[10px] text-sm font-black uppercase tracking-widest hover:shadow-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
-                        >
-                          <BookOpen size={14} />
-                          Explore Syllabus Versions
-                        </button>
-                        <button className="w-full py-3 bg-white/20 backdrop-blur-md rounded-[10px] text-sm font-black uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10 flex items-center justify-center gap-2">
-                          <FileText size={14} />
-                          Generate Full Report
-                        </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    </div>
+                    )}
+
+                    {!hideManagementActions && (
+                      <div className="p-8 bg-gradient-to-br from-primary to-emerald-600 rounded-[10px] text-white shadow-lg shadow-primary/20 relative overflow-hidden group">
+                        <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700" />
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-80">Management Actions</h4>
+                        <div className="space-y-2 relative z-10">
+                          <button
+                            onClick={() => setViewMode("SYLLABUS")}
+                            className="w-full py-3 bg-white text-primary rounded-[10px] text-sm font-black uppercase tracking-widest hover:shadow-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
+                          >
+                            <BookOpen size={14} />
+                            Explore Syllabus Versions
+                          </button>
+                          <button className="w-full py-3 bg-white/20 backdrop-blur-md rounded-[10px] text-sm font-black uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10 flex items-center justify-center gap-2">
+                            <FileText size={14} />
+                            Generate Full Report
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

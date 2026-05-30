@@ -99,7 +99,15 @@ export default function ReuseSubjectContent() {
       </div>
 
       <div className="space-y-6">
-        {activeTab === "subject" && <SubjectDetail id={subject.subjectId} initialSubject={subject as any} />}
+        {activeTab === "subject" && (
+          <SubjectDetail
+            id={subject.subjectId}
+            initialSubject={subject as any}
+            hideBackBtn={true}
+            hideCurriculumMapping={true}
+            hideManagementActions={true}
+          />
+        )}
         {activeTab === "mapping" && (
           <CloPloMapping
             plos={plos}

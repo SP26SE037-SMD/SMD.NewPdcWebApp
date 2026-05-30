@@ -275,6 +275,26 @@ export const CloPloService = {
       suggestion: String(normalized.suggestion ?? ""),
     };
   },
+  async updateSubjectClosStatus(
+    subjectId: string,
+    newStatus: string,
+  ): Promise<ApiResponse<unknown>> {
+    const response = await fetch(
+      `/api/clos/subject/${subjectId}/status?newStatus=${newStatus}`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: { accept: "*/*" },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to update CLOs status");
+    }
+
+    return response.json();
+  },
   async importClos(file: File): Promise<ApiResponse<ImportData>> {
     const formData = new FormData();
     formData.append("file", file);
