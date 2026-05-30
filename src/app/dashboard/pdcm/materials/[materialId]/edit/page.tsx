@@ -359,7 +359,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
             try {
                 const [syllabusRes] = await Promise.allSettled([
                     SyllabusService.getSyllabusById(syllabusId),
-                    SourceService.getSubjectSources(''), // will be replaced after we get subjectId
+                    SourceService.getProposedSubjectSources(''), // will be replaced after we get subjectId
                     Promise.resolve(null)
                 ]);
 
@@ -376,7 +376,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
                 if (subjectId) {
                     const [src, cloRes] = await Promise.allSettled([
-                        SourceService.getSubjectSources(subjectId),
+                        SourceService.getProposedSubjectSources(subjectId),
                         CloPloService.getSubjectClos(subjectId, 0, 100)
                     ]);
                     if (src.status === 'fulfilled' && src.value?.data) {
