@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { SubjectService, PrerequisiteItem } from '@/services/subject.service';
-import { Loader2, ChevronRight, Hash, Globe, GraduationCap } from 'lucide-react';
+import { Loader2, SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RoadmapNode {
@@ -50,7 +50,7 @@ export const SubjectPrerequisiteRoadmap: React.FC<SubjectPrerequisiteRoadmapProp
 
                 // Add all unique subjects from API data to the map
                 rawData.forEach((rel) => {
-                    const subjectNode = getOrCreateNode(rel.subjectCode, rel.subjectName);
+                    getOrCreateNode(rel.subjectCode, rel.subjectName);
                     const prereqNode = getOrCreateNode(rel.prerequisiteSubjectCode, rel.prerequisiteSubjectName);
                     
                     if (!prereqNode.parents.includes(rel.subjectCode)) {
@@ -114,25 +114,40 @@ export const SubjectPrerequisiteRoadmap: React.FC<SubjectPrerequisiteRoadmapProp
         );
     }
 
+    if (nodes.length === 0) {
+        return (
+            <div className="absolute inset-0 flex items-center justify-center px-6 py-8">
+                <div className="max-w-md px-8 py-6 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary/10 text-primary">
+                        <SearchX size={28} />
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-zinc-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                        Prerequisites Hub
+                    </div>
+                    <h3 className="mt-4 text-xl font-black tracking-tight text-zinc-900">
+                        Not found prerequisite
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-zinc-500 font-medium">
+                        There is no prerequisite data available for this subject yet.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     // Group nodes by levels
     const levels = Array.from(new Set(nodes.map(n => n.level))).sort((a, b) => a - b);
 
     return (
-        <div className="relative w-full overflow-x-auto overflow-y-hidden py-16 px-10 scrollbar-hide" ref={containerRef}>
-            <div className="flex items-center gap-32 min-w-max min-h-[600px] justify-start">
+        <div className="relative flex h-full w-full items-center justify-center overflow-x-auto overflow-y-hidden py-6 scrollbar-hide" ref={containerRef}>
+            <div className="flex items-center gap-28 min-w-max min-h-140 justify-center">
                 {levels.map((level, lIdx) => {
                     const levelNodes = nodes.filter(n => n.level === level);
                     const totalLevelNodes = levelNodes.length;
 
                     return (
-                        <div key={level} className="flex flex-col gap-16 relative justify-center min-h-[600px]">
-                            {/* Level Label */}
-                            <div className="absolute top-0 left-0 whitespace-nowrap">
-                                <span className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.3em]">
-                                    {level === levels.length - 1 ? 'Current Subject' : `Stage ${level + 1}`}
-                                </span>
-                            </div>
-
+                        <div key={level} className="flex flex-col gap-14 relative justify-center min-h-140">
                             {levelNodes.map((node, nIdx) => (
                                 <motion.div
                                     key={node.id}
@@ -142,24 +157,16 @@ export const SubjectPrerequisiteRoadmap: React.FC<SubjectPrerequisiteRoadmapProp
                                     className="relative z-10"
                                 >
                                     <div className={cn(
-                                        "w-64 p-6 rounded-[2.5rem] border transition-all duration-300 shadow-sm cursor-pointer group/card",
+                                        "w-64 p-6 rounded-[14px] border transition-all duration-300 shadow-sm cursor-pointer group/card backdrop-blur-sm",
                                         node.id === initialSubjectId 
-                                            ? "bg-zinc-900 border-zinc-800 shadow-2xl shadow-zinc-900/40 translate-x-1" 
-                                            : "bg-white border-zinc-100 hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
+                                            ? "bg-zinc-900/95 border-zinc-800 shadow-2xl shadow-zinc-900/40 translate-x-1"
+                                            : "bg-indigo-50/70 border-indigo-100/80 hover:border-indigo-500/50 hover:bg-indigo-50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
                                     )}>
                                         <div className="flex items-start justify-between mb-4">
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all",
-                                                node.id === initialSubjectId 
-                                                    ? "bg-zinc-800 text-indigo-400" 
-                                                    : "bg-zinc-50 text-zinc-400 group-hover/card:bg-indigo-500 group-hover/card:text-white"
-                                            )}>
-                                                {node.code.substring(0, 3)}
-                                            </div>
                                             <div className="flex flex-col items-end">
                                                 <span className={cn(
                                                     "text-[10px] font-black uppercase tracking-[0.2em]",
-                                                    node.id === initialSubjectId ? "text-indigo-400" : "text-zinc-300"
+                                                    node.id === initialSubjectId ? "text-indigo-400" : "text-indigo-300"
                                                 )}>
                                                     {node.code}
                                                 </span>
