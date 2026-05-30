@@ -435,14 +435,7 @@ export default function SyllabusCompareModal({
             >
               Close
             </button>
-            <button
-              onClick={() => saveCompare()}
-              disabled={isSaving || !compareResult}
-              className="px-6 py-2.5 rounded-xl bg-primary border border-transparent text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSaving && <Loader2 size={16} className="animate-spin" />}
-              Save Compare
-            </button>
+
           </div>
         </motion.div>
       </div>

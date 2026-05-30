@@ -50,6 +50,7 @@ export interface SubjectSyllabusOption {
   subjectCode?: string;
   subjectName?: string;
   minAvgGrade?: number;
+  minAvgMarkToPass?: number;
   credit?: number;
   createdAt?: string;
   approvedDate?: string;
@@ -347,4 +348,41 @@ export const SyllabusService = {
 
     return response.json();
   },
+  async getSyllabusCompareHistory(newSyllabusId: string): Promise<ApiResponse<SyllabusCompareHistory[]>> {
+    const response = await fetch(`/api/syllabus/${newSyllabusId}/get-syllabus-compare/HoPDC`, {
+      method: "GET",
+      credentials: "include",
+      headers: { accept: "*/*" },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to get compare history");
+    }
+    return response.json();
+  },
+
+  async selectCompareSyllabus(historyId: string): Promise<ApiResponse<unknown>> {
+    const response = await fetch(`/api/syllabus/selected-compare-syllabus?historyId=${historyId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { accept: "*/*" },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to select compare syllabus");
+    }
+    return response.json();
+  },
 };
+
+export interface SyllabusCompareHistory {
+  historyId: string;
+  oldSyllabusId: string;
+  newSyllabusId: string;
+  assessmentDiffJson: string;
+  conceptDiffJson: string;
+  selectedCompare: boolean;
+  createdAt: string;
+}
+
+
