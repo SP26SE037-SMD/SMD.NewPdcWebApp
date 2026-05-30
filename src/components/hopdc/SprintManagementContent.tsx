@@ -271,7 +271,7 @@ export default function SprintManagementContent() {
                 : "text-zinc-500 hover:text-zinc-900"
             }`}
           >
-            Manage by Phase
+            Manage by Curriculum
           </button>
         </div>
       </div>

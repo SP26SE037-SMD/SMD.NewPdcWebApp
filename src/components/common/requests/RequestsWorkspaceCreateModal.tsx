@@ -392,7 +392,7 @@ export default function RequestsWorkspaceCreateModal({
                     <>
                       <option value="TASK">Task</option>
                       <option value="SUBJECT">Subject (Not supported yet)</option>
-                      <option value="SPRINT">Sprint (Not supported yet)</option>
+                      <option value="SPRINT">Department Task (Not supported yet)</option>
                     </>
                   ) : (
                     <>
@@ -450,7 +450,7 @@ export default function RequestsWorkspaceCreateModal({
               {createForm.type === "SPRINT" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Select Sprint
+                    Select Department Task
                   </label>
                   <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold text-zinc-500 flex items-center justify-center gap-2">
                     <span>This request type is not supported yet</span>

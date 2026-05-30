@@ -148,7 +148,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       SprintService.updateSprintStatus(sprintId, status),
     onSuccess: (res) => {
       if (res.status === 1000) {
-        showToast(`Work Package updated to ${res.data?.status}`, "success");
+        showToast(`Department Task updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] });
 
         if (res.data?.status === SPRINT_STATUS.COMPLETED && sprint?.curriculumId) {
@@ -351,7 +351,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     if (sprint?.status === SPRINT_STATUS.PLANNING) {
       setIsLeaveConfirmOpen(true);
     } else {
-      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=sprints`);
+      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`);
     }
   };
 
@@ -391,10 +391,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         </button>
         <div className="flex flex-col">
           <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">
-            Curriculum / Deliverable Details
+            Curriculum / Department Tasks Details
           </p>
           <h1 className="font-black text-2xl tracking-tight text-zinc-900">
-            Curriculum Deliverables Management
+            Department Tasks Management
           </h1>
         </div>
       </div>
@@ -487,7 +487,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h3 className="font-black text-lg tracking-tight text-zinc-900">
-              Department Deliverables
+              Department Tasks
             </h3>
             <button
               onClick={async () => {
@@ -668,7 +668,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         isOpen={isQuickLaunchConfirmOpen}
         size="md"
         title="Auto Create Tasks"
-        message="Are you sure you want to generate all missing deliverables for this department? This action will automatically create tasks for all pending subjects."
+        message="Are you sure you want to generate all missing department tasks for this department? This action will automatically create tasks for all pending subjects."
         confirmLabel="Generate Tasks"
         cancelLabel="Cancel"
         onConfirm={() => {
@@ -681,8 +681,8 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       <ConfirmModal
         isOpen={isLeaveConfirmOpen}
         size="md"
-        title="Deliverables Not Started"
-        message="You haven't started this deliverable package yet. Are you sure you want to leave the planning board?"
+        title="Department Tasks Not Started"
+        message="You haven't started this department tasks package yet. Are you sure you want to leave the planning board?"
         confirmLabel="Leave Anyway"
         cancelLabel="Stay & Start"
         onConfirm={() => {
@@ -690,7 +690,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           if (pendingHref) {
             window.location.href = pendingHref;
           } else {
-            router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=sprints`);
+            router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`);
           }
         }}
         onClose={() => setIsLeaveConfirmOpen(false)}

@@ -125,7 +125,7 @@ export const SprintsReceive = ({
 
     const linkedCurriculumId = curriculumId || sprint.curriculumId;
     if (!linkedCurriculumId) return "#";
-    return `/dashboard/hocfdc/framework-execution/${linkedCurriculumId}/sprints/${sprint.sprintId}`;
+    return `/dashboard/hocfdc/framework-execution/${linkedCurriculumId}/department-tasks/${sprint.sprintId}`;
   };
 
   const getAssignHref = (sprint: SprintItem) => {

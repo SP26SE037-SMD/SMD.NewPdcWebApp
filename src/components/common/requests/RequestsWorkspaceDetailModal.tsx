@@ -84,7 +84,7 @@ export default function RequestsWorkspaceDetailModal({
           );
         } else {
           router.push(
-            `/dashboard/hocfdc/framework-execution/${data.curriculumId}/sprints/${data.sprintId}`,
+            `/dashboard/hocfdc/framework-execution/${data.curriculumId}/department-tasks/${data.sprintId}`,
           );
         }
       } else {
@@ -105,7 +105,7 @@ export default function RequestsWorkspaceDetailModal({
     } else if (role === "HoCFDC") {
       router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
     } else if (role === "HoPDC") {
-      router.push(`/dashboard/hopdc/tasks`);
+      router.push(`/dashboard/hopdc/department-tasks`);
     }
   };
 
@@ -210,7 +210,7 @@ export default function RequestsWorkspaceDetailModal({
           toast.success("Navigating to tasks...", {
             id: toastId,
           });
-          router.push(`/dashboard/hopdc/tasks`);
+          router.push(`/dashboard/hopdc/department-tasks`);
         }
       }
     } catch (err) {
@@ -364,7 +364,7 @@ export default function RequestsWorkspaceDetailModal({
                         const t = selectedRequest.type;
                         if (t === "TASK") return "Attachments (Task)";
                         if (t === "SUBJECT") return "Attachments (Subject)";
-                        if (t === "SPRINT") return "Attachments (Sprint)";
+                        if (t === "SPRINT") return "Attachments (Department Task)";
                         if (t === "MAJOR") return "Attachments (Major)";
                         if (t === "CURRICULUM") return "Attachments (Curriculum)";
                         return "Attachments";

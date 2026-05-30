@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -18,6 +19,7 @@ import {
   SPRINT_STATUS,
   SprintItem,
   SprintStatus,
+  SprintPayload,
 } from "@/services/sprint.service";
 import { TaskService, TaskItem, TASK_STATUS } from "@/services/task.service";
 
@@ -84,6 +86,8 @@ interface SprintCardProps {
         isLoading: boolean,
       ) => React.ReactNode);
   type?: string;
+  onStatusChange?: (newStatus: string) => void;
+  onEditSprint?: (sprintId: string, payload: SprintPayload) => Promise<any>;
 }
 
 export const SprintCard = ({
@@ -94,8 +98,71 @@ export const SprintCard = ({
   detailHref,
   actions,
   type,
+  onStatusChange,
+  onEditSprint,
 }: SprintCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // States for inline editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(sprint.sprintName);
+  const [editStartDate, setEditStartDate] = useState(
+    sprint.startDate ? new Date(sprint.startDate).toISOString().split("T")[0] : ""
+  );
+  const [editEndDate, setEditEndDate] = useState(
+    sprint.endDate ? new Date(sprint.endDate).toISOString().split("T")[0] : ""
+  );
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setEditName(sprint.sprintName);
+    setEditStartDate(sprint.startDate ? new Date(sprint.startDate).toISOString().split("T")[0] : "");
+    setEditEndDate(sprint.endDate ? new Date(sprint.endDate).toISOString().split("T")[0] : "");
+  }, [sprint]);
+
+  const handleCancel = () => {
+    setEditName(sprint.sprintName);
+    setEditStartDate(sprint.startDate ? new Date(sprint.startDate).toISOString().split("T")[0] : "");
+    setEditEndDate(sprint.endDate ? new Date(sprint.endDate).toISOString().split("T")[0] : "");
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!editName.trim()) {
+      alert("Name is required");
+      return;
+    }
+    if (!editStartDate || !editEndDate) {
+      alert("Dates are required");
+      return;
+    }
+    const start = new Date(editStartDate);
+    const end = new Date(editEndDate);
+    if (end <= start) {
+      alert("End date must be after start date");
+      return;
+    }
+
+    if (onEditSprint) {
+      setIsSaving(true);
+      try {
+        const payload: SprintPayload = {
+          sprintName: editName,
+          startDate: new Date(editStartDate).toISOString(),
+          endDate: new Date(editEndDate).toISOString(),
+          status: sprint.status as SprintStatus,
+          departmentId: sprint.departmentId || departmentId || "",
+          curriculumId: sprint.curriculumId || "",
+        };
+        await onEditSprint(sprint.sprintId, payload);
+        setIsEditing(false);
+      } catch (err) {
+        console.error("Failed to update sprint", err);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
 
   // Fetch tasks for this sprint to get counts and short list
   const { data: tasksRes, isLoading: isTasksLoading } = useQuery({
@@ -150,35 +217,117 @@ export const SprintCard = ({
                   <ChevronRight size={16} strokeWidth={2.5} />
                 )}
               </button>
-              <span
-                className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.text} rounded-lg ring-1 ring-current/10`}
-              >
-                {sprint.status.replace("_", " ")}
-              </span>
+              {onStatusChange ? (
+                <select
+                  value={sprint.status}
+                  onChange={(e) => onStatusChange(e.target.value)}
+                  className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.text} rounded-lg ring-1 ring-current/10 outline-none cursor-pointer pr-5 appearance-none relative`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: 'right 0.2rem center',
+                    backgroundSize: '1rem',
+                    backgroundRepeat: 'no-repeat',
+                  }}
+                >
+                  {Object.values(SPRINT_STATUS).map((status) => (
+                    <option key={status} value={status} className="bg-white text-zinc-800">
+                      {status.replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span
+                  className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.text} rounded-lg ring-1 ring-current/10`}
+                >
+                  {sprint.status.replace("_", " ")}
+                </span>
+              )}
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/80 px-2 py-0.5 rounded-md">
                 #{sprint.sprintId.substring(0, 6)}
               </span>
             </div>
 
-            <Link
-              href={detailHref}
-              className="block text-xl font-extrabold text-[#2d342b] tracking-tight hover:text-[#409b43] transition-colors cursor-pointer"
-              style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
-            >
-              {sprint.sprintName}
-            </Link>
+            {isEditing ? (
+              <div className="space-y-3.5 w-full pr-4 py-1">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                    Department Task Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 p-2 font-bold text-zinc-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none rounded-lg text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editStartDate}
+                      onChange={(e) => setEditStartDate(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 p-2 font-semibold text-zinc-900 focus:border-primary transition-all outline-none rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editEndDate}
+                      onChange={(e) => setEditEndDate(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 p-2 font-semibold text-zinc-900 focus:border-primary transition-all outline-none rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-wider rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-zinc-100 text-zinc-600 text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-zinc-200 active:scale-95 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href={detailHref}
+                  className="block text-xl font-extrabold text-[#2d342b] tracking-tight hover:text-[#409b43] transition-colors cursor-pointer"
+                  style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+                >
+                  {sprint.sprintName}
+                </Link>
 
-            <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
-              <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
-                <Calendar size={14} className="text-zinc-400" />{" "}
-                {formatDate(sprint.startDate)}
-              </span>
-              <span className="text-zinc-300">→</span>
-              <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
-                <Target size={14} className="text-zinc-400" />{" "}
-                {formatDate(sprint.endDate)}
-              </span>
-            </div>
+                <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
+                  <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+                    <Calendar size={14} className="text-zinc-400" />{" "}
+                    {formatDate(sprint.startDate)}
+                  </span>
+                  <span className="text-zinc-300">→</span>
+                  <span className="flex items-center gap-1.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+                    <Target size={14} className="text-zinc-400" />{" "}
+                    {formatDate(sprint.endDate)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Section 2: Timeline & Task Stats (Refined Middle Column) */}
@@ -212,7 +361,7 @@ export const SprintCard = ({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <CheckCircle2 size={12} /> Department Tasks
+                  <CheckCircle2 size={12} /> Tasks
                 </p>
                 <p className="text-xs font-black text-zinc-800">
                   {closedTasks} <span className="text-zinc-300 mx-0.5">/</span>{" "}
@@ -237,6 +386,15 @@ export const SprintCard = ({
 
           {/* Section 3: Actions */}
           <div className="lg:col-span-3 flex justify-end items-center gap-2">
+            {sprint.status === SPRINT_STATUS.PLANNING && onEditSprint && !isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-3 bg-white border border-zinc-200 text-zinc-600 hover:bg-primary hover:text-white hover:border-primary transition-all rounded-xl shadow-sm active:scale-95 flex items-center justify-center shrink-0"
+                title="Edit Department Task Details"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
             {typeof actions === "function"
               ? actions(totalTasks, closedTasks, isTasksLoading)
               : actions}

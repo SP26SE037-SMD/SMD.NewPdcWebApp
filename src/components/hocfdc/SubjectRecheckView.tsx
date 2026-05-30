@@ -71,8 +71,8 @@ export default function SubjectRecheckView() {
       
       const effectiveSprintId = taskDetailResp?.data?.sprintId || sprintId;
       
-      // Redirect to sprint page
-      const sprintUrl = `/dashboard/hocfdc/framework-execution/${curriculumId}/sprints/${effectiveSprintId}`;
+      // Redirect to department task page
+      const sprintUrl = `/dashboard/hocfdc/framework-execution/${curriculumId}/department-tasks/${effectiveSprintId}`;
       router.push(sprintUrl);
       setTimeout(() => {
         window.location.reload();
@@ -229,7 +229,7 @@ export default function SubjectRecheckView() {
             <div className="flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em]">
               <span>Framework Execution</span>
               <ChevronRight size={10} />
-              <span>Sprint Detail</span>
+              <span>Department Tasks</span>
               <ChevronRight size={10} />
               <span className="text-primary">Subject Recheck</span>
             </div>

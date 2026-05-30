@@ -344,8 +344,6 @@ export function CreateSyllabusTaskModal({
                     });
                   }
                 }}
-                min={new Date().toISOString().slice(0, 10)}
-                max={sprintDeadline ? new Date(sprintDeadline).toISOString().slice(0, 10) : undefined}
                 className={`w-full h-12 rounded-[10px] border ${
                   fieldErrors.dueDate
                     ? "border-red-500 bg-red-50/30"
