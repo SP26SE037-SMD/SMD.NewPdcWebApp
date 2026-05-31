@@ -1006,7 +1006,7 @@ export default function PdfExtractionStep({
       formData.append("file", pdfBlob, "document.pdf");
 
       // 3. Call the extraction API proxy
-      const apiRes = await fetch("/api/curriculums/extract-pdf", {
+      const apiRes = await fetch("/api/regulations/extract-pdf", {
         method: "POST",
         body: formData,
       });

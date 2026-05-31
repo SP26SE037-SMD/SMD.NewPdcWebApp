@@ -206,7 +206,6 @@ const DevelopCard = ({
         ) : ["DONE", "COMPLETED", "APPROVED"].includes(status) ? null : (
           <button
             onClick={() => {
-              console.log("=== TASK PAYLOAD ON DO TASK ===", task);
               const basePath =
                 task.action === "UPDATE" ? "revisions" : "tasks";
               router.push(

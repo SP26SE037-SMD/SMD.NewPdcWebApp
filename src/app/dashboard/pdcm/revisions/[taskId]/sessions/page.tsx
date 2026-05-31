@@ -109,8 +109,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
             
             const rawData = sessionDataRes?.data as any;
             const apiSessions: any[] = Array.isArray(rawData?.content) ? rawData.content : [];
-            
-            console.log('API Sessions Data received:', apiSessions);
 
             const finalSessions: SessionItem[] = apiSessions.map(apiSess => {
                 // Reconstruct content JSON from material/block mappings
@@ -182,7 +180,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
         let isMounted = true;
         const fetchSessionMappings = async () => {
             if (draftSession?.sessionId && editingIndex !== null) {
-                console.log(`[FE] Fetching CLO mappings for Session: ${draftSession.sessionId}`);
                 try {
                     const res = await MappingService.getSessionMappings(draftSession.sessionId);
                     if (isMounted && res.data) {
@@ -260,7 +257,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
             );
             const res = await MappingService.validateSessionMappings(syllabusId, payload);
             if (res.data) {
-                console.log("✅ Session mapping validation result received:", res.data);
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
                 showToast("Mapping validation complete", "success");
@@ -298,13 +294,11 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
             // 3. Execute Deletions
             if (deletions.length > 0) {
-                console.log(`🗑️ Deleting ${deletions.length} session mappings...`);
                 await Promise.all(deletions.map(m => MappingService.deleteSessionMapping(m.id)));
             }
 
             // 4. Execute Additions
             if (additions.length > 0) {
-                console.log(`➕ Adding ${additions.length} session mappings...`);
                 await MappingService.createSessionMappingsBatch(additions);
             }
             
@@ -463,7 +457,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                             {mappingValidationResult && (
                                 <button
                                     onClick={() => {
-                                        console.log("🖱️ View Result clicked");
                                         setIsMappingResultModalOpen(true);
                                     }}
                                     className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d]/30 text-[#00966d] bg-[#00966d]/5 hover:bg-[#00966d]/10 relative z-50"
@@ -1530,7 +1523,6 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
     clos: any[],
     onClose: () => void 
 }) {
-    console.log("📦 Rendering SessionMappingValidationModal with result:", result);
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div 

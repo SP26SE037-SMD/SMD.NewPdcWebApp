@@ -56,7 +56,6 @@ export default function InformationPage({ params }: { params: Promise<{ taskId: 
 
     const realTask = routeTaskData?.data;
     const syllabusId = realTask?.syllabus?.syllabusId || realTask?.syllabusId || realTask?.targetId || (realTask as any)?.target_id;
-    console.log('EXTRACTED SYLLABUS_ID: ', syllabusId);
 
     // Fetch Syllabus Data
     const { data: syllabusRes, isLoading: isSyllabusLoading } = useQuery({
