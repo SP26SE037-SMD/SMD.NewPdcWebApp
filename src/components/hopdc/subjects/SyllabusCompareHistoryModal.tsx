@@ -19,7 +19,7 @@ const renderJsonDiff = (jsonString: string) => {
   try {
     const cleanStr = jsonString.replace(/^```json\n/, '').replace(/\n```$/, '');
     const data = JSON.parse(cleanStr);
-    
+
     if (typeof data !== 'object' || data === null) {
       return <p className="text-xs text-zinc-600">{jsonString}</p>;
     }
@@ -149,11 +149,10 @@ export default function SyllabusCompareHistoryModal({
                 {histories.map((item, idx) => (
                   <div
                     key={item.historyId}
-                    className={`bg-white rounded-2xl p-6 border shadow-sm transition-all ${
-                      item.selectedCompare
+                    className={`bg-white rounded-2xl p-6 border shadow-sm transition-all ${item.selectedCompare
                         ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                         : "border-zinc-200 hover:border-zinc-300"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -178,11 +177,10 @@ export default function SyllabusCompareHistoryModal({
                       <button
                         onClick={() => selectCompare(item.historyId)}
                         disabled={isPending || item.selectedCompare}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 ${
-                          item.selectedCompare
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 ${item.selectedCompare
                             ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
                             : "bg-primary text-white hover:bg-primary/90 shadow-primary/25"
-                        }`}
+                          }`}
                       >
                         {item.selectedCompare ? "Selected" : "Select This Prompts"}
                       </button>

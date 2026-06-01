@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
+  Send,
+  Inbox,
 } from "lucide-react";
 import { RequestItem, RequestService } from "@/services/request.service";
 import RequestsWorkspaceCreateModal from "./requests/RequestsWorkspaceCreateModal";
@@ -324,49 +326,55 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
-                className="flex bg-zinc-100 p-1.5 rounded-2xl w-full md:max-w-md border border-zinc-200/50"
+                className="flex bg-zinc-100/80 backdrop-blur-md p-1.5 rounded-2xl w-full md:max-w-[480px] border border-white/60 shadow-inner"
               >
                 <button
                   onClick={() => handleSourceTabChange("CREATED")}
-                  className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                  className={`flex-1 relative flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${
                     requestSource === "CREATED"
                       ? "text-white"
-                      : "text-zinc-500 hover:text-zinc-800"
+                      : "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50"
                   }`}
                 >
                   {requestSource === "CREATED" && (
                     <motion.div
                       layoutId="sourceTabActive"
-                      className="absolute inset-0 bg-primary rounded-xl shadow-md"
+                      className="absolute inset-0 bg-gradient-to-r from-primary to-emerald-500 rounded-xl shadow-lg shadow-primary/30"
                       transition={{
                         type: "spring",
-                        stiffness: 380,
-                        damping: 30,
+                        stiffness: 400,
+                        damping: 35,
                       }}
                     />
                   )}
-                  <span className="relative z-10">Created</span>
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Send size={14} className={requestSource === "CREATED" ? "transform -rotate-12 transition-transform" : ""} />
+                    CREATED
+                  </span>
                 </button>
                 <button
                   onClick={() => handleSourceTabChange("RECEIVED")}
-                  className={`flex-1 relative py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                  className={`flex-1 relative flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${
                     requestSource === "RECEIVED"
                       ? "text-white"
-                      : "text-zinc-500 hover:text-zinc-800"
+                      : "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50"
                   }`}
                 >
                   {requestSource === "RECEIVED" && (
                     <motion.div
                       layoutId="sourceTabActive"
-                      className="absolute inset-0 bg-primary rounded-xl shadow-md"
+                      className="absolute inset-0 bg-gradient-to-r from-primary to-emerald-500 rounded-xl shadow-lg shadow-primary/30"
                       transition={{
                         type: "spring",
-                        stiffness: 380,
-                        damping: 30,
+                        stiffness: 400,
+                        damping: 35,
                       }}
                     />
                   )}
-                  <span className="relative z-10">Received</span>
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Inbox size={14} className={requestSource === "RECEIVED" ? "animate-bounce" : ""} />
+                    RECEIVED
+                  </span>
                 </button>
               </motion.div>
             )}
