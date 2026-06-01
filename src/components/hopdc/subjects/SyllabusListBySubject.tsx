@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen, Filter,
-  GitCompare, CheckSquare, Square
+  GitCompare, CheckSquare, Square, Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -118,7 +118,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   return (
     <div className="flex flex-col h-full bg-transparent">
-      <div className="px-8 pt-6 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className={`px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${hideHeader ? 'py-0' : 'pt-6 pb-4'}`}>
         {!hideHeader ? (
           <div>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400">Subject</p>
@@ -168,17 +168,18 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-blue-50/50 border-b border-blue-100 overflow-hidden"
+            className="bg-emerald-50/50 border-b border-emerald-100/60 overflow-hidden"
           >
-            <div className="px-8 py-3 flex items-center justify-between">
-              <p className="text-sm font-bold text-blue-800">
+            <div className="px-8 py-4 flex items-center justify-between">
+              <p className="text-sm font-bold text-emerald-800 flex items-center gap-2">
+                <GitCompare size={16} />
                 Select exactly 2 syllabuses to compare ({selectedSyllabusIds.length}/2 selected)
               </p>
               <div className="flex items-center gap-3">
                 {canGetPrompts && (
                   <button
                     onClick={() => setIsHistoryModalOpen(true)}
-                    className="px-6 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-sm"
+                    className="px-5 py-2.5 rounded-xl bg-white text-zinc-600 border border-zinc-200 text-xs font-black uppercase tracking-widest hover:bg-zinc-50 hover:text-zinc-900 transition-all shadow-sm active:scale-95"
                   >
                     Get Compare Prompts
                   </button>
@@ -186,7 +187,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 <button
                   onClick={handleCompareClick}
                   disabled={selectedSyllabusIds.length !== 2}
-                  className="px-6 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/25 active:scale-95"
                 >
                   Compare Selected
                 </button>
@@ -218,7 +219,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Status
             </div>
-            <div className="col-span-1" />
+            <div className="col-span-1 flex justify-end text-xs font-black uppercase tracking-widest text-zinc-500 pr-4">
+              Action
+            </div>
           </div>
 
           {syllabiLoading ? (
@@ -234,8 +237,8 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${isCompareMode && selectedSyllabusIds.includes(syllabus.syllabusId)
-                    ? "bg-blue-50/30"
-                    : "hover:bg-zinc-50/60"
+                    ? "bg-emerald-50/50"
+                    : "hover:bg-zinc-50/80"
                   }`}
                 onClick={() => {
                   if (isCompareMode) {
@@ -254,7 +257,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                       }}
                       disabled={selectedSyllabusIds.length === 2 && !selectedSyllabusIds.includes(syllabus.syllabusId)}
                       className={`transition-colors ${selectedSyllabusIds.includes(syllabus.syllabusId)
-                          ? "text-blue-600"
+                          ? "text-emerald-600"
                           : "text-zinc-300 hover:text-zinc-500 disabled:opacity-30"
                         }`}
                     >
@@ -291,6 +294,19 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   >
                     {(syllabus.status || "DRAFT").replace(/_/g, " ")}
                   </span>
+                </div>
+
+                <div className="col-span-1 flex justify-end">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/dashboard/hopdc/syllabuses/${syllabus.syllabusId}/information`);
+                    }}
+                    className="p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95"
+                    title="View Details"
+                  >
+                    <Eye size={18} />
+                  </button>
                 </div>
               </motion.div>
             ))
