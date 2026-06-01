@@ -324,13 +324,15 @@ export const SyllabusService = {
     oldId: string,
     newId: string,
     assessmentResult: any,
-    analysis: any
+    analysis: any,
+    sessionDiffResponse: any
   ): Promise<ApiResponse<unknown>> {
     const searchParams = new URLSearchParams();
     searchParams.append("oldId", oldId);
     searchParams.append("newId", newId);
     searchParams.append("assessmentResult", JSON.stringify(assessmentResult));
     searchParams.append("analysis", JSON.stringify(analysis));
+    searchParams.append("sessionDiffResponse", JSON.stringify(sessionDiffResponse));
 
     const response = await fetch(
       `/api/syllabus/save-compare-version?${searchParams.toString()}`,
