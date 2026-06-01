@@ -55,7 +55,8 @@ export default function SyllabusCompareModal({
   const { data: oldAssessmentsRes, isLoading: isOldAssLoading } = useQuery({ queryKey: ["assessments", oldSyllabusId], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
   const { data: newAssessmentsRes, isLoading: isNewAssLoading } = useQuery({ queryKey: ["assessments", newSyllabusId], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
 
-  const compareResult: CompareResult | undefined = (response?.data as any)?.comparisonResult;
+  const apiData = (response as any)?.data || response;
+  const compareResult: CompareResult | undefined = apiData?.comparisonResult;
 
   const isLoading = isSummaryLoading || isOldMatLoading || isNewMatLoading || isOldSesLoading || isNewSesLoading || isOldAssLoading || isNewAssLoading;
 
@@ -184,7 +185,12 @@ export default function SyllabusCompareModal({
   }, [assessmentPairs]);
 
   const { mutate: saveCompare, isPending: isSaving } = useMutation({
-    mutationFn: () => SyllabusService.saveCompareVersion(oldSyllabusId, newSyllabusId, assessmentResultPayload, compareResult),
+    mutationFn: () => {
+      const apiData = (response as any)?.data || response;
+      const apiAssessmentDiff = apiData?.assessmentDiffResponse || assessmentResultPayload;
+      const apiSessionDiff = apiData?.sessionDiffResponse || { addedSessions: [], removedSessions: [], changedSessions: [] };
+      return SyllabusService.saveCompareVersion(oldSyllabusId, newSyllabusId, apiAssessmentDiff, compareResult, apiSessionDiff);
+    },
     onSuccess: () => {
       toast.success("Comparison saved successfully");
       onClose();
