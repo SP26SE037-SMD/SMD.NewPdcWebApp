@@ -19,6 +19,7 @@ export async function GET(
         accept: "*/*",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      cache: "no-store",
     });
 
     const data = await backendResponse.json().catch(() => null);

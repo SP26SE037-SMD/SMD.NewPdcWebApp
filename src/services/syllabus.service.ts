@@ -18,12 +18,42 @@ export interface CreateSyllabusPayload {
   minBloomLevel: number;
 }
 
-export interface CompareResult {
+export interface ChangedAssessment {
+  assessmentIdentifier: string;
+  detailChanges: string[];
+}
+
+export interface AssessmentDiffResponse {
+  addedAssessments: string[];
+  removedAssessments: string[];
+  changedAssessments: ChangedAssessment[];
+}
+
+export interface ChangedSession {
+  sessionName: string;
+  detailChanges: string[];
+}
+
+export interface SessionDiffResponse {
+  addedSessions: string[];
+  removedSessions: string[];
+  changedSessions: ChangedSession[];
+}
+
+export interface ComparisonResultContent {
   removed_concepts: string[];
   added_concepts: string[];
   modified_concepts: string[];
   risk_assessment: string;
   risk_reason: string;
+}
+
+export interface CompareResult {
+  oldSyllabusId: string;
+  newSyllabusId: string;
+  assessmentDiffResponse?: AssessmentDiffResponse;
+  comparisonResult?: ComparisonResultContent;
+  sessionDiffResponse?: SessionDiffResponse;
 }
 
 export interface SubjectSyllabus {
