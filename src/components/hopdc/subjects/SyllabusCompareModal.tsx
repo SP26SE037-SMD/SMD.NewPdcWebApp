@@ -108,15 +108,28 @@ export default function SyllabusCompareModal({
     const oldSess: SessionItem[] = extractItems(oldSessionsRes);
     const newSess: SessionItem[] = extractItems(newSessionsRes);
 
+    const apiSessionDiff = apiData?.sessionDiffResponse || { addedSessions: [], removedSessions: [], changedSessions: [] };
+    const sessionChangesMap = new Map<string, string[]>();
+    apiSessionDiff.changedSessions?.forEach((cs: any) => {
+      // Try to extract session number
+      const match = cs.identifier?.match(/Session (\d+)/i);
+      if (match) {
+        sessionChangesMap.set(match[1], cs.changes || []);
+      } else {
+        sessionChangesMap.set(cs.identifier, cs.changes || []);
+      }
+    });
+
     const matched = new Set<number>();
-    const pairs: { old: SessionItem | null, new: SessionItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED' }[] = [];
+    const pairs: { old: SessionItem | null, new: SessionItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED', changes?: string[] }[] = [];
 
     oldSess.forEach(oldItem => {
       const match = newSess.find(newItem => newItem.sessionNumber === oldItem.sessionNumber && !matched.has(newItem.sessionNumber!));
       if (match) {
         matched.add(match.sessionNumber!);
-        const isModified = oldItem.sessionTitle !== match.sessionTitle || oldItem.sessionTopic !== match.sessionTopic;
-        pairs.push({ old: oldItem, new: match, status: isModified ? 'MODIFIED' : 'UNCHANGED' });
+        const aiChanges = sessionChangesMap.get(match.sessionNumber!.toString()) || sessionChangesMap.get(match.sessionTitle || "") || [];
+        const isModified = oldItem.sessionTitle !== match.sessionTitle || oldItem.sessionTopic !== match.sessionTopic || aiChanges.length > 0;
+        pairs.push({ old: oldItem, new: match, status: isModified ? 'MODIFIED' : 'UNCHANGED', changes: aiChanges });
       } else {
         pairs.push({ old: oldItem, new: null, status: 'REMOVED' });
       }
@@ -133,22 +146,31 @@ export default function SyllabusCompareModal({
       const bNum = b.old?.sessionNumber || b.new?.sessionNumber || 0;
       return aNum - bNum;
     });
-  }, [oldSessionsRes, newSessionsRes]);
+  }, [oldSessionsRes, newSessionsRes, apiData?.sessionDiffResponse]);
 
   const assessmentPairs = useMemo(() => {
     const oldAss: AssessmentItem[] = extractItems(oldAssessmentsRes);
     const newAss: AssessmentItem[] = extractItems(newAssessmentsRes);
 
+    const apiAssessmentDiff = apiData?.assessmentDiffResponse || { addedAssessments: [], removedAssessments: [], changedAssessments: [] };
+    const assessmentChangesMap = new Map<string, string[]>();
+    apiAssessmentDiff.changedAssessments?.forEach((ca: any) => {
+      assessmentChangesMap.set(ca.assessmentIdentifier, ca.detailChanges || []);
+    });
+
     const matched = new Set<string>();
-    const pairs: { old: AssessmentItem | null, new: AssessmentItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED' }[] = [];
+    const pairs: { old: AssessmentItem | null, new: AssessmentItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED', changes?: string[] }[] = [];
 
     oldAss.forEach(oldItem => {
       const key = `${oldItem.categoryName}-${oldItem.part}`;
       const match = newAss.find(newItem => `${newItem.categoryName}-${newItem.part}` === key && !matched.has(key));
       if (match) {
         matched.add(key);
-        const isModified = oldItem.weight !== match.weight || oldItem.completionCriteria !== match.completionCriteria;
-        pairs.push({ old: oldItem, new: match, status: isModified ? 'MODIFIED' : 'UNCHANGED' });
+        // Try to match by typeName - Part since that's what backend might return
+        const identifierFallback = `${match.typeName} - Part ${match.part}`;
+        const aiChanges = assessmentChangesMap.get(key) || assessmentChangesMap.get(identifierFallback) || [];
+        const isModified = oldItem.weight !== match.weight || oldItem.completionCriteria !== match.completionCriteria || aiChanges.length > 0;
+        pairs.push({ old: oldItem, new: match, status: isModified ? 'MODIFIED' : 'UNCHANGED', changes: aiChanges });
       } else {
         pairs.push({ old: oldItem, new: null, status: 'REMOVED' });
       }
@@ -166,7 +188,7 @@ export default function SyllabusCompareModal({
       const bPart = b.old?.part || b.new?.part || 0;
       return aPart - bPart;
     });
-  }, [oldAssessmentsRes, newAssessmentsRes]);
+  }, [oldAssessmentsRes, newAssessmentsRes, apiData?.assessmentDiffResponse]);
 
   const assessmentResultPayload = useMemo(() => {
     return {
@@ -422,12 +444,12 @@ export default function SyllabusCompareModal({
                     )}
                     {activeTab === 'sessions' && (
                       <DiffSessions 
-                        sessions={sessionPairs.map(p => ({ item: p.new, status: p.status === 'ADDED' ? 'ADDED' : p.status === 'MODIFIED' ? 'MODIFIED' : 'UNCHANGED' }))} 
+                        sessions={sessionPairs.map(p => ({ item: p.new, status: p.status === 'ADDED' ? 'ADDED' : p.status === 'MODIFIED' ? 'MODIFIED' : 'UNCHANGED', changes: p.changes }))} 
                       />
                     )}
                     {activeTab === 'assessments' && (
                       <DiffAssessments 
-                        assessments={assessmentPairs.map(p => ({ item: p.new, status: p.status === 'ADDED' ? 'ADDED' : p.status === 'MODIFIED' ? 'MODIFIED' : 'UNCHANGED' }))} 
+                        assessments={assessmentPairs.map(p => ({ item: p.new, status: p.status === 'ADDED' ? 'ADDED' : p.status === 'MODIFIED' ? 'MODIFIED' : 'UNCHANGED', changes: p.changes }))} 
                       />
                     )}
                   </div>
