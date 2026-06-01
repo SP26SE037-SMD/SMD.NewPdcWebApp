@@ -80,18 +80,17 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
     });
   }, [syllabuses, statusFilter]);
 
-  const { canGetPrompts, publishedSyllabusId } = useMemo(() => {
-    if (selectedSyllabusIds.length !== 2) return { canGetPrompts: false, publishedSyllabusId: null };
+  const { canGetPrompts, targetHistorySyllabusId } = useMemo(() => {
+    if (selectedSyllabusIds.length !== 2) return { canGetPrompts: false, targetHistorySyllabusId: null };
     const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
     const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
-    if (!s1 || !s2) return { canGetPrompts: false, publishedSyllabusId: null };
+    if (!s1 || !s2) return { canGetPrompts: false, targetHistorySyllabusId: null };
 
-    const statuses = [s1.status, s2.status];
-    if (statuses.includes("PUBLISHED") && statuses.includes("ARCHIVED")) {
-      const pubId = s1.status === "PUBLISHED" ? s1.syllabusId : s2.syllabusId;
-      return { canGetPrompts: true, publishedSyllabusId: pubId };
-    }
-    return { canGetPrompts: false, publishedSyllabusId: null };
+    const time1 = new Date(s1.createdAt || 0).getTime();
+    const time2 = new Date(s2.createdAt || 0).getTime();
+    
+    const newerId = time1 > time2 ? s1.syllabusId : s2.syllabusId;
+    return { canGetPrompts: true, targetHistorySyllabusId: newerId };
   }, [selectedSyllabusIds, syllabuses]);
 
   const handleToggleSelect = (id: string) => {
@@ -108,7 +107,24 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   const handleCompareClick = () => {
     if (selectedSyllabusIds.length === 2) {
-      setIsCompareModalOpen(true);
+      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
+      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
+      
+      if (s1 && s2) {
+        const time1 = new Date(s1.createdAt || 0).getTime();
+        const time2 = new Date(s2.createdAt || 0).getTime();
+        
+        if (time1 <= time2) {
+           setSelectedSyllabusIds([s1.syllabusId, s2.syllabusId]);
+        } else {
+           setSelectedSyllabusIds([s2.syllabusId, s1.syllabusId]);
+        }
+        
+        // Use timeout to ensure state updates before opening modal
+        setTimeout(() => {
+          setIsCompareModalOpen(true);
+        }, 0);
+      }
     }
   };
 
@@ -330,11 +346,11 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
         />
       )}
 
-      {isHistoryModalOpen && publishedSyllabusId && (
+      {isHistoryModalOpen && targetHistorySyllabusId && (
         <SyllabusCompareHistoryModal
           isOpen={isHistoryModalOpen}
           onClose={() => setIsHistoryModalOpen(false)}
-          newSyllabusId={publishedSyllabusId}
+          newSyllabusId={targetHistorySyllabusId}
         />
       )}
     </div>

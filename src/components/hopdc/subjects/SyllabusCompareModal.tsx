@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { SyllabusService, CompareResult } from "@/services/syllabus.service";
+import { SyllabusService, CompareResult, ComparisonResultContent } from "@/services/syllabus.service";
 import { MaterialTextCompareModal } from './MaterialTextCompareModal';
 import { MaterialService, MaterialItem } from "@/services/material.service";
 import { SessionService, SessionItem } from "@/services/session.service";
@@ -56,7 +56,7 @@ export default function SyllabusCompareModal({
   const { data: newAssessmentsRes, isLoading: isNewAssLoading } = useQuery({ queryKey: ["assessments", newSyllabusId], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
 
   const apiData = (response as any)?.data || response;
-  const compareResult: CompareResult | undefined = apiData?.comparisonResult;
+  const compareResult: ComparisonResultContent | undefined = apiData?.comparisonResult;
 
   const isLoading = isSummaryLoading || isOldMatLoading || isNewMatLoading || isOldSesLoading || isNewSesLoading || isOldAssLoading || isNewAssLoading;
 
