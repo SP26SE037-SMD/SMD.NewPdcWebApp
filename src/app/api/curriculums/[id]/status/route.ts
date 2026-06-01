@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const cookieStore = await cookies();
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
 
-        const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+        const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/curriculums/${id}/status?status=${status}`, {
             method: 'PATCH',

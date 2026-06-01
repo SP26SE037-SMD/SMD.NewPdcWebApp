@@ -21,7 +21,7 @@ export async function POST(
         console.log(JSON.stringify(body, null, 2));
         console.log(`\n\n`);
 
-        const baseUrl = process.env.BACKEND_URL || 'http://43.207.156.116';
+        const baseUrl = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
         
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',

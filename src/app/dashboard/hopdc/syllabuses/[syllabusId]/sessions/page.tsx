@@ -4,6 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, store } from '@/store';
 import { setSessions, updateSession, removeSession, addSession } from '@/store/slices/syllabusSlice';
+import { clearAiProcessingMessage } from '@/store/slices/notificationSlice';
 import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil, Eye } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { SessionService, SessionItem } from '@/services/session.service';
@@ -58,6 +59,24 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
     const [mappingValidationResult, setMappingValidationResult] = useState<any>(null);
     const [isMappingSaving, setIsMappingSaving] = useState(false);
     const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
+
+    const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
+
+    useEffect(() => {
+        if (isMappingValidating) {
+            if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
+                setMappingValidationResult(aiProcessingData);
+                setIsMappingResultModalOpen(true);
+                setIsMappingValidating(false);
+                showToast("Mapping validation complete", "success");
+                dispatch(clearAiProcessingMessage());
+            } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
+                setIsMappingValidating(false);
+                showToast(aiProcessingMessage || "Mapping validation failed", "error");
+                dispatch(clearAiProcessingMessage());
+            }
+        }
+    }, [aiProcessingStatus, aiProcessingData, aiProcessingMessage, dispatch, showToast, isMappingValidating]);
 
     // TaskService is not needed for HOPDC as we have syllabusId directly.
     const realTask = null;
@@ -242,22 +261,17 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
     const handleValidateMappings = async () => {
         if (!syllabusId) return;
         setIsMappingValidating(true);
+        dispatch(clearAiProcessingMessage());
         try {
             const payload = Object.entries(mappingStates).flatMap(([sessionId, cloIds]) => 
                 cloIds.map(cloId => ({ sessionId, cloId }))
             );
-            const res = await MappingService.validateSessionMappings(syllabusId, payload);
-            if (res.data) {
-                console.log("✅ Session mapping validation result received:", res.data);
-                setMappingValidationResult(res.data);
-                setIsMappingResultModalOpen(true);
-                showToast("Mapping validation complete", "success");
-            }
+            await MappingService.validateSessionMappings(syllabusId, payload);
+            showToast("Validation started. Please wait...", "info");
         } catch (error) {
             console.error(error);
-            showToast("Failed to validate mappings", "error");
-        } finally {
             setIsMappingValidating(false);
+            showToast("Failed to validate mappings", "error");
         }
     };
 

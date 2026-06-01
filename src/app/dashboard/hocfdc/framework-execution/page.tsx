@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import ActiveFrameworksBoard from "@/components/hocfdc/ActiveFrameworksBoard";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://43.207.156.116";
+const BACKEND_URL = process.env.BACKEND_URL || "https://api.syllabus.io.vn";
 
 export default async function FrameworkExecutionPage() {
   const cookieStore = await cookies();

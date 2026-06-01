@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BlockService } from '@/services/block.service';
 import { X, FileText } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
 
 interface MaterialTextCompareModalProps {
     oldId?: string;
@@ -211,7 +213,12 @@ export function MaterialTextCompareModal({ oldId, newId, title, onClose }: Mater
         );
     };
 
-    return (
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    if (!mounted) return null;
+
+    return createPortal(
         <div className="fixed inset-0 z-[1000] flex justify-center items-center p-4 sm:p-6 bg-black/40 animate-in fade-in duration-200">
             <div className="bg-slate-100 w-full max-w-[1600px] h-[95vh] rounded-[24px] shadow-2xl flex flex-col overflow-hidden border-4 border-white">
                 {/* Header */}
@@ -255,7 +262,8 @@ export function MaterialTextCompareModal({ oldId, newId, title, onClose }: Mater
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

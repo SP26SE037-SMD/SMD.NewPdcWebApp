@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://43.207.156.116";
+const BACKEND_URL = process.env.BACKEND_URL || "https://api.syllabus.io.vn";
 
 export async function GET(
   request: NextRequest,

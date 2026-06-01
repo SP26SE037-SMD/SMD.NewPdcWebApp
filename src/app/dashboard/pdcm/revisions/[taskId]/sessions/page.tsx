@@ -4,6 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, store } from '@/store';
 import { setSessions, updateSession, removeSession, addSession } from '@/store/slices/syllabusSlice';
+import { clearAiProcessingMessage } from '@/store/slices/notificationSlice';
 import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil, Eye } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { SessionService, SessionItem } from '@/services/session.service';
@@ -60,6 +61,24 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     const [mappingValidationResult, setMappingValidationResult] = useState<any>(null);
     const [isMappingSaving, setIsMappingSaving] = useState(false);
     const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
+
+    const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
+
+    useEffect(() => {
+        if (isMappingValidating) {
+            if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
+                setMappingValidationResult(aiProcessingData);
+                setIsMappingResultModalOpen(true);
+                setIsMappingValidating(false);
+                showToast("Mapping validation complete", "success");
+                dispatch(clearAiProcessingMessage());
+            } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
+                setIsMappingValidating(false);
+                showToast(aiProcessingMessage || "Mapping validation failed", "error");
+                dispatch(clearAiProcessingMessage());
+            }
+        }
+    }, [aiProcessingStatus, aiProcessingData, aiProcessingMessage, dispatch, showToast, isMappingValidating]);
 
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['pdcm-task-detail', taskId],
@@ -251,21 +270,17 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     const handleValidateMappings = async () => {
         if (!syllabusId) return;
         setIsMappingValidating(true);
+        dispatch(clearAiProcessingMessage());
         try {
             const payload = Object.entries(mappingStates).flatMap(([sessionId, cloIds]) => 
                 cloIds.map(cloId => ({ sessionId, cloId }))
             );
-            const res = await MappingService.validateSessionMappings(syllabusId, payload);
-            if (res.data) {
-                setMappingValidationResult(res.data);
-                setIsMappingResultModalOpen(true);
-                showToast("Mapping validation complete", "success");
-            }
+            await MappingService.validateSessionMappings(syllabusId, payload);
+            showToast("Validation started. Please wait...", "info");
         } catch (error) {
             console.error(error);
-            showToast("Failed to validate mappings", "error");
-        } finally {
             setIsMappingValidating(false);
+            showToast("Failed to validate mappings", "error");
         }
     };
 
@@ -805,18 +820,21 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                             };
                                             console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
+                                            const errorsArray = Array.isArray(validateRes) ? validateRes : (validateRes?.errors || validateRes?.data?.errors || []);
                                             
-                                            setSingleValidationErrors(validateRes?.data?.errors || []);
+                                            setSingleValidationErrors(errorsArray);
                                             setIsSingleValidated(true);
                                             
-                                            if (!validateRes?.data?.errors || validateRes.data.errors.length === 0) {
+                                            if (errorsArray.length === 0) {
                                                 showToast('Session data is valid!', 'success');
                                             } else {
                                                 showToast('Validation completed with suggestions', 'success');
                                             }
                                         } catch (e: any) {
                                             console.error("Validation error:", e);
-                                            setSingleValidationErrors(e?.response?.data?.data?.errors || []);
+                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
+                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
+                                            setSingleValidationErrors(errorsArray);
                                             setIsSingleValidated(true);
                                             showToast('Validation completed with suggestions', 'success');
                                         } finally {
@@ -1141,19 +1159,21 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                             console.log("VALIDATE PAYLOAD:", payload);
                                                             const res = await SessionService.validateSessions(syllabusId!, payload) as any;
                                                             console.log("🔍 Session Validation Response:", res);
-                                                            setValidationErrors(res?.data?.errors || []);
-                                                            setRemainingQuotas(res?.data?.remainingQuotas || []);
+                                                            const errorsArray = Array.isArray(res) ? res : (res?.errors || res?.data?.errors || []);
+                                                            const quotasArray = res?.remainingQuotas || res?.data?.remainingQuotas || [];
+                                                            setValidationErrors(errorsArray);
+                                                            setRemainingQuotas(quotasArray);
                                                             setIsValidated(true);
-                                                            if (!res?.data?.errors || res.data.errors.length === 0) {
+                                                            if (errorsArray.length === 0) {
                                                                 showToast('All sessions are valid!', 'success');
                                                             } else {
                                                                 showToast('Validation completed with suggestions', 'success');
                                                             }
                                                         } catch (error: any) {
                                                             console.error("Validation Error:", error);
-                                                            // Our apiClient throws error with .data property containing the JSON response
-                                                            const errorData = error.data?.data || {};
-                                                            setValidationErrors(errorData.errors || []);
+                                                            const errorData = error.data || error.response?.data || {};
+                                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
+                                                            setValidationErrors(errorsArray);
                                                             setRemainingQuotas(errorData.remainingQuotas || []);
                                                             setIsValidated(true);
                                                             showToast(error.message || 'Validation completed with errors', 'error');

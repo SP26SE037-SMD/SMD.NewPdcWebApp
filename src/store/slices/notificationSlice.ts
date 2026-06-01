@@ -125,6 +125,8 @@ const notificationSlice = createSlice({
           // Lấy status thật sự từ chuỗi "Status updated: PROCESSING"
           if (message && message.startsWith("Status updated: ")) {
             state.aiProcessingStatus = message.replace("Status updated: ", "").trim();
+          } else if (message) {
+            state.aiProcessingStatus = message.trim();
           }
           
           // Store the realtime AI processing status safely

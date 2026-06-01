@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { X, Check, ArrowRight, ShieldAlert, AlertTriangle, FileText, CalendarDays, ClipboardCheck, AlignLeft, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { SyllabusService, CompareResult } from "@/services/syllabus.service";
@@ -194,17 +195,21 @@ export default function SyllabusCompareModal({
   });
 
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => setMounted(true), []);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white rounded-3xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden shadow-2xl"
-        >
+      {isOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white rounded-3xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+          >
           {comparingMaterial && (
             <MaterialTextCompareModal
               oldId={comparingMaterial.oldId}
@@ -439,6 +444,8 @@ export default function SyllabusCompareModal({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
