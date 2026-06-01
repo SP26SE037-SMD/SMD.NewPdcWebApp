@@ -25,7 +25,7 @@ function getWsUrl(): string {
   if (explicit) return explicit;
 
   // Fallback: use the backend URL from env (available client-side via NEXT_PUBLIC_)
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://43.207.156.116';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.syllabus.io.vn';
   return `${backendUrl}${WS_ENDPOINT}`;
 }
 

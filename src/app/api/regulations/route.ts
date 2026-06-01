@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Get backend URL from environment
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
     
     // Construct target URL with search params
     const targetUrl = new URL(`${BACKEND_URL}/api/regulations`);

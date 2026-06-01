@@ -1,5 +1,5 @@
 // Central type definitions and constants for Auth.
-// Backend response types from: http://43.207.156.116:8080/api/auth/login
+// Backend response types from: https://api.syllabus.io.vn:8080/api/auth/login
 
 // export interface Permission {
 //     permissionId: string;

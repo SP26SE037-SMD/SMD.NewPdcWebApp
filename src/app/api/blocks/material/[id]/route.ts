@@ -12,7 +12,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     
     // Get backend URL from environment
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
     
     // Construct target URL
     const targetUrl = new URL(`${BACKEND_URL}/api/blocks/material/${id}`);
@@ -64,7 +64,7 @@ export async function POST(
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
     const body = await request.json();
     
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
     const targetUrl = `${BACKEND_URL}/api/blocks/material/${id}`;
 
     console.log('Proxying POST /api/blocks/material/[id] to:', targetUrl);
@@ -112,7 +112,7 @@ export async function PUT(
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
     const body = await request.json();
     
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
     const targetUrl = `${BACKEND_URL}/api/blocks/material/${id}`;
 
     console.log('Proxying PUT /api/blocks/material/[id] to:', targetUrl);

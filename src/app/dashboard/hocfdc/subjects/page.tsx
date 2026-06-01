@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { AUTH_TOKEN_COOKIE } from '@/lib/auth';
 import SubjectsManagement from "@/components/hocfdc/SubjectsManagement";
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
 
 export default async function SubjectsPage({
     searchParams,

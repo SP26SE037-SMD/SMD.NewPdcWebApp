@@ -10,7 +10,7 @@ export async function POST() {
     // 2. Gọi API Backend để invalidate Token (nếu có token)
     if (token) {
         try {
-            const baseUrl = process.env.BACKEND_URL || 'http://43.207.156.116';
+            const baseUrl = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
             const response = await fetch(`${baseUrl}/api/auth/logout?jwt=${token}`, {
                 method: 'POST'
             });

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
     const { searchParams } = new URL(request.url);
     
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://43.207.156.116';
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://api.syllabus.io.vn';
     const targetUrl = new URL(`${BACKEND_URL}/api/session-material-blocks`);
     
     searchParams.forEach((value, key) => {

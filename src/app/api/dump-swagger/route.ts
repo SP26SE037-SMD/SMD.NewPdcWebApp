@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 
-const API_BASE_URL = process.env.BACKEND_URL || "http://43.207.156.116";
+const API_BASE_URL = process.env.BACKEND_URL || "https://api.syllabus.io.vn";
 
 export async function GET(request: NextRequest) {
     try {

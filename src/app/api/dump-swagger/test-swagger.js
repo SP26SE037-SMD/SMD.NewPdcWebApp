@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://43.207.156.116";
+const BACKEND_URL = "https://api.syllabus.io.vn";
 
 async function run() {
     try {
