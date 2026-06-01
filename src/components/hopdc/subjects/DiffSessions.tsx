@@ -5,7 +5,7 @@ import { SessionItem } from '@/services/session.service';
 import { Plus, Minus, Eye, CheckCircle2, Edit2 } from 'lucide-react';
 
 interface DiffSessionsProps {
-    sessions: { item: SessionItem | null, status: string }[];
+    sessions: { item: SessionItem | null, status: string, changes?: string[] }[];
 }
 
 export function DiffSessions({ sessions }: DiffSessionsProps) {
@@ -90,11 +90,21 @@ export function DiffSessions({ sessions }: DiffSessionsProps) {
                                 )}
                             </div>
                             
-                            <div className="absolute top-4 right-4 md:static md:col-span-2 flex items-center justify-end gap-1.5">
-                                {isAdded && <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Plus size={12}/> Added</span>}
-                                {isRemoved && <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Minus size={12}/> Removed</span>}
-                                {isModified && !isAdded && !isRemoved && <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Edit2 size={12}/> Mod</span>}
+                            <div className="absolute top-4 right-4 md:static md:col-span-2 flex flex-col items-end justify-center gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    {isAdded && <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Plus size={12}/> Added</span>}
+                                    {isRemoved && <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Minus size={12}/> Removed</span>}
+                                    {isModified && !isAdded && !isRemoved && <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Edit2 size={12}/> Mod</span>}
+                                </div>
                             </div>
+                            
+                            {m.changes && m.changes.length > 0 && (
+                                <div className="col-span-12 mt-3 pt-3 border-t border-blue-200/50">
+                                    <ul className="list-disc list-inside text-[11px] text-blue-700/80 space-y-1 font-medium">
+                                        {m.changes.map((c, i) => <li key={i}>{c}</li>)}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

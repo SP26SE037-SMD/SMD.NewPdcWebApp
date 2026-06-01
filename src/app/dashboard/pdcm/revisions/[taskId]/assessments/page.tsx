@@ -63,7 +63,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number } | null>(null);
-    
+
 
 
     // 1. Fetch Task to get.syllabus?.syllabusId
@@ -195,7 +195,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     useEffect(() => {
         if (activeTab === 'mapping' && assessments.length > 0) {
             const newStates = { ...mappingStates };
-            
+
             if (mappingsRes?.data) {
                 const apiMappings = mappingsRes.data;
                 const grouped: Record<string, string[]> = {};
@@ -203,7 +203,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                     if (!grouped[m.assessmentId]) grouped[m.assessmentId] = [];
                     grouped[m.assessmentId].push(m.cloId);
                 });
-                
+
                 assessments.forEach(ass => {
                     if (ass.assessmentId) {
                         newStates[ass.assessmentId] = grouped[ass.assessmentId] || [];
@@ -224,7 +224,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
         if (!syllabusId) return;
         setIsMappingValidating(true);
         try {
-            const payload = Object.entries(mappingStates).flatMap(([assessmentId, cloIds]) => 
+            const payload = Object.entries(mappingStates).flatMap(([assessmentId, cloIds]) =>
                 cloIds.map(cloId => ({ assessmentId, cloId }))
             );
             const res = await MappingService.validateAssessmentMappings(syllabusId, payload);
@@ -247,7 +247,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
         setIsMappingSaving(true);
         try {
             const existingMappings = mappingsRes.data;
-            
+
             // 1. Identify mappings to DELETE
             const deletions = existingMappings.filter(m => {
                 const selectedCloIds = mappingStates[m.assessmentId] || [];
@@ -276,7 +276,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 console.log(`➕ Adding ${additions.length} mappings...`);
                 await MappingService.createAssessmentMappingsBatch(additions);
             }
-            
+
             if (deletions.length > 0 || additions.length > 0) {
                 showToast(`Saved successfully (${additions.length} added, ${deletions.length} removed)`, "success");
                 queryClient.invalidateQueries({ queryKey: ['assessment-mappings', syllabusId] });
@@ -379,7 +379,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
         <div className="min-h-screen pb-32 animate-in fade-in duration-500">
             {!isRevisionLoading && revisionRequest && (
                 <div className="mb-6">
-                    <ReviewerFeedback 
+                    <ReviewerFeedback
                         reviewer={revisionRequest.reviewer}
                         comments={[{ title: 'Assessments Feedback', content: revisionRequest.commentAssessment }]}
                     />
@@ -476,14 +476,14 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
             {/* ── Tabs Navigation ── */}
             <div className="flex border-b border-outline-variant/30 mb-8 mt-4">
-                <button 
+                <button
                     onClick={() => setActiveTab('list')}
                     className={`px-8 py-3 font-bold text-sm transition-all relative ${activeTab === 'list' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Assessment List
                     {activeTab === 'list' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--primary-rgb),0.3)]"></div>}
                 </button>
-                <button 
+                <button
                     onClick={() => {
                         if (assessments.length === 0) {
                             showToast("Please create assessments first before mapping CLOs", "info");
@@ -500,99 +500,99 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
             <div className={activeTab === 'list' ? 'block' : 'hidden'}>
                 <>
-            {/* ── Scrollable Bento Grid List of Assessments ── */}
-            <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-3 custom-scrollbar">
-                {assessments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-zinc-400 bg-surface-container-lowest rounded-3xl border-2 border-dashed border-outline-variant/30 animate-in fade-in zoom-in duration-500">
-                        <span className="material-symbols-outlined text-6xl mb-4 opacity-20">assignment_late</span>
-                        <p className="text-lg font-medium text-on-surface/60" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No assessments found</p>
-                        <p className="text-sm opacity-60 mt-1">Please add a new assessment or import from an Excel file</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-3 pb-4">
-                        {assessments.map((ass, index) => (
-                            <div key={ass.assessmentId || `local-${index}`}
-                                className="group relative bg-surface-container-lowest p-0.5 rounded-xl transition-all duration-300 hover:shadow-lg border border-transparent hover:border-primary/10">
-                                <div className="flex items-center justify-between p-3">
-                                    <div className="flex items-center space-x-3">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
-                                            <span className="material-symbols-outlined text-xl">
-                                                {ass.typeName?.toLowerCase().includes('formative') ? 'edit_note' : 'history_edu'}
-                                            </span>
+                    {/* ── Scrollable Bento Grid List of Assessments ── */}
+                    <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-3 custom-scrollbar">
+                        {assessments.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-zinc-400 bg-surface-container-lowest rounded-3xl border-2 border-dashed border-outline-variant/30 animate-in fade-in zoom-in duration-500">
+                                <span className="material-symbols-outlined text-6xl mb-4 opacity-20">assignment_late</span>
+                                <p className="text-lg font-medium text-on-surface/60" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>No assessments found</p>
+                                <p className="text-sm opacity-60 mt-1">Please add a new assessment or import from an Excel file</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-3 pb-4">
+                                {assessments.map((ass, index) => (
+                                    <div key={ass.assessmentId || `local-${index}`}
+                                        className="group relative bg-surface-container-lowest p-0.5 rounded-xl transition-all duration-300 hover:shadow-lg border border-transparent hover:border-primary/10">
+                                        <div className="flex items-center justify-between p-3">
+                                            <div className="flex items-center space-x-3">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
+                                                    <span className="material-symbols-outlined text-xl">
+                                                        {ass.typeName?.toLowerCase().includes('formative') ? 'edit_note' : 'history_edu'}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-on-surface" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                                        {ass.categoryName} - Part {ass.part}
+                                                    </h3>
+                                                    <div className="flex items-center space-x-2 mt-0.5">
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
+                                                            {ass.typeName}
+                                                        </span>
+                                                        <span className="text-[11px] text-on-surface-variant/60">•</span>
+                                                        <span className="text-[11px] text-on-surface-variant font-medium">
+                                                            {ass.note ? (ass.note.length > 50 ? ass.note.substring(0, 50) + '...' : ass.note) : 'No instructions provided.'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-4">
+                                                <div className="text-right">
+                                                    <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-bold mb-0">Weighting</p>
+                                                    <p className="text-lg font-bold text-on-surface leading-none">{ass.weight}%</p>
+                                                </div>
+                                                <div className="flex items-center space-x-1">
+                                                    <button onClick={() => setExpandedIndex(index)}
+                                                        className="p-1 px-2 text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center gap-1 border border-primary/20 shadow-xs">
+                                                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                                        <span className="text-[10px] font-bold">View</span>
+                                                    </button>
+                                                    <button onClick={() => setExpandedIndex(index)}
+                                                        className="p-1 px-2 text-on-surface-variant hover:bg-surface-container rounded-md transition-colors flex items-center gap-1 border border-outline-variant/20 shadow-xs">
+                                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                        <span className="text-[10px] font-bold">Edit</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : handleDeleteLocal(index)}
+                                                        className="p-1 text-error hover:bg-error-container/10 rounded-md transition-colors">
+                                                        <span className="material-symbols-outlined text-[18px]">delete_outline</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm font-bold text-on-surface" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                                {ass.categoryName} - Part {ass.part}
-                                            </h3>
-                                            <div className="flex items-center space-x-2 mt-0.5">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
-                                                    {ass.typeName}
-                                                </span>
-                                                <span className="text-[11px] text-on-surface-variant/60">•</span>
-                                                <span className="text-[11px] text-on-surface-variant font-medium">
-                                                    {ass.note ? (ass.note.length > 50 ? ass.note.substring(0, 50) + '...' : ass.note) : 'No instructions provided.'}
+
+                                        {/* Expanded Preview Details */}
+                                        <div className="mx-4 mb-4 h-px bg-surface-container"></div>
+                                        <div className="px-4 pb-4 text-[11px] text-on-surface-variant grid grid-cols-3 gap-6">
+                                            <div>
+                                                <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Duration</span>
+                                                <span className="font-medium">{ass.duration} Min</span>
+                                            </div>
+                                            <div>
+                                                <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Eval Range</span>
+                                                <span className="font-medium">{ass.completionCriteria || 'N/A'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Methodology</span>
+                                                <span className="px-1.5 py-0.5 rounded-md bg-tertiary-container text-on-tertiary-container text-[9px] font-bold">
+                                                    {ass.questionType || 'Standard'}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-4">
-                                        <div className="text-right">
-                                            <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-bold mb-0">Weighting</p>
-                                            <p className="text-lg font-bold text-on-surface leading-none">{ass.weight}%</p>
-                                        </div>
-                                        <div className="flex items-center space-x-1">
-                                            <button onClick={() => setExpandedIndex(index)}
-                                                className="p-1 px-2 text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center gap-1 border border-primary/20 shadow-xs">
-                                                <span className="material-symbols-outlined text-[16px]">visibility</span>
-                                                <span className="text-[10px] font-bold">View</span>
-                                            </button>
-                                            <button onClick={() => setExpandedIndex(index)}
-                                                className="p-1 px-2 text-on-surface-variant hover:bg-surface-container rounded-md transition-colors flex items-center gap-1 border border-outline-variant/20 shadow-xs">
-                                                <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                <span className="text-[10px] font-bold">Edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : handleDeleteLocal(index)}
-                                                className="p-1 text-error hover:bg-error-container/10 rounded-md transition-colors">
-                                                <span className="material-symbols-outlined text-[18px]">delete_outline</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Expanded Preview Details */}
-                                <div className="mx-4 mb-4 h-px bg-surface-container"></div>
-                                <div className="px-4 pb-4 text-[11px] text-on-surface-variant grid grid-cols-3 gap-6">
-                                    <div>
-                                        <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Duration</span>
-                                        <span className="font-medium">{ass.duration} Min</span>
-                                    </div>
-                                    <div>
-                                        <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Eval Range</span>
-                                        <span className="font-medium">{ass.completionCriteria || 'N/A'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="block text-[9px] font-bold uppercase tracking-widest mb-0.5 text-on-surface-variant/60">Methodology</span>
-                                        <span className="px-1.5 py-0.5 rounded-md bg-tertiary-container text-on-tertiary-container text-[9px] font-bold">
-                                            {ass.questionType || 'Standard'}
-                                        </span>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </div>
 
-           
+
 
                 </>
             </div>
 
             <div className={activeTab === 'mapping' ? 'block' : 'hidden'}>
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <CloMappingTab 
-                        assessments={assessments} 
+                    <CloMappingTab
+                        assessments={assessments}
                         subjectClos={subjectClos}
                         mappingStates={mappingStates}
                         onMappingChange={(assessmentId, cloIds) => setMappingStates(prev => ({ ...prev, [assessmentId]: cloIds }))}
@@ -602,7 +602,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
             {/* ── Mapping Validation Modal ── */}
             {isMappingResultModalOpen && mappingValidationResult && (
-                <MappingValidationModal 
+                <MappingValidationModal
                     result={mappingValidationResult}
                     assessments={assessments}
                     onClose={() => setIsMappingResultModalOpen(false)}
@@ -646,15 +646,15 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                             </p>
                         </div>
                         <div className="flex gap-3 justify-center pt-2">
-                            <button 
-                                onClick={() => setDeleteConfirm(null)} 
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
                                 disabled={isDeleting}
                                 className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-1/2 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
-                            <button 
-                                onClick={executeDelete} 
+                            <button
+                                onClick={executeDelete}
                                 disabled={isDeleting}
                                 className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 w-1/2 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
@@ -665,15 +665,15 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
             )}
-{/* Custom Import & Preview Modal for Assessments */}
+            {/* Custom Import & Preview Modal for Assessments */}
             {(isImportModalOpen || isPreviewOpen) && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-                    <div 
+                    <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => { if(!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                        onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
                     />
-                    
-                    <div 
+
+                    <div
                         className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
                     >
                         <div className="p-8 pb-4 flex justify-between items-center border-b border-outline-variant/20">
@@ -687,7 +687,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                             </div>
                             <div className="flex items-center gap-4">
                                 {!isPreviewOpen && (
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             const ExcelJS = (await import('exceljs')).default;
                                             const fs = await import('file-saver');
@@ -751,8 +751,8 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                         Download Template
                                     </button>
                                 )}
-                                <button 
-                                    onClick={() => { if(!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                                <button
+                                    onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
                                     className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[#f8faf2] text-zinc-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
                                 >
                                     <span className="material-symbols-outlined">close</span>
@@ -762,7 +762,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
                         <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
                             {!isPreviewOpen ? (
-                                <div 
+                                <div
                                     className="border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center text-center transition-all border-[#adb4a8]/30 bg-[#f8faf2] hover:border-primary hover:bg-primary/5 cursor-pointer"
                                     onClick={() => document.getElementById('excel-upload-hidden')?.click()}
                                 >
@@ -771,16 +771,16 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                     </div>
                                     <h3 className="text-lg font-bold text-[#2d342b] mb-1">Click to upload Excel file</h3>
                                     <p className="text-sm text-black/40">Supported formats: .xlsx, .xls, .csv</p>
-                                    
-                                    <input 
+
+                                    <input
                                         id="excel-upload-hidden"
                                         type="file"
                                         accept=".xlsx,.xls,.csv"
                                         className="hidden"
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
-                                            if(!file) return;
-                                            
+                                            if (!file) return;
+
                                             try {
                                                 const data = await file.arrayBuffer();
                                                 const workbook = XLSX.read(data, { type: 'array' });
@@ -813,7 +813,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     // Match category: exact → includes → first fallback
                                                     const matchedCategory = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryName.toLowerCase() === rawCategory.toLowerCase())
                                                         || ASSESSMENT_CATEGORIES.find((c: any) => c.categoryName.toLowerCase().includes(rawCategory.toLowerCase()) || rawCategory.toLowerCase().includes(c.categoryName.toLowerCase()));
-                                                    
+
                                                     // Match type: exact → includes → first fallback
                                                     const matchedType = ASSESSMENT_TYPES.find((t: any) => t.typeName.toLowerCase() === rawType.toLowerCase())
                                                         || ASSESSMENT_TYPES.find((t: any) => t.typeName.toLowerCase().includes(rawType.toLowerCase()) || rawType.toLowerCase().includes(t.typeName.toLowerCase()));
@@ -838,7 +838,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     // Validate Question Type based on mapped rules
                                                     let validQuestionType = rawQuestionType;
                                                     const validQuestionTypesForCombo = getAvailableQTypes(finalCategoryName, finalTypeName);
-                                                    
+
                                                     if (validQuestionTypesForCombo) {
                                                         const isValid = validQuestionTypesForCombo.some((v: string) => v.toLowerCase() === rawQuestionType.toLowerCase());
                                                         if (!isValid && rawQuestionType) {
@@ -871,7 +871,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                         status: "DRAFT"
                                                     };
                                                 });
-                                                
+
                                                 console.log("✅ PARSED ASSESSMENTS (preview):", parsedAssessments);
                                                 setPreviewData(parsedAssessments);
                                                 setIsValidated(false);
@@ -880,7 +880,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 setIsImportModalOpen(false);
                                                 setIsPreviewOpen(true);
                                                 (e.target as HTMLInputElement).value = '';
-                                            } catch(err) {
+                                            } catch (err) {
                                                 console.error(err);
                                                 showToast('Invalid Excel file format', 'error');
                                             }
@@ -1005,91 +1005,92 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
                                                     const realIdx = (previewPage - 1) * 10 + idx;
                                                     return (
-                                                    <React.Fragment key={idx}>
-                                                    <tr className="hover:bg-primary/5 transition-colors">
-                                                        <td className="px-3 py-2 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">{realIdx + 1}</span></td>
-                                                        <td className="px-3 py-2 text-xs">
-                                                            <select 
-                                                                className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                value={item.categoryId}
-                                                                onChange={e => {
-                                                                    const d = [...previewData];
-                                                                    const cat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryId === e.target.value);
-                                                                    d[realIdx].categoryId = e.target.value;
-                                                                    d[realIdx].categoryName = cat?.categoryName || "";
-                                                                    d[realIdx].typeId = "";
-                                                                    d[realIdx].typeName = "";
-                                                                    d[realIdx].questionType = "";
-                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                    setPreviewData(d);
-                                                                }}
-                                                            >
-                                                                {ASSESSMENT_CATEGORIES.map((c: any) => (
-                                                                    <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
-                                                                ))}
-                                                            </select>
-                                                        </td>
-                                                        <td className="px-3 py-2 text-xs">
-                                                            <select 
-                                                                className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                value={item.typeId}
-                                                                onChange={e => {
-                                                                    const d = [...previewData];
-                                                                    const type = ASSESSMENT_TYPES.find((t: any) => t.typeId === e.target.value);
-                                                                    d[realIdx].typeId = e.target.value;
-                                                                    d[realIdx].typeName = type?.typeName || "";
-                                                                    d[realIdx].questionType = "";
-                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                    setPreviewData(d);
-                                                                }}
-                                                            >
-                                                                {(() => {
-                                                                    const validMap = getValidTypesMap(item.categoryName || "");
-                                                                    const validNames = Object.keys(validMap);
-                                                                    const availTypes = validNames.length > 0 
-                                                                        ? ASSESSMENT_TYPES.filter((t: any) => validNames.some(v => t.typeName.toLowerCase() === v.toLowerCase()))
-                                                                        : ASSESSMENT_TYPES;
-                                                                    return availTypes.map((t: any) => (
-                                                                        <option key={t.typeId} value={t.typeId}>{t.typeName}</option>
-                                                                    ));
-                                                                })()}
-                                                            </select>
-                                                        </td>
-                                                        <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.part} onChange={e => { const d = [...previewData]; d[realIdx].part = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                        <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.weight} onChange={e => { const d = [...previewData]; d[realIdx].weight = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                        <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.duration} onChange={e => { const d = [...previewData]; d[realIdx].duration = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                        <td className="px-3 py-2">
-                                                            <select 
-                                                                className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                value={item.questionType || ''}
-                                                                onChange={e => {
-                                                                    const d = [...previewData];
-                                                                    d[realIdx].questionType = e.target.value;
-                                                                    d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                    setPreviewData(d);
-                                                                }}
-                                                            >
-                                                                <option value="" disabled>Select</option>
-                                                                {(() => {
-                                                                    const availQTypes = getAvailableQTypes(item.categoryName, item.typeName) || COMMON_QUESTION_TYPES;
-                                                                    return availQTypes.map((t: string) => <option key={t} value={t}>{t}</option>);
-                                                                })()}
-                                                            </select>
-                                                        </td>
-                                                        <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.note || ''} onChange={e => { const d = [...previewData]; d[realIdx].note = e.target.value; setPreviewData(d); }} /></td>
-                                                    </tr>
-                                                    {item._importErrors && item._importErrors.length > 0 && (
-                                                        <tr key={`err-${idx}`} className="bg-red-50/50">
-                                                            <td colSpan={8} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="material-symbols-outlined text-[14px]">error</span>
-                                                                    {item._importErrors.join(" | ")}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                    </React.Fragment>
-                                                );})}
+                                                        <React.Fragment key={idx}>
+                                                            <tr className="hover:bg-primary/5 transition-colors">
+                                                                <td className="px-3 py-2 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">{realIdx + 1}</span></td>
+                                                                <td className="px-3 py-2 text-xs">
+                                                                    <select
+                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
+                                                                        value={item.categoryId}
+                                                                        onChange={e => {
+                                                                            const d = [...previewData];
+                                                                            const cat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryId === e.target.value);
+                                                                            d[realIdx].categoryId = e.target.value;
+                                                                            d[realIdx].categoryName = cat?.categoryName || "";
+                                                                            d[realIdx].typeId = "";
+                                                                            d[realIdx].typeName = "";
+                                                                            d[realIdx].questionType = "";
+                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
+                                                                            setPreviewData(d);
+                                                                        }}
+                                                                    >
+                                                                        {ASSESSMENT_CATEGORIES.map((c: any) => (
+                                                                            <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-xs">
+                                                                    <select
+                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
+                                                                        value={item.typeId}
+                                                                        onChange={e => {
+                                                                            const d = [...previewData];
+                                                                            const type = ASSESSMENT_TYPES.find((t: any) => t.typeId === e.target.value);
+                                                                            d[realIdx].typeId = e.target.value;
+                                                                            d[realIdx].typeName = type?.typeName || "";
+                                                                            d[realIdx].questionType = "";
+                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
+                                                                            setPreviewData(d);
+                                                                        }}
+                                                                    >
+                                                                        {(() => {
+                                                                            const validMap = getValidTypesMap(item.categoryName || "");
+                                                                            const validNames = Object.keys(validMap);
+                                                                            const availTypes = validNames.length > 0
+                                                                                ? ASSESSMENT_TYPES.filter((t: any) => validNames.some(v => t.typeName.toLowerCase() === v.toLowerCase()))
+                                                                                : ASSESSMENT_TYPES;
+                                                                            return availTypes.map((t: any) => (
+                                                                                <option key={t.typeId} value={t.typeId}>{t.typeName}</option>
+                                                                            ));
+                                                                        })()}
+                                                                    </select>
+                                                                </td>
+                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.part} onChange={e => { const d = [...previewData]; d[realIdx].part = Number(e.target.value); setPreviewData(d); }} /></td>
+                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.weight} onChange={e => { const d = [...previewData]; d[realIdx].weight = Number(e.target.value); setPreviewData(d); }} /></td>
+                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.duration} onChange={e => { const d = [...previewData]; d[realIdx].duration = Number(e.target.value); setPreviewData(d); }} /></td>
+                                                                <td className="px-3 py-2">
+                                                                    <select
+                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
+                                                                        value={item.questionType || ''}
+                                                                        onChange={e => {
+                                                                            const d = [...previewData];
+                                                                            d[realIdx].questionType = e.target.value;
+                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
+                                                                            setPreviewData(d);
+                                                                        }}
+                                                                    >
+                                                                        <option value="" disabled>Select</option>
+                                                                        {(() => {
+                                                                            const availQTypes = getAvailableQTypes(item.categoryName, item.typeName) || COMMON_QUESTION_TYPES;
+                                                                            return availQTypes.map((t: string) => <option key={t} value={t}>{t}</option>);
+                                                                        })()}
+                                                                    </select>
+                                                                </td>
+                                                                <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.note || ''} onChange={e => { const d = [...previewData]; d[realIdx].note = e.target.value; setPreviewData(d); }} /></td>
+                                                            </tr>
+                                                            {item._importErrors && item._importErrors.length > 0 && (
+                                                                <tr key={`err-${idx}`} className="bg-red-50/50">
+                                                                    <td colSpan={8} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="material-symbols-outlined text-[14px]">error</span>
+                                                                            {item._importErrors.join(" | ")}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1112,13 +1113,13 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
                         {isPreviewOpen && (
                             <div className="p-6 bg-surface-container-lowest border-t border-outline-variant/20 flex justify-end gap-3 rounded-b-[32px]">
-                                <button 
+                                <button
                                     onClick={() => { setIsPreviewOpen(false); setPreviewData([]); setIsImportModalOpen(true); setIsValidated(false); setValidationErrors([]); setValidationSummary(null); }}
                                     className="px-6 py-2.5 rounded-xl font-bold text-on-surface-variant bg-white border border-outline-variant/30 hover:bg-outline-variant/10 transition-colors"
                                 >
                                     Back
                                 </button>
-                                <button 
+                                <button
                                     disabled={isSaving || !isValidated}
                                     onClick={async () => {
                                         if (!syllabusId) return;
@@ -1163,7 +1164,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 }
 
 
-            
+
 
 
 // ── Assessment Edit Modal Component ──
@@ -1182,7 +1183,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
     const [isSaving, setIsSaving] = useState(false);
     const [existingMappings, setExistingMappings] = useState<CloAssessmentMapping[]>([]);
     const [isSkillOpen, setIsSkillOpen] = useState(false);
-    
+
     // Validate-first state
     const [isSingleValidating, setIsSingleValidating] = useState(false);
     const [isSingleValidated, setIsSingleValidated] = useState(!!assessment.assessmentId); // Skip validate for existing
@@ -1195,11 +1196,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
     const currentCategory = categories.find(c => c.categoryId === assessment.categoryId);
     const currentType = types.find(t => t.typeId === assessment.typeId);
-    
+
     // Determine available types based on selected category
     const validTypesMap = getValidTypesMap(currentCategory?.categoryName || "");
     const validTypeNames = Object.keys(validTypesMap);
-    const availableTypes = validTypeNames.length > 0 
+    const availableTypes = validTypeNames.length > 0
         ? types.filter(t => validTypeNames.some(vtn => t.typeName.toLowerCase() === vtn.toLowerCase()))
         : types;
 
@@ -1310,8 +1311,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 value={assessment.categoryId}
                                 onChange={(e) => {
                                     const cat = categories.find(c => c.categoryId === e.target.value);
-                                    onUpdate({ 
-                                        categoryId: e.target.value, 
+                                    onUpdate({
+                                        categoryId: e.target.value,
                                         categoryName: cat?.categoryName,
                                         typeId: "", typeName: "", questionType: ""
                                     });
@@ -1328,8 +1329,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 value={assessment.typeId}
                                 onChange={(e) => {
                                     const type = types.find(t => t.typeId === e.target.value);
-                                    onUpdate({ 
-                                        typeId: e.target.value, 
+                                    onUpdate({
+                                        typeId: e.target.value,
                                         typeName: type?.typeName,
                                         questionType: ""
                                     });
@@ -1479,7 +1480,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
                                 Cancel
                             </button>
-                            
+
                             {!isSingleValidated ? (
                                 <button
                                     onClick={async () => {
@@ -1546,8 +1547,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 }
 
 // ── CLO Mapping Tab Component ──
-function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChange }: { 
-    assessments: AssessmentItem[], 
+function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChange }: {
+    assessments: AssessmentItem[],
     subjectClos: any[],
     mappingStates: Record<string, string[]>,
     onMappingChange: (assessmentId: string, cloIds: string[]) => void
@@ -1581,10 +1582,10 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {savedAssessments.map((ass) => (
-                                <MappingRow 
-                                    key={ass.assessmentId} 
-                                    assessment={ass} 
-                                    subjectClos={subjectClos} 
+                                <MappingRow
+                                    key={ass.assessmentId}
+                                    assessment={ass}
+                                    subjectClos={subjectClos}
                                     selectedCloIds={mappingStates[ass.assessmentId!] || []}
                                     onSelectionChange={(ids) => onMappingChange(ass.assessmentId!, ids)}
                                 />
@@ -1592,7 +1593,7 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex items-center gap-3">
                     <span className="material-symbols-outlined text-amber-500 text-lg">info</span>
                     <p className="text-[11px] text-slate-500 font-medium">
@@ -1605,8 +1606,8 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
 }
 
 // ── Mapping Row Component (Inline Expandable) ──
-function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange }: { 
-    assessment: AssessmentItem, 
+function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange }: {
+    assessment: AssessmentItem,
     subjectClos: any[],
     selectedCloIds: string[],
     onSelectionChange: (ids: string[]) => void
@@ -1615,7 +1616,7 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
 
     return (
         <>
-            <tr 
+            <tr
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={`transition-colors group cursor-pointer ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50/50'}`}
             >
@@ -1663,7 +1664,7 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                                     <h4 className="text-sm font-bold text-slate-900">Select Course Learning Outcomes</h4>
                                     <p className="text-xs text-slate-500 mt-0.5">Pick outcomes that are assessed in this component</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setIsExpanded(false)}
                                     className="text-xs font-bold text-slate-500 hover:text-slate-700"
                                 >
@@ -1678,20 +1679,18 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                                         <button
                                             key={clo.cloId}
                                             onClick={() => {
-                                                const newIds = isSelected 
-                                                    ? selectedCloIds.filter(id => id !== clo.cloId) 
+                                                const newIds = isSelected
+                                                    ? selectedCloIds.filter(id => id !== clo.cloId)
                                                     : [...selectedCloIds, clo.cloId];
                                                 onSelectionChange(newIds);
                                             }}
-                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${
-                                                isSelected 
-                                                ? 'bg-white border-emerald-400 ring-1 ring-emerald-100 shadow-sm' 
-                                                : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
-                                            }`}
+                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${isSelected
+                                                    ? 'bg-white border-emerald-400 ring-1 ring-emerald-100 shadow-sm'
+                                                    : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
+                                                }`}
                                         >
-                                            <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                                                isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'
-                                            }`}>
+                                            <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'
+                                                }`}>
                                                 {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
                                             </div>
                                             <div className="space-y-1">
@@ -1714,15 +1713,15 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
     );
 }
 // ── Mapping Validation Modal Component ──
-function MappingValidationModal({ result, assessments, onClose }: { 
-    result: any, 
+function MappingValidationModal({ result, assessments, onClose }: {
+    result: any,
     assessments: AssessmentItem[],
-    onClose: () => void 
+    onClose: () => void
 }) {
     console.log("📦 Rendering MappingValidationModal with result:", result);
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div 
+            <div
                 className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
                 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
             >
@@ -1739,13 +1738,13 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                     {result.is_valid ? 'Mapping Alignment Validated' : 'Alignment Suggestions'}
                                 </h3>
                                 <p className={`text-sm font-medium opacity-70 ${result.is_valid ? 'text-emerald-800' : 'text-amber-800'}`}>
-                                    {result.is_valid 
-                                        ? 'Your configuration is perfectly balanced.' 
+                                    {result.is_valid
+                                        ? 'Your configuration is perfectly balanced.'
                                         : 'We found some gaps in your mapping configuration.'}
                                 </p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={onClose}
                             className="w-10 h-10 rounded-full hover:bg-white/50 flex items-center justify-center transition-colors text-slate-400 hover:text-slate-600"
                         >
@@ -1871,7 +1870,7 @@ function MappingValidationModal({ result, assessments, onClose }: {
                 </div>
 
                 <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end">
-                    <button 
+                    <button
                         onClick={onClose}
                         className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-slate-900/20 text-sm"
                     >

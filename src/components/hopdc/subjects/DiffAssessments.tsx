@@ -5,7 +5,7 @@ import { AssessmentItem } from '@/services/assessment.service';
 import { Plus, Minus, Edit2, Scale } from 'lucide-react';
 
 interface DiffAssessmentsProps {
-    assessments: { item: AssessmentItem | null, status: string }[];
+    assessments: { item: AssessmentItem | null, status: string, changes?: string[] }[];
 }
 
 export function DiffAssessments({ assessments }: DiffAssessmentsProps) {
@@ -99,11 +99,21 @@ export function DiffAssessments({ assessments }: DiffAssessmentsProps) {
                                 </span>
                             </div>
                             
-                            <div className="absolute top-4 right-4 md:static md:col-span-2 flex items-center justify-end gap-1.5">
-                                {isAdded && <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Plus size={12}/> Added</span>}
-                                {isRemoved && <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Minus size={12}/> Removed</span>}
-                                {isModified && !isAdded && !isRemoved && <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Edit2 size={12}/> Mod</span>}
+                            <div className="absolute top-4 right-4 md:static md:col-span-2 flex flex-col items-end justify-center gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    {isAdded && <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Plus size={12}/> Added</span>}
+                                    {isRemoved && <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Minus size={12}/> Removed</span>}
+                                    {isModified && !isAdded && !isRemoved && <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Edit2 size={12}/> Mod</span>}
+                                </div>
                             </div>
+
+                            {m.changes && m.changes.length > 0 && (
+                                <div className="col-span-12 mt-3 pt-3 border-t border-amber-200/50">
+                                    <ul className="list-disc list-inside text-[11px] text-amber-700/80 space-y-1 font-medium">
+                                        {m.changes.map((c, i) => <li key={i}>{c}</li>)}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
