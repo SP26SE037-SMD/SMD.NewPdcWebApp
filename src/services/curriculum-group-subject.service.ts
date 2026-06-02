@@ -54,4 +54,8 @@ export class CurriculumGroupSubjectService {
     static async getDepartmentsByCurriculum(curriculumId: string): Promise<ApiResponse<any>> {
         return apiClient.get<ApiResponse<any>>(`/api/curriculum-group-subjects/departments/by-curriculum?curriculumId=${curriculumId}`);
     }
+
+    static async getCurriculaBySubject(subjectId: string): Promise<ApiResponse<string[]>> {
+        return apiClient.get<ApiResponse<string[]>>(`/api/curriculum-group-subjects/subjects/${subjectId}/curricula`);
+    }
 }

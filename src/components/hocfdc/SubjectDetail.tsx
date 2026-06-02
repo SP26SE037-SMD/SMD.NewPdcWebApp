@@ -17,7 +17,9 @@ import {
   Edit2,
   Info,
   FileText,
+  Circle,
 } from "lucide-react";
+import { CloPloService } from "@/services/cloplo.service";
 import {
   Subject,
   SubjectService,
@@ -27,6 +29,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubjectPrerequisiteRoadmap } from "./SubjectPrerequisiteRoadmap";
 import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySubject";
+import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
+import { CurriculumService } from "@/services/curriculum.service";
+import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -63,7 +68,27 @@ export default function SubjectDetail({
   const [departments, setDepartments] = useState<any[]>([]);
 
   // New UI states
-  const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">(initialViewMode);
+  const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">(
+    initialViewMode,
+  );
+
+  // Curriculum mapping states
+  const [curriculaList, setCurriculaList] = useState<
+    { id: string; name: string; code: string }[]
+  >([]);
+  const [loadingCurricula, setLoadingCurricula] = useState(false);
+  const [selectedCurriculumForMatrix, setSelectedCurriculumForMatrix] = useState<{ id: string; name: string; code: string } | null>(null);
+  const [matrixData, setMatrixData] = useState<{
+    plos: any[];
+    clos: any[];
+    mappings: any[];
+    loading: boolean;
+  }>({
+    plos: [],
+    clos: [],
+    mappings: [],
+    loading: false,
+  });
 
   const fetchSubject = async (showLoading = true) => {
     try {
@@ -97,6 +122,83 @@ export default function SubjectDetail({
       fetchDeps();
     }
   }, [isEditing, departments.length]);
+
+  useEffect(() => {
+    const fetchMappedCurricula = async () => {
+      if (!subject?.subjectId) return;
+      setLoadingCurricula(true);
+      try {
+        const res = await CurriculumGroupSubjectService.getCurriculaBySubject(
+          subject.subjectId,
+        );
+        if (res && res.data && Array.isArray(res.data)) {
+          const curriculaDetails = await Promise.all(
+            res.data.map(async (cid) => {
+              try {
+                const detailRes =
+                  await CurriculumService.getCurriculumById(cid);
+                const envelope = (detailRes as any)?.data;
+                const curriculumData =
+                  envelope?.data ?? envelope ?? detailRes;
+                if (curriculumData && curriculumData.status !== "DRAFT") {
+                  return {
+                    id: cid,
+                    name: curriculumData.curriculumName || "Unknown",
+                    code: curriculumData.curriculumCode || "N/A",
+                  };
+                }
+              } catch (err) {
+                console.error(`Failed to fetch curriculum ${cid}:`, err);
+              }
+              return null;
+            }),
+          );
+          setCurriculaList(
+            curriculaDetails.filter(
+              (c): c is { id: string; name: string; code: string } =>
+                c !== null,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load mapped curricula:", error);
+      } finally {
+        setLoadingCurricula(false);
+      }
+    };
+
+    fetchMappedCurricula();
+  }, [subject?.subjectId]);
+
+  useEffect(() => {
+    const fetchMatrixData = async () => {
+      if (!selectedCurriculumForMatrix || !subject?.subjectId) return;
+      setMatrixData(prev => ({ ...prev, loading: true }));
+      try {
+        const [closRes, plosRes, mappingsRes] = await Promise.all([
+          CloPloService.getSubjectClos(subject.subjectId, 0, 100),
+          CurriculumService.getPloByCurriculumId(selectedCurriculumForMatrix.id),
+          CloPloService.getMappingsBySubjectAndCurriculum(subject.subjectId, selectedCurriculumForMatrix.id),
+        ]);
+
+        const closList = closRes?.data?.content || [];
+        const plosList = plosRes?.data?.content || [];
+        const mappingsList = mappingsRes?.data || [];
+
+        setMatrixData({
+          clos: closList,
+          plos: plosList,
+          mappings: mappingsList,
+          loading: false,
+        });
+      } catch (err) {
+        console.error("Failed to fetch matrix data:", err);
+        setMatrixData(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchMatrixData();
+  }, [selectedCurriculumForMatrix, subject?.subjectId]);
 
   const handleEditToggle = () => {
     if (!subject) return;
@@ -187,13 +289,14 @@ export default function SubjectDetail({
         <div className="max-w-7xl mx-auto px-8">
           <div className="relative overflow-hidden bg-white/70 backdrop-blur-xl border border-white/60 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <div className="absolute top-0 right-0 p-32 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
-            
+
             <div className="p-8 md:p-10 flex flex-col gap-8 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <button
                     onClick={() => {
-                      if (viewMode === "SYLLABUS") router.push(`/dashboard/hocfdc/subjects/${id}`);
+                      if (viewMode === "SYLLABUS")
+                        router.push(`/dashboard/hocfdc/subjects/${id}`);
                       else router.push("/dashboard/hocfdc/subjects");
                     }}
                     className="w-11 h-11 flex items-center justify-center bg-white/80 border border-zinc-200/50 rounded-xl text-zinc-500 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm group active:scale-95"
@@ -209,7 +312,9 @@ export default function SubjectDetail({
                         {subject.subjectCode}
                       </span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                        {viewMode === "SYLLABUS" ? "SYLLABUS LIST" : subject.department?.departmentName}
+                        {viewMode === "SYLLABUS"
+                          ? "SYLLABUS LIST"
+                          : subject.department?.departmentName}
                       </span>
                     </div>
                     <h1 className="text-3xl font-black text-zinc-900 tracking-tight leading-none mt-2">
@@ -222,12 +327,13 @@ export default function SubjectDetail({
                 <div className="flex items-center gap-4">
                   <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/80 border border-zinc-100 rounded-xl shadow-sm">
                     <div
-                      className={`w-2 h-2 rounded-full animate-pulse ${subject.status === SUBJECT_STATUS.COMPLETED
-                        ? "bg-emerald-500"
-                        : subject.status === SUBJECT_STATUS.PENDING_REVIEW
-                          ? "bg-amber-500"
-                          : "bg-zinc-400"
-                        }`}
+                      className={`w-2 h-2 rounded-full animate-pulse ${
+                        subject.status === SUBJECT_STATUS.COMPLETED
+                          ? "bg-emerald-500"
+                          : subject.status === SUBJECT_STATUS.PENDING_REVIEW
+                            ? "bg-amber-500"
+                            : "bg-zinc-400"
+                      }`}
                     />
                     <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
                       {subject.status.replace("_", " ")}
@@ -237,22 +343,27 @@ export default function SubjectDetail({
                   <div className="flex items-center gap-3">
                     {viewMode === "DETAIL" && !isEditing && (
                       <button
-                        onClick={() => router.push(`/dashboard/hocfdc/subjects/${id}/syllabuses`)}
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/hocfdc/subjects/${id}/syllabuses`,
+                          )
+                        }
                         className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 active:scale-95"
                       >
                         <FileText size={14} />
                         View Syllabuses
                       </button>
                     )}
-                    {viewMode === "DETAIL" && subject.status === SUBJECT_STATUS.DRAFT && (
-                      <button
-                        onClick={handleEditToggle}
-                        className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-xl hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
-                      >
-                        {isEditing ? <X size={14} /> : <Edit2 size={14} />}
-                        {isEditing ? "Discard" : "Edit Subject"}
-                      </button>
-                    )}
+                    {viewMode === "DETAIL" &&
+                      subject.status === SUBJECT_STATUS.DRAFT && (
+                        <button
+                          onClick={handleEditToggle}
+                          className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-xl hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                        >
+                          {isEditing ? <X size={14} /> : <Edit2 size={14} />}
+                          {isEditing ? "Discard" : "Edit Subject"}
+                        </button>
+                      )}
                     {isEditing ? (
                       <button
                         onClick={handleSave}
@@ -277,18 +388,51 @@ export default function SubjectDetail({
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-zinc-200 to-transparent my-2" />
                   <div className="grid grid-cols-4 gap-6">
                     {[
-                      { label: "Total Credits", value: subject.credits, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-50" },
-                      { label: "Degree Level", value: subject.degreeLevel, icon: GraduationCap, color: "text-emerald-600", bg: "bg-emerald-50" },
-                      { label: "Time Allocation", value: subject.timeAllocation, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-                      { label: "Scoring Scale", value: `${subject.scoringScale} (Min ${subject.minToPass || 0})`, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+                      {
+                        label: "Total Credits",
+                        value: subject.credits,
+                        icon: Layers,
+                        color: "text-indigo-600",
+                        bg: "bg-indigo-50",
+                      },
+                      {
+                        label: "Degree Level",
+                        value: subject.degreeLevel,
+                        icon: GraduationCap,
+                        color: "text-emerald-600",
+                        bg: "bg-emerald-50",
+                      },
+                      {
+                        label: "Time Allocation",
+                        value: subject.timeAllocation,
+                        icon: Clock,
+                        color: "text-amber-600",
+                        bg: "bg-amber-50",
+                      },
+                      {
+                        label: "Scoring Scale",
+                        value: `${subject.scoringScale} (Min ${subject.minToPass || 0})`,
+                        icon: CheckCircle2,
+                        color: "text-emerald-600",
+                        bg: "bg-emerald-50",
+                      },
                     ].map((stat, i) => (
-                      <div key={i} className="flex items-center gap-4 group cursor-default">
-                        <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-white/50`}>
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 group cursor-default"
+                      >
+                        <div
+                          className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-white/50`}
+                        >
                           <stat.icon size={20} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
-                          <p className="text-sm font-bold text-zinc-900">{stat.value}</p>
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                            {stat.label}
+                          </p>
+                          <p className="text-sm font-bold text-zinc-900">
+                            {stat.value}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -318,43 +462,76 @@ export default function SubjectDetail({
                         <Edit2 size={24} />
                       </div>
                       <div>
-                        <h2 className="text-xl font-black text-zinc-900 tracking-tight">Edit Subject</h2>
-                        <p className="text-xs text-zinc-500 font-medium">Updating subject configuration for {subject.subjectCode}</p>
+                        <h2 className="text-xl font-black text-zinc-900 tracking-tight">
+                          Edit Subject
+                        </h2>
+                        <p className="text-xs text-zinc-500 font-medium">
+                          Updating subject configuration for{" "}
+                          {subject.subjectCode}
+                        </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Subject Code</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Subject Code
+                        </label>
                         <input
                           value={editFormData?.subjectCode}
-                          onChange={(e) => setEditFormData({ ...editFormData, subjectCode: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              subjectCode: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Credits</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Credits
+                        </label>
                         <input
                           type="number"
                           value={editFormData?.credits}
-                          onChange={(e) => setEditFormData({ ...editFormData, credits: parseInt(e.target.value) })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              credits: parseInt(e.target.value),
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Subject Name</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Subject Name
+                        </label>
                         <input
                           value={editFormData?.subjectName}
-                          onChange={(e) => setEditFormData({ ...editFormData, subjectName: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              subjectName: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Description</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Description
+                        </label>
                         <textarea
                           rows={4}
                           value={editFormData?.description}
-                          onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              description: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-medium focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all resize-none"
                         />
                       </div>
@@ -365,7 +542,9 @@ export default function SubjectDetail({
                       <div className="w-10 h-10 bg-white/20 rounded-[10px] flex items-center justify-center text-white">
                         <Info size={20} />
                       </div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.2em]">Editing Mode</h3>
+                      <h3 className="text-sm font-black uppercase tracking-[0.2em]">
+                        Editing Mode
+                      </h3>
                       <p className="text-xs text-indigo-100 font-medium leading-relaxed">
                         Review all academic parameters before committing.
                       </p>
@@ -386,7 +565,9 @@ export default function SubjectDetail({
                         <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
                           <Target size={20} />
                         </div>
-                        <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase tracking-widest">Subject Description</h2>
+                        <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase tracking-widest">
+                          Subject Description
+                        </h2>
                       </div>
                       <div className="space-y-6">
                         <div className="relative">
@@ -400,7 +581,9 @@ export default function SubjectDetail({
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Student Tasks
                           </h4>
-                          <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">{subject.studentTasks}</p>
+                          <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">
+                            {subject.studentTasks}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -413,11 +596,15 @@ export default function SubjectDetail({
                             <Layers size={20} />
                           </div>
                           <div>
-                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">Prerequisite Subjects</h3>
+                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">
+                              Prerequisite Subjects
+                            </h3>
                           </div>
                         </div>
                         <button
-                          onClick={() => router.push("/dashboard/hocfdc/prerequisites")}
+                          onClick={() =>
+                            router.push("/dashboard/hocfdc/prerequisites")
+                          }
                           className="rounded-xl bg-white border border-emerald-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-emerald-50 hover:border-emerald-300 active:scale-95"
                         >
                           Manage Prerequisites
@@ -425,13 +612,14 @@ export default function SubjectDetail({
                       </div>
 
                       <div className="relative h-[450px] w-full overflow-hidden">
-                        <SubjectPrerequisiteRoadmap initialSubjectId={subject.subjectId} />
+                        <SubjectPrerequisiteRoadmap
+                          initialSubjectId={subject.subjectId}
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="col-span-4 space-y-6">
-
                     {/* PLO Mapping Section */}
                     <div className="bg-white/70 backdrop-blur-xl rounded-[20px] border border-white/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:bg-white/90 transition-all">
                       <div className="flex items-center justify-between mb-6">
@@ -445,10 +633,48 @@ export default function SubjectDetail({
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Current subject</p>
-                          <p className="text-sm font-bold text-emerald-950">{subject.subjectCode}</p>
+                      <div className="space-y-4">
+                        <div>
+                          {loadingCurricula ? (
+                            <div className="flex items-center gap-2 text-zinc-400 py-2">
+                              <Loader2 size={14} className="animate-spin" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider">
+                                Loading mappings...
+                              </span>
+                            </div>
+                          ) : curriculaList.length === 0 ? (
+                            <p className="text-xs font-semibold text-zinc-400 italic">
+                              No mapped curricula found. This subject is not yet
+                              assigned to any curriculum.
+                            </p>
+                          ) : (
+                            <div className="space-y-2.5 max-h-60 overflow-y-auto no-scrollbar pr-1">
+                              {curriculaList.map((curr) => (
+                                <div
+                                  key={curr.id}
+                                  onClick={() =>
+                                    setSelectedCurriculumForMatrix(curr)
+                                  }
+                                  className="block p-3.5 bg-white border border-zinc-200 rounded-xl hover:border-indigo-350 hover:shadow-sm transition-all group cursor-pointer"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="space-y-1">
+                                      <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wider">
+                                        {curr.code}
+                                      </span>
+                                      <p className="text-xs font-black text-zinc-800 group-hover:text-indigo-600 transition-colors leading-tight mt-1">
+                                        {curr.name}
+                                      </p>
+                                    </div>
+                                    <ChevronRight
+                                      size={14}
+                                      className="text-zinc-450 group-hover:text-indigo-550 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -472,6 +698,217 @@ export default function SubjectDetail({
           </motion.div>
         )}
       </div>
+
+      {/* Matrix Modal */}
+      <AnimatePresence>
+        {selectedCurriculumForMatrix && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md animate-in fade-in duration-200">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-6xl h-[85vh] rounded-[24px] border border-zinc-200 bg-white shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-zinc-100 px-8 py-6 bg-white shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-[16px] flex items-center justify-center bg-indigo-50 text-indigo-600 shadow-inner">
+                    <Layers size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-zinc-900 tracking-tight">
+                      CLO-PLO ALIGNMENT MATRIX
+                    </h3>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest leading-none mt-1">
+                      Curriculum: {selectedCurriculumForMatrix.code} — {selectedCurriculumForMatrix.name}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      router.push(`/dashboard/hocfdc/curriculums/${selectedCurriculumForMatrix.id}`);
+                      setSelectedCurriculumForMatrix(null);
+                    }}
+                    className="px-5 py-2.5 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 flex items-center gap-2 active:scale-95"
+                  >
+                    <Layers size={14} />
+                    View Curriculum
+                  </button>
+                  <button
+                    onClick={() => setSelectedCurriculumForMatrix(null)}
+                    className="h-10 w-10 rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-all flex items-center justify-center shadow-sm"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                {matrixData.loading ? (
+                  <div className="flex flex-col items-center justify-center py-32 gap-4">
+                    <Loader2 className="animate-spin text-primary" size={36} />
+                    <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                      Loading Matrix Relationships...
+                    </p>
+                  </div>
+                ) : matrixData.clos.length === 0 ? (
+                  <div className="p-12 border-2 border-dashed border-zinc-200 rounded-3xl text-center space-y-3">
+                    <AlertCircle size={32} className="text-zinc-300 mx-auto" />
+                    <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">No CLOs Defined</p>
+                    <p className="text-xs text-zinc-400">This subject does not have any Course Learning Outcomes mapped.</p>
+                  </div>
+                ) : matrixData.plos.length === 0 ? (
+                  <div className="p-12 border-2 border-dashed border-zinc-200 rounded-3xl text-center space-y-3">
+                    <AlertCircle size={32} className="text-zinc-300 mx-auto" />
+                    <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">No PLOs Defined</p>
+                    <p className="text-xs text-zinc-400">The selected curriculum does not have any Program Learning Outcomes defined.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div>
+                        <p className="text-xs text-zinc-500 font-medium italic">
+                          Visualizing the mapping relationship between Course Learning Outcomes (CLOs) and Program Learning Outcomes (PLOs).
+                        </p>
+                      </div>
+                      <div className="flex gap-4 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="material-symbols-outlined text-primary text-sm"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
+                            circle
+                          </span>
+                          <span className="text-xs font-bold text-zinc-600">Mapped</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-zinc-200 text-sm">circle</span>
+                          <span className="text-xs font-bold text-zinc-600">Unmapped</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto pb-4 custom-scrollbar">
+                      <table className="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                          <tr className="bg-zinc-50/80 border-b border-zinc-200 text-[10px] font-black tracking-widest text-zinc-500">
+                            <th className="p-4 rounded-tl-xl w-[320px] min-w-[320px] max-w-[320px] sticky left-0 z-20 bg-zinc-50 shadow-[2px_0_5px_rgba(0,0,0,0.02)] text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                              Course Learning Outcomes (CLOs)
+                            </th>
+                            {matrixData.plos.map((plo, idx) => (
+                              <th
+                                key={plo.ploId}
+                                className="p-4 text-center min-w-[120px] group/header relative"
+                              >
+                                <span className="text-[11px] font-black uppercase tracking-widest text-primary">
+                                  {plo.ploCode || `PLO-${idx + 1}`}
+                                </span>
+                                
+                                {/* Tooltip */}
+                                <div className="absolute opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-zinc-900 text-white text-[11px] rounded-2xl shadow-2xl p-4 z-[100] text-left pointer-events-none border border-zinc-800 backdrop-blur-sm bg-opacity-95 normal-case">
+                                  <p className="font-black text-emerald-400 mb-2 tracking-widest uppercase border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                    <CheckCircle2 size={12} />
+                                    {plo.ploCode}
+                                  </p>
+                                  <p className="font-medium leading-relaxed text-zinc-300 text-sm whitespace-pre-wrap">
+                                    {plo.description}
+                                  </p>
+                                </div>
+                              </th>
+                            ))}
+                            <th className="p-4 bg-emerald-50/30 text-center rounded-tr-xl w-[100px]">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[#1d5c42]">
+                                Coverage
+                              </span>
+                            </th>
+                          </tr>
+                        </thead>
+                        
+                        <tbody>
+                          {matrixData.clos.map((clo) => {
+                            const supportCount = matrixData.plos.filter(plo => matrixData.mappings.some(m => m.cloId === clo.cloId && m.ploId === plo.ploId)).length;
+                            const isUnmapped = supportCount === 0;
+
+                            return (
+                              <tr
+                                key={clo.cloId}
+                                className={`group hover:bg-zinc-50/80 transition-colors ${isUnmapped ? "bg-red-50/5" : ""}`}
+                              >
+                                <td className="p-4 border-b border-zinc-100 sticky left-0 bg-white group-hover:bg-zinc-50/80 transition-colors z-10 w-[320px] min-w-[320px] max-w-[320px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                  <div className="flex flex-col gap-1 pr-2">
+                                    <span className={`text-[13px] font-black tracking-tight ${isUnmapped ? "text-red-600" : "text-zinc-900"}`}>
+                                      {clo.cloCode}
+                                    </span>
+                                    <span className={`text-xs leading-relaxed ${isUnmapped ? "text-red-400 font-medium italic" : "text-zinc-500"}`}>
+                                      {clo.description}
+                                    </span>
+                                  </div>
+                                </td>
+                                {matrixData.plos.map((plo) => {
+                                  const mapped = matrixData.mappings.some(m => m.cloId === clo.cloId && m.ploId === plo.ploId);
+                                  return (
+                                    <td
+                                      key={plo.ploId}
+                                      className={`p-4 border-b border-zinc-100 text-center transition-all ${
+                                        mapped ? "bg-emerald-50/10" : ""
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-center">
+                                        <span
+                                          className={`material-symbols-outlined transition-all ${
+                                            mapped ? "text-primary scale-125" : "text-zinc-200"
+                                          }`}
+                                          style={{ fontVariationSettings: mapped ? "'FILL' 1" : "'FILL' 0" }}
+                                        >
+                                          circle
+                                        </span>
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                                <td className="p-4 border-b border-emerald-150 bg-emerald-50/30 text-center group-hover:bg-emerald-50/50 transition-colors font-bold text-xs text-[#0b7a47]">
+                                  {supportCount}/{matrixData.plos.length}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        
+                        <tfoot className="bg-zinc-50/80">
+                          <tr>
+                            <td className="p-4 border-t border-zinc-200 text-[10px] font-black uppercase tracking-widest text-zinc-500 rounded-bl-xl sticky left-0 z-10 bg-zinc-50 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                              PLO Support Count
+                            </td>
+                            {matrixData.plos.map((plo) => {
+                              const count = matrixData.clos.filter(clo => matrixData.mappings.some(m => m.cloId === clo.cloId && m.ploId === plo.ploId)).length;
+                              return (
+                                <td
+                                  key={plo.ploId}
+                                  className="p-4 border-t border-zinc-200 text-center"
+                                >
+                                  <span className={`text-[11px] font-black ${count === 0 ? "text-red-400" : "text-[#0b7a47]"}`}>
+                                    {count}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                            <td className="p-4 border-t border-emerald-150 bg-emerald-50/30 text-center rounded-br-xl text-[10px] font-black text-zinc-400">
+                              Total
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
