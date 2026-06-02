@@ -147,7 +147,7 @@ export const StandardInputContent = () => {
       queryClient.invalidateQueries({
         queryKey: ["syllabus-action-logs", syllabusId],
       });
-      router.push("/dashboard/hopdc/department-tasks");
+      router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
     },
     onError: (error) => {
       showTimedNotice(

@@ -415,11 +415,11 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                   disabled={updateStatusMutation.isPending}
                   className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border outline-none cursor-pointer transition-all active:scale-95 disabled:opacity-50 ${
                     sprint.status === SPRINT_STATUS.IN_PROGRESS
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-500/20 focus:border-emerald-500"
+                      ? "bg-blue-50 text-blue-600 border-blue-500/20 focus:border-blue-500"
                       : sprint.status === SPRINT_STATUS.PLANNING
                         ? "bg-amber-50 text-amber-600 border-amber-500/20 focus:border-amber-500"
                         : sprint.status === SPRINT_STATUS.COMPLETED
-                          ? "bg-blue-50 text-blue-600 border-blue-500/20 focus:border-blue-500"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-500/20 focus:border-emerald-500"
                           : sprint.status === SPRINT_STATUS.CANCELLED
                             ? "bg-rose-50 text-rose-600 border-rose-500/20 focus:border-rose-500"
                             : "bg-zinc-50 text-zinc-600 border-zinc-200"

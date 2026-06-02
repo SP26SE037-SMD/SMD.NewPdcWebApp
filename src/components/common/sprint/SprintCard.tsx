@@ -36,9 +36,9 @@ export const getStatusConfig = (status: SprintStatus | string) => {
   switch (s) {
     case SPRINT_STATUS.IN_PROGRESS:
       return {
-        color: "bg-emerald-500",
-        text: "text-emerald-600",
-        bg: "bg-emerald-50",
+        color: "bg-blue-500",
+        text: "text-blue-600",
+        bg: "bg-blue-50",
         icon: Clock,
       };
     case SPRINT_STATUS.PLANNING:
@@ -50,9 +50,9 @@ export const getStatusConfig = (status: SprintStatus | string) => {
       };
     case SPRINT_STATUS.COMPLETED:
       return {
-        color: "bg-blue-500",
-        text: "text-blue-600",
-        bg: "bg-blue-50",
+        color: "bg-emerald-500",
+        text: "text-emerald-600",
+        bg: "bg-emerald-50",
         icon: CheckCircle2,
       };
     case SPRINT_STATUS.CANCELLED:
