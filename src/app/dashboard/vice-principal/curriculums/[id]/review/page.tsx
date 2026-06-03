@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -11,8 +11,37 @@ import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subje
 import { GroupService } from "@/services/group.service";
 import { PoService } from "@/services/po.service";
 import { PoPloService } from "@/services/poplo.service";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, FileText, Upload, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+// --- SUPABASE CONFIGURATION ---
+const SUPABASE_URL = "https://blydhlkiaqmgdhnueqad.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJseWRobGtpYXFtZ2RobnVlcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mjk2ODMsImV4cCI6MjA5MzEwNTY4M30.oeBAhVfqlHLOC8wgbKE1yL3AW_y835IgBEd9nPJaiuI";
+const SUPABASE_BUCKET = "academic-docs";
+
+// Helper function to remove Vietnamese tones and make string URL-safe
+const removeVietnameseTones = (str: string) => {
+  str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+  str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+  str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+  str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+  str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+  str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+  str = str.replace(/đ/g, "d");
+  str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+  str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+  str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+  str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+  str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+  str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+  str = str.replace(/Đ/g, "D");
+  str = str.replace(/\s+/g, "-");
+  str = str.replace(/[^a-zA-Z0-9.\-_]/g, "");
+  return str;
+};
+
 
 export default function VicePrincipalReviewPage() {
   const { id } = useParams() as { id: string };
@@ -31,6 +60,22 @@ export default function VicePrincipalReviewPage() {
   const effectiveId = id || curIdFromUrl || "";
   const [isPublishing, setIsPublishing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Decision Document Upload & Preview States
+  const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
+  const [decisionFile, setDecisionFile] = useState<File | null>(null);
+  const [decisionTitle, setDecisionTitle] = useState("");
+  const [decisionPreviewUrl, setDecisionPreviewUrl] = useState<string | null>(null);
+  const [uploadingDecision, setUploadingDecision] = useState(false);
+  const decisionFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (decisionPreviewUrl) {
+        URL.revokeObjectURL(decisionPreviewUrl);
+      }
+    };
+  }, [decisionPreviewUrl]);
 
   // Queries
   const { data: curriculumData, isLoading: isLoadingCur } = useQuery({
@@ -132,23 +177,122 @@ export default function VicePrincipalReviewPage() {
     );
   }
 
-  const handlePublish = async () => {
-    if (!confirm("Are you sure you want to publish this curriculum?")) {
+  const handlePublish = () => {
+    setDecisionTitle(`QD-${curriculum?.curriculumCode || ""}`);
+    setIsDecisionModalOpen(true);
+  };
+
+  const handleDecisionFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== "application/pdf") {
+        showToast("Only PDF files are allowed", "error");
+        return;
+      }
+      setDecisionFile(selectedFile);
+
+      if (decisionPreviewUrl) {
+        URL.revokeObjectURL(decisionPreviewUrl);
+      }
+      const url = URL.createObjectURL(selectedFile);
+      setDecisionPreviewUrl(url);
+
+      if (!decisionTitle) {
+        setDecisionTitle(`QD-${curriculum?.curriculumCode || ""}`);
+      }
+    }
+  };
+
+  const resetDecisionModal = () => {
+    setIsDecisionModalOpen(false);
+    setDecisionFile(null);
+    setDecisionTitle("");
+    if (decisionPreviewUrl) {
+      URL.revokeObjectURL(decisionPreviewUrl);
+    }
+    setDecisionPreviewUrl(null);
+    setUploadingDecision(false);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!decisionFile || !decisionTitle.trim()) {
+      showToast("Please provide both a PDF file and a decision number/title", "error");
       return;
     }
-    setIsPublishing(true);
+
+    setUploadingDecision(true);
     try {
-      await CurriculumService.updateCurriculumStatus(effectiveId, "PUBLISHED");
-      showToast("Curriculum published successfully!", "success");
+      // 1. Upload to Supabase Storage
+      const cleanTitle = removeVietnameseTones(decisionTitle.trim());
+      const cleanName = `${cleanTitle}.pdf`;
+      const filePath = encodeURIComponent(cleanName);
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${filePath}`;
+
+      const uploadRes = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+          "Content-Type": "application/pdf",
+          "x-upsert": "true",
+        },
+        body: decisionFile,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload decision document to storage.");
+      }
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${filePath}`;
+
+      // 2. Call backend API to create a new document record
+      const docResponse = await fetch("/api/document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentUrl: publicUrl,
+          description: decisionTitle.trim(),
+          majorId: curriculum?.majorId || curriculum?.major?.majorId || null,
+        }),
+      });
+
+      if (!docResponse.ok) {
+        const errData = await docResponse.json().catch(() => ({}));
+        console.error("Backend API Error:", errData);
+        throw new Error(
+          errData.message || "Failed to save document record in the system."
+        );
+      }
+
+      // 3. Patch decision update to curriculum subjects
+      try {
+        await CurriculumService.updateCurriculumDecision(effectiveId, decisionTitle.trim());
+      } catch (patchError: any) {
+        console.error("Failed to patch decisionNo to curriculum subjects:", patchError);
+        throw new Error(patchError?.message || "Failed to update decision number across curriculum subjects.");
+      }
+
+      // 4. Update curriculum status to PUBLISHED
+      try {
+        await CurriculumService.updateCurriculumStatus(effectiveId, "PUBLISHED");
+      } catch (statusError: any) {
+        console.error("Failed to update curriculum status to PUBLISHED:", statusError);
+        throw new Error(statusError?.message || "Failed to finalize publishing status.");
+      }
+
+      showToast("Curriculum published and decision updated successfully!", "success");
+      resetDecisionModal();
       queryClient.invalidateQueries({ queryKey: ["curriculum-details", effectiveId] });
       router.refresh();
     } catch (error: any) {
-      console.error("Failed to publish curriculum:", error);
-      showToast(error?.message || "Failed to publish curriculum. Please try again.", "error");
+      console.error("Publishing flow error:", error);
+      showToast(error.message || "An unexpected error occurred during publishing.", "error");
     } finally {
-      setIsPublishing(false);
+      setUploadingDecision(false);
     }
   };
+
 
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -632,6 +776,183 @@ export default function VicePrincipalReviewPage() {
           </div>
         )}
       </div>
+
+      {/* Upload Decision Modal */}
+      <AnimatePresence>
+        {isDecisionModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={uploadingDecision ? undefined : resetDecisionModal}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl border border-white/20 overflow-hidden flex flex-col h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-zinc-100">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Upload size={20} className="text-[#2d6a4f]" />
+                  Upload Enactment Decision PDF
+                </h2>
+                <button
+                  disabled={uploadingDecision}
+                  onClick={resetDecisionModal}
+                  className="p-2 text-zinc-400 hover:text-zinc-600 rounded-xl hover:bg-zinc-100 transition-colors disabled:opacity-50"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 flex overflow-hidden">
+                {/* Left Panel: PDF Preview */}
+                <div className="hidden lg:block w-3/5 bg-zinc-100/50 relative border-r border-zinc-200">
+                  {decisionPreviewUrl ? (
+                    <div className="absolute inset-0 p-6">
+                      <div className="w-full h-full bg-white rounded-2xl shadow-2xl border border-zinc-200 overflow-hidden relative">
+                        <iframe
+                          src={decisionPreviewUrl}
+                          className="w-full h-full border-none"
+                          title="PDF Preview"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-300 p-12 text-center">
+                      <div className="w-40 h-52 border-4 border-dashed border-zinc-200 rounded-3xl flex items-center justify-center mb-6">
+                        <FileText size={80} className="opacity-10" />
+                      </div>
+                      <p className="text-base font-black opacity-30 uppercase tracking-[0.2em]">
+                        Preview Engine Ready
+                      </p>
+                      <p className="text-sm mt-3 opacity-30 font-medium">
+                        Please select a decision PDF file on the right to preview
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Panel: Form Inputs */}
+                <div className="w-full lg:w-2/5 p-10 overflow-y-auto bg-zinc-50/30">
+                  <div className="space-y-10 max-w-lg mx-auto">
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+                        Publish Curriculum
+                      </h3>
+                      <p className="text-zinc-500 text-sm font-medium">
+                        Please upload the official enactment decision PDF document and set its title/number. This will be synchronized as the decision number across all subjects in the curriculum.
+                      </p>
+                    </div>
+
+                    {/* Decision No / Title Input */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                        Decision No. / Document Title
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          disabled={uploadingDecision}
+                          placeholder="e.g. QD-CNTT-2026-001"
+                          value={decisionTitle}
+                          onChange={(e) => setDecisionTitle(e.target.value)}
+                          className="w-full p-5 pl-14 bg-white border border-zinc-200 rounded-2xl focus:border-[#2d6a4f] focus:ring-4 focus:ring-[#2d6a4f]/10 outline-none transition-all font-bold shadow-sm placeholder:text-zinc-300 disabled:opacity-50"
+                        />
+                        <FileText
+                          className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400"
+                          size={24}
+                        />
+                      </div>
+                    </div>
+
+                    {/* File Upload Dropzone */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                        PDF Enactment Decision
+                      </label>
+                      <div
+                        onClick={() => !uploadingDecision && decisionFileInputRef.current?.click()}
+                        className={`border-2 border-dashed border-zinc-200 rounded-[2rem] p-12 text-center transition-all cursor-pointer group bg-white shadow-sm hover:shadow-xl hover:shadow-[#2d6a4f]/5 ${uploadingDecision ? "opacity-50 cursor-not-allowed" : "hover:border-[#2d6a4f] hover:bg-[#2d6a4f]/5"}`}
+                      >
+                        <input
+                          type="file"
+                          ref={decisionFileInputRef}
+                          disabled={uploadingDecision}
+                          onChange={handleDecisionFileChange}
+                          className="hidden"
+                          accept=".pdf"
+                        />
+                        {decisionFile ? (
+                          <div className="flex flex-col items-center">
+                            <div className="w-24 h-24 bg-green-50 rounded-3xl flex items-center justify-center text-green-600 mb-5 rotate-6 group-hover:rotate-0 transition-transform shadow-inner">
+                              <CheckCircle2 size={40} />
+                            </div>
+                            <p className="font-black text-zinc-900 mb-2 max-w-xs truncate">
+                              {decisionFile.name}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-white bg-[#2d6a4f] px-3 py-1 rounded-full uppercase">
+                                Ready
+                              </span>
+                              <span className="text-[10px] font-black text-zinc-400 bg-zinc-100 px-3 py-1 rounded-full uppercase">
+                                {(decisionFile.size / (1024 * 1024)).toFixed(2)} MB
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <div className="w-24 h-24 bg-zinc-50 rounded-3xl flex items-center justify-center text-zinc-400 mb-5 group-hover:text-[#2d6a4f] group-hover:bg-[#2d6a4f]/10 transition-all shadow-inner">
+                              <Upload size={40} />
+                            </div>
+                            <p className="font-black text-zinc-900">
+                              Drop decision PDF here
+                            </p>
+                            <p className="text-xs text-zinc-400 mt-2 font-medium">
+                              Click to browse files
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-zinc-100 bg-zinc-50/50 flex justify-end gap-3">
+                <button
+                  disabled={uploadingDecision}
+                  onClick={resetDecisionModal}
+                  className="px-6 py-3 font-bold text-sm text-zinc-500 hover:text-zinc-700 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={!decisionFile || !decisionTitle.trim() || uploadingDecision}
+                  onClick={handleConfirmPublish}
+                  className="px-8 py-3 bg-[#2d6a4f] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#2d6a4f]/20 hover:bg-[#1d5c42] transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                >
+                  {uploadingDecision ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" /> Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={18} /> Confirm & Publish
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
