@@ -53,9 +53,6 @@ export default function FormResultsPage({
               <span className="text-xs font-black uppercase tracking-wider text-primary">
                 Form Results
               </span>
-              <h2 className="text-xl font-bold text-on-surface mt-1 break-all">
-                Form ID: {formId}
-              </h2>
             </div>
           </div>
 
