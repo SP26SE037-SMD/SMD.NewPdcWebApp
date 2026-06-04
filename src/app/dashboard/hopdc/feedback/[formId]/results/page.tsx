@@ -22,17 +22,17 @@ export default function FormResultsPage({
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center mb-5"
+          className="flex flex-col items-start gap-4 mb-5"
         >
           <button
             onClick={() => router.push("/dashboard/hopdc/feedback")}
-            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container shadow-sm shrink-0"
+            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container shadow-sm shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Forms
           </button>
 
-          <div className="sm:ml-4">
+          <div>
             <h1 className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent pb-1">
               Feedback Results
             </h1>
