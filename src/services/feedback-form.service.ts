@@ -222,4 +222,12 @@ export const FeedbackFormService = {
   getReport: async (formId: string) => {
     return apiClient.get<FeedbackReportData>(`/api/v1/forms/${formId}/report`);
   },
+
+  scheduleClose: async (formId: string, payload: { closeAt: string }) => {
+    return apiClient.post<{ message?: string }>(
+      `/api/v1/forms/${formId}/schedule-close`,
+      payload,
+      { credentials: "include" }
+    );
+  },
 };

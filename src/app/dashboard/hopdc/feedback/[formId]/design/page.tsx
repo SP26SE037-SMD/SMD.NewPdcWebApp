@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   ArrowLeft,
   Eye,
+  Clock,
 } from "lucide-react";
 import { Major, MajorService } from "@/services/major.service";
 import {
@@ -49,8 +50,8 @@ const QUESTION_TYPES: FeedbackCreateQuestionPayload["type"][] = [
 ];
 
 type SectionAction = "NEXT" | "SUBMIT" | "GO_TO_SECTION";
-type SectionEditorMode = "create" | "edit";
-type QuestionEditorMode = "create" | "edit";
+type SectionEditorMode = "create" | "edit" | "view";
+type QuestionEditorMode = "create" | "edit" | "view";
 
 type QuestionOptionDraft = {
   id: string;
@@ -167,7 +168,7 @@ function GoogleFormsPreview({ schema, height }: GoogleFormsPreviewProps) {
 
   return (
     <div
-      className="rounded-3xl border border-[#dadce0] bg-[#f0ebf8] p-4 sm:p-6 shadow-md font-sans text-[#202124] flex flex-col overflow-hidden w-full"
+      className="rounded-[32px] border border-outline/10 bg-surface-container-lowest/50 p-6 sm:p-8 shadow-sm font-sans text-[#202124] flex flex-col overflow-hidden w-full"
       style={{ height: height ? `${height}px` : "auto" }}
     >
       {/* Title & Badge */}
@@ -428,12 +429,18 @@ export default function FormDesignPage({
   const [activeMainTab, setActiveMainTab] = useState<"manage" | "designer">(
     "manage",
   );
+
+  // Schedule close modal states
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [scheduleCloseAt, setScheduleCloseAt] = useState("");
+  const [isScheduling, setIsScheduling] = useState(false);
   const [filterFormType, setFilterFormType] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [designerFormId, setDesignerFormId] = useState("");
   const [schema, setSchema] = useState<FeedbackFormFullSchema | null>(null);
   const [loadingSchema, setLoadingSchema] = useState(false);
+  const [isRefreshingSchema, setIsRefreshingSchema] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState("");
 
   const designerRef = useRef<HTMLDivElement>(null);
@@ -491,7 +498,8 @@ export default function FormDesignPage({
     return tabs;
   }, [designerFormId]);
 
-  const [sectionMode, setSectionMode] = useState<SectionEditorMode>("create");
+  const [sectionMode, setSectionMode] =
+    useState<SectionEditorMode>("view");
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [sectionForm, setSectionForm] = useState<{
@@ -505,7 +513,7 @@ export default function FormDesignPage({
   });
 
   const [questionMode, setQuestionMode] =
-    useState<QuestionEditorMode>("create");
+    useState<QuestionEditorMode>("view");
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null,
   );
@@ -592,7 +600,7 @@ export default function FormDesignPage({
   };
 
   const resetSectionEditor = () => {
-    setSectionMode("create");
+    setSectionMode("view");
     setEditingSectionId(null);
     setSectionForm({
       title: "",
@@ -602,7 +610,7 @@ export default function FormDesignPage({
   };
 
   const resetQuestionEditor = () => {
-    setQuestionMode("create");
+    setQuestionMode("view");
     setEditingQuestionId(null);
     setQuestionForm({
       content: "",
@@ -769,14 +777,21 @@ export default function FormDesignPage({
     }
   };
 
-  const loadDesignerSchema = async (inputFormId?: string) => {
+  const loadDesignerSchema = async (
+    inputFormId?: string,
+    isBackgroundReload: boolean = false
+  ) => {
     const targetFormId = (inputFormId || designerFormId).trim();
     if (!targetFormId) {
       setError("Please enter form id to load schema.");
       return;
     }
 
-    setLoadingSchema(true);
+    if (!isBackgroundReload) {
+      setLoadingSchema(true);
+    } else {
+      setIsRefreshingSchema(true);
+    }
     setError(null);
 
     try {
@@ -819,13 +834,17 @@ export default function FormDesignPage({
         }
       }
 
-      showToast("Form schema loaded.", "success");
+
     } catch (err: any) {
       setSchema(null);
       setSelectedSectionId("");
       setError(err?.message || "Failed to load form schema");
     } finally {
-      setLoadingSchema(false);
+      if (!isBackgroundReload) {
+        setLoadingSchema(false);
+      } else {
+        setIsRefreshingSchema(false);
+      }
     }
   };
 
@@ -895,7 +914,7 @@ export default function FormDesignPage({
       }
 
       resetSectionEditor();
-      await loadDesignerSchema(targetFormId);
+      await loadDesignerSchema(targetFormId, true);
       const message =
         sectionMode === "edit"
           ? "Section updated successfully."
@@ -1052,7 +1071,7 @@ export default function FormDesignPage({
       }
 
       resetQuestionEditor();
-      await loadDesignerSchema(designerFormId);
+      await loadDesignerSchema(designerFormId, true);
       const message =
         questionMode === "edit"
           ? "Question updated successfully."
@@ -1102,7 +1121,7 @@ export default function FormDesignPage({
         }
       }
 
-      await loadDesignerSchema(designerFormId);
+      await loadDesignerSchema(designerFormId, true);
 
       const message =
         deleteConfirm.kind === "section"
@@ -1122,6 +1141,27 @@ export default function FormDesignPage({
       showToast(message, "error");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleScheduleClose = async () => {
+    if (!scheduleCloseAt) {
+      showToast("Please select a closing time.", "error");
+      return;
+    }
+
+    try {
+      setIsScheduling(true);
+      await FeedbackFormService.scheduleClose(formId, {
+        closeAt: new Date(scheduleCloseAt).toISOString(),
+      });
+      showToast("Scheduled form closing time successfully.", "success");
+      setScheduleModalOpen(false);
+      setScheduleCloseAt("");
+    } catch (err: any) {
+      showToast(err.message || "Failed to schedule closing time.", "error");
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -1150,39 +1190,49 @@ export default function FormDesignPage({
     <div className="space-y-8 p-4 bg-white min-h-screen">
       <div className="mx-auto pt-12 pb-12 px-6 transition-all duration-500 max-w-7xl xl:max-w-[1500px]">
         <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl backdrop-blur-2xl"
-          >
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  router.push("/dashboard/hopdc/feedback");
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-outline/20 bg-surface px-4 py-2 text-sm font-bold text-on-surface-variant transition duration-300 hover:bg-surface-container active:scale-95 shadow-sm"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Forms
-              </button>
+          <div className="mb-4">
+            <button
+              onClick={() => {
+                router.push("/dashboard/hopdc/feedback");
+              }}
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-on-surface-variant/60 transition duration-300 hover:text-on-surface"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              Back to Forms
+            </button>
+            <div className="mt-6 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-primary">
-                  Designing Form
-                </span>
-                <h2 className="text-base font-bold text-on-surface break-all">
-                  {designerFormId}
-                </h2>
+                <h1 className="text-4xl font-black tracking-tight text-on-surface">Form Designer</h1>
+                <p className="mt-2 text-sm text-on-surface-variant/70 font-medium">Design custom feedback forms, configure sections, and set navigation rules with ease.</p>
               </div>
+              {schema && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setScheduleModalOpen(true)}
+                    className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20 border border-primary/20 shadow-sm"
+                  >
+                    <Clock className="h-4 w-4" />
+                    Set Close Time
+                  </button>
+                  <button
+                    onClick={() => handlePublish(formId)}
+                    disabled={publishingFormId === formId}
+                    className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90 shadow-md shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {publishingFormId === formId ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Publish Form
+                  </button>
+                  {isRefreshingSchema && (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary/60" />
+                  )}
+                </div>
+              )}
             </div>
-
-            {schema && (
-              <div className="flex items-center gap-2">
-                <span className="rounded-lg bg-surface-container px-2.5 py-1.5 text-xs font-bold text-on-surface-variant border border-outline/5">
-                  {schema.sections?.length || 0} Sections
-                </span>
-              </div>
-            )}
-          </motion.div>
+          </div>
 
           {loadingSchema ? (
             <motion.div
@@ -1215,254 +1265,198 @@ export default function FormDesignPage({
               </div>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-stretch">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-12 items-start">
               <div className="xl:col-span-7 w-full">
                 <motion.div
                   ref={designerRef}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="rounded-3xl border border-outline/20 bg-linear-to-b from-surface/60 to-surface/30 p-6 shadow-xl shadow-black/5 backdrop-blur-3xl w-full"
+                  className="rounded-[32px] bg-white p-10 shadow-2xl shadow-primary/5 ring-1 ring-outline/5 w-full min-h-[700px] relative"
                 >
-                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
-                    <div>
-                      <span className="text-xs font-black uppercase tracking-wider text-primary">
-                        Feedback Toolkit
-                      </span>
-                      <h2 className="text-xl font-bold text-on-surface mt-1">
-                        Form Designer
-                      </h2>
-                      <p className="mt-1 text-xs text-on-surface-variant">
-                        Configure sections, set navigation rules, and design
-                        custom questions.
-                      </p>
-                    </div>
-                  </div>
-
                   {/* Grid layout for Sections vs Questions */}
-                  <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
+                  <div className="absolute top-8 right-8">
+                    <span className="rounded-full bg-surface-container-highest px-3 py-1 text-xs font-bold text-on-surface-variant border border-outline/5 shadow-sm">
+                      {schema?.sections?.length || 0} Sections
+                    </span>
+                  </div>
+                  <div className="mt-5 flex flex-col gap-8">
                     {/* SECTIONS PANEL */}
-                    <div className="rounded-2xl border border-outline/10 bg-white/40 p-5 shadow-xs backdrop-blur-xs flex flex-col justify-between">
+                    <div className="w-full flex flex-col gap-4">
                       <div>
-                        <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
-                            <ListTree className="h-4 w-4 text-primary/70" />
-                            Sections List
-                          </h3>
-                          {schema?.sections?.length ? (
-                            <span className="rounded-lg bg-surface-container px-2.5 py-1 text-xs font-bold text-on-surface-variant border border-outline/5">
-                              {schema.sections.length} sections
-                            </span>
-                          ) : null}
-                        </div>
-
                         {loadingSchema ? (
-                          <div className="flex items-center justify-center gap-2 py-12 text-sm font-medium text-on-surface-variant">
+                          <div className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-on-surface-variant">
                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                            Loading form sections...
-                          </div>
-                        ) : schema?.sections?.length ? (
-                          <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                            {schema.sections.map((section, index) => {
-                              const isActive =
-                                selectedSectionId === section.sectionId;
-                              const questionCount =
-                                section.questions?.length || 0;
-
-                              return (
-                                <div
-                                  key={section.sectionId}
-                                  className={`group rounded-xl border p-3.5 transition-all duration-300 ${
-                                    isActive
-                                      ? "border-primary bg-linear-to-r from-primary/10 to-primary/5 shadow-xs translate-x-0.5"
-                                      : "border-outline/15 bg-white/70 hover:bg-white hover:border-primary/30 hover:shadow-xs translate-x-0"
-                                  }`}
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <button
-                                      onClick={() =>
-                                        setSelectedSectionId(section.sectionId)
-                                      }
-                                      className="flex-1 text-left"
-                                    >
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span
-                                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                            isActive
-                                              ? "bg-primary text-white"
-                                              : "bg-primary/10 text-primary"
-                                          }`}
-                                        >
-                                          Section {index + 1}
-                                        </span>
-                                        <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary border border-secondary/10">
-                                          Action:{" "}
-                                          {section.actionAfter ||
-                                            section.afterSectionAction ||
-                                            "NEXT"}
-                                        </span>
-                                      </div>
-                                      <h4
-                                        className={`mt-2 text-sm font-bold transition-colors ${
-                                          isActive
-                                            ? "text-primary"
-                                            : "text-on-surface"
-                                        }`}
-                                      >
-                                        {section.title || "Untitled section"}
-                                      </h4>
-                                      <p className="mt-1 text-xs text-on-surface-variant/70 font-medium">
-                                        Contains {questionCount} question(s)
-                                      </p>
-                                    </button>
-
-                                    <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                                      <button
-                                        onClick={() =>
-                                          handleEditSection(section)
-                                        }
-                                        className="rounded-lg border border-outline/20 p-2 text-on-surface-variant transition bg-white/50 hover:bg-white hover:text-primary hover:border-primary/30"
-                                        title="Edit section"
-                                      >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteSection(section.sectionId)
-                                        }
-                                        className="rounded-lg border border-error/20 p-2 text-error transition bg-white/50 hover:bg-error/10 hover:border-error/30"
-                                        title="Delete section"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                            Loading sections...
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-dashed border-outline/25 py-12 text-center text-on-surface-variant/80 bg-white/30">
-                            <ClipboardList className="h-8 w-8 text-outline/50 mx-auto mb-2" />
-                            <p className="text-sm font-semibold">
-                              No sections found
-                            </p>
-                            <p className="text-xs mt-1 text-on-surface-variant/60">
-                              Add a new section below to get started.
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2 border-b border-outline/10 w-full mb-8">
+
+                            {schema?.sections?.map((section, index) => {
+                              const isActive = selectedSectionId === section.sectionId;
+                              return (
+                                <button
+                                  key={section.sectionId}
+                                  onClick={() => setSelectedSectionId(section.sectionId)}
+                                  className={`relative flex items-center px-4 py-3 text-sm font-semibold transition-colors duration-200 border-b-2 -mb-[1px] ${
+                                    isActive
+                                      ? "border-primary text-primary"
+                                      : "border-transparent text-on-surface-variant/70 hover:text-on-surface hover:border-outline/30"
+                                  }`}
+                                >
+                                  {section.title || "Untitled section"}
+                                </button>
+                              );
+                            })}
+                            <button
+                              onClick={() => { resetSectionEditor(); setSectionMode("create"); setSelectedSectionId(""); }}
+                              className="flex items-center gap-1.5 px-4 py-3 text-sm font-bold text-primary/70 hover:text-primary transition-colors border-b-2 border-transparent -mb-[1px]"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add Section
+                            </button>
                           </div>
                         )}
                       </div>
 
                       {/* Save section form editor */}
-                      <div className="mt-6 space-y-3 rounded-2xl border border-outline/10 bg-linear-to-b from-surface-container-lowest/90 to-surface-container-lowest/50 p-4.5 shadow-inner shadow-black/5">
-                        <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                            <Plus className="h-3.5 w-3.5" />
-                            {sectionMode === "edit"
-                              ? "Edit Section"
-                              : "Add New Section"}
-                          </h4>
-
-                          {sectionMode === "edit" && (
-                            <button
-                              onClick={resetSectionEditor}
-                              className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container"
-                            >
-                              <X className="h-3 w-3" />
-                              Cancel
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="space-y-3 mt-2">
-                          <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                              Section Title
-                            </label>
-                            <input
-                              value={sectionForm.title}
-                              onChange={(e) =>
-                                setSectionForm((prev) => ({
-                                  ...prev,
-                                  title: e.target.value,
-                                }))
-                              }
-                              placeholder="e.g. Personal Information"
-                              className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                              Action After Section
-                            </label>
-                            <select
-                              value={sectionForm.afterSectionAction}
-                              onChange={(e) =>
-                                setSectionForm((prev) => ({
-                                  ...prev,
-                                  afterSectionAction: e.target
-                                    .value as SectionAction,
-                                }))
-                              }
-                              className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                            >
-                              <option value="NEXT">Go to next section</option>
-                              <option value="SUBMIT">Submit the form</option>
-                              <option value="GO_TO_SECTION">
-                                Jump to specific section
-                              </option>
-                            </select>
-                          </div>
-
-                          {sectionForm.afterSectionAction ===
-                            "GO_TO_SECTION" && (
-                            <div>
-                              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                Target Section ID
-                              </label>
-                              <input
-                                value={sectionForm.targetSectionId}
-                                onChange={(e) =>
-                                  setSectionForm((prev) => ({
-                                    ...prev,
-                                    targetSectionId: e.target.value,
-                                  }))
-                                }
-                                placeholder="e.g. section_2"
-                                className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                              />
-                            </div>
-                          )}
-
-                          <button
-                            onClick={handleSaveSection}
-                            disabled={addingSection || !designerFormId.trim()}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/10 transition hover:scale-[1.01] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      {sectionMode !== "view" && (
+                        <div
+                          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+                          onClick={() => {
+                            if (!addingSection) resetSectionEditor();
+                          }}
+                        >
+                          <div
+                            className="w-full max-w-xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl"
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            {addingSection ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : sectionMode === "edit" ? (
-                              <Pencil className="h-4 w-4" />
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
-                            {sectionMode === "edit"
-                              ? "Save Section"
-                              : "Add Section"}
-                          </button>
+                            <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-4 mb-4">
+                              <h4 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                {sectionMode === "edit"
+                                  ? "Edit Section"
+                                  : "Add New Section"}
+                              </h4>
+
+                              <button
+                                onClick={resetSectionEditor}
+                                className="inline-flex items-center gap-1 rounded-full border border-outline/20 bg-white px-3 py-1.5 text-xs font-bold text-on-surface-variant transition hover:text-[#ef4444] hover:border-[#ef4444]"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                Cancel
+                              </button>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
+                                  Section Title
+                                </label>
+                                <input
+                                  value={sectionForm.title}
+                                  onChange={(e) =>
+                                    setSectionForm((prev) => ({
+                                      ...prev,
+                                      title: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="e.g. Personal Information"
+                                  className="w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none transition shadow-sm border border-outline/20 focus:border-primary focus:shadow-md"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
+                                  Action After Section
+                                </label>
+                                <select
+                                  value={sectionForm.afterSectionAction}
+                                  onChange={(e) =>
+                                    setSectionForm((prev) => ({
+                                      ...prev,
+                                      afterSectionAction: e.target
+                                        .value as SectionAction,
+                                    }))
+                                  }
+                                  className="w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none transition shadow-sm border border-outline/20 focus:border-primary focus:shadow-md appearance-none"
+                                >
+                                  <option value="NEXT">Go to next section</option>
+                                  <option value="SUBMIT">Submit the form</option>
+                                  <option value="GO_TO_SECTION">
+                                    Jump to specific section
+                                  </option>
+                                </select>
+                              </div>
+
+                              {sectionForm.afterSectionAction ===
+                                "GO_TO_SECTION" && (
+                                <div>
+                                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
+                                    Target Section ID
+                                  </label>
+                                  <input
+                                    value={sectionForm.targetSectionId}
+                                    onChange={(e) =>
+                                      setSectionForm((prev) => ({
+                                        ...prev,
+                                        targetSectionId: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="e.g. section_2"
+                                    className="w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none transition shadow-sm border border-outline/20 focus:border-primary focus:shadow-md"
+                                  />
+                                </div>
+                              )}
+
+                              <button
+                                onClick={handleSaveSection}
+                                disabled={addingSection || !designerFormId.trim()}
+                                className="inline-flex mt-4 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:scale-[1.02] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {addingSection ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : sectionMode === "edit" ? (
+                                  <Pencil className="h-4 w-4" />
+                                ) : (
+                                  <Plus className="h-4 w-4" />
+                                )}
+                                {sectionMode === "edit"
+                                  ? "Save Section"
+                                  : "Add Section"}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* QUESTIONS PANEL */}
-                    <div className="rounded-2xl border border-outline/10 bg-white/40 p-5 shadow-xs backdrop-blur-xs flex flex-col justify-between">
+                    <div className="w-full flex flex-col gap-4">
                       <div>
-                        <h3 className="mb-4 text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2 border-b border-outline/5 pb-2.5">
-                          <Send className="h-4 w-4 text-primary/70" />
-                          Questions inside Section
-                        </h3>
+                        <div className="mb-8 flex items-center justify-between">
+                          <h3 className="text-2xl font-black text-on-surface flex items-center gap-3">
+                            {selectedSection?.title || "Untitled Section"}
+                          </h3>
+                          {selectedSection && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEditSection(selectedSection)}
+                                className="flex items-center gap-2 rounded-lg bg-transparent px-3 py-1.5 text-sm font-bold text-on-surface border border-on-surface transition hover:text-[#f59e0b] hover:border-[#f59e0b] shadow-sm"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSection(selectedSection.sectionId)}
+                                className="flex items-center gap-2 rounded-lg bg-transparent px-3 py-1.5 text-sm font-bold text-on-surface border border-on-surface transition hover:text-[#ef4444] hover:border-[#ef4444] shadow-sm"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
 
                         {selectedSection ? (
                           <div className="space-y-3">
@@ -1472,49 +1466,44 @@ export default function FormDesignPage({
                                   (question, index) => (
                                     <div
                                       key={question.questionId}
-                                      className="group/q bg-white/70 hover:bg-white border border-outline/15 hover:border-primary/20 transition-all duration-300 shadow-xs hover:shadow-sm rounded-xl p-3.5 flex flex-col justify-between"
+                                      className="group/q relative bg-white transition-all duration-300 rounded-2xl p-6 flex flex-col justify-between border-y border-transparent hover:border-outline/5 hover:bg-surface-container-lowest/50"
                                     >
-                                      <div>
-                                        <div className="mb-2 flex items-center justify-between gap-2">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-secondary">
-                                              Q {index + 1}
+                                      <div className="absolute left-0 top-6 bottom-6 w-1 rounded-r-full bg-primary/20 group-hover/q:bg-primary transition-colors" />
+                                      <div className="pl-4">
+                                        <div className="mb-3 flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-3 flex-wrap">
+                                            <span className="text-xs font-black uppercase tracking-wider text-on-surface-variant/50">
+                                              Question {index + 1}
                                             </span>
-                                            <span className="rounded-md bg-primary/5 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/10">
+                                            <span className="rounded bg-surface-container px-1.5 py-0.5 text-[9px] font-bold text-on-surface-variant uppercase tracking-wider">
                                               {question.type}
                                             </span>
                                             {question.isRequired && (
-                                              <span className="rounded-md bg-error/10 px-2 py-0.5 text-[10px] font-bold text-error border border-error/10">
-                                                REQUIRED
+                                              <span className="rounded bg-error/10 px-1.5 py-0.5 text-[9px] font-bold text-error uppercase tracking-wider">
+                                                * Required
                                               </span>
                                             )}
                                           </div>
 
-                                          <div className="flex items-center gap-1 opacity-60 group-hover/q:opacity-100 transition-opacity">
+                                          <div className="flex items-center gap-1 opacity-0 group-hover/q:opacity-100 transition-opacity">
                                             <button
-                                              onClick={() =>
-                                                handleEditQuestion(question)
-                                              }
-                                              className="rounded-lg border border-outline/20 p-1.5 text-on-surface-variant transition bg-white/50 hover:bg-white hover:text-primary hover:border-primary/30"
+                                              onClick={() => handleEditQuestion(question)}
+                                              className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#f59e0b]"
                                               title="Edit question"
                                             >
-                                              <Pencil className="h-3 w-3" />
+                                              <Pencil className="h-4 w-4" />
                                             </button>
                                             <button
-                                              onClick={() =>
-                                                handleDeleteQuestion(
-                                                  question.questionId,
-                                                )
-                                              }
-                                              className="rounded-lg border border-error/20 p-1.5 text-error transition bg-white/50 hover:bg-error/10 hover:border-error/30"
+                                              onClick={() => handleDeleteQuestion(question.questionId)}
+                                              className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#ef4444]"
                                               title="Delete question"
                                             >
-                                              <Trash2 className="h-3 w-3" />
+                                              <Trash2 className="h-4 w-4" />
                                             </button>
                                           </div>
                                         </div>
 
-                                        <p className="text-sm font-bold text-on-surface break-all">
+                                        <p className="text-base font-bold text-on-surface break-all">
                                           {question.content}
                                         </p>
 
@@ -1560,27 +1549,35 @@ export default function FormDesignPage({
                             </div>
 
                             {/* Save question form editor */}
-                            <div className="mt-6 space-y-3 rounded-2xl border border-outline/10 bg-linear-to-b from-surface-container-lowest/90 to-surface-container-lowest/50 p-4.5 shadow-inner shadow-black/5">
-                              <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                                <h4 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                                  <Plus className="h-3.5 w-3.5" />
-                                  {questionMode === "edit"
-                                    ? "Edit Question Details"
-                                    : "Add New Question"}
-                                </h4>
+                            {questionMode !== "view" && (
+                              <div
+                                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+                                onClick={() => {
+                                  if (!addingQuestion) resetQuestionEditor();
+                                }}
+                              >
+                                <div
+                                  className="w-full max-w-2xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-4 mb-4">
+                                    <h4 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
+                                      <Plus className="h-4 w-4" />
+                                      {questionMode === "edit"
+                                        ? "Edit Question Details"
+                                        : "Add New Question"}
+                                    </h4>
 
-                                {questionMode === "edit" && (
-                                  <button
-                                    onClick={resetQuestionEditor}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container"
-                                  >
-                                    <X className="h-3 w-3" />
-                                    Cancel
-                                  </button>
-                                )}
-                              </div>
+                                    <button
+                                      onClick={resetQuestionEditor}
+                                      className="inline-flex items-center gap-1 rounded-full border border-outline/20 bg-white px-3 py-1.5 text-xs font-bold text-on-surface-variant transition hover:text-[#ef4444] hover:border-[#ef4444]"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                      Cancel
+                                    </button>
+                                  </div>
 
-                              <div className="space-y-3 mt-2">
+                              <div className="space-y-4">
                                 <div>
                                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
                                     Question Label / Title
@@ -1594,7 +1591,7 @@ export default function FormDesignPage({
                                       }))
                                     }
                                     placeholder="e.g. Rate your overall satisfaction"
-                                    className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
+                                    className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md"
                                   />
                                 </div>
 
@@ -1612,7 +1609,7 @@ export default function FormDesignPage({
                                             .value as FeedbackCreateQuestionPayload["type"],
                                         }))
                                       }
-                                      className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
+                                      className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md"
                                     >
                                       <option value="">Choose type...</option>
                                       {QUESTION_TYPES.map((type) => (
@@ -1627,7 +1624,7 @@ export default function FormDesignPage({
                                     <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
                                       Settings
                                     </label>
-                                    <label className="inline-flex w-full items-center gap-2 rounded-xl border border-outline/20 bg-white/50 hover:bg-white px-3 py-2 text-sm text-on-surface-variant cursor-pointer transition select-none">
+                                    <label className="group/req inline-flex w-fit items-center gap-2 rounded-lg hover:bg-surface-container-highest/50 px-2 py-1.5 -ml-2 text-sm text-on-surface-variant cursor-pointer transition-all select-none">
                                       <input
                                         type="checkbox"
                                         checked={questionForm.isRequired}
@@ -1637,95 +1634,111 @@ export default function FormDesignPage({
                                             isRequired: e.target.checked,
                                           }))
                                         }
-                                        className="h-4 w-4 rounded-md border-outline/30 text-primary focus:ring-primary/15 cursor-pointer"
+                                        className="h-4 w-4 rounded-md border-outline/30 text-primary focus:ring-primary/15 cursor-pointer transition-all group-hover/req:border-primary/50"
                                       />
-                                      <span className="font-bold text-xs uppercase tracking-wider text-on-surface-variant/80">
+                                      <span className="font-bold text-xs uppercase tracking-wider text-on-surface-variant/80 group-hover/req:text-primary transition-colors">
                                         Required Field
                                       </span>
                                     </label>
                                   </div>
                                 </div>
 
-                                {questionNeedsOptions && (
-                                  <div className="space-y-2.5 rounded-xl border border-outline/10 bg-white/50 p-3 mt-3">
-                                    <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                                      <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/80">
-                                        Question Choices / Options
-                                      </p>
-                                      <button
-                                        onClick={addQuestionOption}
-                                        className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container shadow-xs active:scale-95"
-                                      >
-                                        <Plus className="h-3.5 w-3.5 text-primary" />
-                                        Add Choice
-                                      </button>
-                                    </div>
-
-                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                                      {questionOptions.map((option, index) => (
-                                        <div
-                                          key={option.id}
-                                          className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center bg-white/40 p-2 rounded-xl border border-outline/5"
+                                  {questionNeedsOptions && (
+                                    <div className="mt-4 pt-3 border-t border-outline/5">
+                                      <div className="flex items-center justify-between gap-2 pb-3">
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/80">
+                                          Question Choices / Options
+                                        </p>
+                                        <button
+                                          onClick={addQuestionOption}
+                                          className="inline-flex items-center gap-1 text-xs font-bold text-primary/80 transition hover:text-primary active:scale-95"
                                         >
-                                          <input
-                                            value={option.optionText}
-                                            onChange={(e) =>
-                                              updateQuestionOption(
-                                                option.id,
-                                                "optionText",
-                                                e.target.value,
-                                              )
-                                            }
-                                            placeholder={`Option Label ${index + 1}`}
-                                            className="w-full rounded-lg border border-outline/20 bg-white px-3 py-1.5 text-xs outline-none transition focus:border-primary/40"
-                                          />
+                                          <Plus className="h-3.5 w-3.5" />
+                                          Add Choice
+                                        </button>
+                                      </div>
 
-                                          <input
-                                            value={option.nextSectionId}
-                                            onChange={(e) =>
-                                              updateQuestionOption(
-                                                option.id,
-                                                "nextSectionId",
-                                                e.target.value,
-                                              )
-                                            }
-                                            placeholder="Jump Section ID (optional)"
-                                            className="w-full rounded-lg border border-outline/20 bg-white px-3 py-1.5 text-xs outline-none transition focus:border-primary/40"
-                                          />
-
-                                          <button
-                                            onClick={() =>
-                                              removeQuestionOption(option.id)
-                                            }
-                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-error/20 text-error transition bg-white hover:bg-error/10"
-                                            title="Remove option"
+                                      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
+                                        {questionOptions.map((option, index) => (
+                                          <div
+                                            key={option.id}
+                                            className="group/opt flex items-center gap-3 relative"
                                           >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                                            <div className="h-2 w-2 rounded-full border-2 border-outline/30 mt-0.5 flex-shrink-0" />
+                                            <input
+                                              value={option.optionText}
+                                              onChange={(e) =>
+                                                updateQuestionOption(
+                                                  option.id,
+                                                  "optionText",
+                                                  e.target.value,
+                                                )
+                                              }
+                                              placeholder={`Option ${index + 1}`}
+                                              className="flex-1 border-b border-outline/20 bg-transparent py-1.5 text-sm outline-none transition focus:border-primary/50 text-on-surface"
+                                            />
 
-                                <button
-                                  onClick={handleSaveQuestion}
-                                  disabled={addingQuestion}
-                                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/10 transition hover:scale-[1.01] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {addingQuestion ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : questionMode === "edit" ? (
-                                    <Pencil className="h-4 w-4" />
-                                  ) : (
-                                    <Plus className="h-4 w-4" />
+                                            <input
+                                              value={option.nextSectionId}
+                                              onChange={(e) =>
+                                                updateQuestionOption(
+                                                  option.id,
+                                                  "nextSectionId",
+                                                  e.target.value,
+                                                )
+                                              }
+                                              placeholder="Jump to Section ID (optional)"
+                                              className="flex-1 border-b border-outline/20 bg-transparent py-1.5 text-xs outline-none transition focus:border-primary/50 text-on-surface-variant"
+                                            />
+
+                                            <button
+                                              onClick={() =>
+                                                removeQuestionOption(option.id)
+                                              }
+                                              className="opacity-0 group-hover/opt:opacity-100 absolute right-0 p-1.5 text-error/60 transition hover:text-error hover:bg-error/10 rounded-md bg-surface-container-lowest"
+                                              title="Remove option"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
                                   )}
-                                  {questionMode === "edit"
-                                    ? "Save Question Details"
-                                    : "Add Question"}
-                                </button>
+
+                                  <button
+                                    onClick={handleSaveQuestion}
+                                    disabled={addingQuestion}
+                                    className="inline-flex mt-4 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:scale-[1.02] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {addingQuestion ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : questionMode === "edit" ? (
+                                      <Pencil className="h-4 w-4" />
+                                    ) : (
+                                      <Plus className="h-4 w-4" />
+                                    )}
+                                    {questionMode === "edit"
+                                      ? "Save Question Details"
+                                      : "Add Question"}
+                                  </button>
                               </div>
-                            </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {questionMode === "view" && (
+                              <button
+                                onClick={() => {
+                                  resetQuestionEditor();
+                                  setQuestionMode("create");
+                                }}
+                                className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90 shadow-md shadow-primary/20"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Add New Question
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div className="rounded-2xl border border-dashed border-outline/25 py-16 text-center text-on-surface-variant/80 bg-white/30">
@@ -1761,7 +1774,7 @@ export default function FormDesignPage({
 
         {deleteConfirm && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
             onClick={() => {
               if (!deleting) {
                 setDeleteConfirm(null);
@@ -1769,7 +1782,7 @@ export default function FormDesignPage({
             }}
           >
             <div
-              className="w-full max-w-xl rounded-3xl border border-outline/20 bg-surface p-5 shadow-2xl"
+              className="w-full max-w-xl rounded-3xl border border-outline/20 bg-white p-5 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <h4 className="text-xl font-bold text-on-surface">
@@ -1783,7 +1796,7 @@ export default function FormDesignPage({
                 <button
                   onClick={() => setDeleteConfirm(null)}
                   disabled={deleting}
-                  className="inline-flex items-center justify-center rounded-xl border border-outline/20 bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-xl border border-outline/20 bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant transition hover:text-[#ef4444] hover:border-[#ef4444] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1791,11 +1804,70 @@ export default function FormDesignPage({
                 <button
                   onClick={handleConfirmDelete}
                   disabled={deleting}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-error px-4 py-2 text-sm font-semibold text-on-error transition hover:bg-error/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ef4444] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ef4444]/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Schedule Close Modal */}
+        {scheduleModalOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+            onClick={() => !isScheduling && setScheduleModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-4 mb-4">
+                <h4 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Schedule Close Time
+                </h4>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
+                    Close Form At
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleCloseAt}
+                    onChange={(e) => setScheduleCloseAt(e.target.value)}
+                    disabled={isScheduling}
+                    className="w-full rounded-xl border border-outline/20 bg-surface px-4 py-3 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <p className="mt-1.5 text-[10px] text-on-surface-variant/60">
+                    Select a date and time to automatically stop accepting responses.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <button
+                    onClick={() => {
+                      setScheduleModalOpen(false);
+                      setScheduleCloseAt("");
+                    }}
+                    disabled={isScheduling}
+                    className="inline-flex items-center justify-center rounded-xl border border-outline/20 bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant transition hover:text-[#ef4444] hover:border-[#ef4444] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleScheduleClose}
+                    disabled={isScheduling || !scheduleCloseAt}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 shadow-sm shadow-primary/20"
+                  >
+                    {isScheduling && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Schedule
+                  </button>
+                </div>
               </div>
             </div>
           </div>
