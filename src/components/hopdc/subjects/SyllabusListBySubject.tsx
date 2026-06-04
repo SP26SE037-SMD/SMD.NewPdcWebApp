@@ -27,7 +27,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   const router = useRouter();
 
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [isCompareMode, setIsCompareMode] = useState(true);
   const [selectedSyllabusIds, setSelectedSyllabusIds] = useState<string[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -49,24 +49,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   const syllabuses = useMemo(() => syllabiResp?.data || [], [syllabiResp?.data]);
 
-  useEffect(() => {
-    if (syllabuses.length > 0 && selectedSyllabusIds.length === 0 && !isCompareMode) {
-      const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
-      if (pubSyllabus) {
-        const archivedSyllabuses = syllabuses.filter((s) => s.status === "ARCHIVED");
-        if (archivedSyllabuses.length > 0) {
-          const pubDate = new Date(pubSyllabus.approvedDate || pubSyllabus.createdAt || 0).getTime();
-          const closestArchived = archivedSyllabuses.reduce((prev, curr) => {
-            const prevDate = new Date(prev.approvedDate || prev.createdAt || 0).getTime();
-            const currDate = new Date(curr.approvedDate || curr.createdAt || 0).getTime();
-            return Math.abs(currDate - pubDate) < Math.abs(prevDate - pubDate) ? curr : prev;
-          });
-          setSelectedSyllabusIds([pubSyllabus.syllabusId, closestArchived.syllabusId]);
-          setIsCompareMode(true);
-        }
-      }
-    }
-  }, [syllabuses, isCompareMode, selectedSyllabusIds.length]);
+
 
   const filteredSyllabuses = useMemo(() => {
     let result = syllabuses;
@@ -80,17 +63,33 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
     });
   }, [syllabuses, statusFilter]);
 
-  const { canGetPrompts, targetHistorySyllabusId } = useMemo(() => {
-    if (selectedSyllabusIds.length !== 2) return { canGetPrompts: false, targetHistorySyllabusId: null };
-    const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
-    const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
-    if (!s1 || !s2) return { canGetPrompts: false, targetHistorySyllabusId: null };
-
-    const time1 = new Date(s1.createdAt || 0).getTime();
-    const time2 = new Date(s2.createdAt || 0).getTime();
+  const { targetHistorySyllabusId } = useMemo(() => {
+    if (selectedSyllabusIds.length === 2) {
+      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
+      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
+      if (s1 && s2) {
+        let newerId = s1.syllabusId;
+        if (s1.status === "PUBLISHED" && s2.status !== "PUBLISHED") {
+          newerId = s1.syllabusId;
+        } else if (s2.status === "PUBLISHED" && s1.status !== "PUBLISHED") {
+          newerId = s2.syllabusId;
+        } else {
+          const time1 = new Date(s1.createdAt || 0).getTime();
+          const time2 = new Date(s2.createdAt || 0).getTime();
+          newerId = time1 > time2 ? s1.syllabusId : s2.syllabusId;
+        }
+        return { targetHistorySyllabusId: newerId };
+      }
+    }
     
-    const newerId = time1 > time2 ? s1.syllabusId : s2.syllabusId;
-    return { canGetPrompts: true, targetHistorySyllabusId: newerId };
+    if (selectedSyllabusIds.length === 1) {
+      return { targetHistorySyllabusId: selectedSyllabusIds[0] };
+    }
+
+    const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
+    if (pubSyllabus) return { targetHistorySyllabusId: pubSyllabus.syllabusId };
+    
+    return { targetHistorySyllabusId: syllabuses[0]?.syllabusId || null };
   }, [selectedSyllabusIds, syllabuses]);
 
   const handleToggleSelect = (id: string) => {
@@ -111,14 +110,25 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
       const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
       
       if (s1 && s2) {
-        const time1 = new Date(s1.createdAt || 0).getTime();
-        const time2 = new Date(s2.createdAt || 0).getTime();
-        
-        if (time1 <= time2) {
-           setSelectedSyllabusIds([s1.syllabusId, s2.syllabusId]);
+        let oldId = s1.syllabusId;
+        let newId = s2.syllabusId;
+
+        if (s1.status === "PUBLISHED" && s2.status !== "PUBLISHED") {
+          oldId = s2.syllabusId;
+          newId = s1.syllabusId;
+        } else if (s2.status === "PUBLISHED" && s1.status !== "PUBLISHED") {
+          oldId = s1.syllabusId;
+          newId = s2.syllabusId;
         } else {
-           setSelectedSyllabusIds([s2.syllabusId, s1.syllabusId]);
+          const time1 = new Date(s1.createdAt || 0).getTime();
+          const time2 = new Date(s2.createdAt || 0).getTime();
+          if (time1 > time2) {
+            oldId = s2.syllabusId;
+            newId = s1.syllabusId;
+          }
         }
+        
+        setSelectedSyllabusIds([oldId, newId]);
         
         // Use timeout to ensure state updates before opening modal
         setTimeout(() => {
@@ -192,14 +202,13 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 Select exactly 2 syllabuses to compare ({selectedSyllabusIds.length}/2 selected)
               </p>
               <div className="flex items-center gap-3">
-                {canGetPrompts && (
-                  <button
-                    onClick={() => setIsHistoryModalOpen(true)}
-                    className="px-5 py-2.5 rounded-xl bg-white text-zinc-600 border border-zinc-200 text-xs font-black uppercase tracking-widest hover:bg-zinc-50 hover:text-zinc-900 transition-all shadow-sm active:scale-95"
-                  >
-                    Get Compare Prompts
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  disabled={!targetHistorySyllabusId}
+                  className="px-5 py-2.5 rounded-xl bg-white text-zinc-600 border border-zinc-200 text-xs font-black uppercase tracking-widest hover:bg-zinc-50 hover:text-zinc-900 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Get Compare Prompts
+                </button>
                 <button
                   onClick={handleCompareClick}
                   disabled={selectedSyllabusIds.length !== 2}
@@ -223,14 +232,11 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 Select
               </div>
             )}
-            <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
+            <div className={`${isCompareMode ? "col-span-6" : "col-span-7"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
               Syllabus Name
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Created At
-            </div>
-            <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
-              Min Avg Grade
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Status
@@ -286,7 +292,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   </div>
                 )}
 
-                <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} space-y-0.5`}>
+                <div className={`${isCompareMode ? "col-span-6" : "col-span-7"} space-y-0.5`}>
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
@@ -295,12 +301,6 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
                     {syllabus.createdAt ? new Date(syllabus.createdAt).toLocaleDateString() : "N/A"}
-                  </span>
-                </div>
-
-                <div className="col-span-2">
-                  <span className="text-sm font-bold text-zinc-700">
-                    {syllabus.minAvgGrade ?? syllabus.minAvgMarkToPass ?? "N/A"}
                   </span>
                 </div>
 
