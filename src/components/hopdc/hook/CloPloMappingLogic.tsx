@@ -206,7 +206,7 @@ export function useSubjectMappingLogic() {
         `/dashboard/hopdc/assignments?sprintId=${sprintId}&curriculumId=${curriculumId}`,
       );
     } else {
-      router.push("/dashboard/hopdc/department-tasks");
+      router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
     }
   };
 

@@ -105,7 +105,7 @@ export default function RequestsWorkspaceDetailModal({
     } else if (role === "HoCFDC") {
       router.push(`/dashboard/hocfdc/curriculums/${curriculumId}`);
     } else if (role === "HoPDC") {
-      router.push(`/dashboard/hopdc/department-tasks`);
+      router.push(`/dashboard/hopdc/department-tasks?tab=sprint-tasks`);
     }
   };
 
@@ -210,7 +210,7 @@ export default function RequestsWorkspaceDetailModal({
           toast.success("Navigating to tasks...", {
             id: toastId,
           });
-          router.push(`/dashboard/hopdc/department-tasks`);
+          router.push(`/dashboard/hopdc/department-tasks?tab=sprint-tasks`);
         }
       }
     } catch (err) {

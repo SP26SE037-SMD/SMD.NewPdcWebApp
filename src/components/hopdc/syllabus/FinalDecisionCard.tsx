@@ -270,7 +270,7 @@ export function FinalDecisionCard({
             `/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`,
           );
         } else {
-          router.push("/dashboard/hopdc/department-tasks");
+          router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
         }
       }
 
@@ -468,7 +468,7 @@ export function FinalDecisionCard({
             `/dashboard/hopdc/assignments?sprintId=${redirectSprintId}&curriculumId=${redirectCurriculumId}`,
           );
         } else {
-          router.push("/dashboard/hopdc/department-tasks");
+          router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
         }
       }
 

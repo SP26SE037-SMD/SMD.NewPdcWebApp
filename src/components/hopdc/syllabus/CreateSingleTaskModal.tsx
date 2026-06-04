@@ -468,7 +468,7 @@ export function CreateSingleTaskModal({
                     onClick={() => setCreateMode("NEW")}
                     className={`flex items-center justify-center gap-2 h-12 border rounded-[10px] text-xs font-black uppercase tracking-wider transition-all ${
                       createMode === "NEW"
-                        ? "border-[#2d6a4f] text-[#2d6a4f] bg-emerald-50/10"
+                        ? "border-[#409b43] text-[#409b43] bg-emerald-50/10"
                         : "border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50/50"
                     }`}
                   >
@@ -479,7 +479,7 @@ export function CreateSingleTaskModal({
                     onClick={() => setCreateMode("COPY")}
                     className={`flex items-center justify-center gap-2 h-12 border rounded-[10px] text-xs font-black uppercase tracking-wider transition-all ${
                       createMode === "COPY"
-                        ? "border-[#2d6a4f] text-[#2d6a4f] bg-emerald-50/10"
+                        ? "border-[#409b43] text-[#409b43] bg-emerald-50/10"
                         : "border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50/50"
                     }`}
                   >

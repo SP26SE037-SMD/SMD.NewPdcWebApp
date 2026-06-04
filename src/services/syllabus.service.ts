@@ -408,6 +408,18 @@ export const SyllabusService = {
     }
     return response.json();
   },
+  async publishSyllabus(syllabusId: string): Promise<ApiResponse<unknown>> {
+    const response = await fetch(`/api/syllabus/${syllabusId}/publish`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { accept: "*/*" },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to publish syllabus");
+    }
+    return response.json();
+  },
 };
 
 export interface SyllabusCompareHistory {

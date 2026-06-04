@@ -45,19 +45,24 @@ jobs:
           docker push taikt2004/smd-frontend:${IMAGE_TAG}
           docker push taikt2004/smd-frontend:latest
 
-      # 6. Deploy to EC2
+    # 6. Deploy to EC2
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         env:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          # 1. KÉO BIẾN TỪ GITHUB SECRETS XUỐNG
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXTAUTH_URL }}
+          AUTH_TRUST_HOST: "true"
 
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          envs: GOOGLE_CLIENT_SECRET, BACKEND_URL
+          # 2. ĐẨY BIẾN QUA KẾT NỐI SSH
+          envs: GOOGLE_CLIENT_SECRET, BACKEND_URL, NEXTAUTH_URL, NEXT_PUBLIC_BASE_URL, AUTH_TRUST_HOST
           script: |
             IMAGE_TAG=${{ env.IMAGE_TAG }}
 
@@ -70,12 +75,15 @@ jobs:
             sudo docker stop smd-frontend || true
             sudo docker rm smd-frontend || true
 
-            # Run new container
+            # 3. BƠM BIẾN VÀO DOCKER CONTAINER LÚC CHẠY
             sudo docker run -d \
               --name smd-frontend \
               -p 3000:3000 \
               -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
               -e BACKEND_URL="$BACKEND_URL" \
+              -e NEXTAUTH_URL="$NEXTAUTH_URL" \
+              -e NEXT_PUBLIC_BASE_URL="$NEXT_PUBLIC_BASE_URL" \
+              -e AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
               --restart unless-stopped \
               taikt2004/smd-frontend:$IMAGE_TAG
 

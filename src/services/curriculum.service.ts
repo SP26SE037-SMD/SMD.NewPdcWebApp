@@ -239,4 +239,10 @@ export const CurriculumService = {
       return data;
     });
   },
+  updateCurriculumDecision: async (curriculumId: string, decisionNo: string) => {
+    return apiClient.patch<any>(
+      `/api/subjects/curriculum/${curriculumId}/decision?curriculumId=${curriculumId}&decisionNo=${encodeURIComponent(decisionNo)}`,
+      {}
+    );
+  },
 };

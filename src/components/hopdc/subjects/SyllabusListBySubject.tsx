@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen, Filter,
-  GitCompare, CheckSquare, Square, Eye
+  GitCompare, CheckSquare, Square, Eye, CheckCircle2, Loader2
 } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { SyllabusService } from "@/services/syllabus.service";
@@ -18,19 +20,29 @@ const STATUS_COLORS: Record<string, string> = {
   REVISION_REQUESTED: "bg-rose-50 text-rose-600 border-rose-200",
   APPROVED: "bg-emerald-50 text-emerald-600 border-emerald-200",
   PUBLISHED: "bg-primary/10 text-primary border-primary/20",
-  ARCHIVED: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  ARCHIVED: "bg-red-50 text-red-600 border-red-200",
 };
 import SyllabusCompareModal from "./SyllabusCompareModal";
 import SyllabusCompareHistoryModal from "./SyllabusCompareHistoryModal";
 
 export default function SyllabusListBySubject({ subjectId, hideHeader = false }: { subjectId: string; hideHeader?: boolean }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isCompareMode, setIsCompareMode] = useState(true);
   const [selectedSyllabusIds, setSelectedSyllabusIds] = useState<string[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [publishingSyllabusId, setPublishingSyllabusId] = useState<string | null>(null);
+  const [publishingSyllabus, setPublishingSyllabus] = useState<{ id: string; name: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Fetch Subject details
   const { data: subjectResp, isLoading: subjectLoading } = useQuery({
@@ -49,7 +61,47 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   const syllabuses = useMemo(() => syllabiResp?.data || [], [syllabiResp?.data]);
 
+  const hasPublishedSyllabus = useMemo(() => {
+    return syllabuses.some((s) => s.status === "PUBLISHED");
+  }, [syllabuses]);
 
+  const canPublishApprovedSyllabus =
+    subject?.status === "COMPLETED" && hasPublishedSyllabus;
+
+  const handlePublishSyllabus = async (id: string) => {
+    setPublishingSyllabusId(id);
+    try {
+      await SyllabusService.publishSyllabus(id);
+      showToast("Syllabus published successfully!", "success");
+      queryClient.invalidateQueries({ queryKey: ["subject-syllabi", subjectId] });
+      queryClient.invalidateQueries({ queryKey: ["subject-detail", subjectId] });
+      setPublishingSyllabus(null);
+    } catch (err: any) {
+      console.error("Failed to publish syllabus:", err);
+      showToast(err.message || "Failed to publish syllabus.", "error");
+    } finally {
+      setPublishingSyllabusId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (syllabuses.length > 0 && selectedSyllabusIds.length === 0 && !isCompareMode) {
+      const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
+      if (pubSyllabus) {
+        const archivedSyllabuses = syllabuses.filter((s) => s.status === "ARCHIVED");
+        if (archivedSyllabuses.length > 0) {
+          const pubDate = new Date(pubSyllabus.approvedDate || pubSyllabus.createdAt || 0).getTime();
+          const closestArchived = archivedSyllabuses.reduce((prev, curr) => {
+            const prevDate = new Date(prev.approvedDate || prev.createdAt || 0).getTime();
+            const currDate = new Date(curr.approvedDate || curr.createdAt || 0).getTime();
+            return Math.abs(currDate - pubDate) < Math.abs(prevDate - pubDate) ? curr : prev;
+          });
+          setSelectedSyllabusIds([pubSyllabus.syllabusId, closestArchived.syllabusId]);
+          setIsCompareMode(true);
+        }
+      }
+    }
+  }, [syllabuses, isCompareMode, selectedSyllabusIds.length]);
 
   const filteredSyllabuses = useMemo(() => {
     let result = syllabuses;
@@ -313,6 +365,23 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 </div>
 
                 <div className="col-span-1 flex justify-end">
+                  {syllabus.status === "APPROVED" && canPublishApprovedSyllabus && (
+                    <button
+                      disabled={publishingSyllabusId !== null}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPublishingSyllabus({ id: syllabus.syllabusId, name: syllabus.syllabusName });
+                      }}
+                      className="mr-2 p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                      title="Publish Syllabus"
+                    >
+                      {publishingSyllabusId === syllabus.syllabusId ? (
+                        <Loader2 className="w-[18px] h-[18px] animate-spin text-emerald-600" />
+                      ) : (
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -352,6 +421,72 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           onClose={() => setIsHistoryModalOpen(false)}
           newSyllabusId={targetHistorySyllabusId}
         />
+      )}
+
+      {/* Custom Publish Confirmation Modal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {publishingSyllabus && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={() => publishingSyllabusId === null && setPublishingSyllabus(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col p-6 text-center space-y-6"
+              >
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 size={36} />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-zinc-900 tracking-tight">
+                    Publish Syllabus
+                  </h3>
+                  <p className="text-sm text-zinc-500 font-medium leading-relaxed">
+                    Are you sure you want to publish the syllabus <span className="text-emerald-700 font-extrabold">"{publishingSyllabus.name}"</span>?
+                  </p>
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-left text-xs font-semibold text-amber-800 flex gap-2.5 items-start">
+                    <span className="material-symbols-outlined text-[18px] text-amber-600 mt-0.5">warning</span>
+                    <p>
+                      This action will replace the currently published syllabus for this subject. The previous syllabus will automatically be archived.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    disabled={publishingSyllabusId !== null}
+                    onClick={() => setPublishingSyllabus(null)}
+                    className="flex-1 py-3 border border-zinc-200 text-zinc-500 font-bold text-sm rounded-xl hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={publishingSyllabusId !== null}
+                    onClick={() => handlePublishSyllabus(publishingSyllabus.id)}
+                    className="flex-1 py-3 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {publishingSyllabusId !== null ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Publishing...
+                      </>
+                    ) : (
+                      "Confirm & Publish"
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   );

@@ -43,9 +43,9 @@ export default function LandingPage() {
               />
               <div className="h-6 w-[1px] bg-zinc-300" />
               <img
-                src="/fpt-logo.png"
-                alt="FPT University"
-                className="h-8 w-auto object-contain"
+                src="/giggling-logo.png"
+                alt="Giggling University"
+                className="h-15 w-auto object-contain"
               />
             </div>
             <div className="h-8 w-[1px] bg-zinc-200 hidden md:block" />
@@ -105,12 +105,6 @@ export default function LandingPage() {
                   <p className="text-2xl font-bold">100%</p>
                   <p className="text-xs text-muted font-bold tracking-tighter uppercase">
                     Digitalization
-                  </p>
-                </div>
-                <div className="border-l-2 border-primary/20 pl-4">
-                  <p className="text-2xl font-bold">AI</p>
-                  <p className="text-xs text-muted font-bold tracking-tighter uppercase">
-                    AI Support Generating CLOs
                   </p>
                 </div>
                 <div className="border-l-2 border-primary/20 pl-4">
@@ -261,9 +255,9 @@ export default function LandingPage() {
                 />
                 <div className="h-5 w-[1px] bg-white/20" />
                 <img
-                  src="/fpt-logo.png"
-                  alt="FPT University"
-                  className="h-7 w-auto object-contain brightness-0 invert"
+                  src="/giggling-logo.png"
+                  alt="Giggling University"
+                  className="h-15 w-auto object-contain brightness-0 invert"
                 />
               </div>
               <p className="text-sm leading-relaxed max-w-sm mx-auto md:mx-0">
@@ -290,7 +284,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-xs tracking-tight gap-4">
-            <p>© 2026 SMD Project Team. FPT University Capstone.</p>
+            <p>© 2026 SMD System. Giggling University.</p>
             <div className="flex gap-4">
               <span>
                 System Health:{" "}

@@ -161,7 +161,7 @@ export function TaskList({
       queryClient.invalidateQueries({ queryKey: ["assignments"] }),
     ]);
     router.refresh();
-    router.push("/dashboard/hopdc/department-tasks");
+    router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
   };
 
   // ─── Open Subtask Creation Modal with CLO/PLO validation ──────────────────
@@ -623,7 +623,7 @@ export function TaskList({
         {isSingleTaskMode && (
           <button
             onClick={() => setIsSingleTaskModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2d6a4f] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1d5c42] transition-colors shadow-sm mr-auto"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#409b43] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#347d36] transition-colors shadow-sm mr-auto"
           >
             <Plus size={13} />
             Assign Task

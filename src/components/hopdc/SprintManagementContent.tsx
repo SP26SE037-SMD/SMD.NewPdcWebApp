@@ -70,6 +70,15 @@ export default function SprintManagementContent() {
   );
 
   useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "sprint-tasks" || tabParam === "curriculum") {
+      setActiveTab("sprint-tasks");
+    } else if (tabParam === "single-tasks") {
+      setActiveTab("single-tasks");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -212,7 +221,7 @@ export default function SprintManagementContent() {
         <CurriculumDetailView
           curriculum={curriculum}
           sprintId={selectedSprintId ?? undefined}
-          onBack={() => router.push("/dashboard/hopdc/department-tasks")}
+          onBack={() => router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks")}
           onOpenTask={handleOpenTask}
         />
       </div>
@@ -257,7 +266,7 @@ export default function SprintManagementContent() {
             onClick={() => setActiveTab("single-tasks")}
             className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap outline-none ${
               activeTab === "single-tasks"
-                ? "bg-[#2d6a4f] text-white shadow-md shadow-[#2d6a4f]/20"
+                ? "bg-[#409b43] text-white shadow-md shadow-[#409b43]/20"
                 : "text-zinc-500 hover:text-zinc-900"
             }`}
           >
@@ -267,7 +276,7 @@ export default function SprintManagementContent() {
             onClick={() => setActiveTab("sprint-tasks")}
             className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap outline-none ${
               activeTab === "sprint-tasks"
-                ? "bg-[#2d6a4f] text-white shadow-md shadow-[#2d6a4f]/20"
+                ? "bg-[#409b43] text-white shadow-md shadow-[#409b43]/20"
                 : "text-zinc-500 hover:text-zinc-900"
             }`}
           >

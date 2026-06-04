@@ -17,6 +17,7 @@ import {
   Edit2,
   Info,
   FileText,
+  Circle,
 } from "lucide-react";
 import {
   Subject,
@@ -27,6 +28,10 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubjectPrerequisiteRoadmap } from "./SubjectPrerequisiteRoadmap";
 import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySubject";
+import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
+import { CurriculumService } from "@/services/curriculum.service";
+import { CloPloMatrixModal } from "@/components/common/CloPloMatrixModal";
+import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -63,7 +68,16 @@ export default function SubjectDetail({
   const [departments, setDepartments] = useState<any[]>([]);
 
   // New UI states
-  const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">(initialViewMode);
+  const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">(
+    initialViewMode,
+  );
+
+  // Curriculum mapping states
+  const [curriculaList, setCurriculaList] = useState<
+    { id: string; name: string; code: string }[]
+  >([]);
+  const [loadingCurricula, setLoadingCurricula] = useState(false);
+  const [selectedCurriculumForMatrix, setSelectedCurriculumForMatrix] = useState<{ id: string; name: string; code: string } | null>(null);
 
   const fetchSubject = async (showLoading = true) => {
     try {
@@ -97,6 +111,55 @@ export default function SubjectDetail({
       fetchDeps();
     }
   }, [isEditing, departments.length]);
+
+  useEffect(() => {
+    const fetchMappedCurricula = async () => {
+      if (!subject?.subjectId) return;
+      setLoadingCurricula(true);
+      try {
+        const res = await CurriculumGroupSubjectService.getCurriculaBySubject(
+          subject.subjectId,
+        );
+        if (res && res.data && Array.isArray(res.data)) {
+          const curriculaDetails = await Promise.all(
+            res.data.map(async (cid) => {
+              try {
+                const detailRes =
+                  await CurriculumService.getCurriculumById(cid);
+                const envelope = (detailRes as any)?.data;
+                const curriculumData =
+                  envelope?.data ?? envelope ?? detailRes;
+                if (curriculumData && curriculumData.status !== "DRAFT") {
+                  return {
+                    id: cid,
+                    name: curriculumData.curriculumName || "Unknown",
+                    code: curriculumData.curriculumCode || "N/A",
+                  };
+                }
+              } catch (err) {
+                console.error(`Failed to fetch curriculum ${cid}:`, err);
+              }
+              return null;
+            }),
+          );
+          setCurriculaList(
+            curriculaDetails.filter(
+              (c): c is { id: string; name: string; code: string } =>
+                c !== null,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load mapped curricula:", error);
+      } finally {
+        setLoadingCurricula(false);
+      }
+    };
+
+    fetchMappedCurricula();
+  }, [subject?.subjectId]);
+
+
 
   const handleEditToggle = () => {
     if (!subject) return;
@@ -187,13 +250,14 @@ export default function SubjectDetail({
         <div className="max-w-7xl mx-auto px-8">
           <div className="relative overflow-hidden bg-white/70 backdrop-blur-xl border border-white/60 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <div className="absolute top-0 right-0 p-32 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
-            
+
             <div className="p-8 md:p-10 flex flex-col gap-8 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <button
                     onClick={() => {
-                      if (viewMode === "SYLLABUS") router.push(`/dashboard/hocfdc/subjects/${id}`);
+                      if (viewMode === "SYLLABUS")
+                        router.push(`/dashboard/hocfdc/subjects/${id}`);
                       else router.push("/dashboard/hocfdc/subjects");
                     }}
                     className="w-11 h-11 flex items-center justify-center bg-white/80 border border-zinc-200/50 rounded-xl text-zinc-500 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm group active:scale-95"
@@ -209,7 +273,9 @@ export default function SubjectDetail({
                         {subject.subjectCode}
                       </span>
                       <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                        {viewMode === "SYLLABUS" ? "SYLLABUS LIST" : subject.department?.departmentName}
+                        {viewMode === "SYLLABUS"
+                          ? "SYLLABUS LIST"
+                          : subject.department?.departmentName}
                       </span>
                     </div>
                     <h1 className="text-3xl font-black text-zinc-900 tracking-tight leading-none mt-2">
@@ -222,12 +288,13 @@ export default function SubjectDetail({
                 <div className="flex items-center gap-4">
                   <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/80 border border-zinc-100 rounded-xl shadow-sm">
                     <div
-                      className={`w-2 h-2 rounded-full animate-pulse ${subject.status === SUBJECT_STATUS.COMPLETED
-                        ? "bg-emerald-500"
-                        : subject.status === SUBJECT_STATUS.PENDING_REVIEW
-                          ? "bg-amber-500"
-                          : "bg-zinc-400"
-                        }`}
+                      className={`w-2 h-2 rounded-full animate-pulse ${
+                        subject.status === SUBJECT_STATUS.COMPLETED
+                          ? "bg-emerald-500"
+                          : subject.status === SUBJECT_STATUS.PENDING_REVIEW
+                            ? "bg-amber-500"
+                            : "bg-zinc-400"
+                      }`}
                     />
                     <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
                       {subject.status.replace("_", " ")}
@@ -237,22 +304,27 @@ export default function SubjectDetail({
                   <div className="flex items-center gap-3">
                     {viewMode === "DETAIL" && !isEditing && (
                       <button
-                        onClick={() => router.push(`/dashboard/hocfdc/subjects/${id}/syllabuses`)}
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/hocfdc/subjects/${id}/syllabuses`,
+                          )
+                        }
                         className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 active:scale-95"
                       >
                         <FileText size={14} />
                         View Syllabuses
                       </button>
                     )}
-                    {viewMode === "DETAIL" && subject.status === SUBJECT_STATUS.DRAFT && (
-                      <button
-                        onClick={handleEditToggle}
-                        className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-xl hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
-                      >
-                        {isEditing ? <X size={14} /> : <Edit2 size={14} />}
-                        {isEditing ? "Discard" : "Edit Subject"}
-                      </button>
-                    )}
+                    {viewMode === "DETAIL" &&
+                      subject.status === SUBJECT_STATUS.DRAFT && (
+                        <button
+                          onClick={handleEditToggle}
+                          className="px-5 py-2.5 bg-white border border-zinc-200 text-zinc-600 text-sm font-black uppercase tracking-widest rounded-xl hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                        >
+                          {isEditing ? <X size={14} /> : <Edit2 size={14} />}
+                          {isEditing ? "Discard" : "Edit Subject"}
+                        </button>
+                      )}
                     {isEditing ? (
                       <button
                         onClick={handleSave}
@@ -277,18 +349,51 @@ export default function SubjectDetail({
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-zinc-200 to-transparent my-2" />
                   <div className="grid grid-cols-4 gap-6">
                     {[
-                      { label: "Total Credits", value: subject.credits, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-50" },
-                      { label: "Degree Level", value: subject.degreeLevel, icon: GraduationCap, color: "text-emerald-600", bg: "bg-emerald-50" },
-                      { label: "Time Allocation", value: subject.timeAllocation, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-                      { label: "Scoring Scale", value: `${subject.scoringScale} (Min ${subject.minToPass || 0})`, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+                      {
+                        label: "Total Credits",
+                        value: subject.credits,
+                        icon: Layers,
+                        color: "text-indigo-600",
+                        bg: "bg-indigo-50",
+                      },
+                      {
+                        label: "Degree Level",
+                        value: subject.degreeLevel,
+                        icon: GraduationCap,
+                        color: "text-emerald-600",
+                        bg: "bg-emerald-50",
+                      },
+                      {
+                        label: "Time Allocation",
+                        value: subject.timeAllocation,
+                        icon: Clock,
+                        color: "text-amber-600",
+                        bg: "bg-amber-50",
+                      },
+                      {
+                        label: "Scoring Scale",
+                        value: `${subject.scoringScale} (Min ${subject.minToPass || 0})`,
+                        icon: CheckCircle2,
+                        color: "text-emerald-600",
+                        bg: "bg-emerald-50",
+                      },
                     ].map((stat, i) => (
-                      <div key={i} className="flex items-center gap-4 group cursor-default">
-                        <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-white/50`}>
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 group cursor-default"
+                      >
+                        <div
+                          className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-white/50`}
+                        >
                           <stat.icon size={20} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
-                          <p className="text-sm font-bold text-zinc-900">{stat.value}</p>
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                            {stat.label}
+                          </p>
+                          <p className="text-sm font-bold text-zinc-900">
+                            {stat.value}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -318,43 +423,76 @@ export default function SubjectDetail({
                         <Edit2 size={24} />
                       </div>
                       <div>
-                        <h2 className="text-xl font-black text-zinc-900 tracking-tight">Edit Subject</h2>
-                        <p className="text-xs text-zinc-500 font-medium">Updating subject configuration for {subject.subjectCode}</p>
+                        <h2 className="text-xl font-black text-zinc-900 tracking-tight">
+                          Edit Subject
+                        </h2>
+                        <p className="text-xs text-zinc-500 font-medium">
+                          Updating subject configuration for{" "}
+                          {subject.subjectCode}
+                        </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Subject Code</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Subject Code
+                        </label>
                         <input
                           value={editFormData?.subjectCode}
-                          onChange={(e) => setEditFormData({ ...editFormData, subjectCode: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              subjectCode: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Credits</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Credits
+                        </label>
                         <input
                           type="number"
                           value={editFormData?.credits}
-                          onChange={(e) => setEditFormData({ ...editFormData, credits: parseInt(e.target.value) })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              credits: parseInt(e.target.value),
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Subject Name</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Subject Name
+                        </label>
                         <input
                           value={editFormData?.subjectName}
-                          onChange={(e) => setEditFormData({ ...editFormData, subjectName: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              subjectName: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-bold focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">Description</label>
+                        <label className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400 ml-1">
+                          Description
+                        </label>
                         <textarea
                           rows={4}
                           value={editFormData?.description}
-                          onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              description: e.target.value,
+                            })
+                          }
                           className="w-full bg-zinc-50/50 border border-zinc-100 rounded-[10px] py-4 px-6 text-sm font-medium focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all resize-none"
                         />
                       </div>
@@ -365,7 +503,9 @@ export default function SubjectDetail({
                       <div className="w-10 h-10 bg-white/20 rounded-[10px] flex items-center justify-center text-white">
                         <Info size={20} />
                       </div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.2em]">Editing Mode</h3>
+                      <h3 className="text-sm font-black uppercase tracking-[0.2em]">
+                        Editing Mode
+                      </h3>
                       <p className="text-xs text-indigo-100 font-medium leading-relaxed">
                         Review all academic parameters before committing.
                       </p>
@@ -386,7 +526,9 @@ export default function SubjectDetail({
                         <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
                           <Target size={20} />
                         </div>
-                        <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase tracking-widest">Subject Description</h2>
+                        <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase tracking-widest">
+                          Subject Description
+                        </h2>
                       </div>
                       <div className="space-y-6">
                         <div className="relative">
@@ -400,7 +542,9 @@ export default function SubjectDetail({
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Student Tasks
                           </h4>
-                          <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">{subject.studentTasks}</p>
+                          <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">
+                            {subject.studentTasks}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -413,11 +557,15 @@ export default function SubjectDetail({
                             <Layers size={20} />
                           </div>
                           <div>
-                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">Prerequisite Subjects</h3>
+                            <h3 className="mt-1 text-lg font-black text-zinc-900 uppercase tracking-[0.2em]">
+                              Prerequisite Subjects
+                            </h3>
                           </div>
                         </div>
                         <button
-                          onClick={() => router.push("/dashboard/hocfdc/prerequisites")}
+                          onClick={() =>
+                            router.push("/dashboard/hocfdc/prerequisites")
+                          }
                           className="rounded-xl bg-white border border-emerald-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-emerald-50 hover:border-emerald-300 active:scale-95"
                         >
                           Manage Prerequisites
@@ -425,13 +573,14 @@ export default function SubjectDetail({
                       </div>
 
                       <div className="relative h-[450px] w-full overflow-hidden">
-                        <SubjectPrerequisiteRoadmap initialSubjectId={subject.subjectId} />
+                        <SubjectPrerequisiteRoadmap
+                          initialSubjectId={subject.subjectId}
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="col-span-4 space-y-6">
-
                     {/* PLO Mapping Section */}
                     <div className="bg-white/70 backdrop-blur-xl rounded-[20px] border border-white/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:bg-white/90 transition-all">
                       <div className="flex items-center justify-between mb-6">
@@ -445,10 +594,48 @@ export default function SubjectDetail({
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Current subject</p>
-                          <p className="text-sm font-bold text-emerald-950">{subject.subjectCode}</p>
+                      <div className="space-y-4">
+                        <div>
+                          {loadingCurricula ? (
+                            <div className="flex items-center gap-2 text-zinc-400 py-2">
+                              <Loader2 size={14} className="animate-spin" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider">
+                                Loading mappings...
+                              </span>
+                            </div>
+                          ) : curriculaList.length === 0 ? (
+                            <p className="text-xs font-semibold text-zinc-400 italic">
+                              No mapped curricula found. This subject is not yet
+                              assigned to any curriculum.
+                            </p>
+                          ) : (
+                            <div className="space-y-2.5 max-h-60 overflow-y-auto no-scrollbar pr-1">
+                              {curriculaList.map((curr) => (
+                                <div
+                                  key={curr.id}
+                                  onClick={() =>
+                                    setSelectedCurriculumForMatrix(curr)
+                                  }
+                                  className="block p-3.5 bg-white border border-zinc-200 rounded-xl hover:border-indigo-350 hover:shadow-sm transition-all group cursor-pointer"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="space-y-1">
+                                      <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wider">
+                                        {curr.code}
+                                      </span>
+                                      <p className="text-xs font-black text-zinc-800 group-hover:text-indigo-600 transition-colors leading-tight mt-1">
+                                        {curr.name}
+                                      </p>
+                                    </div>
+                                    <ChevronRight
+                                      size={14}
+                                      className="text-zinc-450 group-hover:text-indigo-550 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -472,6 +659,15 @@ export default function SubjectDetail({
           </motion.div>
         )}
       </div>
+
+      {/* Matrix Modal */}
+      <CloPloMatrixModal
+        isOpen={!!selectedCurriculumForMatrix}
+        onClose={() => setSelectedCurriculumForMatrix(null)}
+        subjectId={subject.subjectId}
+        curriculum={selectedCurriculumForMatrix}
+        showViewCurriculumButton={true}
+      />
     </div>
   );
 }

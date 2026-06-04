@@ -416,7 +416,7 @@ export default function HoPDCReviewSynthesisPage({
           `/dashboard/hopdc/assignments?sprintId=${finalSprintId}&curriculumId=${finalCurriculumId}`,
         );
       } else {
-        router.push("/dashboard/hopdc/department-tasks");
+        router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
       }
     } catch (error: any) {
       console.error("[SYNTHESIS ERROR] Submission failed:", error);

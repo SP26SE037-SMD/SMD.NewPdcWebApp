@@ -26,6 +26,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubjectPrerequisiteRoadmap } from "../../hocfdc/SubjectPrerequisiteRoadmap";
 import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySubject";
+import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
+import { CurriculumService } from "@/services/curriculum.service";
+import { CloPloMatrixModal } from "@/components/common/CloPloMatrixModal";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -38,60 +41,6 @@ const STATUS_COLORS: Record<string, string> = {
     "text-emerald-600 bg-emerald-50 border-emerald-100",
   [SUBJECT_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
 };
-
-// --- MOCK DATA ---
-const MOCK_CURRICULUMS = [
-  {
-    id: "curr-1",
-    majorName: "Software Engineering",
-    majorCode: "SE",
-    mappings: [
-      { clo: "CLO1: Understand basic concepts", plo: "PLO1.1: Foundations" },
-      { clo: "CLO2: Design patterns", plo: "PLO2.3: System Design" },
-      { clo: "CLO3: Teamwork", plo: "PLO5.1: Professional Ethics" },
-    ],
-  },
-  {
-    id: "curr-2",
-    majorName: "Digital Marketing",
-    majorCode: "DM",
-    mappings: [
-      { clo: "CLO1: Understand basic concepts", plo: "PLO3.2: Analytics" },
-      { clo: "CLO4: Market research", plo: "PLO4.1: Strategic Planning" },
-    ],
-  },
-];
-
-const MOCK_SYLLABUSES = [
-  {
-    id: "syll-v2",
-    versionName: "Syllabus 2024 - Standard",
-    status: "ACTIVE",
-    version: "2.0",
-    materials: [
-      { id: "m1", name: "Core Banking Systems", type: "PDF", date: "2024-01-15", desc: "Main textbook for the course", status: "VERIFIED" },
-      { id: "m2", name: "Financial Risk Management", type: "Slides", date: "2024-02-10", desc: "Lecture slides for week 1-5", status: "PENDING" },
-    ],
-    sessions: [
-      { id: "s1", number: 1, title: "Introduction to Banking", method: "Lecture", duration: "90 min", type: "Theory", topic: "Basic operations" },
-      { id: "s2", number: 2, title: "Credit Risk Analysis", method: "Workshop", duration: "120 min", type: "Practical", topic: "Scoring models" },
-    ],
-    assessments: [
-      { id: "a1", category: "Quiz", weight: "10%", criteria: "MCQ Test", duration: "15 min", type: "Formative" },
-      { id: "a2", category: "Midterm", weight: "30%", criteria: "Essay + Project", duration: "90 min", type: "Summative" },
-      { id: "a3", category: "Final Exam", weight: "60%", criteria: "Problem Solving", duration: "120 min", type: "Summative" },
-    ],
-  },
-  {
-    id: "syll-v1",
-    versionName: "Syllabus 2023 - Archive",
-    status: "ARCHIVED",
-    version: "1.0",
-    materials: [],
-    sessions: [],
-    assessments: [],
-  },
-];
 
 export default function SubjectDetail({
   id,
@@ -123,8 +72,13 @@ export default function SubjectDetail({
 
   // New UI states
   const [viewMode, setViewMode] = useState<"DETAIL" | "SYLLABUS">(initialViewMode);
-  const [selectedMajorForMapping, setSelectedMajorForMapping] = useState<any>(null);
-  const [selectedSyllabus, setSelectedSyllabus] = useState<any>(MOCK_SYLLABUSES[0]);
+
+  // Curriculum mapping states
+  const [curriculaList, setCurriculaList] = useState<
+    { id: string; name: string; code: string }[]
+  >([]);
+  const [loadingCurricula, setLoadingCurricula] = useState(false);
+  const [selectedCurriculumForMatrix, setSelectedCurriculumForMatrix] = useState<{ id: string; name: string; code: string } | null>(null);
 
   const fetchSubject = async (showLoading = true) => {
     try {
@@ -158,6 +112,53 @@ export default function SubjectDetail({
       fetchDeps();
     }
   }, [isEditing, departments.length]);
+
+  useEffect(() => {
+    const fetchMappedCurricula = async () => {
+      if (!subject?.subjectId) return;
+      setLoadingCurricula(true);
+      try {
+        const res = await CurriculumGroupSubjectService.getCurriculaBySubject(
+          subject.subjectId,
+        );
+        if (res && res.data && Array.isArray(res.data)) {
+          const curriculaDetails = await Promise.all(
+            res.data.map(async (cid) => {
+              try {
+                const detailRes =
+                  await CurriculumService.getCurriculumById(cid);
+                const envelope = (detailRes as any)?.data;
+                const curriculumData =
+                  envelope?.data ?? envelope ?? detailRes;
+                if (curriculumData && curriculumData.status !== "DRAFT") {
+                  return {
+                    id: cid,
+                    name: curriculumData.curriculumName || "Unknown",
+                    code: curriculumData.curriculumCode || "N/A",
+                  };
+                }
+              } catch (err) {
+                console.error(`Failed to fetch curriculum ${cid}:`, err);
+              }
+              return null;
+            }),
+          );
+          setCurriculaList(
+            curriculaDetails.filter(
+              (c): c is { id: string; name: string; code: string } =>
+                c !== null,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load mapped curricula:", error);
+      } finally {
+        setLoadingCurricula(false);
+      }
+    };
+
+    fetchMappedCurricula();
+  }, [subject?.subjectId]);
 
   const handleEditToggle = () => {
     if (!subject) return;
@@ -504,65 +505,55 @@ export default function SubjectDetail({
                               <Layers size={16} />
                             </div>
                             <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest">
-                              {selectedMajorForMapping ? "Mapping Details" : "Curriculum Mapping"}
+                              Curriculum Mapping
                             </h3>
                           </div>
-                          {selectedMajorForMapping && (
-                            <button
-                              onClick={() => setSelectedMajorForMapping(null)}
-                              className="text-xs font-black text-emerald-600 uppercase tracking-widest hover:underline"
-                            >
-                              Back
-                            </button>
-                          )}
                         </div>
 
-                        <AnimatePresence mode="wait">
-                          {selectedMajorForMapping ? (
-                            <motion.div
-                              key="mapping-detail"
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -10 }}
-                              className="space-y-4"
-                            >
-                              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
-                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">{selectedMajorForMapping.majorCode}</p>
-                                <p className="text-sm font-bold text-emerald-950">{selectedMajorForMapping.majorName}</p>
+                        <div className="space-y-4">
+                          <div>
+                            {loadingCurricula ? (
+                              <div className="flex items-center gap-2 text-zinc-400 py-2">
+                                <Loader2 size={14} className="animate-spin" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">
+                                  Loading mappings...
+                                </span>
                               </div>
-                              <div className="space-y-3">
-                                {selectedMajorForMapping.mappings.map((m: any, idx: number) => (
-                                  <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl shadow-sm">
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{m.clo}</p>
-                                    <p className="text-xs font-bold text-zinc-900 tracking-tight">{m.plo}</p>
+                            ) : curriculaList.length === 0 ? (
+                              <p className="text-xs font-semibold text-zinc-400 italic">
+                                No mapped curricula found. This subject is not yet
+                                assigned to any curriculum.
+                              </p>
+                            ) : (
+                              <div className="space-y-2.5 max-h-60 overflow-y-auto no-scrollbar pr-1">
+                                {curriculaList.map((curr) => (
+                                  <div
+                                    key={curr.id}
+                                    onClick={() =>
+                                      setSelectedCurriculumForMatrix(curr)
+                                    }
+                                    className="block p-3.5 bg-white border border-zinc-200 rounded-xl hover:border-indigo-350 hover:shadow-sm transition-all group cursor-pointer"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="space-y-1">
+                                        <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wider">
+                                          {curr.code}
+                                        </span>
+                                        <p className="text-xs font-black text-zinc-800 group-hover:text-indigo-600 transition-colors leading-tight mt-1">
+                                          {curr.name}
+                                        </p>
+                                      </div>
+                                      <ChevronRight
+                                        size={14}
+                                        className="text-zinc-450 group-hover:text-indigo-550 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0"
+                                      />
+                                    </div>
                                   </div>
                                 ))}
                               </div>
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="major-list"
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: 10 }}
-                              className="space-y-3"
-                            >
-                              {MOCK_CURRICULUMS.map((major) => (
-                                <button
-                                  key={major.id}
-                                  onClick={() => setSelectedMajorForMapping(major)}
-                                  className="w-full flex items-center justify-between p-4 bg-white border border-zinc-100 rounded-xl hover:border-emerald-300 transition-all group shadow-sm"
-                                >
-                                  <div className="text-left">
-                                    <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-0.5">{major.majorCode}</p>
-                                    <p className="text-sm font-bold text-zinc-800">{major.majorName}</p>
-                                  </div>
-                                  <ChevronRight size={16} className="text-zinc-300 group-hover:text-emerald-500 transition-colors" />
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -578,6 +569,15 @@ export default function SubjectDetail({
           </div>
         )}
       </div>
+
+      {/* Matrix Modal */}
+      <CloPloMatrixModal
+        isOpen={!!selectedCurriculumForMatrix}
+        onClose={() => setSelectedCurriculumForMatrix(null)}
+        subjectId={subject.subjectId}
+        curriculum={selectedCurriculumForMatrix}
+        showViewCurriculumButton={false}
+      />
     </div>
   );
 }
