@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
@@ -10,10 +10,10 @@ import { FeedbackReport } from "../../_components/FeedbackReport";
 export default function FormResultsPage({
   params,
 }: {
-  params: { formId: string };
+  params: Promise<{ formId: string }>;
 }) {
   const router = useRouter();
-  const formId = params.formId;
+  const { formId } = use(params);
   const [activeResultTab, setActiveResultTab] = useState<"submissions" | "report">("submissions");
 
   return (
