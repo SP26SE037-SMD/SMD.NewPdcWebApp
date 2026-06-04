@@ -1739,6 +1739,31 @@ export default function FormDesignPage({
                                 Add New Question
                               </button>
                             )}
+                            
+                            <div className="mt-8 pt-6 border-t border-outline/10 flex items-center justify-between text-sm font-semibold text-on-surface-variant/80">
+                              <span>After section {(schema?.sections?.findIndex(s => s.sectionId === selectedSection.sectionId) ?? -1) + 1}</span>
+                              <div className="flex items-center gap-2 text-primary">
+                                <span>
+                                  {(() => {
+                                    const action = selectedSection.actionAfter || selectedSection.afterSectionAction || "NEXT";
+                                    if (action === "NEXT") return "Continue to next section";
+                                    if (action === "SUBMIT") return "Submit form";
+                                    if (action === "GO_TO_SECTION") {
+                                      const target = schema?.sections?.find(s => s.sectionId === selectedSection.targetSectionId);
+                                      return target ? `Go to section ${(schema?.sections?.indexOf(target) ?? -1) + 1} (${target.title || 'Untitled'})` : "Go to section (Not found)";
+                                    }
+                                    return "Continue to next section";
+                                  })()}
+                                </span>
+                                <button
+                                  onClick={() => handleEditSection(selectedSection)}
+                                  className="p-1.5 hover:bg-primary/10 rounded-full transition-colors text-primary"
+                                  title="Change action"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <div className="rounded-2xl border border-dashed border-outline/25 py-16 text-center text-on-surface-variant/80 bg-white/30">

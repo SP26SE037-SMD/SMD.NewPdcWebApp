@@ -111,12 +111,7 @@ export default function HopdcFeedbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [selectedResultFormId, setSelectedResultFormId] = useState<
-    string | null
-  >(null);
-  const [activeResultTab, setActiveResultTab] = useState<
-    "submissions" | "report"
-  >("submissions");
+
   const [activeMainTab, setActiveMainTab] = useState<"manage" | "designer">(
     "manage",
   );
@@ -382,7 +377,6 @@ export default function HopdcFeedbackPage() {
     setForms([]);
     setSuccess(null);
     setFilterFormType("ALL");
-    setSelectedResultFormId(null);
     setActiveMainTab("manage");
     setDesignerFormId("");
     setSchema(null);
@@ -393,7 +387,6 @@ export default function HopdcFeedbackPage() {
     setCurriculumId(value);
     setSuccess(null);
     setFilterFormType("ALL");
-    setSelectedResultFormId(null);
     setActiveMainTab("manage");
     setDesignerFormId("");
     setSchema(null);
@@ -994,79 +987,6 @@ export default function HopdcFeedbackPage() {
 
           {/* Disabled overlay when no curriculum selected */}
           <div className={`p-5 md:p-8 transition-all duration-300 ${!curriculumId ? 'opacity-40 pointer-events-none select-none' : ''}`}>
-          {selectedResultFormId ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-full flex flex-col"
-            >
-              {/* Header of Results block */}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-outline/10 pb-4 mb-6">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-primary">
-                    Feedback Results
-                  </span>
-                  <h2 className="text-xl font-bold text-on-surface mt-1 break-all">
-                    Form ID: {selectedResultFormId}
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setSelectedResultFormId(null)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-bold text-on-surface-variant transition hover:bg-surface-container active:scale-95 shadow-sm"
-                >
-                  <X className="h-4 w-4" />
-                  Close Results
-                </button>
-              </div>
-
-              {/* Tabs for Results - Premium Sliding tabs */}
-              <div className="flex gap-3 border-b border-outline/10 pb-3 mb-6">
-                <button
-                  onClick={() => setActiveResultTab("submissions")}
-                  className={`relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
-              ${activeResultTab === "submissions"
-                      ? "text-white"
-                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-outline/10"
-                    }`}
-                >
-                  {activeResultTab === "submissions" && (
-                    <motion.div
-                      layoutId="activeResultTab"
-                      className="absolute inset-0 bg-primary rounded-xl"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  <span className="relative z-10">Submissions</span>
-                </button>
-                <button
-                  onClick={() => setActiveResultTab("report")}
-                  className={`relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
-              ${activeResultTab === "report"
-                      ? "text-white"
-                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-outline/10"
-                    }`}
-                >
-                  {activeResultTab === "report" && (
-                    <motion.div
-                      layoutId="activeResultTab"
-                      className="absolute inset-0 bg-primary rounded-xl"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  <span className="relative z-10">Report Dashboard</span>
-                </button>
-              </div>
-
-              {/* Results Content */}
-              <div className="mt-4">
-                {activeResultTab === "submissions" ? (
-                  <FeedbackSubmissions formId={selectedResultFormId} />
-                ) : (
-                  <FeedbackReport formId={selectedResultFormId} />
-                )}
-              </div>
-            </motion.div>
-          ) : (
             <>
 
               {activeMainTab === "manage" && (
@@ -1235,7 +1155,7 @@ export default function HopdcFeedbackPage() {
                                   {form.isActive && (
                                     <button
                                       onClick={() =>
-                                        setSelectedResultFormId(form.id)
+                                        router.push(`/dashboard/hopdc/feedback/${form.id}/results`)
                                       }
                                       className="inline-flex items-center gap-1 rounded-xl bg-linear-to-r from-secondary to-secondary/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-secondary/10 transition duration-300 hover:scale-105 active:scale-95"
                                     >
@@ -1269,7 +1189,6 @@ export default function HopdcFeedbackPage() {
               )}
 
             </>
-          )}
           </div>
         </motion.div>
 
