@@ -329,6 +329,27 @@ export const SyllabusService = {
     return response.json();
   },
 
+  async validateCompareVersion(
+    oldSyllabusId: string,
+    newSyllabusId: string,
+  ): Promise<ApiResponse<boolean>> {
+    const response = await fetch(
+      `/api/syllabus/validate-compare-version?oldSyllabusId=${oldSyllabusId}&newSyllabusId=${newSyllabusId}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { accept: "*/*" },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.message || "Failed to validate compare version");
+    }
+
+    return response.json();
+  },
+
   async copySyllabus(
     oldSyllabusId: string,
     newSyllabusId: string,

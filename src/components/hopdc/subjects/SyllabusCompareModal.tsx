@@ -43,6 +43,12 @@ export default function SyllabusCompareModal({
     enabled: isOpen && !!oldSyllabusId && !!newSyllabusId,
   });
 
+  const { data: validationRes, isLoading: isValidationLoading } = useQuery({
+    queryKey: ["validate-compare-version", oldSyllabusId, newSyllabusId],
+    queryFn: () => SyllabusService.validateCompareVersion(oldSyllabusId, newSyllabusId),
+    enabled: isOpen && !!oldSyllabusId && !!newSyllabusId,
+  });
+
   // Materials
   const { data: oldMaterialsRes, isLoading: isOldMatLoading } = useQuery({ queryKey: ["materials", oldSyllabusId], queryFn: () => MaterialService.getMaterialsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
   const { data: newMaterialsRes, isLoading: isNewMatLoading } = useQuery({ queryKey: ["materials", newSyllabusId], queryFn: () => MaterialService.getMaterialsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
@@ -464,7 +470,12 @@ export default function SyllabusCompareModal({
           </div>
 
           {/* Footer */}
-          <div className="px-8 py-5 border-t border-zinc-100 bg-zinc-50/50 flex justify-end gap-3 shrink-0">
+          <div className="px-8 py-5 border-t border-zinc-100 bg-zinc-50/50 flex justify-end gap-3 shrink-0 items-center">
+            {validationRes?.data === false && (
+              <p className="text-sm text-rose-500 font-medium mr-auto">
+                You can only save the comparison between the latest syllabus and the previous version.
+              </p>
+            )}
             <button
               onClick={onClose}
               disabled={isSaving}
@@ -474,7 +485,7 @@ export default function SyllabusCompareModal({
             </button>
             <button
               onClick={() => saveCompare()}
-              disabled={isSaving || !response}
+              disabled={isSaving || !response || isValidationLoading || validationRes?.data === false}
               className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
             >
               {isSaving && <Loader2 size={16} className="animate-spin" />}
