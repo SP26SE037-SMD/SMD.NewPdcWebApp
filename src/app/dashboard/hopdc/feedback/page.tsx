@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -35,6 +36,7 @@ import {
   FeedbackFormService,
 } from "@/services/feedback-form.service";
 import { useToast } from "@/components/ui/Toast";
+import { useRouter } from "next/navigation";
 import { FeedbackSubmissions } from "./_components/FeedbackSubmissions";
 import { FeedbackReport } from "./_components/FeedbackReport";
 
@@ -82,297 +84,19 @@ const isValidQuestionType = (
 ): value is FeedbackCreateQuestionPayload["type"] =>
   QUESTION_TYPES.includes(value as FeedbackCreateQuestionPayload["type"]);
 
-type GoogleFormsPreviewProps = {
-  schema: FeedbackFormFullSchema | null;
-  height?: number;
-};
-
-function GoogleFormsPreview({ schema, height }: GoogleFormsPreviewProps) {
-  const [currentSectionId, setCurrentSectionId] = useState<string>("");
-
-  // Get all sections
-  const sections = useMemo(() => schema?.sections || [], [schema]);
-
-  // Set default section when schema loads
-  useEffect(() => {
-    if (sections.length > 0) {
-      // Find the first section
-      setCurrentSectionId(sections[0].sectionId);
-    } else {
-      setCurrentSectionId("");
-    }
-  }, [sections]);
-
-  // Find the active section details
-  const activeSection = useMemo(() => {
-    return sections.find((s) => s.sectionId === currentSectionId) || null;
-  }, [sections, currentSectionId]);
-
-  const activeSectionIndex = useMemo(() => {
-    return sections.findIndex((s) => s.sectionId === currentSectionId);
-  }, [sections, currentSectionId]);
-
-  if (!schema) {
-    return (
-      <div className="rounded-3xl border border-[#dadce0] bg-white p-8 text-center text-gray-500 shadow-sm font-sans">
-        <Eye className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-        <p className="text-sm font-semibold">No schema loaded for preview.</p>
-      </div>
-    );
-  }
-
-  const handleNext = () => {
-    if (!activeSection) return;
-
-    // Check if there is a branching action or actionAfter
-    const action = activeSection.actionAfter || activeSection.afterSectionAction || "NEXT";
-    const target = activeSection.targetSectionId;
-
-    if (action === "SUBMIT") {
-      alert("🎉 Google Forms Preview: Form simulated submission successfully!");
-      // Reset back to section 1
-      if (sections.length > 0) {
-        setCurrentSectionId(sections[0].sectionId);
-      }
-      return;
-    }
-
-    if (action === "GO_TO_SECTION" && target) {
-      const exists = sections.some((s) => s.sectionId === target);
-      if (exists) {
-        setCurrentSectionId(target);
-        return;
-      }
-    }
-
-    // Default: go to next section in list
-    if (activeSectionIndex < sections.length - 1) {
-      setCurrentSectionId(sections[activeSectionIndex + 1].sectionId);
-    } else {
-      alert("🎉 Google Forms Preview: Form simulated submission successfully (Last section reached)!");
-      if (sections.length > 0) {
-        setCurrentSectionId(sections[0].sectionId);
-      }
-    }
-  };
-
-  const handleBack = () => {
-    if (activeSectionIndex > 0) {
-      setCurrentSectionId(sections[activeSectionIndex - 1].sectionId);
-    }
-  };
-
-  return (
-    <div
-      className="rounded-3xl border border-[#dadce0] bg-[#f0ebf8] p-4 sm:p-6 shadow-md font-sans text-[#202124] flex flex-col overflow-hidden w-full"
-      style={{ height: height ? `${height}px` : "auto" }}
-    >
-      {/* Title & Badge */}
-      <div className="mb-4 flex items-center justify-between px-1">
-        <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[#673ab7]/80">
-          <Eye className="h-3.5 w-3.5" />
-          Google Forms Live Preview
-        </span>
-        {sections.length > 1 && (
-          <span className="text-[11px] font-semibold text-gray-500">
-            Section {activeSectionIndex + 1} of {sections.length}
-          </span>
-        )}
-      </div>
-
-      {/* Main Google Form Container */}
-      <div className="space-y-4 flex-1 h-0 overflow-y-auto pr-1">
-        {/* Form Title Card */}
-        <div className="overflow-hidden rounded-xl border border-[#dadce0] bg-white shadow-xs">
-          {/* Iconic Google Purple Top Strip */}
-          <div className="h-2.5 w-full bg-[#673ab7]" />
-          <div className="p-6">
-            <h1 className="text-3xl font-normal tracking-tight text-[#202124] break-words leading-tight">
-              {schema.title || "Untitled Form"}
-            </h1>
-            <p className="mt-2 text-sm font-normal text-[#202124] break-words whitespace-pre-wrap leading-relaxed">
-              {schema.description || "Feedback and assessment form."}
-            </p>
-
-            {/* Required field indicator */}
-            <div className="mt-4 border-t border-[#dadce0]/80 pt-3 text-xs text-[#d93025]">
-              * Indicates required question
-            </div>
-          </div>
-        </div>
-
-        {/* Dynamic Section Title Card (Only if sections exist and has title) */}
-        {activeSection && activeSection.title && (
-          <div className="rounded-xl border border-[#dadce0] bg-white p-6 shadow-xs">
-            <h2 className="text-xl font-normal text-[#202124] break-words leading-snug">
-              {activeSection.title}
-            </h2>
-          </div>
-        )}
-
-        {/* Questions in Current Section */}
-        {activeSection && activeSection.questions && activeSection.questions.length > 0 ? (
-          activeSection.questions.map((q, idx) => {
-            const isScale = q.type === "SCALE" || q.type === "LINEAR_SCALE";
-            const isCheckbox = q.type === "CHECKBOX";
-            const isRadio = q.type === "RADIO";
-            const isDropdown = q.type === "DROPDOWN";
-
-            return (
-              <div
-                key={q.questionId || idx}
-                className="rounded-xl border border-[#dadce0] bg-white p-6 shadow-xs transition-shadow duration-200 hover:shadow-sm"
-              >
-                {/* Question Text */}
-                <div className="text-base font-normal text-[#202124] break-words flex gap-1 items-start leading-snug">
-                  <span>{q.content || "Question"}</span>
-                  {q.isRequired && (
-                    <span className="text-[#d93025] font-normal" title="Required">*</span>
-                  )}
-                </div>
-
-                {/* Answers Fields Styled precisely like Google Forms */}
-                <div className="mt-4">
-                  {/* TEXT, SHORT_TEXT, PARAGRAPH types */}
-                  {(q.type === "TEXT" || q.type === "SHORT_TEXT" || q.type === "PARAGRAPH") && (
-                    <div className="w-full">
-                      <input
-                        type="text"
-                        disabled
-                        placeholder="Your answer"
-                        className="w-full sm:max-w-md border-b border-[#dadce0]/80 bg-transparent py-1.5 text-sm font-normal text-[#202124] outline-none transition-all duration-300 placeholder:text-gray-400/70"
-                      />
-                    </div>
-                  )}
-
-                  {/* RADIO or CHECKBOX choice list */}
-                  {(isRadio || isCheckbox) && (
-                    <div className="space-y-3">
-                      {q.options && q.options.length > 0 ? (
-                        q.options.map((opt, oIdx) => {
-                          const optionText = opt.optionText || opt.text || "";
-                          return (
-                            <label
-                              key={oIdx}
-                              className="flex items-start gap-3 text-sm font-normal text-[#202124] cursor-pointer select-none"
-                            >
-                              <input
-                                type={isCheckbox ? "checkbox" : "radio"}
-                                disabled
-                                name={q.questionId}
-                                className={`mt-0.5 h-4 w-4 border-[#dadce0] text-[#673ab7] focus:ring-[#673ab7] ${isCheckbox ? "rounded" : ""
-                                  }`}
-                              />
-                              <span className="break-all">{optionText}</span>
-                            </label>
-                          );
-                        })
-                      ) : (
-                        <div className="text-xs text-gray-400 italic">No choices configured.</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* DROPDOWN select list */}
-                  {isDropdown && (
-                    <div className="w-full sm:max-w-xs">
-                      <select
-                        disabled
-                        className="w-full rounded border border-[#dadce0] bg-white px-3 py-2 text-sm text-[#202124] outline-none"
-                      >
-                        <option>Choose</option>
-                        {q.options?.map((opt, oIdx) => (
-                          <option key={oIdx}>{opt.optionText || opt.text}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* LINEAR_SCALE / SCALE type (Numbered Horizontal Grid) */}
-                  {isScale && (
-                    <div className="mt-2 flex items-center justify-center gap-3 sm:gap-5 rounded-xl border border-gray-100 bg-[#f8f9fa] p-4">
-                      <span className="text-xs font-semibold text-gray-500">Worst</span>
-                      <div className="flex items-center gap-3 sm:gap-5">
-                        {[1, 2, 3, 4, 5].map((num) => (
-                          <div key={num} className="flex flex-col items-center gap-2">
-                            <span className="text-xs font-bold text-gray-600">{num}</span>
-                            <input
-                              type="radio"
-                              disabled
-                              name={q.questionId}
-                              className="h-4.5 w-4.5 border-[#dadce0] text-[#673ab7] focus:ring-[#673ab7]"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <span className="text-xs font-semibold text-gray-500">Best</span>
-                    </div>
-                  )}
-
-                  {/* DATE input type */}
-                  {q.type === "DATE" && (
-                    <div className="w-full sm:max-w-xs">
-                      <input
-                        type="date"
-                        disabled
-                        className="border-b border-[#dadce0]/80 bg-transparent py-1.5 text-sm font-normal text-gray-400 outline-none w-full"
-                      />
-                    </div>
-                  )}
-
-                  {/* TIME input type */}
-                  {q.type === "TIME" && (
-                    <div className="w-full sm:max-w-xs">
-                      <input
-                        type="time"
-                        disabled
-                        className="border-b border-[#dadce0]/80 bg-transparent py-1.5 text-sm font-normal text-gray-400 outline-none w-full"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="rounded-xl border border-[#dadce0] bg-white p-10 text-center text-sm text-gray-400 italic">
-            No questions inside this section.
-          </div>
-        )}
-
-        {/* Section Navigation Buttons at the bottom */}
-        {sections.length > 0 && (
-          <div className="flex items-center justify-between pt-2">
-            <div>
-              {activeSectionIndex > 0 && (
-                <button
-                  onClick={handleBack}
-                  className="rounded bg-white px-6 py-2 text-sm font-semibold text-[#673ab7] border border-[#dadce0] transition hover:bg-gray-50 hover:shadow-xs active:bg-gray-100"
-                >
-                  Back
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={handleNext}
-              className="rounded bg-[#673ab7] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#5e35b1] hover:shadow-xs active:bg-[#512da8]"
-            >
-              {activeSectionIndex === sections.length - 1 ? "Submit" : "Next"}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function HopdcFeedbackPage() {
   const { showToast } = useToast();
+  const router = useRouter();
   const [majorId, setMajorId] = useState("");
   const [curriculumId, setCurriculumId] = useState("");
-  const [formType, setFormType] = useState("GENERAL");
-  const [customFormType, setCustomFormType] = useState("");
+  const [formName, setFormName] = useState(""); // Keeping this just in case, but using createFormName for modal
+  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createMajorId, setCreateMajorId] = useState("");
+  const [createCurriculumId, setCreateCurriculumId] = useState("");
+  const [createFormName, setCreateFormName] = useState("");
+  const [createCurriculums, setCreateCurriculums] = useState<CurriculumFramework[]>([]);
+  const [loadingCreateCurriculums, setLoadingCreateCurriculums] = useState(false);
 
   const [majors, setMajors] = useState<Major[]>([]);
   const [curriculums, setCurriculums] = useState<CurriculumFramework[]>([]);
@@ -676,17 +400,43 @@ export default function HopdcFeedbackPage() {
     await loadForms(value);
   };
 
-  const handleCreateFeedback = async () => {
-    const resolvedFormType =
-      formType === "CUSTOM" ? customFormType.trim() : formType;
+  const openCreateModal = () => {
+    setCreateMajorId(majorId);
+    setCreateCurriculumId(curriculumId);
+    setCreateFormName("");
+    setCreateCurriculums(curriculums);
+    setIsCreateModalOpen(true);
+  };
 
-    if (!majorId || !curriculumId) {
+  const handleCreateMajorChange = async (value: string) => {
+    setCreateMajorId(value);
+    setCreateCurriculumId("");
+    if (!value) {
+      setCreateCurriculums([]);
+      return;
+    }
+    setLoadingCreateCurriculums(true);
+    try {
+      const response = (await CurriculumService.getCurriculumsByMajorId(value)) as any;
+      const items = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
+      setCreateCurriculums(items);
+    } catch (err) {
+      setCreateCurriculums([]);
+    } finally {
+      setLoadingCreateCurriculums(false);
+    }
+  };
+
+  const handleCreateFeedback = async () => {
+    const resolvedFormName = createFormName.trim();
+
+    if (!createMajorId || !createCurriculumId) {
       setError("Please choose major and curriculum before creating feedback.");
       return;
     }
 
-    if (!resolvedFormType) {
-      setError("Please choose or enter form type.");
+    if (!resolvedFormName) {
+      setError("Please enter form name.");
       return;
     }
 
@@ -696,13 +446,17 @@ export default function HopdcFeedbackPage() {
 
     try {
       const created = await FeedbackFormService.createForm({
-        curriculumId,
-        formType: resolvedFormType,
+        curriculumId: createCurriculumId,
+        formType: resolvedFormName,
       });
       setSuccess(`Feedback form created: ${created.id}`);
       showToast(`Feedback form created: ${created.id}`, "success");
-      setCustomFormType("");
-      await loadForms(curriculumId);
+      
+      setIsCreateModalOpen(false);
+      
+      // Navigate to designer instead of reloading forms
+      router.push(`/dashboard/hopdc/feedback/${created.id}/design`);
+      
     } catch (err: any) {
       const message = err?.message || "Failed to create feedback form";
       setError(message);
@@ -794,10 +548,8 @@ export default function HopdcFeedbackPage() {
     }
   };
 
-  const handleOpenDesigner = async (formId: string) => {
-    setDesignerFormId(formId);
-    setActiveMainTab("designer");
-    await loadDesignerSchema(formId);
+  const handleOpenDesigner = (formId: string) => {
+    router.push(`/dashboard/hopdc/feedback/${formId}/design`);
   };
 
   const handleEditSection = (section: FeedbackFormSchemaSection) => {
@@ -1126,20 +878,29 @@ export default function HopdcFeedbackPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              if (curriculumId) {
-                loadForms(curriculumId);
-              }
-            }}
-            disabled={!curriculumId || loadingForms}
-            className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCcw
-              className={`h-4 w-4 ${loadingForms ? "animate-spin" : ""}`}
-            />
-            Refresh Forms
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/40 active:scale-95"
+            >
+              <Plus className="h-4.5 w-4.5" />
+              Create Form
+            </button>
+            <button
+              onClick={() => {
+                if (curriculumId) {
+                  loadForms(curriculumId);
+                }
+              }}
+              disabled={!curriculumId || loadingForms}
+              className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${loadingForms ? "animate-spin" : ""}`}
+              />
+              Refresh Forms
+            </button>
+          </div>
         </motion.div>
 
         {error && (
@@ -1152,89 +913,92 @@ export default function HopdcFeedbackPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-3xl border border-outline/20 bg-surface/40 p-6 shadow-xl shadow-black/5 backdrop-blur-2xl mb-6"
+          className="rounded-3xl border border-outline/20 bg-surface/40 shadow-xl shadow-black/5 backdrop-blur-2xl mb-6 flex flex-col"
         >
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
-            <div>
-              <span className="text-xs font-black uppercase tracking-wider text-primary">
-                Configuration
-              </span>
-              <h2 className="text-lg font-bold text-on-surface mt-0.5">
-                Select Major & Curriculum
-              </h2>
+          {/* Top section: Configuration */}
+          <div className="p-5 md:p-8">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-primary">
+                  Configuration
+                </span>
+                <h2 className="text-lg font-bold text-on-surface mt-0.5">
+                  Select Major & Curriculum
+                </h2>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  Major
+                </label>
+                <select
+                  value={majorId}
+                  onChange={(e) => handleMajorChange(e.target.value)}
+                  disabled={loadingMajors}
+                  className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
+                >
+                  <option value="">
+                    {loadingMajors ? "Loading majors..." : "Select major"}
+                  </option>
+                  {majors.map((major) => (
+                    <option key={major.majorId} value={major.majorId}>
+                      {major.majorCode} - {major.majorName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  Curriculum
+                </label>
+                <select
+                  value={curriculumId}
+                  onChange={(e) => handleCurriculumChange(e.target.value)}
+                  disabled={!majorId || loadingCurriculums}
+                  className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
+                >
+                  <option value="">
+                    {loadingCurriculums
+                      ? "Loading curriculums..."
+                      : "Select curriculum"}
+                  </option>
+                  {curriculums.map((curriculum) => (
+                    <option
+                      key={curriculum.curriculumId}
+                      value={curriculum.curriculumId}
+                    >
+                      {curriculum.curriculumCode} - {curriculum.curriculumName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {selectedCurriculum && (
+              <div className="mt-4 rounded-xl border border-outline/10 bg-surface-container-lowest/90 px-4 py-3.5 text-sm font-bold text-on-surface-variant shadow-inner flex items-center gap-2">
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/10 shadow-xs">
+                  Selected
+                </span>
+                <span>
+                  {selectedCurriculum.curriculumCode} -{" "}
+                  {selectedCurriculum.curriculumName}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                Major
-              </label>
-              <select
-                value={majorId}
-                onChange={(e) => handleMajorChange(e.target.value)}
-                disabled={loadingMajors}
-                className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
-              >
-                <option value="">
-                  {loadingMajors ? "Loading majors..." : "Select major"}
-                </option>
-                {majors.map((major) => (
-                  <option key={major.majorId} value={major.majorId}>
-                    {major.majorCode} - {major.majorName}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="h-px w-full bg-outline/10" />
 
-            <div>
-              <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                Curriculum
-              </label>
-              <select
-                value={curriculumId}
-                onChange={(e) => handleCurriculumChange(e.target.value)}
-                disabled={!majorId || loadingCurriculums}
-                className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
-              >
-                <option value="">
-                  {loadingCurriculums
-                    ? "Loading curriculums..."
-                    : "Select curriculum"}
-                </option>
-                {curriculums.map((curriculum) => (
-                  <option
-                    key={curriculum.curriculumId}
-                    value={curriculum.curriculumId}
-                  >
-                    {curriculum.curriculumCode} - {curriculum.curriculumName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {selectedCurriculum && (
-            <div className="mt-4 rounded-xl border border-outline/10 bg-surface-container-lowest/90 px-4 py-3.5 text-sm font-bold text-on-surface-variant shadow-inner flex items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/10 shadow-xs">
-                Selected
-              </span>
-              <span>
-                {selectedCurriculum.curriculumCode} -{" "}
-                {selectedCurriculum.curriculumName}
-              </span>
-            </div>
-          )}
-        </motion.div>
-
-
-        {/* Disabled overlay when no curriculum selected */}
-        <div className={`transition-all duration-300 ${!curriculumId ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+          {/* Disabled overlay when no curriculum selected */}
+          <div className={`p-5 md:p-8 transition-all duration-300 ${!curriculumId ? 'opacity-40 pointer-events-none select-none' : ''}`}>
           {selectedResultFormId ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-outline/20 bg-surface/40 p-6 shadow-xl shadow-black/5 backdrop-blur-2xl mb-6"
+              className="w-full flex flex-col"
             >
               {/* Header of Results block */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-outline/10 pb-4 mb-6">
@@ -1304,131 +1068,25 @@ export default function HopdcFeedbackPage() {
             </motion.div>
           ) : (
             <>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="flex gap-3 overflow-x-auto pb-4 scrollbar-none mb-6"
-              >
-                {mainTabs.map((tab) => {
-                  const isActive = activeMainTab === tab.id;
-                  const Icon = tab.id === "manage" ? ClipboardList : ListTree;
-
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveMainTab(tab.id);
-                        if (tab.id === "manage") {
-                          setDesignerFormId("");
-                          setSchema(null);
-                        }
-                      }}
-                      className={`relative group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-base font-bold transition-all duration-300 whitespace-nowrap
-              ${isActive
-                          ? "text-white"
-                          : "bg-white/50 hover:bg-white border border-outline/10 text-on-surface-variant hover:border-primary/20"
-                        }`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeMainTab"
-                          className="absolute inset-0 bg-linear-to-r from-primary to-primary/80 rounded-2xl shadow-lg shadow-primary/20"
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.6,
-                          }}
-                        />
-                      )}
-                      <Icon
-                        className={`relative z-10 h-4 w-4 ${isActive ? "text-white" : "text-primary/60 group-hover:text-primary"}`}
-                      />
-                      <span className="relative z-10">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </motion.div>
 
               {activeMainTab === "manage" && (
                 <>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl mb-5"
+                    className="w-full flex flex-col"
                   >
-                    <h2 className="mb-4 text-lg font-bold text-on-surface">
-                      Create New Feedback Form
-                    </h2>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                          Form Type
-                        </label>
-                        <select
-                          value={formType}
-                          onChange={(e) => setFormType(e.target.value)}
-                          className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-                        >
-                          {DEFAULT_FORM_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                              {type === "MIDTERM"
-                                ? "Midterm"
-                                : type === "FINAL"
-                                  ? "Final"
-                                  : type === "GENERAL"
-                                    ? "General"
-                                    : type === "WEEKLY"
-                                      ? "Weekly"
-                                      : type}
-                            </option>
-                          ))}
-                          <option value="CUSTOM">Custom</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-end">
-                        <button
-                          onClick={handleCreateFeedback}
-                          disabled={submitting || !curriculumId}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-primary to-primary/80 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition duration-300 hover:scale-[1.02] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {submitting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                          Create Feedback
-                        </button>
-                      </div>
-                    </div>
-
-                    {formType === "CUSTOM" && (
-                      <div className="mt-4 max-w-md">
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                          Custom Form Type
-                        </label>
-                        <input
-                          value={customFormType}
-                          onChange={(e) => setCustomFormType(e.target.value)}
-                          placeholder="Example: ALUMNI_2026"
-                          className="w-full rounded-xl border border-outline/20 bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                    className="rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl shadow-black/5 backdrop-blur-2xl mb-5"
-                  >
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
                       <div className="flex flex-wrap items-center gap-3.5">
-                        <h2 className="text-lg font-bold text-on-surface">
-                          Feedback Forms
-                        </h2>
+                        <div>
+                          <span className="text-xs font-black uppercase tracking-wider text-primary">
+                            Management
+                          </span>
+                          <h2 className="text-xl font-bold text-on-surface mt-1 flex items-center gap-2">
+                            <ClipboardList className="h-5 w-5 text-primary" />
+                            Feedback Forms
+                          </h2>
+                        </div>
                         {forms.length > 0 && (
                           <div className="flex flex-wrap items-center gap-2">
                             <div className="relative flex items-center">
@@ -1610,615 +1268,10 @@ export default function HopdcFeedbackPage() {
                 </>
               )}
 
-              {activeMainTab === "designer" && (
-                <div className="space-y-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-outline/20 bg-surface/40 p-5 shadow-xl backdrop-blur-2xl"
-                  >
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => {
-                          setActiveMainTab("manage");
-                          setDesignerFormId("");
-                          setSchema(null);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-xl border border-outline/20 bg-surface px-4 py-2 text-sm font-bold text-on-surface-variant transition duration-300 hover:bg-surface-container active:scale-95 shadow-sm"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to Forms
-                      </button>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">
-                          Designing Form
-                        </span>
-                        <h2 className="text-base font-bold text-on-surface break-all">
-                          {designerFormId}
-                        </h2>
-                      </div>
-                    </div>
-
-                    {schema && (
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-surface-container px-2.5 py-1.5 text-xs font-bold text-on-surface-variant border border-outline/5">
-                          {schema.sections?.length || 0} Sections
-                        </span>
-                      </div>
-                    )}
-                  </motion.div>
-
-                  {loadingSchema ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-3xl border border-outline/20 bg-surface/40 p-10 shadow-xl shadow-black/5 backdrop-blur-2xl"
-                    >
-                      <div className="flex flex-col items-center justify-center gap-5 py-16">
-                        <div className="relative">
-                          <div className="h-14 w-14 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <ListTree className="h-5 w-5 text-primary/60" />
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-base font-bold text-on-surface">Loading Form Designer</p>
-                          <p className="mt-1 text-sm text-on-surface-variant/70">Fetching schema, sections and questions...</p>
-                        </div>
-                        {/* Skeleton bars */}
-                        <div className="w-full max-w-lg space-y-3 mt-4">
-                          <div className="h-4 w-3/4 rounded-lg bg-outline/10 animate-pulse" />
-                          <div className="h-4 w-full rounded-lg bg-outline/10 animate-pulse" />
-                          <div className="h-4 w-5/6 rounded-lg bg-outline/10 animate-pulse" />
-                          <div className="h-4 w-2/3 rounded-lg bg-outline/10 animate-pulse" />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-stretch">
-                      <div className="xl:col-span-7 w-full">
-                        <motion.div
-                          ref={designerRef}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          className="rounded-3xl border border-outline/20 bg-linear-to-b from-surface/60 to-surface/30 p-6 shadow-xl shadow-black/5 backdrop-blur-3xl w-full"
-                        >
-                          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
-                            <div>
-                              <span className="text-xs font-black uppercase tracking-wider text-primary">
-                                Feedback Toolkit
-                              </span>
-                              <h2 className="text-xl font-bold text-on-surface mt-1">
-                                Form Designer
-                              </h2>
-                              <p className="mt-1 text-xs text-on-surface-variant">
-                                Configure sections, set navigation rules, and design
-                                custom questions.
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Grid layout for Sections vs Questions */}
-                          <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
-                            {/* SECTIONS PANEL */}
-                            <div className="rounded-2xl border border-outline/10 bg-white/40 p-5 shadow-xs backdrop-blur-xs flex flex-col justify-between">
-                              <div>
-                                <div className="mb-4 flex items-center justify-between">
-                                  <h3 className="text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2">
-                                    <ListTree className="h-4 w-4 text-primary/70" />
-                                    Sections List
-                                  </h3>
-                                  {schema?.sections?.length ? (
-                                    <span className="rounded-lg bg-surface-container px-2.5 py-1 text-xs font-bold text-on-surface-variant border border-outline/5">
-                                      {schema.sections.length} sections
-                                    </span>
-                                  ) : null}
-                                </div>
-
-                                {loadingSchema ? (
-                                  <div className="flex items-center justify-center gap-2 py-12 text-sm font-medium text-on-surface-variant">
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                    Loading form sections...
-                                  </div>
-                                ) : schema?.sections?.length ? (
-                                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                                    {schema.sections.map((section, index) => {
-                                      const isActive =
-                                        selectedSectionId === section.sectionId;
-                                      const questionCount =
-                                        section.questions?.length || 0;
-
-                                      return (
-                                        <div
-                                          key={section.sectionId}
-                                          className={`group rounded-xl border p-3.5 transition-all duration-300 ${isActive
-                                              ? "border-primary bg-linear-to-r from-primary/10 to-primary/5 shadow-xs translate-x-0.5"
-                                              : "border-outline/15 bg-white/70 hover:bg-white hover:border-primary/30 hover:shadow-xs translate-x-0"
-                                            }`}
-                                        >
-                                          <div className="flex items-start justify-between gap-3">
-                                            <button
-                                              onClick={() =>
-                                                setSelectedSectionId(section.sectionId)
-                                              }
-                                              className="flex-1 text-left"
-                                            >
-                                              <div className="flex items-center gap-2 flex-wrap">
-                                                <span
-                                                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${isActive
-                                                      ? "bg-primary text-white"
-                                                      : "bg-primary/10 text-primary"
-                                                    }`}
-                                                >
-                                                  Section {index + 1}
-                                                </span>
-                                                <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary border border-secondary/10">
-                                                  Action:{" "}
-                                                  {section.actionAfter ||
-                                                    section.afterSectionAction ||
-                                                    "NEXT"}
-                                                </span>
-                                              </div>
-                                              <h4
-                                                className={`mt-2 text-sm font-bold transition-colors ${isActive
-                                                    ? "text-primary"
-                                                    : "text-on-surface"
-                                                  }`}
-                                              >
-                                                {section.title || "Untitled section"}
-                                              </h4>
-                                              <p className="mt-1 text-xs text-on-surface-variant/70 font-medium">
-                                                Contains {questionCount} question(s)
-                                              </p>
-                                            </button>
-
-                                            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                                              <button
-                                                onClick={() =>
-                                                  handleEditSection(section)
-                                                }
-                                                className="rounded-lg border border-outline/20 p-2 text-on-surface-variant transition bg-white/50 hover:bg-white hover:text-primary hover:border-primary/30"
-                                                title="Edit section"
-                                              >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                              </button>
-                                              <button
-                                                onClick={() =>
-                                                  handleDeleteSection(section.sectionId)
-                                                }
-                                                className="rounded-lg border border-error/20 p-2 text-error transition bg-white/50 hover:bg-error/10 hover:border-error/30"
-                                                title="Delete section"
-                                              >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                              </button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <div className="rounded-2xl border border-dashed border-outline/25 py-12 text-center text-on-surface-variant/80 bg-white/30">
-                                    <ClipboardList className="h-8 w-8 text-outline/50 mx-auto mb-2" />
-                                    <p className="text-sm font-semibold">
-                                      No sections found
-                                    </p>
-                                    <p className="text-xs mt-1 text-on-surface-variant/60">
-                                      Add a new section below to get started.
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Save section form editor */}
-                              <div className="mt-6 space-y-3 rounded-2xl border border-outline/10 bg-linear-to-b from-surface-container-lowest/90 to-surface-container-lowest/50 p-4.5 shadow-inner shadow-black/5">
-                                <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                                  <h4 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                                    <Plus className="h-3.5 w-3.5" />
-                                    {sectionMode === "edit"
-                                      ? "Edit Section"
-                                      : "Add New Section"}
-                                  </h4>
-
-                                  {sectionMode === "edit" && (
-                                    <button
-                                      onClick={resetSectionEditor}
-                                      className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container"
-                                    >
-                                      <X className="h-3 w-3" />
-                                      Cancel
-                                    </button>
-                                  )}
-                                </div>
-
-                                <div className="space-y-3 mt-2">
-                                  <div>
-                                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                      Section Title
-                                    </label>
-                                    <input
-                                      value={sectionForm.title}
-                                      onChange={(e) =>
-                                        setSectionForm((prev) => ({
-                                          ...prev,
-                                          title: e.target.value,
-                                        }))
-                                      }
-                                      placeholder="e.g. Personal Information"
-                                      className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                      Action After Section
-                                    </label>
-                                    <select
-                                      value={sectionForm.afterSectionAction}
-                                      onChange={(e) =>
-                                        setSectionForm((prev) => ({
-                                          ...prev,
-                                          afterSectionAction: e.target
-                                            .value as SectionAction,
-                                        }))
-                                      }
-                                      className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                                    >
-                                      <option value="NEXT">Go to next section</option>
-                                      <option value="SUBMIT">Submit the form</option>
-                                      <option value="GO_TO_SECTION">
-                                        Jump to specific section
-                                      </option>
-                                    </select>
-                                  </div>
-
-                                  {sectionForm.afterSectionAction ===
-                                    "GO_TO_SECTION" && (
-                                      <div>
-                                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                          Target Section ID
-                                        </label>
-                                        <input
-                                          value={sectionForm.targetSectionId}
-                                          onChange={(e) =>
-                                            setSectionForm((prev) => ({
-                                              ...prev,
-                                              targetSectionId: e.target.value,
-                                            }))
-                                          }
-                                          placeholder="e.g. section_2"
-                                          className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                                        />
-                                      </div>
-                                    )}
-
-                                  <button
-                                    onClick={handleSaveSection}
-                                    disabled={addingSection || !designerFormId.trim()}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/10 transition hover:scale-[1.01] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {addingSection ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : sectionMode === "edit" ? (
-                                      <Pencil className="h-4 w-4" />
-                                    ) : (
-                                      <Plus className="h-4 w-4" />
-                                    )}
-                                    {sectionMode === "edit"
-                                      ? "Save Section"
-                                      : "Add Section"}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* QUESTIONS PANEL */}
-                            <div className="rounded-2xl border border-outline/10 bg-white/40 p-5 shadow-xs backdrop-blur-xs flex flex-col justify-between">
-                              <div>
-                                <h3 className="mb-4 text-sm font-black uppercase tracking-wider text-primary flex items-center gap-2 border-b border-outline/5 pb-2.5">
-                                  <Send className="h-4 w-4 text-primary/70" />
-                                  Questions inside Section
-                                </h3>
-
-                                {selectedSection ? (
-                                  <div className="space-y-3">
-                                    <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
-                                      {(selectedSection.questions || []).length > 0 ? (
-                                        (selectedSection.questions || []).map(
-                                          (question, index) => (
-                                            <div
-                                              key={question.questionId}
-                                              className="group/q bg-white/70 hover:bg-white border border-outline/15 hover:border-primary/20 transition-all duration-300 shadow-xs hover:shadow-sm rounded-xl p-3.5 flex flex-col justify-between"
-                                            >
-                                              <div>
-                                                <div className="mb-2 flex items-center justify-between gap-2">
-                                                  <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-secondary">
-                                                      Q {index + 1}
-                                                    </span>
-                                                    <span className="rounded-md bg-primary/5 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/10">
-                                                      {question.type}
-                                                    </span>
-                                                    {question.isRequired && (
-                                                      <span className="rounded-md bg-error/10 px-2 py-0.5 text-[10px] font-bold text-error border border-error/10">
-                                                        REQUIRED
-                                                      </span>
-                                                    )}
-                                                  </div>
-
-                                                  <div className="flex items-center gap-1 opacity-60 group-hover/q:opacity-100 transition-opacity">
-                                                    <button
-                                                      onClick={() =>
-                                                        handleEditQuestion(question)
-                                                      }
-                                                      className="rounded-lg border border-outline/20 p-1.5 text-on-surface-variant transition bg-white/50 hover:bg-white hover:text-primary hover:border-primary/30"
-                                                      title="Edit question"
-                                                    >
-                                                      <Pencil className="h-3 w-3" />
-                                                    </button>
-                                                    <button
-                                                      onClick={() =>
-                                                        handleDeleteQuestion(
-                                                          question.questionId,
-                                                        )
-                                                      }
-                                                      className="rounded-lg border border-error/20 p-1.5 text-error transition bg-white/50 hover:bg-error/10 hover:border-error/30"
-                                                      title="Delete question"
-                                                    >
-                                                      <Trash2 className="h-3 w-3" />
-                                                    </button>
-                                                  </div>
-                                                </div>
-
-                                                <p className="text-sm font-bold text-on-surface break-all">
-                                                  {question.content}
-                                                </p>
-
-                                                {!!question.options?.length && (
-                                                  <div className="mt-2.5 border-t border-outline/5 pt-2">
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/70">
-                                                      Options:
-                                                    </span>
-                                                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                                      {question.options
-                                                        .map(
-                                                          (opt) =>
-                                                            opt.text || opt.optionText,
-                                                        )
-                                                        .filter(Boolean)
-                                                        .map((text, idx) => (
-                                                          <span
-                                                            key={idx}
-                                                            className="inline-flex items-center rounded-md bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant border border-outline/5"
-                                                          >
-                                                            {text}
-                                                          </span>
-                                                        ))}
-                                                    </div>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </div>
-                                          ),
-                                        )
-                                      ) : (
-                                        <div className="rounded-2xl border border-dashed border-outline/25 py-12 text-center text-on-surface-variant/80 bg-white/30">
-                                          <ClipboardList className="h-8 w-8 text-outline/50 mx-auto mb-2" />
-                                          <p className="text-sm font-semibold">
-                                            No questions yet
-                                          </p>
-                                          <p className="text-xs mt-1 text-on-surface-variant/60">
-                                            Configure your first question using the tool
-                                            below.
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Save question form editor */}
-                                    <div className="mt-6 space-y-3 rounded-2xl border border-outline/10 bg-linear-to-b from-surface-container-lowest/90 to-surface-container-lowest/50 p-4.5 shadow-inner shadow-black/5">
-                                      <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                                        <h4 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                                          <Plus className="h-3.5 w-3.5" />
-                                          {questionMode === "edit"
-                                            ? "Edit Question Details"
-                                            : "Add New Question"}
-                                        </h4>
-
-                                        {questionMode === "edit" && (
-                                          <button
-                                            onClick={resetQuestionEditor}
-                                            className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container"
-                                          >
-                                            <X className="h-3 w-3" />
-                                            Cancel
-                                          </button>
-                                        )}
-                                      </div>
-
-                                      <div className="space-y-3 mt-2">
-                                        <div>
-                                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                            Question Label / Title
-                                          </label>
-                                          <input
-                                            value={questionForm.content}
-                                            onChange={(e) =>
-                                              setQuestionForm((prev) => ({
-                                                ...prev,
-                                                content: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="e.g. Rate your overall satisfaction"
-                                            className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                                          />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                          <div>
-                                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                              Answer Input Type
-                                            </label>
-                                            <select
-                                              value={questionForm.type}
-                                              onChange={(e) =>
-                                                setQuestionForm((prev) => ({
-                                                  ...prev,
-                                                  type: e.target
-                                                    .value as FeedbackCreateQuestionPayload["type"],
-                                                }))
-                                              }
-                                              className="w-full rounded-xl border border-outline/20 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15"
-                                            >
-                                              <option value="">Choose type...</option>
-                                              {QUESTION_TYPES.map((type) => (
-                                                <option key={type} value={type}>
-                                                  {type}
-                                                </option>
-                                              ))}
-                                            </select>
-                                          </div>
-
-                                          <div>
-                                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                              Settings
-                                            </label>
-                                            <label className="inline-flex w-full items-center gap-2 rounded-xl border border-outline/20 bg-white/50 hover:bg-white px-3 py-2 text-sm text-on-surface-variant cursor-pointer transition select-none">
-                                              <input
-                                                type="checkbox"
-                                                checked={questionForm.isRequired}
-                                                onChange={(e) =>
-                                                  setQuestionForm((prev) => ({
-                                                    ...prev,
-                                                    isRequired: e.target.checked,
-                                                  }))
-                                                }
-                                                className="h-4 w-4 rounded-md border-outline/30 text-primary focus:ring-primary/15 cursor-pointer"
-                                              />
-                                              <span className="font-bold text-xs uppercase tracking-wider text-on-surface-variant/80">
-                                                Required Field
-                                              </span>
-                                            </label>
-                                          </div>
-                                        </div>
-
-                                        {questionNeedsOptions && (
-                                          <div className="space-y-2.5 rounded-xl border border-outline/10 bg-white/50 p-3 mt-3">
-                                            <div className="flex items-center justify-between gap-2 border-b border-outline/5 pb-2">
-                                              <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/80">
-                                                Question Choices / Options
-                                              </p>
-                                              <button
-                                                onClick={addQuestionOption}
-                                                className="inline-flex items-center gap-1 rounded-lg border border-outline/20 bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant transition hover:bg-surface-container shadow-xs active:scale-95"
-                                              >
-                                                <Plus className="h-3.5 w-3.5 text-primary" />
-                                                Add Choice
-                                              </button>
-                                            </div>
-
-                                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                                              {questionOptions.map((option, index) => (
-                                                <div
-                                                  key={option.id}
-                                                  className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center bg-white/40 p-2 rounded-xl border border-outline/5"
-                                                >
-                                                  <input
-                                                    value={option.optionText}
-                                                    onChange={(e) =>
-                                                      updateQuestionOption(
-                                                        option.id,
-                                                        "optionText",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    placeholder={`Option Label ${index + 1}`}
-                                                    className="w-full rounded-lg border border-outline/20 bg-white px-3 py-1.5 text-xs outline-none transition focus:border-primary/40"
-                                                  />
-
-                                                  <input
-                                                    value={option.nextSectionId}
-                                                    onChange={(e) =>
-                                                      updateQuestionOption(
-                                                        option.id,
-                                                        "nextSectionId",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    placeholder="Jump Section ID (optional)"
-                                                    className="w-full rounded-lg border border-outline/20 bg-white px-3 py-1.5 text-xs outline-none transition focus:border-primary/40"
-                                                  />
-
-                                                  <button
-                                                    onClick={() =>
-                                                      removeQuestionOption(option.id)
-                                                    }
-                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-error/20 text-error transition bg-white hover:bg-error/10"
-                                                    title="Remove option"
-                                                  >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                  </button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        <button
-                                          onClick={handleSaveQuestion}
-                                          disabled={addingQuestion}
-                                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/10 transition hover:scale-[1.01] active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                          {addingQuestion ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                          ) : questionMode === "edit" ? (
-                                            <Pencil className="h-4 w-4" />
-                                          ) : (
-                                            <Plus className="h-4 w-4" />
-                                          )}
-                                          {questionMode === "edit"
-                                            ? "Save Question Details"
-                                            : "Add Question"}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-2xl border border-dashed border-outline/25 py-16 text-center text-on-surface-variant/80 bg-white/30">
-                                    <ListTree className="h-8 w-8 text-outline/50 mx-auto mb-2" />
-                                    <p className="text-sm font-semibold">
-                                      No section selected
-                                    </p>
-                                    <p className="text-xs mt-1 text-on-surface-variant/60">
-                                      Select or load a section from the left column to
-                                      build and manage its questions.
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      <div className="xl:col-span-5 w-full flex flex-col h-full">
-                        <motion.div
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.15 }}
-                          className="flex-1 flex flex-col h-full"
-                        >
-                          <GoogleFormsPreview schema={schema} height={designerHeight} />
-                        </motion.div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </>
           )}
-        </div>
+          </div>
+        </motion.div>
 
         {deleteConfirm && (
           <div
@@ -2260,6 +1313,117 @@ export default function HopdcFeedbackPage() {
               </div>
             </div>
           </div>
+        )}
+        
+        {isCreateModalOpen && typeof document !== "undefined" && createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+            onClick={() => !submitting && setIsCreateModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-lg rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6 border-b border-outline/10 pb-4">
+                <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Create New Feedback Form
+                </h3>
+                <button
+                  onClick={() => !submitting && setIsCreateModalOpen(false)}
+                  className="text-on-surface-variant hover:text-on-surface transition hover:bg-surface-container p-1 rounded-full"
+                  disabled={submitting}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Select Major
+                  </label>
+                  <select
+                    value={createMajorId}
+                    onChange={(e) => handleCreateMajorChange(e.target.value)}
+                    disabled={loadingMajors || submitting}
+                    className="w-full rounded-2xl border border-outline/20 bg-white/70 px-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm"
+                  >
+                    <option value="">
+                      {loadingMajors ? "Loading majors..." : "Select major"}
+                    </option>
+                    {majors.map((m) => (
+                      <option key={m.majorId} value={m.majorId}>
+                        {m.majorCode} - {m.majorName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Select Curriculum
+                  </label>
+                  <select
+                    value={createCurriculumId}
+                    onChange={(e) => setCreateCurriculumId(e.target.value)}
+                    disabled={!createMajorId || loadingCreateCurriculums || submitting}
+                    className="w-full rounded-2xl border border-outline/20 bg-white/70 px-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm"
+                  >
+                    <option value="">
+                      {loadingCreateCurriculums ? "Loading curriculums..." : "Select curriculum"}
+                    </option>
+                    {createCurriculums.map((c) => (
+                      <option key={c.curriculumId} value={c.curriculumId}>
+                        {c.curriculumCode} - {c.curriculumName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Form Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                      <Pencil className="h-4.5 w-4.5 text-primary/60" />
+                    </div>
+                    <input
+                      value={createFormName}
+                      onChange={(e) => setCreateFormName(e.target.value)}
+                      disabled={submitting}
+                      placeholder="e.g., Midterm Evaluation, Alumni Survey..."
+                      className="w-full rounded-2xl border border-outline/20 bg-white/70 pl-11 pr-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm placeholder:font-medium placeholder:text-on-surface-variant/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-8 flex items-center justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => !submitting && setIsCreateModalOpen(false)}
+                    disabled={submitting}
+                    className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateFeedback}
+                    disabled={submitting || !createCurriculumId || !createFormName.trim()}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary to-primary/80 px-8 py-2.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:scale-[1.02] hover:shadow-primary/40 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Plus className="h-5 w-5" />
+                    )}
+                    Create Form
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

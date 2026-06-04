@@ -208,17 +208,21 @@ export default function SyllabusCompareModal({
 
   const { mutate: saveCompare, isPending: isSaving } = useMutation({
     mutationFn: () => {
-      const apiData = (response as any)?.data || response;
-      const apiAssessmentDiff = apiData?.assessmentDiffResponse || assessmentResultPayload;
-      const apiSessionDiff = apiData?.sessionDiffResponse || { addedSessions: [], removedSessions: [], changedSessions: [] };
-      return SyllabusService.saveCompareVersion(oldSyllabusId, newSyllabusId, apiAssessmentDiff, compareResult, apiSessionDiff);
+      const apiData = (response as any)?.data || response || {};
+      
+      return SyllabusService.saveCompareVersion(
+        oldSyllabusId, 
+        newSyllabusId, 
+        apiData.assessmentDiffResponse, 
+        apiData.comparisonResult, 
+        apiData.sessionDiffResponse
+      );
     },
     onSuccess: () => {
-      toast.success("Comparison saved successfully");
-      onClose();
+      toast.success("Lưu kết quả so sánh thành công!");
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Failed to save comparison");
+      toast.error(err?.message || "Lưu kết quả so sánh thất bại");
     }
   });
 
@@ -468,7 +472,14 @@ export default function SyllabusCompareModal({
             >
               Close
             </button>
-
+            <button
+              onClick={() => saveCompare()}
+              disabled={isSaving || !response}
+              className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving && <Loader2 size={16} className="animate-spin" />}
+              Save Compare
+            </button>
           </div>
         </motion.div>
       </div>

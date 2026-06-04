@@ -351,25 +351,28 @@ export const SyllabusService = {
   },
 
   async saveCompareVersion(
-    oldId: string,
-    newId: string,
-    assessmentResult: any,
-    analysis: any,
+    oldSyllabusId: string,
+    newSyllabusId: string,
+    assessmentDiffResponse: any,
+    comparisonResult: any,
     sessionDiffResponse: any
   ): Promise<ApiResponse<unknown>> {
-    const searchParams = new URLSearchParams();
-    searchParams.append("oldId", oldId);
-    searchParams.append("newId", newId);
-    searchParams.append("assessmentResult", JSON.stringify(assessmentResult));
-    searchParams.append("analysis", JSON.stringify(analysis));
-    searchParams.append("sessionDiffResponse", JSON.stringify(sessionDiffResponse));
-
     const response = await fetch(
-      `/api/syllabus/save-compare-version?${searchParams.toString()}`,
+      `/api/syllabus/save-compare-version`,
       {
         method: "POST",
         credentials: "include",
-        headers: { accept: "*/*" },
+        headers: {
+          "Content-Type": "application/json",
+          "accept": "*/*"
+        },
+        body: JSON.stringify({
+          oldSyllabusId,
+          newSyllabusId,
+          assessmentDiffResponse,
+          comparisonResult,
+          sessionDiffResponse
+        }),
       },
     );
 
