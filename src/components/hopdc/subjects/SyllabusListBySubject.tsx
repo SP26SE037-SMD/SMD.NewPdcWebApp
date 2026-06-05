@@ -115,7 +115,32 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
     });
   }, [syllabuses, statusFilter]);
 
-  const { targetHistorySyllabusId } = useMemo(() => {
+  const { targetHistorySyllabusId, isGetCompareEnabled } = useMemo(() => {
+    let enabled = false;
+    if (selectedSyllabusIds.length === 2) {
+      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
+      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
+      
+      if (s1 && s2) {
+        const isOnePublishedAndOneArchived = 
+          (s1.status === "PUBLISHED" && s2.status === "ARCHIVED") ||
+          (s2.status === "PUBLISHED" && s1.status === "ARCHIVED");
+          
+        if (isOnePublishedAndOneArchived) {
+          const archivedSyllabus = s1.status === "ARCHIVED" ? s1 : s2;
+          const sortedDates = [...syllabuses].sort((a, b) => {
+            const dateA = a.approvedDate ? new Date(a.approvedDate).getTime() : 0;
+            const dateB = b.approvedDate ? new Date(b.approvedDate).getTime() : 0;
+            return dateB - dateA;
+          });
+          const secondMostRecent = sortedDates[1];
+          if (secondMostRecent && archivedSyllabus.syllabusId === secondMostRecent.syllabusId) {
+            enabled = true;
+          }
+        }
+      }
+    }
+
     if (selectedSyllabusIds.length === 2) {
       const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
       const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
@@ -130,18 +155,18 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           const time2 = new Date(s2.createdAt || 0).getTime();
           newerId = time1 > time2 ? s1.syllabusId : s2.syllabusId;
         }
-        return { targetHistorySyllabusId: newerId };
+        return { targetHistorySyllabusId: newerId, isGetCompareEnabled: enabled };
       }
     }
     
     if (selectedSyllabusIds.length === 1) {
-      return { targetHistorySyllabusId: selectedSyllabusIds[0] };
+      return { targetHistorySyllabusId: selectedSyllabusIds[0], isGetCompareEnabled: enabled };
     }
 
     const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
-    if (pubSyllabus) return { targetHistorySyllabusId: pubSyllabus.syllabusId };
+    if (pubSyllabus) return { targetHistorySyllabusId: pubSyllabus.syllabusId, isGetCompareEnabled: enabled };
     
-    return { targetHistorySyllabusId: syllabuses[0]?.syllabusId || null };
+    return { targetHistorySyllabusId: syllabuses[0]?.syllabusId || null, isGetCompareEnabled: enabled };
   }, [selectedSyllabusIds, syllabuses]);
 
   const handleToggleSelect = (id: string) => {
@@ -256,7 +281,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsHistoryModalOpen(true)}
-                  disabled={!targetHistorySyllabusId}
+                  disabled={!isGetCompareEnabled}
                   className="px-5 py-2.5 rounded-xl bg-white text-zinc-600 border border-zinc-200 text-xs font-black uppercase tracking-widest hover:bg-zinc-50 hover:text-zinc-900 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Get Compare Prompts
@@ -284,11 +309,14 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 Select
               </div>
             )}
-            <div className={`${isCompareMode ? "col-span-6" : "col-span-7"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
+            <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
               Syllabus Name
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Created At
+            </div>
+            <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
+              Approved At
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Status
@@ -344,7 +372,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   </div>
                 )}
 
-                <div className={`${isCompareMode ? "col-span-6" : "col-span-7"} space-y-0.5`}>
+                <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} space-y-0.5`}>
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
@@ -353,6 +381,12 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
                     {syllabus.createdAt ? new Date(syllabus.createdAt).toLocaleDateString() : "N/A"}
+                  </span>
+                </div>
+
+                <div className="col-span-2">
+                  <span className="text-sm font-bold text-zinc-700">
+                    {syllabus.approvedDate ? new Date(syllabus.approvedDate).toLocaleDateString() : "-"}
                   </span>
                 </div>
 
