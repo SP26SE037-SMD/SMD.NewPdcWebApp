@@ -51,10 +51,41 @@ const renderJsonDiff = (jsonString: string) => {
                 {formattedKey}
               </span>
               {Array.isArray(value) ? (
-                <ul className="list-disc pl-4 text-xs text-zinc-700 space-y-1">
-                  {value.map((v: any, i: number) => (
-                    <li key={i}>{typeof v === 'string' ? v : JSON.stringify(v)}</li>
-                  ))}
+                <ul className="list-disc pl-4 text-xs text-zinc-700 space-y-2">
+                  {value.map((v: any, i: number) => {
+                    if (typeof v === 'string') return <li key={i}>{v}</li>;
+                    if (typeof v === 'object' && v !== null) {
+                      const identifier = v.identifier || v.assessmentIdentifier || v.name || v.title || "Item";
+                      const changes = v.changes || v.detailChanges || v.differences || [];
+                      
+                      if (Array.isArray(changes) && changes.length > 0) {
+                        return (
+                          <li key={i} className="mb-2">
+                            <span className="font-bold text-zinc-800">{identifier}</span>
+                            <ul className="list-disc pl-4 mt-1 space-y-1">
+                              {changes.map((c: any, j: number) => (
+                                <li key={j} className="text-zinc-600">{c}</li>
+                              ))}
+                            </ul>
+                          </li>
+                        );
+                      }
+                      
+                      return (
+                        <li key={i}>
+                          <ul className="space-y-1">
+                            {Object.entries(v).map(([k, val]) => (
+                              <li key={k}>
+                                <span className="font-semibold text-zinc-800 capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}:</span>{" "}
+                                <span className="text-zinc-600">{typeof val === 'string' ? val : JSON.stringify(val)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      );
+                    }
+                    return <li key={i}>{JSON.stringify(v)}</li>;
+                  })}
                 </ul>
               ) : (
                 <p className="text-xs text-zinc-700 font-medium leading-relaxed">{String(value)}</p>
