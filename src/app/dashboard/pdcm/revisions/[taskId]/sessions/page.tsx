@@ -276,12 +276,18 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
             const payload = Object.entries(mappingStates).flatMap(([sessionId, cloIds]) => 
                 cloIds.map(cloId => ({ sessionId, cloId }))
             );
+            if (payload.length === 0) {
+                showToast("Please select at least one mapping to validate.", "error");
+                setIsMappingValidating(false);
+                return;
+            }
             await MappingService.validateSessionMappings(syllabusId, payload);
             showToast("Validation started. Please wait...", "info");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             setIsMappingValidating(false);
-            showToast("Failed to validate mappings", "error");
+            const errMsg = error.message || "Failed to validate mappings";
+            showToast(errMsg, "error");
         }
     };
 
@@ -1088,7 +1094,10 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                     const rawMethods = String(row['Teaching Methods'] || row['teachingMethods'] || row['Methods'] || '').trim();
                                                     const rawTopic = String(row['Topic'] || row['topic'] || '').trim();
                                                     const rawType = String(row['Type'] || row['type'] || '').trim().toUpperCase();
-                                                    const rawCloMapping = String(row['CLO-Mapping'] || row['cloMapping'] || '').trim();
+                                                    
+                                                    // Robustly find CLO-Mapping key ignoring spaces, dashes, newlines
+                                                    const cloKey = Object.keys(row).find(k => k.replace(/[\s\r\n\-_]/g, '').toLowerCase() === 'clomapping');
+                                                    const rawCloMapping = cloKey ? String(row[cloKey]).trim() : '';
 
                                                     return {
                                                         _rowNum: index + 1,
@@ -1149,19 +1158,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         </div>
                                     </div>
                                     
-                                    {isValidated && validationErrors.length > 0 && (
-                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3">
-                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
-                                            <div className="flex-1">
-                                                <h4 className="font-bold text-sm">Validation Issues Found</h4>
-                                                <ul className="text-xs mt-1 list-disc list-inside space-y-1">
-                                                    {validationErrors.map((err: any, i: number) => (
-                                                        <li key={i}>{err.message}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    )}
+                                    
 
                                     {saveError && (
                                         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
@@ -1187,6 +1184,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
                                                     const realIdx = (previewPage - 1) * 10 + idx;
                                                     const hasError = item._importErrors && item._importErrors.length > 0;
+                                                    const hasWarning = item._importWarnings && item._importWarnings.length > 0;
                                                     
                                                     return (
                                                         <React.Fragment key={idx}>
@@ -1208,19 +1206,20 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                                     <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.cloMapping || ""} />
                                                                 </td>
                                                             </tr>
-                                                            {hasError && (
-                                                                <tr className="bg-red-50/50">
-                                                                    <td colSpan={6} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                            {(hasError || hasWarning) && (
+                                                                <tr className={hasError ? "bg-red-50/50" : "bg-amber-50/50"}>
+                                                                    <td colSpan={6} className={`px-3 py-1.5 text-[11px] font-medium ${hasError ? 'text-red-600' : 'text-amber-600'}`}>
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">error</span>
-                                                                            {item._importErrors.join(" | ")}
+                                                                            <span className="material-symbols-outlined text-[14px]">{hasError ? 'error' : 'warning'}</span>
+                                                                            {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
                                                                         </div>
                                                                     </td>
                                                                 </tr>
                                                             )}
                                                         </React.Fragment>
                                                     );
-                                                })}                                            </tbody>
+                                                })}
+                                            </tbody>
                                         </table>
                                     </div>
 
@@ -1271,21 +1270,19 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                     Back
                                 </button>
                                 <button 
-                                    disabled={isSaving || !isValidated}
+                                    disabled={isSaving}
                                     onClick={async () => {
                                         setIsSaving(true);
                                         try {
                                             const { SessionService } = await import('@/services/session.service');
                                             
-                                            const payload = previewData.map(item => {
-                                                const p = { ...item };
-                                                delete p._rowNum;
-                                                delete p.content; // Exclude internal state
-                                                return p;
-                                            });
-
-                                            console.log("BULK CREATE PAYLOAD:", payload);
-                                            await SessionService.bulkCreateSessions(payload);
+                                            if (!syllabusId || !subjectId || !importFile) return;
+                                            const res = await SessionService.importSessions(syllabusId, subjectId, importFile) as any;
+                                            if (res && res.data && !res.data.valid) {
+                                                const err = new Error('Validation failed or import errors occurred.') as any;
+                                                err.data = res;
+                                                throw err;
+                                            }
 
                                             showToast(`Successfully saved ${previewData.length} sessions`, 'success');
                                             
@@ -1300,16 +1297,55 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                             setIsSaving(false);
                                             setSaveError(null);
                                         } catch (error: any) {
-                                            console.error(error);
-                                            const errMsg = error.message || 'Failed to save sessions';
-                                            setSaveError(errMsg);
-                                            showToast(errMsg, 'error');
+                                            // Validation errors are expected, no need to log the entire error to trigger the Next.js overlay
+                                            const errorData = error.data?.data || error.data;
+                                            
+                                            const importErrs = errorData?.importErrors || [];
+                                            const validateErrs = errorData?.validateError?.errors || [];
+                                            const validateWarns = errorData?.validateError?.warnings || [];
+                                            const legacyErrs = (errorData?.errors && Array.isArray(errorData?.errors)) ? errorData.errors : [];
+                                            
+                                            const allErrors = [
+                                                ...importErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                ...validateErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                ...validateWarns.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...legacyErrs.map((e: any) => ({ ...e, type: 'error' }))
+                                            ];
+
+                                            if (allErrors.length > 0) {
+                                                 showToast(errorData?.message || 'Validation failed or import errors occurred.', 'error');
+                                                 setPreviewData(prev => {
+                                                     const newData = [...prev];
+                                                     newData.forEach(item => { item._importErrors = []; item._importWarnings = []; });
+                                                     allErrors.forEach((err: any) => {
+                                                         const targetItem = newData.find(n => 
+                                                             (err.sessionNumber !== undefined && n.sessionNumber === err.sessionNumber) || 
+                                                             (err.rowNumber !== undefined && n._rowNum === err.rowNumber - 1)
+                                                         );
+                                                         
+                                                         if (targetItem) {
+                                                             if (err.type === 'warning') {
+                                                                 if (!targetItem._importWarnings) targetItem._importWarnings = [];
+                                                                 targetItem._importWarnings.push(err.message);
+                                                             } else {
+                                                                 if (!targetItem._importErrors) targetItem._importErrors = [];
+                                                                 targetItem._importErrors.push(err.message);
+                                                             }
+                                                         }
+                                                     });
+                                                     return newData;
+                                                 });
+                                            } else {
+                                                 const errMsg = error.message || 'Failed to save sessions';
+                                                 setSaveError(errMsg);
+                                                 showToast(errMsg, 'error');
+                                            }
                                         } finally {
                                             setIsSaving(false);
                                         }
                                     }}
-                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-50 cursor-not-allowed'}`}
-                                    style={{ background: isValidated ? '#41683f' : '#adb4a8' }}
+                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg hover:scale-[1.02] active:scale-95 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    style={{ background: '#41683f' }}
                                 >
                                     {isSaving ? <span className="material-symbols-outlined animate-spin">refresh</span> : <span className="material-symbols-outlined text-[20px]">save</span>}
                                     Confirm & Save

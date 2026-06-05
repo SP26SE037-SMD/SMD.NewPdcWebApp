@@ -908,7 +908,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ syllabus
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-16">Part</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Weight</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Duration</th>
-                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Q.Type</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Question Type</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[120px]">Note</th>
                                                 </tr>
                                             </thead>

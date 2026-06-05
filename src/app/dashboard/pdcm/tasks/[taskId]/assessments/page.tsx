@@ -223,15 +223,21 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             const payload = Object.entries(mappingStates).flatMap(([assessmentId, cloIds]) =>
                 cloIds.map(cloId => ({ assessmentId, cloId }))
             );
+            if (payload.length === 0) {
+                showToast("Please select at least one mapping to validate.", "error");
+                setIsMappingValidating(false);
+                return;
+            }
             const res = await MappingService.validateAssessmentMappings(syllabusId, payload);
             if (res.data) {
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
                 showToast("Mapping validation complete", "success");
             }
-        } catch (error) {
-            console.error(error);
-            showToast("Failed to validate mappings", "error");
+        } catch (error: any) {
+            // Validation errors are expected, no need to log the entire error to trigger the Next.js overlay
+            const errMsg = error.message || "Failed to validate mappings";
+            showToast(errMsg, "error");
         } finally {
             setIsMappingValidating(false);
         }
@@ -780,13 +786,13 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 const parsedAssessments = rows.map((row, index) => {
                                                     const rawCategory = String(row['Category'] || row['category'] || '').trim();
                                                     const rawType = String(row['Type'] || row['type'] || '').trim();
-                                                    const rawPart = Number(row['Part'] || row['part'] || 1);
+                                                    const rawPart = row['Part'] || row['part'] || 1;
                                                     let rawWeight = Number(row['Weight'] || row['weight'] || 0);
                                                     if (rawWeight > 0 && rawWeight <= 1) {
                                                         rawWeight = Math.round(rawWeight * 100);
                                                     }
                                                     const rawCriteria = String(row['Completion Criteria'] || row['completionCriteria'] || '').trim();
-                                                    const rawDuration = Number(row['Duration'] || row['duration'] || 0);
+                                                    const rawDuration = row['Duration'] || row['duration'] || '';
                                                     const rawQuestionType = String(row['Question Type'] || row['questionType'] || '').trim();
                                                     const rawKnowledge = String(row['Knowledge Skill'] || row['knowledgeSkill'] || '').trim();
                                                     const rawGuide = String(row['Grading Guide'] || row['gradingGuide'] || '').trim();
@@ -805,31 +811,21 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     const finalTypeName = matchedType?.typeName || rawType || ASSESSMENT_TYPES[0]?.typeName || "";
 
                                                     const rowErrors: string[] = [];
-                                                    if (!matchedCategory && rawCategory) rowErrors.push(`Category "${rawCategory}" not found.`);
-                                                    if (!matchedType && rawType) rowErrors.push(`Type "${rawType}" not found.`);
+                                                    // Removed client-side validation as requested by user
 
-                                                    // Validate Type based on Category
-                                                    const validTypesMap = getValidTypesMap(finalCategoryName);
-                                                    const validTypesForCategory = Object.keys(validTypesMap);
-                                                    if (validTypesForCategory.length > 0 && !validTypesForCategory.some(v => v.toLowerCase() === finalTypeName.toLowerCase())) {
-                                                        rowErrors.push(`Type "${finalTypeName}" is invalid for Category "${finalCategoryName}". Must be: ${validTypesForCategory.join(" or ")}`);
-                                                    }
-
-                                                    // Validate Question Type based on mapped rules
+                                                    // Determine validQuestionType based on mapped rules (just falling back to raw if invalid)
                                                     let validQuestionType = rawQuestionType;
                                                     const validQuestionTypesForCombo = getAvailableQTypes(finalCategoryName, finalTypeName);
 
                                                     if (validQuestionTypesForCombo) {
                                                         const isValid = validQuestionTypesForCombo.some((v: string) => v.toLowerCase() === rawQuestionType.toLowerCase());
                                                         if (!isValid && rawQuestionType) {
-                                                            rowErrors.push(`Question Type "${rawQuestionType}" is invalid for ${finalCategoryName}/${finalTypeName}. Must be: ${validQuestionTypesForCombo.join(" or ")}`);
-                                                            validQuestionType = ""; // fallback to empty so user must select
+                                                            validQuestionType = rawQuestionType;
                                                         } else if (!rawQuestionType && validQuestionTypesForCombo.length > 0) {
                                                             validQuestionType = validQuestionTypesForCombo[0];
                                                         }
                                                     } else if (rawQuestionType && !COMMON_QUESTION_TYPES.some((v: string) => v.toLowerCase() === rawQuestionType.toLowerCase())) {
-                                                        rowErrors.push(`Question Type "${rawQuestionType}" is unrecognized.`);
-                                                        validQuestionType = "";
+                                                        validQuestionType = rawQuestionType;
                                                     }
 
                                                     return {
@@ -885,74 +881,11 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             >
                                                 <span className="material-symbols-outlined text-[14px]">delete</span> Delete & Upload New
                                             </button>
-                                            <button
-                                                disabled={isValidating}
-                                                onClick={async () => {
-                                                    if (!syllabusId) return;
-                                                    setIsValidating(true);
-                                                    setValidationErrors([]); // Clear old results
-                                                    setValidationSummary(null);
-                                                    try {
-                                                        const { AssessmentService } = await import('@/services/assessment.service');
-                                                        const payload = previewData.map(item => {
-                                                            const p = { ...item };
-                                                            delete p._rowNum;
-                                                            delete p._rawCLOs;
-                                                            delete p.matchedClos;
-                                                            delete p.categoryName;
-                                                            delete p.typeName;
-                                                            return p;
-                                                        });
-                                                        const res = await AssessmentService.validateAssessments(syllabusId, payload) as any;
-                                                        setValidationErrors(res?.data?.errors || []);
-                                                        setValidationSummary(res?.data?.summary || null);
-                                                        setIsValidated(true);
-                                                        if (!res?.data?.errors || res.data.errors.length === 0) {
-                                                            showToast('All assessments are valid!', 'success');
-                                                        } else {
-                                                            showToast('Validation completed with suggestions', 'warning');
-                                                        }
-                                                    } catch (error: any) {
-                                                        console.error(error);
-                                                        setIsValidated(true);
-                                                        showToast('Validation completed with suggestions', 'warning');
-                                                    } finally {
-                                                        setIsValidating(false);
-                                                    }
-                                                }}
-                                                className="text-xs font-bold text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 ml-2 shadow-sm"
-                                            >
-                                                {isValidating ? <Loader2 size={14} className="animate-spin" /> : <span className="material-symbols-outlined text-[14px]">fact_check</span>}
-                                                {isValidated ? 'Re-validate Assessments' : 'Validate Assessments'}
-                                            </button>
+                                            
                                         </div>
                                     </div>
 
-                                    {/* Validation Results */}
-                                    {isValidated && (
-                                        validationErrors.length > 0 ? (
-                                            <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <span className="material-symbols-outlined text-amber-500 mt-0.5">info</span>
-                                                <div>
-                                                    <h4 className="font-bold text-sm">Validation Suggestions</h4>
-                                                    <ul className="text-xs mt-1 list-disc list-inside space-y-0.5">
-                                                        {validationErrors.map((err: any, i: number) => (
-                                                            <li key={i}><span className="font-semibold">[{err.code}]</span> {err.message}</li>
-                                                        ))}
-                                                    </ul>
-                                                    <p className="text-[10px] mt-2 italic text-amber-600">These are suggestions only. You can still save your assessments.</p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <span className="material-symbols-outlined text-emerald-500 mt-0.5">check_circle</span>
-                                                <div>
-                                                    <h4 className="font-bold text-sm">Validation Passed</h4>
-                                                    <p className="text-xs mt-0.5">All assessment components meet the syllabus configuration rules. You can proceed to save.</p>
-                                                </div>
-                                            </div>
-                                        )
-                                    )}
+                                    
 
                                     {isValidated && validationSummary && (
                                         <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-xl">
@@ -977,7 +910,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Weight</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Completion Criteria</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Duration</th>
-                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Q.Type</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Question Type</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Knowledge Skill</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Grading Guide</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[120px]">Note</th>
@@ -1012,19 +945,11 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                                         })()}
                                                                     </select>
                                                                 </td>
-                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.part} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.part || ""} /></td>
                                                                 <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.weight} /></td>
                                                                 <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.completionCriteria || ""} /></td>
-                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.duration} /></td>
-                                                                <td className="px-3 py-2">
-                                                                    <select className="w-full bg-transparent outline-none text-xs appearance-none opacity-80 cursor-not-allowed" value={item.questionType || ""} disabled>
-                                                                        <option value="" disabled>Select</option>
-                                                                        {(() => {
-                                                                            const availQTypes = getAvailableQTypes(item.categoryName, item.typeName) || COMMON_QUESTION_TYPES;
-                                                                            return availQTypes.map((t: string) => <option key={t} value={t}>{t}</option>);
-                                                                        })()}
-                                                                    </select>
-                                                                </td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.duration || ""} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.questionType || ""} /></td>
                                                                 <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.knowledgeSkill || ""} /></td>
                                                                 <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.gradingGuide || ""} /></td>
                                                                 <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.note || ""} /></td>
@@ -1072,7 +997,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                     Back
                                 </button>
                                 <button
-                                    disabled={isSaving || !isValidated}
+                                    disabled={isSaving}
                                     onClick={async () => {
                                         if (!syllabusId || !subjectId || !importFile) return;
                                         setIsSaving(true);
@@ -1086,20 +1011,51 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                 setPreviewData([]);
                                                 setImportFile(null);
                                             } else {
-                                                showToast('Validation failed or import errors occurred.', 'error');
-                                                if (res?.data?.errors) {
-                                                    setValidationErrors(res.data.errors);
+                                                const errorData = res?.data;
+                                                if (errorData && errorData.errors && Array.isArray(errorData.errors)) {
+                                                    showToast(errorData.message || 'Validation failed or import errors occurred.', 'error');
+                                                    setPreviewData(prev => {
+                                                        const newData = [...prev];
+                                                        newData.forEach(item => item._importErrors = []);
+                                                        errorData.errors.forEach((err: any) => {
+                                                            const targetIndex = err.rowNumber - 2;
+                                                            if (targetIndex >= 0 && targetIndex < newData.length) {
+                                                                if (!newData[targetIndex]._importErrors) newData[targetIndex]._importErrors = [];
+                                                                newData[targetIndex]._importErrors.push(err.message);
+                                                            }
+                                                        });
+                                                        return newData;
+                                                    });
+                                                } else {
+                                                    showToast('Validation failed or import errors occurred.', 'error');
                                                 }
                                             }
                                         } catch (error: any) {
-                                            console.error(error);
-                                            showToast(error?.message || 'Failed to import assessments', 'error');
+                                            // Validation errors are expected, no need to log the entire error to trigger the Next.js overlay
+                                            const errorData = error.data?.data || error.data;
+                                            if (errorData && errorData.errors && Array.isArray(errorData.errors)) {
+                                                 showToast(errorData.message || 'Validation failed or import errors occurred.', 'error');
+                                                 setPreviewData(prev => {
+                                                     const newData = [...prev];
+                                                     newData.forEach(item => item._importErrors = []);
+                                                     errorData.errors.forEach((err: any) => {
+                                                         const targetIndex = err.rowNumber - 2;
+                                                         if (targetIndex >= 0 && targetIndex < newData.length) {
+                                                             if (!newData[targetIndex]._importErrors) newData[targetIndex]._importErrors = [];
+                                                             newData[targetIndex]._importErrors.push(err.message);
+                                                         }
+                                                     });
+                                                     return newData;
+                                                 });
+                                            } else {
+                                                 showToast(error?.message || 'Failed to import assessments', 'error');
+                                            }
                                         } finally {
                                             setIsSaving(false);
                                         }
                                     }}
-                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg ${isValidated ? 'hover:scale-[1.02] active:scale-95' : 'opacity-50 cursor-not-allowed'}`}
-                                    style={{ background: isValidated ? '#41683f' : '#adb4a8' }}
+                                    className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-white shadow-lg hover:scale-[1.02] active:scale-95 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    style={{ background: '#41683f' }}
                                 >
                                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <span className="material-symbols-outlined text-[20px]">save</span>}
                                     Confirm & Save
