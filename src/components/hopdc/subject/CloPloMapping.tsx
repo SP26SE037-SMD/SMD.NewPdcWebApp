@@ -67,6 +67,150 @@ function formatBloomLevel(value?: string | number): string {
   return normalized;
 }
 
+function renderMarkdown(text: string) {
+  if (!text) return null;
+  
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-2 text-sm text-zinc-600 leading-relaxed font-medium">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={idx} className="h-2" />;
+        
+        if (trimmed.startsWith("###")) {
+          const headingText = trimmed.replace(/^###\s*/, "");
+          return (
+            <h3 key={idx} className="text-xs font-black text-zinc-800 uppercase tracking-wider mt-4 mb-2">
+              {parseBoldText(headingText)}
+            </h3>
+          );
+        }
+        
+        if (trimmed.startsWith("-")) {
+          const itemText = trimmed.replace(/^-\s*/, "");
+          return (
+            <div key={idx} className="flex items-start gap-2 ml-2">
+              <span className="text-zinc-400 mt-2 shrink-0 block w-1 h-1 rounded-full bg-zinc-400" />
+              <span className="text-zinc-600">{parseBoldText(itemText)}</span>
+            </div>
+          );
+        }
+        
+        return <p key={idx} className="text-zinc-600">{parseBoldText(line)}</p>;
+      })}
+    </div>
+  );
+}
+
+function parseBoldText(text: string) {
+  const parts = text.split("**");
+  return parts.map((part, idx) => {
+    if (idx % 2 === 1) {
+      return <strong key={idx} className="font-extrabold text-zinc-900">{part}</strong>;
+    }
+    return part;
+  });
+}
+
+function renderWarningText(text: string, wrapInQuotes = false) {
+  if (!text) return null;
+
+  const formattedText = text
+    .replace(/\. (Option 1:)/g, ".\nOption 1:")
+    .replace(/\. (Option 2:)/g, ".\nOption 2:");
+
+  const lines = formattedText.split("\n");
+
+  return (
+    <span className="block space-y-1 text-left">
+      {lines.map((line, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === lines.length - 1;
+        const linePrefix = isFirst && wrapInQuotes ? '"' : '';
+        const lineSuffix = isLast && wrapInQuotes ? '"' : '';
+
+        if (line.startsWith("Option 1:")) {
+          const content = line.replace("Option 1:", "");
+          return (
+            <span key={idx} className="block">
+              <strong className="font-extrabold text-zinc-950">Option 1:</strong>
+              {linePrefix}{content}{lineSuffix}
+            </span>
+          );
+        }
+        if (line.startsWith("Option 2:")) {
+          const content = line.replace("Option 2:", "");
+          return (
+            <span key={idx} className="block">
+              <strong className="font-extrabold text-zinc-950">Option 2:</strong>
+              {linePrefix}{content}{lineSuffix}
+            </span>
+          );
+        }
+        return (
+          <span key={idx} className="block">
+            {linePrefix}{line}{lineSuffix}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function renderReasonText(text: string) {
+  if (!text) return null;
+
+  let cleaned = text.trim();
+  
+  // Strip enclosing quotes, single quotes, asterisks, or underscores
+  while (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'")) ||
+    (cleaned.startsWith('*') && cleaned.endsWith('*')) ||
+    (cleaned.startsWith('_') && cleaned.endsWith('_'))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  // Strip all other markdown italic/bold markers to keep the text non-italic and plain
+  cleaned = cleaned.replace(/\*+/g, "").replace(/_+/g, "");
+
+  // Split Solution: to a new line, keeping any text before it
+  const formatted = cleaned.replace(/(\s+)?Solution:/gi, "\nSolution:");
+  const lines = formatted.split("\n");
+
+  return (
+    <span className="block space-y-1 text-left">
+      {lines.map((line, idx) => {
+        const trimmedLine = line.trim();
+        const lowerLine = trimmedLine.toLowerCase();
+
+        if (lowerLine.startsWith("reason:")) {
+          const content = trimmedLine.slice(7).trim();
+          return (
+            <span key={idx} className="block">
+              <strong className="font-extrabold text-zinc-950">Reason:</strong>{" "}
+              {content}
+            </span>
+          );
+        }
+
+        if (lowerLine.startsWith("solution:")) {
+          const content = trimmedLine.slice(9).trim();
+          return (
+            <span key={idx} className="block">
+              <strong className="font-extrabold text-zinc-950">Solution:</strong>{" "}
+              {content}
+            </span>
+          );
+        }
+
+        return <span key={idx} className="block">{trimmedLine}</span>;
+      })}
+    </span>
+  );
+}
+
 interface CloPloMappingProps {
   plos: PLO[];
   clos: SubjectClo[];
@@ -450,16 +594,14 @@ export function CloPloMapping({
             </div>
 
             <div className="mt-6">
-              <div className="p-4 bg-white rounded-xl border border-primary/10 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="p-5 bg-white rounded-2xl border border-primary/10 shadow-sm space-y-3">
+                <div className="flex items-center gap-2 mb-1">
                   <Lightbulb className="h-4 w-4 text-amber-500" />
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     AI Suggestions
                   </span>
                 </div>
-                <p className="text-sm text-zinc-600 leading-relaxed font-medium italic whitespace-pre-line">
-                  {validationResult.suggestions}
-                </p>
+                {renderMarkdown(validationResult.suggestions)}
               </div>
             </div>
           </motion.div>
@@ -524,16 +666,18 @@ export function CloPloMapping({
                 </tr>
               </thead>
               <tbody>
-                {clos.map((clo) => {
+                {clos.map((clo, cloIdx) => {
                   const coverage = getCloCoverage(clo.cloId);
                   const isUnmapped = coverage === 0;
+                  const isFirstRow = cloIdx === 0;
+                  const isLastRow = cloIdx === clos.length - 1;
 
                   return (
                     <tr
                       key={clo.cloId}
-                      className={`group hover:bg-zinc-50/80 transition-colors ${isUnmapped ? "bg-red-50/5" : ""}`}
+                      className={`group hover:bg-zinc-50/80 transition-colors ${isUnmapped ? "bg-red-50/5" : ""} hover:relative hover:z-20`}
                     >
-                      <td className="p-4 border-b border-zinc-100 sticky left-0 bg-white group-hover:bg-zinc-50/80 transition-colors z-10 w-[400px] min-w-[400px] max-w-[400px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                      <td className="p-4 border-b border-zinc-100 sticky left-0 bg-white group-hover:bg-zinc-50/80 transition-colors z-10 group-hover:z-30 w-[400px] min-w-[400px] max-w-[400px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                         <div className="flex flex-col gap-1.5 pr-2">
                           <div className="flex items-center justify-between gap-2">
                             {(() => {
@@ -556,9 +700,38 @@ export function CloPloMapping({
                               );
                             })()}
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200">
-                                Bloom: {formatBloomLevel(clo.bloomLevel)}
-                              </span>
+                              {(() => {
+                                const levelWarning = validationResult?.wrong_level_warnings?.find(
+                                  (w: any) => w.clo_code === clo.cloCode
+                                );
+                                return (
+                                  <div className="relative group/bloom inline-block">
+                                    <span
+                                      className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md border flex items-center gap-1.5 transition-all ${
+                                        levelWarning
+                                          ? "bg-amber-50 text-amber-700 border-amber-200 cursor-help"
+                                          : "bg-zinc-100 text-zinc-500 border-zinc-200"
+                                      }`}
+                                    >
+                                      {levelWarning && <AlertTriangle size={10} className="text-amber-500 shrink-0" />}
+                                      Bloom: {formatBloomLevel(clo.bloomLevel)}
+                                    </span>
+                                    {levelWarning && (
+                                      <div className={`absolute opacity-0 invisible group-hover/bloom:opacity-100 group-hover/bloom:visible transition-all duration-300 left-0 w-[280px] bg-white border border-amber-200 shadow-2xl rounded-2xl p-4 z-[120] text-left pointer-events-none animate-in fade-in ${isFirstRow ? "top-full mt-2 slide-in-from-top-1" : "bottom-full mb-2 slide-in-from-bottom-1"}`}>
+                                        <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-amber-50">
+                                          <AlertCircle className="text-amber-500 shrink-0" size={14} />
+                                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                            Bloom Level Warning
+                                          </p>
+                                        </div>
+                                        <div className="text-xs text-zinc-600 font-medium leading-relaxed">
+                                          {renderWarningText(levelWarning.warning)}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               {onEditClo && (
                                 <button
                                   type="button"
@@ -636,7 +809,7 @@ export function CloPloMapping({
 
                             {/* Invalid Mapping Reason Tooltip */}
                             {invalidMapping && (
-                              <div className="absolute opacity-0 invisible group-hover/cell:opacity-100 group-hover/cell:visible transition-all duration-300 bottom-full left-1/2 -translate-x-1/2 mb-2 w-[280px] bg-white border border-amber-200 shadow-2xl rounded-2xl p-4 z-[110] text-left pointer-events-none">
+                              <div className={`absolute opacity-0 invisible group-hover/cell:opacity-100 group-hover/cell:visible transition-all duration-300 left-1/2 -translate-x-1/2 w-[280px] bg-white border border-amber-200 shadow-2xl rounded-2xl p-4 z-[110] text-left pointer-events-none animate-in fade-in ${isFirstRow ? "top-full mt-2 slide-in-from-top-1" : "bottom-full mb-2 slide-in-from-bottom-1"}`}>
                                 <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-amber-50">
                                   <AlertTriangle
                                     size={14}
@@ -646,9 +819,9 @@ export function CloPloMapping({
                                     Logic Warning
                                   </p>
                                 </div>
-                                <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
-                                  "{invalidMapping.reason}"
-                                </p>
+                                <div className="text-xs text-zinc-600 font-medium leading-relaxed">
+                                  {renderReasonText(invalidMapping.reason)}
+                                </div>
                               </div>
                             )}
                           </td>
@@ -682,20 +855,20 @@ export function CloPloMapping({
                                 <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all active:scale-95">
                                   <AlertCircle size={16} />
                                 </button>
-                                <div className="absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 top-full right-0 mt-2 w-[280px] bg-white border border-red-100 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none">
-                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-red-50">
-                                    <AlertTriangle
-                                      size={14}
-                                      className="text-red-500"
-                                    />
-                                    <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">
-                                      Logical Error
-                                    </p>
+                                  <div className={`absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 right-0 w-[280px] bg-white border border-red-100 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none animate-in fade-in ${isLastRow ? "bottom-full mb-2 slide-in-from-bottom-1" : "top-full mt-2 slide-in-from-top-1"}`}>
+                                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-red-50">
+                                      <AlertTriangle
+                                        size={14}
+                                        className="text-red-500"
+                                      />
+                                      <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">
+                                        Logical Error
+                                      </p>
+                                    </div>
+                                    <div className="text-xs text-zinc-600 font-medium leading-relaxed">
+                                      {renderReasonText(invalid.reason)}
+                                    </div>
                                   </div>
-                                  <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
-                                    "{invalid.reason}"
-                                  </p>
-                                </div>
                               </div>
                             );
                           }
@@ -706,20 +879,20 @@ export function CloPloMapping({
                                 <button className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-all active:scale-95">
                                   <Info size={16} />
                                 </button>
-                                <div className="absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 top-full right-0 mt-2 w-[280px] bg-white border border-amber-100 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none">
-                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-50">
-                                    <AlertTriangle
-                                      size={14}
-                                      className="text-amber-500"
-                                    />
-                                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                                      Level Warning
-                                    </p>
+                                  <div className={`absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 right-0 w-[280px] bg-white border border-amber-100 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none animate-in fade-in ${isLastRow ? "bottom-full mb-2 slide-in-from-bottom-1" : "top-full mt-2 slide-in-from-top-1"}`}>
+                                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-50">
+                                      <AlertTriangle
+                                        size={14}
+                                        className="text-amber-500"
+                                      />
+                                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                        Level Warning
+                                      </p>
+                                    </div>
+                                    <div className="text-xs text-zinc-600 font-medium leading-relaxed italic">
+                                      {renderWarningText(warning.warning, true)}
+                                    </div>
                                   </div>
-                                  <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
-                                    "{warning.warning}"
-                                  </p>
-                                </div>
                               </div>
                             );
                           }
@@ -730,19 +903,19 @@ export function CloPloMapping({
                                 <div className="p-2 bg-zinc-100 text-zinc-400 rounded-lg shadow-sm border border-zinc-200/50">
                                   <AlertTriangle size={16} />
                                 </div>
-                                <div className="absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 top-full right-0 mt-2 w-[280px] bg-white border border-zinc-200 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none">
-                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-100">
-                                    <Info size={14} className="text-zinc-400" />
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                                      Unmapped Outcome
+                                  <div className={`absolute opacity-0 invisible group-hover/validate:opacity-100 group-hover/validate:visible transition-all duration-500 right-0 w-[280px] bg-white border border-zinc-200 shadow-2xl rounded-2xl p-5 z-[100] text-left pointer-events-none animate-in fade-in ${isLastRow ? "bottom-full mb-2 slide-in-from-bottom-1" : "top-full mt-2 slide-in-from-top-1"}`}>
+                                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-100">
+                                      <Info size={14} className="text-zinc-400" />
+                                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                                        Unmapped Outcome
+                                      </p>
+                                    </div>
+                                    <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
+                                      "This CLO is currently not mapped to any
+                                      Program Learning Outcomes (PLOs). Please
+                                      establish at least one connection."
                                     </p>
                                   </div>
-                                  <p className="text-xs text-zinc-600 font-medium leading-relaxed italic">
-                                    "This CLO is currently not mapped to any
-                                    Program Learning Outcomes (PLOs). Please
-                                    establish at least one connection."
-                                  </p>
-                                </div>
                               </div>
                             );
                           }

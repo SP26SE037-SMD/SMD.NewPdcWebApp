@@ -40,7 +40,7 @@ export default function RequestsWorkspaceCreateModal({
     content: "",
     comment: "",
     status: "PENDING",
-    type: role === "HoPDC" ? "TASK" : "MAJOR",
+    type: role === "HoPDC" ? "TASK" : "CURRICULUM",
     targetId: "",
     receivedById: "",
     majorId: "",
@@ -262,6 +262,7 @@ export default function RequestsWorkspaceCreateModal({
       majorId,
       curriculumId: "",
       targetId: "",
+      title: "Finalize Task & Recheck Subject",
     }));
     await fetchCurriculumsByMajor(majorId);
   };
@@ -315,7 +316,7 @@ export default function RequestsWorkspaceCreateModal({
       content: "",
       comment: "",
       status: "PENDING",
-      type: role === "HoPDC" ? "TASK" : "MAJOR",
+      type: role === "HoPDC" ? "TASK" : "CURRICULUM",
       targetId: "",
       receivedById: "",
       majorId: "",
@@ -375,6 +376,7 @@ export default function RequestsWorkspaceCreateModal({
                     setCreateForm((prev) => ({
                       ...prev,
                       type: newType,
+                      title: "Finalize Task & Recheck Subject",
                       targetId: "",
                       majorId: "",
                       curriculumId: "",
@@ -391,12 +393,10 @@ export default function RequestsWorkspaceCreateModal({
                   {role === "HoPDC" ? (
                     <>
                       <option value="TASK">Task</option>
-                      <option value="SUBJECT">Subject (Not supported yet)</option>
-                      <option value="SPRINT">Department Task (Not supported yet)</option>
+                      <option value="SUBJECT" disabled>Subject (Not supported yet)</option>
                     </>
                   ) : (
                     <>
-                      <option value="MAJOR">Major</option>
                       <option value="CURRICULUM">Curriculum</option>
                     </>
                   )}
@@ -410,12 +410,17 @@ export default function RequestsWorkspaceCreateModal({
                   </label>
                   <select
                     value={createForm.targetId}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const taskId = e.target.value;
+                      const selectedTask = tasks.find((t) => t.taskId === taskId);
                       setCreateForm((prev) => ({
                         ...prev,
-                        targetId: e.target.value,
-                      }))
-                    }
+                        targetId: taskId,
+                        title: selectedTask?.subject
+                          ? `Check ${selectedTask.subject.subjectCode || ""} - ${selectedTask.subject.subjectName || ""}`
+                          : "Finalize Task & Recheck Subject",
+                      }));
+                    }}
                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
@@ -447,16 +452,7 @@ export default function RequestsWorkspaceCreateModal({
                 </div>
               )}
 
-              {createForm.type === "SPRINT" && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                    Select Department Task
-                  </label>
-                  <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold text-zinc-500 flex items-center justify-center gap-2">
-                    <span>This request type is not supported yet</span>
-                  </div>
-                </div>
-              )}
+              {/* SPRINT type removed */}
 
               {createForm.type === "MAJOR" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -529,10 +525,15 @@ export default function RequestsWorkspaceCreateModal({
                       value={createForm.curriculumId}
                       onChange={(e) => {
                         const currId = e.target.value;
+                        const selectedCurriculum = curriculums.find((c) => c.curriculumId === currId);
+                        const selectedMajor = majors.find((m) => m.majorId === createForm.majorId);
                         setCreateForm((prev) => ({
                           ...prev,
                           curriculumId: currId,
                           targetId: currId,
+                          title: selectedCurriculum && selectedMajor
+                            ? `Check ${selectedCurriculum.curriculumCode || ""} of new ${selectedMajor.majorName || ""}`
+                            : "Finalize Task & Recheck Subject",
                         }));
                       }}
                       disabled={!createForm.majorId || loadingCurriculums}
@@ -616,8 +617,7 @@ export default function RequestsWorkspaceCreateModal({
                 !createForm.title.trim() ||
                 !createForm.content.trim() ||
                 !createForm.targetId ||
-                createForm.type === "SUBJECT" ||
-                createForm.type === "SPRINT"
+                createForm.type === "SUBJECT"
               }
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
