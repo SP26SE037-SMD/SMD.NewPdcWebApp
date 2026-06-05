@@ -449,6 +449,7 @@ export interface SyllabusCompareHistory {
   newSyllabusId: string;
   assessmentDiffJson: string;
   conceptDiffJson: string;
+  sessionDiffJson: string;
   selectedCompare: boolean;
   createdAt: string;
 }
