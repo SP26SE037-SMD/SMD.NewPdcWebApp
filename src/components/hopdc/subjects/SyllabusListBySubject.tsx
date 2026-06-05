@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen, Filter,
@@ -27,6 +27,9 @@ import SyllabusCompareHistoryModal from "./SyllabusCompareHistoryModal";
 
 export default function SyllabusListBySubject({ subjectId, hideHeader = false }: { subjectId: string; hideHeader?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isHocfdc = pathname.includes("/hocfdc");
+  const dashboardPrefix = isHocfdc ? "/dashboard/hocfdc" : "/dashboard/hopdc";
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -346,7 +349,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   if (isCompareMode) {
                     handleToggleSelect(syllabus.syllabusId);
                   } else {
-                    router.push(`/dashboard/hopdc/syllabuses/${syllabus.syllabusId}/information`);
+                    router.push(`${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`);
                   }
                 }}
               >
@@ -419,7 +422,7 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/dashboard/hopdc/syllabuses/${syllabus.syllabusId}/information`);
+                      router.push(`${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`);
                     }}
                     className="p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95"
                     title="View Details"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MaterialService } from '@/services/material.service';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,6 +42,9 @@ type Material = {
 export default function MaterialsPage({ params }: { params: Promise<{ syllabusId: string }> }) {
     const { syllabusId } = use(params);
     const router = useRouter();
+    const pathname = usePathname();
+    const isHocfdc = pathname.includes('/hocfdc');
+    const rolePrefix = isHocfdc ? '/dashboard/hocfdc' : '/dashboard/hopdc';
 
     const { data: materialsData, isLoading: isMaterialsLoading } = useQuery({
         queryKey: ['hopdc-materials', syllabusId, 'DRAFT'],
@@ -214,7 +217,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                                                 <td className="px-6 py-4 text-right pr-8">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
-                                                            onClick={() => router.push(`/dashboard/hopdc/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
+                                                            onClick={() => router.push(`${rolePrefix}/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
                                                             className="p-2 rounded-lg text-zinc-400 hover:text-[#41683f] hover:bg-[#41683f]08 transition-all flex items-center justify-center cursor-pointer"
                                                             title="View"
                                                         >
@@ -258,7 +261,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ syllabusId
                                     </h3>
                                     <div className="flex gap-3">
                                         <button
-                                            onClick={() => router.push(`/dashboard/hopdc/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
+                                            onClick={() => router.push(`${rolePrefix}/materials/${material.materialId}?syllabusId=${syllabusId}&title=${encodeURIComponent(material.title)}`)}
                                             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                                             style={{ background: `${C.primaryContainer}80`, color: C.primary }}
                                         >

@@ -16,6 +16,7 @@ import {
   Info,
   Building2,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import {
   Subject,
@@ -29,6 +30,7 @@ import SyllabusListBySubject from "@/components/hopdc/subjects/SyllabusListBySub
 import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subject.service";
 import { CurriculumService } from "@/services/curriculum.service";
 import { CloPloMatrixModal } from "@/components/common/CloPloMatrixModal";
+import { SourceService } from "@/services/source.service";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -504,7 +506,7 @@ export default function SubjectDetail({
                             <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
                               <Layers size={16} />
                             </div>
-                            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest">
+                            <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
                               Curriculum Mapping
                             </h3>
                           </div>
@@ -536,10 +538,10 @@ export default function SubjectDetail({
                                   >
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="space-y-1">
-                                        <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wider">
+                                        <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-black uppercase tracking-wider">
                                           {curr.code}
                                         </span>
-                                        <p className="text-xs font-black text-zinc-800 group-hover:text-indigo-600 transition-colors leading-tight mt-1">
+                                        <p className="text-sm font-black text-zinc-800 group-hover:text-indigo-600 transition-colors leading-tight mt-1">
                                           {curr.name}
                                         </p>
                                       </div>
@@ -556,6 +558,76 @@ export default function SubjectDetail({
                         </div>
                       </div>
                     )}
+
+                    {/* Reference Sources Section */}
+                    <div className="bg-white/70 backdrop-blur-xl rounded-[20px] border border-white/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:bg-white/90 transition-all">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+                            <BookOpen size={16} />
+                          </div>
+                          <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
+                            Reference Sources
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {!subject.sources || subject.sources.length === 0 ? (
+                          <p className="text-xs font-semibold text-zinc-400 italic">
+                            No reference sources mapped to this subject.
+                          </p>
+                        ) : (
+                          <div className="space-y-3.5 max-h-60 overflow-y-auto no-scrollbar pr-1">
+                            {subject.sources.map((source) => (
+                              <div
+                                key={source.sourceId || source.isbn || source.sourceName}
+                                className="p-3.5 bg-white border border-zinc-200 rounded-xl hover:border-emerald-300 hover:shadow-sm transition-all group"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                      source.type === "TEXTBOOK" || source.type === "REFERENCE_BOOK"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-blue-50 text-blue-700"
+                                    }`}>
+                                      {source.type || "REFERENCE"}
+                                    </span>
+                                    {source.publishedYear && (
+                                      <span className="text-[10px] font-bold text-zinc-400">
+                                        {source.publishedYear}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="text-sm font-black text-zinc-800 leading-tight pt-1">
+                                    {source.sourceName}
+                                  </h4>
+                                  <p className="text-xs font-semibold text-zinc-500">
+                                    Author: {source.author || "N/A"}
+                                  </p>
+                                  {source.publisher && (
+                                    <p className="text-[10px] text-zinc-400 font-medium">
+                                      Publisher: {source.publisher}
+                                    </p>
+                                  )}
+                                  {source.url && (
+                                    <a
+                                      href={source.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] font-black text-emerald-600 hover:underline flex items-center gap-1 pt-1 cursor-pointer"
+                                    >
+                                      <span>Link Resource</span>
+                                      <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Quick Actions removed */}
                   </div>

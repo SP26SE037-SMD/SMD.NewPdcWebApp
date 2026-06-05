@@ -24,6 +24,8 @@ export default function SyllabusWorkspaceLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
+    const isHocfdc = pathname.includes('/hocfdc');
+    const rolePrefix = isHocfdc ? '/dashboard/hocfdc' : '/dashboard/hopdc';
     const { syllabusId } = use(params);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
@@ -53,7 +55,7 @@ export default function SyllabusWorkspaceLayout({
                     <AlertCircle size={48} className="mx-auto mb-4 text-red-500/80" />
                     <h2 className="text-xl font-bold mb-2 text-zinc-900">Syllabus Not Found</h2>
                     <p className="text-sm mb-8 text-zinc-500">The syllabus does not exist or you don&apos;t have access.</p>
-                    <button onClick={() => router.push('/dashboard/hopdc')}
+                    <button onClick={() => router.push(rolePrefix)}
                         className="w-full py-3 rounded-xl font-bold text-sm bg-[#2d6a4f] text-white hover:bg-[#1d5c42] transition-colors">
                         Return to Subjects
                     </button>
@@ -73,7 +75,7 @@ export default function SyllabusWorkspaceLayout({
                         {/* Top Bar: Back Button & Actions */}
                         <div className="flex items-center justify-between">
                             <button
-                                onClick={() => router.push(`/dashboard/hopdc/subjects/${syllabus?.subjectId || ''}`)}
+                                onClick={() => router.push(`${rolePrefix}/subjects/${syllabus?.subjectId || ''}`)}
                                 className="flex items-center gap-2 px-3 py-1.5 -ml-3 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors group"
                             >
                                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -114,7 +116,7 @@ export default function SyllabusWorkspaceLayout({
                                 return (
                                     <Link
                                         key={tab.id}
-                                        href={`/dashboard/hopdc/syllabuses/${syllabusId}/${tab.id}`}
+                                        href={`${rolePrefix}/syllabuses/${syllabusId}/${tab.id}`}
                                         className={`flex items-center gap-2 px-5 py-3 text-sm font-bold transition-all relative whitespace-nowrap ${
                                             isActive 
                                                 ? "text-[#2d6a4f]" 

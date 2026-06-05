@@ -67,6 +67,7 @@ export interface Subject {
         createdAt: string;
     };
     preRequisite?: PrerequisiteItem[];
+    sources?: any[];
     createdAt: string;
 }
 
@@ -105,6 +106,7 @@ export interface SubjectDetail {
     departmentName: string;
   } | null;
   preRequisite?: PrerequisiteItem[];
+  sources?: any[];
 }
 
 export const SubjectService = {
