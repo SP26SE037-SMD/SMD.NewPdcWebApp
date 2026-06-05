@@ -65,14 +65,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
     ALL: 0,
     PENDING: 0,
     APPROVED: 0,
-    REJECTED: 0,
   });
 
   const tabs = [
     { id: "ALL", label: "All Requests" },
     { id: "PENDING", label: "Pending" },
     { id: "APPROVED", label: "Approved" },
-    ...(role === "VP" ? [] : [{ id: "REJECTED", label: "Rejected" }]),
   ];
 
   useEffect(() => {
@@ -92,7 +90,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
       const receivedById =
         requestSource === "RECEIVED" ? user.accountId : undefined;
 
-      const [allRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+      const [allRes, pendingRes, approvedRes] = await Promise.all([
         RequestService.getRequests({
           page: 0,
           size: 3,
@@ -116,21 +114,12 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
           receivedById,
           status: "APPROVED",
         }),
-        RequestService.getRequests({
-          page: 0,
-          size: 3,
-          search: search || undefined,
-          createdById,
-          receivedById,
-          status: "REJECTED",
-        }),
       ]);
 
       setStatusCounts({
         ALL: allRes?.data?.totalElements || 0,
         PENDING: pendingRes?.data?.totalElements || 0,
         APPROVED: approvedRes?.data?.totalElements || 0,
-        REJECTED: rejectedRes?.data?.totalElements || 0,
       });
     } catch (err) {
       console.error("Failed to load status counts", err);
