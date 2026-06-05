@@ -116,6 +116,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const subjectClos = closRes?.data?.content || [];
 
     const [previewData, setPreviewData] = useState<any[]>([]);
+    const [importFile, setImportFile] = useState<File | null>(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'list' | 'mapping'>('list');
@@ -707,10 +708,11 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 { header: 'Knowledge Skill', key: 'knowledgeSkill', width: 20 },
                                                 { header: 'Grading Guide', key: 'gradingGuide', width: 20 },
                                                 { header: 'Note', key: 'note', width: 20 },
+                                                { header: 'CLO-Mapping', key: 'cloMapping', width: 20 },
                                             ];
 
-                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 10, completionCriteria: 'Pass 50%', duration: 15, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: '1 point/question', note: 'Optional' });
-                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 40, completionCriteria: '', duration: 90, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: 'Rubric A', note: 'Mandatory' });
+                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 10, completionCriteria: 'Pass 50%', duration: 15, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: '1 point/question', note: 'Optional', cloMapping: 'CLO1, CLO2' });
+                                            worksheet.addRow({ category: 'Summative', type: 'Quiz', part: 1, weight: 40, completionCriteria: '', duration: 90, questionType: 'Multiple Choice', knowledgeSkill: '', gradingGuide: 'Rubric A', note: 'Mandatory', cloMapping: 'CLO2, CLO3' });
 
                                             worksheet.getRow(1).font = { bold: true };
                                             worksheet.getRow(1).fill = {
@@ -780,6 +782,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if (!file) return;
+                                            setImportFile(file);
 
                                             try {
                                                 const data = await file.arrayBuffer();
@@ -809,6 +812,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     const rawKnowledge = String(row['Knowledge Skill'] || row['knowledgeSkill'] || '').trim();
                                                     const rawGuide = String(row['Grading Guide'] || row['gradingGuide'] || '').trim();
                                                     const rawNote = String(row['Note'] || row['note'] || '').trim();
+                                                    const rawCloMapping = String(row['CLO-Mapping'] || row['cloMapping'] || '').trim();
 
                                                     // Match category: exact → includes → first fallback
                                                     const matchedCategory = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryName.toLowerCase() === rawCategory.toLowerCase())
@@ -868,6 +872,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                         knowledgeSkill: rawKnowledge,
                                                         gradingGuide: rawGuide,
                                                         note: rawNote,
+                                                        cloMapping: rawCloMapping,
                                                         status: "DRAFT"
                                                     };
                                                 });
@@ -996,9 +1001,13 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Type</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-16">Part</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Weight</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Completion Criteria</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 w-20">Duration</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[100px]">Q.Type</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Knowledge Skill</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[150px]">Grading Guide</th>
                                                     <th className="px-3 py-3 font-bold text-slate-500 min-w-[120px]">Note</th>
+                                                    <th className="px-3 py-3 font-bold text-slate-500 min-w-[120px]">CLO-Mapping</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-outline-variant/10">
@@ -1009,40 +1018,14 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                             <tr className="hover:bg-primary/5 transition-colors">
                                                                 <td className="px-3 py-2 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">{realIdx + 1}</span></td>
                                                                 <td className="px-3 py-2 text-xs">
-                                                                    <select
-                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                        value={item.categoryId}
-                                                                        onChange={e => {
-                                                                            const d = [...previewData];
-                                                                            const cat = ASSESSMENT_CATEGORIES.find((c: any) => c.categoryId === e.target.value);
-                                                                            d[realIdx].categoryId = e.target.value;
-                                                                            d[realIdx].categoryName = cat?.categoryName || "";
-                                                                            d[realIdx].typeId = "";
-                                                                            d[realIdx].typeName = "";
-                                                                            d[realIdx].questionType = "";
-                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                            setPreviewData(d);
-                                                                        }}
-                                                                    >
+                                                                    <select className="w-full bg-transparent outline-none text-xs appearance-none opacity-80 cursor-not-allowed" value={item.categoryId || ""} disabled>
                                                                         {ASSESSMENT_CATEGORIES.map((c: any) => (
                                                                             <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
                                                                         ))}
                                                                     </select>
                                                                 </td>
                                                                 <td className="px-3 py-2 text-xs">
-                                                                    <select
-                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                        value={item.typeId}
-                                                                        onChange={e => {
-                                                                            const d = [...previewData];
-                                                                            const type = ASSESSMENT_TYPES.find((t: any) => t.typeId === e.target.value);
-                                                                            d[realIdx].typeId = e.target.value;
-                                                                            d[realIdx].typeName = type?.typeName || "";
-                                                                            d[realIdx].questionType = "";
-                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                            setPreviewData(d);
-                                                                        }}
-                                                                    >
+                                                                    <select className="w-full bg-transparent outline-none text-xs appearance-none opacity-80 cursor-not-allowed" value={item.typeId || ""} disabled>
                                                                         {(() => {
                                                                             const validMap = getValidTypesMap(item.categoryName || "");
                                                                             const validNames = Object.keys(validMap);
@@ -1055,20 +1038,12 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                                         })()}
                                                                     </select>
                                                                 </td>
-                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.part} onChange={e => { const d = [...previewData]; d[realIdx].part = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.weight} onChange={e => { const d = [...previewData]; d[realIdx].weight = Number(e.target.value); setPreviewData(d); }} /></td>
-                                                                <td className="px-3 py-2"><input type="number" className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-center" value={item.duration} onChange={e => { const d = [...previewData]; d[realIdx].duration = Number(e.target.value); setPreviewData(d); }} /></td>
+                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.part} /></td>
+                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.weight} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.completionCriteria || ""} /></td>
+                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.duration} /></td>
                                                                 <td className="px-3 py-2">
-                                                                    <select
-                                                                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs appearance-none"
-                                                                        value={item.questionType || ''}
-                                                                        onChange={e => {
-                                                                            const d = [...previewData];
-                                                                            d[realIdx].questionType = e.target.value;
-                                                                            d[realIdx]._importErrors = []; // clear error on manual fix
-                                                                            setPreviewData(d);
-                                                                        }}
-                                                                    >
+                                                                    <select className="w-full bg-transparent outline-none text-xs appearance-none opacity-80 cursor-not-allowed" value={item.questionType || ""} disabled>
                                                                         <option value="" disabled>Select</option>
                                                                         {(() => {
                                                                             const availQTypes = getAvailableQTypes(item.categoryName, item.typeName) || COMMON_QUESTION_TYPES;
@@ -1076,11 +1051,14 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                                         })()}
                                                                     </select>
                                                                 </td>
-                                                                <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.note || ''} onChange={e => { const d = [...previewData]; d[realIdx].note = e.target.value; setPreviewData(d); }} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.knowledgeSkill || ""} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.gradingGuide || ""} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.note || ""} /></td>
+                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.cloMapping || ""} /></td>
                                                             </tr>
                                                             {item._importErrors && item._importErrors.length > 0 && (
                                                                 <tr key={`err-${idx}`} className="bg-red-50/50">
-                                                                    <td colSpan={8} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                    <td colSpan={12} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
                                                                         <div className="flex items-center gap-1.5">
                                                                             <span className="material-symbols-outlined text-[14px]">error</span>
                                                                             {item._importErrors.join(" | ")}
@@ -1122,28 +1100,26 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                 <button
                                     disabled={isSaving || !isValidated}
                                     onClick={async () => {
-                                        if (!syllabusId) return;
+                                        if (!syllabusId || !subjectId || !importFile) return;
                                         setIsSaving(true);
                                         try {
                                             const { AssessmentService } = await import('@/services/assessment.service');
-                                            const payload = previewData.map(item => {
-                                                const p = { ...item };
-                                                delete p._rowNum;
-                                                delete p._rawCLOs;
-                                                delete p.matchedClos;
-                                                delete p.categoryName;
-                                                delete p.typeName;
-                                                return p;
-                                            });
-                                            console.log("BULK CREATE ASSESSMENT PAYLOAD:", payload);
-                                            await AssessmentService.bulkCreateAssessments(payload);
-                                            showToast(`Successfully saved ${previewData.length} assessments`, 'success');
-                                            setTimeout(() => { window.location.reload(); }, 500);
-                                            setIsPreviewOpen(false);
-                                            setPreviewData([]);
-                                        } catch (error) {
+                                            const res = await AssessmentService.importAssessments(syllabusId, subjectId, importFile) as any;
+                                            if (res && res.data && res.data.valid) {
+                                                showToast(`Successfully saved ${res.data.savedCount} assessments`, 'success');
+                                                setTimeout(() => { window.location.reload(); }, 500);
+                                                setIsPreviewOpen(false);
+                                                setPreviewData([]);
+                                                setImportFile(null);
+                                            } else {
+                                                showToast('Validation failed or import errors occurred.', 'error');
+                                                if (res?.data?.errors) {
+                                                    setValidationErrors(res.data.errors);
+                                                }
+                                            }
+                                        } catch (error: any) {
                                             console.error(error);
-                                            showToast('Failed to save assessments', 'error');
+                                            showToast(error?.message || 'Failed to import assessments', 'error');
                                         } finally {
                                             setIsSaving(false);
                                         }

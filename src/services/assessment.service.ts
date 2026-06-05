@@ -92,4 +92,10 @@ export class AssessmentService {
     static async bulkCreateAssessments(payload: any[]) {
         return apiClient.post('/api/assessments/bluk', payload);
     }
+
+    static async importAssessments(syllabusId: string, subjectId: string, file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiClient.postFormData(`/api/assessments/import?syllabusId=${syllabusId}&subjectId=${subjectId}`, formData);
+    }
 }
