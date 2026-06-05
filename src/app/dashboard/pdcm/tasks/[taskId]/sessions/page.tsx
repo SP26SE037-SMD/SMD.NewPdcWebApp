@@ -35,6 +35,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewData, setPreviewData] = useState<any[]>([]);
+    const [importFile, setImportFile] = useState<File | null>(null);
     const [searchParams, setSearchParams] = useState<any>({});
     
     // DEBUG: dump swagger
@@ -963,15 +964,15 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             worksheet.columns = [
                                                 { header: 'Session Number', key: 'sessionNumber', width: 16 },
                                                 { header: 'Title', key: 'title', width: 35 },
-                                                { header: 'Duration', key: 'duration', width: 12 },
                                                 { header: 'Teaching Methods', key: 'teachingMethods', width: 22 },
                                                 { header: 'Topic', key: 'topic', width: 25 },
                                                 { header: 'Type', key: 'type', width: 15 },
+                                                { header: 'CLO-Mapping', key: 'cloMapping', width: 20 },
                                             ];
 
-                                            worksheet.addRow({ sessionNumber: 1, title: 'Introduction to Computer Science', duration: 50, teachingMethods: 'Lecture', topic: 'Intro', type: 'THEORY' });
-                                            worksheet.addRow({ sessionNumber: 2, title: 'Data Structures', duration: 50, teachingMethods: 'Laboratory', topic: 'Arrays', type: 'PRACTICE' });
-                                            worksheet.addRow({ sessionNumber: 3, title: 'Assignment Review', duration: 50, teachingMethods: 'Self-study', topic: 'Review', type: 'SELF_STUDY' });
+                                            worksheet.addRow({ sessionNumber: 1, title: 'Introduction to Computer Science', teachingMethods: 'Lecture', topic: 'Intro', type: 'THEORY', cloMapping: 'CLO1, CLO2' });
+                                            worksheet.addRow({ sessionNumber: 2, title: 'Data Structures', teachingMethods: 'Laboratory', topic: 'Arrays', type: 'PRACTICE', cloMapping: 'CLO2' });
+                                            worksheet.addRow({ sessionNumber: 3, title: 'Assignment Review', teachingMethods: 'Self-study', topic: 'Review', type: 'SELF_STUDY', cloMapping: '' });
 
                                             worksheet.getRow(1).font = { bold: true };
                                             worksheet.getRow(1).fill = {
@@ -982,18 +983,17 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             worksheet.getRow(1).alignment = { horizontal: 'center' };
 
                                             for (let i = 2; i <= 200; i++) {
-                                                worksheet.getCell(`D${i}`).dataValidation = {
+                                                worksheet.getCell(`C${i}`).dataValidation = {
                                                     type: 'list',
                                                     allowBlank: true,
                                                     formulae: ['"Lecture,Laboratory,Seminar,Workshop,Case Study,Project-based,Self-study"']
                                                 };
-                                                worksheet.getCell(`F${i}`).dataValidation = {
+                                                worksheet.getCell(`E${i}`).dataValidation = {
                                                     type: 'list',
                                                     allowBlank: true,
                                                     formulae: ['"THEORY,PRACTICE,SELF_STUDY"']
                                                 };
                                                 worksheet.getCell(`A${i}`).alignment = { horizontal: 'center' };
-                                                worksheet.getCell(`C${i}`).alignment = { horizontal: 'center' };
                                             }
 
                                             const buffer = await workbook.xlsx.writeBuffer();
@@ -1032,6 +1032,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if(!file) return;
+                                            setImportFile(file);
                                             
                                             try {
                                                 const data = await file.arrayBuffer();
@@ -1188,101 +1189,51 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             <thead className="bg-surface-container-lowest sticky top-0 z-10 shadow-sm">
                                                 <tr>
                                                     <th className="px-4 py-3 font-bold text-slate-500 whitespace-nowrap w-20">Session</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500">Title</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500 whitespace-nowrap w-24">Duration</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500">Methods</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500">Topic</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500">Type</th>
-                                                    <th className="px-4 py-3 font-bold text-slate-500 w-48">Errors</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 min-w-[200px]">Title</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 min-w-[150px]">Methods</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 min-w-[200px]">Topic</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 min-w-[120px]">Type</th>
+                                                    <th className="px-4 py-3 font-bold text-slate-500 min-w-[150px]">CLO-Mapping</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-outline-variant/10">
                                                 {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
                                                     const realIdx = (previewPage - 1) * 10 + idx;
-                                                    const rowErrorsObj = validationErrors.find(e => e.rowNumber === item.sessionNumber);
-                                                    const rowErrors = rowErrorsObj?.errors || [];
-                                                    const hasError = rowErrors.length > 0;
+                                                    const hasError = item._importErrors && item._importErrors.length > 0;
                                                     
                                                     return (
-                                                    <tr key={idx} className={`transition-colors ${hasError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-primary/5'}`}>
-                                                        <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
-                                                        <td className="px-4 py-3 font-bold text-slate-800">
-                                                            <textarea 
-                                                                rows={2}
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
-                                                                value={item.sessionTitle} 
-                                                                onChange={(e) => {
-                                                                    const newData = [...previewData];
-                                                                    newData[realIdx].sessionTitle = e.target.value;
-                                                                    setPreviewData(newData);
-                                                                    setIsValidated(false);
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-500">
-                                                            <input 
-                                                                type="number"
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'duration') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
-                                                                value={item.duration} 
-                                                                onChange={(e) => {
-                                                                    const newData = [...previewData];
-                                                                    newData[realIdx].duration = Number(e.target.value);
-                                                                    setPreviewData(newData);
-                                                                    setIsValidated(false);
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-600 text-xs">
-                                                            <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'teachingMethods') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
-                                                                value={item.teachingMethods || ''} 
-                                                                onChange={(e) => {
-                                                                    const newData = [...previewData];
-                                                                    newData[realIdx].teachingMethods = e.target.value;
-                                                                    setPreviewData(newData);
-                                                                    setIsValidated(false);
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-600 text-xs">
-                                                            <textarea 
-                                                                rows={3}
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
-                                                                value={item.sessionTopic || ''} 
-                                                                onChange={(e) => {
-                                                                    const newData = [...previewData];
-                                                                    newData[realIdx].sessionTopic = e.target.value;
-                                                                    setPreviewData(newData);
-                                                                    setIsValidated(false);
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-600 text-xs">
-                                                            <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionType') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
-                                                                value={item.sessionType || ''} 
-                                                                onChange={(e) => {
-                                                                    const newData = [...previewData];
-                                                                    newData[realIdx].sessionType = e.target.value;
-                                                                    setPreviewData(newData);
-                                                                    setIsValidated(false);
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3">
+                                                        <React.Fragment key={idx}>
+                                                            <tr className={`transition-colors hover:bg-primary/5`}>
+                                                                <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
+                                                                <td className="px-4 py-3 font-bold text-slate-800">
+                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionTitle || ""} />
+                                                                </td>
+                                                                <td className="px-4 py-3 text-slate-600 text-xs">
+                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.teachingMethods || ""} />
+                                                                </td>
+                                                                <td className="px-4 py-3 text-slate-600 text-xs">
+                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionTopic || ""} />
+                                                                </td>
+                                                                <td className="px-4 py-3 text-slate-600 text-xs">
+                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionType || ""} />
+                                                                </td>
+                                                                <td className="px-4 py-3 text-slate-600 text-xs">
+                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.cloMapping || ""} />
+                                                                </td>
+                                                            </tr>
                                                             {hasError && (
-                                                                <div className="flex flex-col gap-1">
-                                                                    {rowErrors.map((err: any, i: number) => (
-                                                                        <span key={i} className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded leading-tight">
-                                                                            • {err.message}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
+                                                                <tr className="bg-red-50/50">
+                                                                    <td colSpan={6} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="material-symbols-outlined text-[14px]">error</span>
+                                                                            {item._importErrors.join(" | ")}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
                                                             )}
-                                                        </td>
-                                                    </tr>
-                                                )})}
-                                            </tbody>
+                                                        </React.Fragment>
+                                                    );
+                                                })}                                            </tbody>
                                         </table>
                                     </div>
 
