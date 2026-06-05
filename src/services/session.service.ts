@@ -104,6 +104,12 @@ export class SessionService {
         return apiClient.post('/api/sessions/bluk', payload);
     }
 
+    static async importSessions(syllabusId: string, subjectId: string, file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiClient.postFormData(`/api/sessions/import?syllabusId=${syllabusId}&subjectId=${subjectId}`, formData);
+    }
+
     static async getSessions(syllabusId: string, page = 0, size = 100) {
         return apiClient.get<any>(`/api/sessions?syllabusId=${syllabusId}&page=${page}&size=${size}&sort=sessionNumber,asc`);
     }
