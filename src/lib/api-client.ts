@@ -37,6 +37,22 @@ export const apiClient = {
         return this.handleResponse(response);
     },
 
+    async postFormData<T>(endpoint: string, formData: FormData, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
+        const headers = { ...options?.headers } as any;
+        // Don't set Content-Type, let the browser set it with the boundary
+        delete headers['Content-Type'];
+        
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers,
+            body: formData,
+            signal: options?.signal,
+            ...options,
+        });
+        return this.handleResponse(response);
+    },
+
+
     async put<T>(endpoint: string, body: any, options?: RequestInit & { signal?: AbortSignal }): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'PUT',
