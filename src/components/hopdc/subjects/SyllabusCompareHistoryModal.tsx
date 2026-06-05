@@ -186,7 +186,7 @@ export default function SyllabusCompareHistoryModal({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                       <div className="bg-zinc-50/50 rounded-xl p-4 border border-zinc-100 shadow-inner">
                         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-100">
                           <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
@@ -194,6 +194,15 @@ export default function SyllabusCompareHistoryModal({
                         </div>
                         <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                           {renderJsonDiff(item.conceptDiffJson)}
+                        </div>
+                      </div>
+                      <div className="bg-zinc-50/50 rounded-xl p-4 border border-zinc-100 shadow-inner">
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-100">
+                          <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                          <p className="text-xs font-black text-zinc-700 uppercase tracking-widest">Session Prompts</p>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {renderJsonDiff(item.sessionDiffJson)}
                         </div>
                       </div>
                       <div className="bg-zinc-50/50 rounded-xl p-4 border border-zinc-100 shadow-inner">

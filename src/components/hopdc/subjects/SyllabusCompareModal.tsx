@@ -35,6 +35,7 @@ export default function SyllabusCompareModal({
 }: SyllabusCompareModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('summary');
   const [comparingMaterial, setComparingMaterial] = useState<{ oldId?: string, newId?: string, title: string } | null>(null);
+  const [hasSaved, setHasSaved] = useState(false);
 
   // AI Summary
   const { data: response, isLoading: isSummaryLoading, isError: isSummaryError } = useQuery({
@@ -225,7 +226,8 @@ export default function SyllabusCompareModal({
       );
     },
     onSuccess: () => {
-      toast.success("Lưu kết quả so sánh thành công!");
+      setHasSaved(true);
+      toast.success("Lưu thành công!");
     },
     onError: (err: any) => {
       toast.error(err?.message || "Lưu kết quả so sánh thất bại");
@@ -483,14 +485,16 @@ export default function SyllabusCompareModal({
             >
               Close
             </button>
-            <button
-              onClick={() => saveCompare()}
-              disabled={isSaving || !response || isValidationLoading || validationRes?.data === false}
-              className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSaving && <Loader2 size={16} className="animate-spin" />}
-              Save Compare
-            </button>
+            {!hasSaved && (
+              <button
+                onClick={() => saveCompare()}
+                disabled={isSaving || !response || isValidationLoading || validationRes?.data === false}
+                className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSaving && <Loader2 size={16} className="animate-spin" />}
+                Save Compare
+              </button>
+            )}
           </div>
         </motion.div>
       </div>
