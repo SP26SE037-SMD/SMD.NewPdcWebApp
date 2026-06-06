@@ -228,7 +228,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setSingleValidationErrors([]);
     }, [draftSession?.sessionNumber, draftSession?.sessionTitle, draftSession?.duration, draftSession?.teachingMethods, draftSession?.sessionTopic, draftSession?.sessionType]);
 
-    const { data: mappingsRes } = useQuery({
+    const { data: mappingsRes, refetch: refetchMappings } = useQuery({
         queryKey: ['session-mappings', syllabusId],
         queryFn: () => syllabusId ? MappingService.getSyllabusSessionMappings(syllabusId) : null,
         enabled: !!syllabusId,
@@ -393,6 +393,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         try {
             await SessionService.deleteSession(id);
             dispatch(removeSession({ syllabusId, index }));
+            if (refetchMappings) refetchMappings();
             showToast("Session deleted successfully", "success");
             setDeleteConfirm(null);
         } catch (error: any) {
@@ -875,6 +876,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
                                                 dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
                                                 refetchSessions();
+                                                if (refetchMappings) refetchMappings();
                                             }, 100);
 
                                             showToast("Session saved successfully!", "success");
@@ -1139,7 +1141,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
                                     {saveError && (
                                         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
-                                            <span className="material-symbols-outlined text-red-500 mt-0.5">warning</span>
+                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <p className="text-xs font-medium">{saveError}</p>
                                             </div>
@@ -1165,8 +1167,32 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                     
                                                     return (
                                                         <React.Fragment key={idx}>
-                                                            <tr className={`transition-colors hover:bg-primary/5`}>
-                                                                <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
+                                                            <tr className={`group transition-colors ${hasError ? 'bg-red-50/70 hover:bg-red-100/70' : hasWarning ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-primary/5'}`}>
+                                                                <td className="px-4 py-3 font-medium text-slate-700 text-center relative">
+                                                                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${hasError ? 'bg-red-100 text-red-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{item.sessionNumber}</span>
+                                                                    {(hasError || hasWarning) && (
+                                                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 hidden group-hover:flex flex-col z-[60] min-w-[280px] max-w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl pointer-events-none animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200">
+                                                                            {/* Caret pointing left */}
+                                                                            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-white border-l border-b border-slate-200 rotate-45"></div>
+                                                                            
+                                                                            {/* Body */}
+                                                                            <div className="p-3.5 flex flex-col gap-2.5 relative z-10">
+                                                                                {item._importErrors?.map((err: string, i: number) => (
+                                                                                     <div key={`err-${i}`} className="flex gap-2 items-start text-[12px] leading-snug">
+                                                                                         <span className="material-symbols-outlined text-[16px] shrink-0 text-red-600">error</span>
+                                                                                         <span className="text-red-700 font-medium" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err}</span>
+                                                                                     </div>
+                                                                                 ))}
+                                                                                 {item._importWarnings?.map((warn: string, i: number) => (
+                                                                                     <div key={`warn-${i}`} className="flex gap-2 items-start text-[12px] leading-snug">
+                                                                                         <span className="material-symbols-outlined text-[16px] shrink-0 text-amber-500">warning</span>
+                                                                                         <span className="text-amber-600 font-medium" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{warn}</span>
+                                                                                     </div>
+                                                                                 ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </td>
                                                                 <td className="px-4 py-3 font-bold text-slate-800">
                                                                     <div title={String(item.sessionTitle || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTitle || ""}</div>
                                                                 </td>
@@ -1183,16 +1209,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                     <div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div>
                                                                 </td>
                                                             </tr>
-                                                            {(hasError || hasWarning) && (
-                                                                <tr className="bg-amber-50/50">
-                                                                    <td colSpan={6} className="px-3 py-1.5 text-[11px] font-medium text-amber-600">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
-                                                                            {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            )}
                                                         </React.Fragment>
                                                     );
                                                 })}
@@ -1265,6 +1281,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             
                                             setTimeout(() => {
                                                 refetchSessions();
+                                                if (refetchMappings) refetchMappings();
                                             }, 500);
 
                                             setIsPreviewOpen(false);
@@ -1279,24 +1296,31 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             
                                             const importErrs = errorData?.importErrors || [];
                                             const validateErrs = errorData?.validateError?.errors || [];
-                                            const validateWarns = errorData?.validateError?.warnings || [];
+                                            const validateWarnsContent = errorData?.validateError?.warningsContent || [];
+                                            const validateWarnsCovered = errorData?.validateError?.warningsCovered || [];
                                             const legacyErrs = (errorData?.errors && Array.isArray(errorData?.errors)) ? errorData.errors : [];
                                             
                                             const allErrors = [
                                                 ...importErrs.map((e: any) => ({ ...e, type: 'error' })),
                                                 ...validateErrs.map((e: any) => ({ ...e, type: 'error' })),
-                                                ...validateWarns.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...validateWarnsContent.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...validateWarnsCovered.map((e: any) => ({ ...e, type: 'warning' })),
                                                 ...legacyErrs.map((e: any) => ({ ...e, type: 'error' }))
                                             ];
 
                                             if (allErrors.length > 0) {
+                                                 const globalErrs = allErrors.filter((e: any) => (!e.sessionNumber || e.sessionNumber === 0) && !e.rowNumber);
+                                                 if (globalErrs.length > 0) {
+                                                     setSaveError(globalErrs.map((e: any) => e.message).join("\n"));
+                                                 }
+                                                 
                                                  showToast(errorData?.message || 'Validation failed or import errors occurred.', 'error');
                                                  setPreviewData(prev => {
                                                      const newData = [...prev];
                                                      newData.forEach(item => { item._importErrors = []; item._importWarnings = []; });
                                                      allErrors.forEach((err: any) => {
                                                          const targetItem = newData.find(n => 
-                                                             (err.sessionNumber !== undefined && n.sessionNumber === err.sessionNumber) || 
+                                                             (err.sessionNumber !== undefined && err.sessionNumber > 0 && n.sessionNumber === err.sessionNumber) || 
                                                              (err.rowNumber !== undefined && n._rowNum === err.rowNumber - 1)
                                                          );
                                                          

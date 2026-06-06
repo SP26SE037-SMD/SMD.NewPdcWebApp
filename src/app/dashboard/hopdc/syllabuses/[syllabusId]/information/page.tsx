@@ -207,18 +207,31 @@ export default function InformationPage({ params }: { params: Promise<{ syllabus
                             <ol key={ci} className="space-y-2">
                                 {col.map((ref, idx) => {
                                     const num = ci === 0 ? idx + 1 : half + idx + 1;
-                                    const yearMatch = ref.match(/\((\d{4})\)/);
+                                    const parts = ref.split('|||');
+                                    const refText = parts[0];
+                                    const url = parts[1];
+
+                                    const yearMatch = refText.match(/\((\d{4})\)/);
                                     const year = yearMatch ? yearMatch[0] : '';
-                                    const title = ref.replace(/\(\d{4}\)/, '').trim().replace(/\.$/, '').trim();
+                                    const title = refText.replace(/\(\d{4}\)/, '').trim().replace(/\.$/, '').trim();
                                     return (
                                         <li key={idx} className="flex items-start gap-2.5">
                                             <span className="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 mt-0.5"
                                                 style={{ background: C.surfaceContainer, color: C.primary }}>
                                                 {num}
                                             </span>
-                                            <div className="text-[10.5px] leading-snug">
+                                            <div className="text-[10.5px] leading-snug break-all">
                                                 <span className="font-bold" style={{ color: C.onSurface }}>{title}</span>
                                                 {year && <span className="ml-1.5 opacity-60" style={{ color: C.onSurfaceVariant }}>{year}</span>}
+                                                {url && (
+                                                    <div className="mt-2">
+                                                        <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" 
+                                                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-bold tracking-wide transition-all bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 w-fit shadow-sm border border-blue-100/50">
+                                                            <span className="material-symbols-outlined text-[14px]">link</span>
+                                                            <span>Access Resource</span>
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
                                         </li>
                                     );

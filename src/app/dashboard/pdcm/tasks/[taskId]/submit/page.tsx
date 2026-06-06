@@ -232,9 +232,20 @@ export default function SubmitPage({ params }: { params: Promise<{ taskId: strin
 
                                 // 3. Create a Review Request
                                 const isUpdate = taskData?.action === 'UPDATE';
+                                const isCreateNewSyllabus = taskData?.taskName?.toUpperCase().includes('CREATE NEW SYLLABUS');
+                                const subjectName = taskData?.subject?.subjectName || taskData?.subject?.subjectCode || "Subject";
+
+                                let reqTitle = isUpdate ? "Request to review revised syllabus" : "Request to review syllabus";
+                                let reqContent = isUpdate ? "The syllabus has been revised as requested and resubmitted for review." : "The syllabus has been completed and submitted for review.";
+
+                                if (isCreateNewSyllabus) {
+                                    reqTitle = `Review new syllabus version for ${subjectName}`;
+                                    reqContent = `Review new syllabus version for ${subjectName}`;
+                                }
+
                                 const requestPayload = {
-                                    title: isUpdate ? "Request to review revised syllabus" : "Request to review syllabus",
-                                    content: isUpdate ? "The syllabus has been revised as requested and resubmitted for review." : "The syllabus has been completed and submitted for review.",
+                                    title: reqTitle,
+                                    content: reqContent,
                                     type: "TASK",
                                     targetId: taskId,
                                     receivedById: taskData?.createdBy?.accountId || null

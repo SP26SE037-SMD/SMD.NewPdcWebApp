@@ -384,9 +384,10 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     ]);
                     if (src.status === 'fulfilled' && src.value?.data) {
                         const d = src.value.data as any[];
-                        sourcesReference = d.map((s: any) =>
-                            `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`
-                        );
+                        sourcesReference = d.map((s: any) => {
+                            const text = `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`;
+                            return s.url ? `${text}|||${s.url}` : text;
+                        });
                     }
                     if (cloRes.status === 'fulfilled' && cloRes.value?.data?.content) {
                         clos = cloRes.value.data.content.map((c: any) => `[${c.cloCode}] ${c.description}`);
