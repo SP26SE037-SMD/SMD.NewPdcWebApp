@@ -480,7 +480,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
                             >
                                 {isMappingValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">fact_check</span>}
-                                Validate Mapping
+                                {isMappingValidating ? (aiProcessingMessage || "Validating...") : "Validate Mapping"}
                             </button>
                             <button
                                 onClick={handleSaveAllMappings}
