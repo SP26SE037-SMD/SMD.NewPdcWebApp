@@ -121,12 +121,18 @@ const notificationSlice = createSlice({
       console.log("===> INCOMING WS MESSAGE:", action.payload);
 
       switch (code) {
+        case 'VALIDATE_MAPPING_SUCCESS':
+        case 'VALIDATE_MAPPING_FAIL':
         case 'STATUS_UPDATE': {
-          // Lấy status thật sự từ chuỗi "Status updated: PROCESSING"
-          if (message && message.startsWith("Status updated: ")) {
-            state.aiProcessingStatus = message.replace("Status updated: ", "").trim();
-          } else if (message) {
-            state.aiProcessingStatus = message.trim();
+          if (code === 'VALIDATE_MAPPING_SUCCESS' || code === 'VALIDATE_MAPPING_FAIL') {
+            state.aiProcessingStatus = code;
+          } else {
+            // Lấy status thật sự từ chuỗi "Status updated: PROCESSING"
+            if (message && message.startsWith("Status updated: ")) {
+              state.aiProcessingStatus = message.replace("Status updated: ", "").trim();
+            } else if (message) {
+              state.aiProcessingStatus = message.trim();
+            }
           }
           
           // Store the realtime AI processing status safely
@@ -137,7 +143,7 @@ const notificationSlice = createSlice({
             state.aiProcessingData = null;
             state.aiProcessingMessage = data || message || "Processing...";
           }
-          console.log(`[STATUS_UPDATE] Status: ${state.aiProcessingStatus} | Msg: ${state.aiProcessingMessage}`);
+          console.log(`[REALTIME_MSG] Code: ${code} | Status: ${state.aiProcessingStatus} | Msg: ${state.aiProcessingMessage}`);
           break;
         }
         case 'NOTIFICATION':
