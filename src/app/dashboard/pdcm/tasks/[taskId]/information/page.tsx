@@ -232,9 +232,13 @@ info: {
 
     return (
         <div className="space-y-7">
-            {realTask && realTask.action === 'UPDATE' && (realTask.description || realTask.comment) && (
+            {realTask && (
+                (realTask.action === 'UPDATE' && (realTask.description || realTask.comment)) ||
+                (realTask.taskName?.toUpperCase().includes('CREATE NEW SYLLABUS') && realTask.description)
+            ) && (
                 <ReviewerFeedback 
                     reviewer={realTask.createdBy as any}
+                    type={realTask.action === 'UPDATE' ? 'revision' : 'assignment'}
                     comments={[
                         { title: 'Task Requirement / Description', content: realTask.description ?? undefined },
                         { title: 'Additional Comments', content: realTask.comment ?? undefined }

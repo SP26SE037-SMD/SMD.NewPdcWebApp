@@ -10,6 +10,7 @@ interface ReviewerFeedbackProps {
         content?: string;
     }[];
     onClose?: () => void;
+    type?: 'revision' | 'assignment';
 }
 
 const C = {
@@ -22,7 +23,7 @@ const C = {
     primary: "#41683f",
 };
 
-export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, comments, onClose }) => {
+export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, comments, onClose, type = 'revision' }) => {
     // Filter out empty comments
     const activeComments = comments.filter(c => c.content && c.content.trim().length > 0);
 
@@ -30,21 +31,25 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
         return null; // Nothing to show if no comments are available for this section
     }
 
+    const isAssignment = type === 'assignment';
+    const baseColor = isAssignment ? '#3b82f6' : C.error;
+    const accentColor = isAssignment ? '#60a5fa' : C.errorContainer;
+
     return (
         <div className="mb-8 rounded-2xl overflow-hidden border shadow-sm animate-in fade-in slide-in-from-top-4 duration-500"
-            style={{ borderColor: `${C.error}33`, background: `${C.error}08` }}>
+            style={{ borderColor: `${baseColor}33`, background: `${baseColor}08` }}>
 
             {/* Header / Reviewer Info */}
             <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b"
-                style={{ borderColor: `${C.error}22`, background: `${C.error}11` }}>
+                style={{ borderColor: `${baseColor}22`, background: `${baseColor}11` }}>
 
                 <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: C.error, color: 'white' }}>
-                        <AlertCircle size={18} />
+                        style={{ background: baseColor, color: 'white' }}>
+                        {isAssignment ? <span className="material-symbols-outlined text-[18px]">assignment</span> : <AlertCircle size={18} />}
                     </span>
-                    <h3 className="font-bold text-lg" style={{ color: C.error, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Revision Requested
+                    <h3 className="font-bold text-lg" style={{ color: baseColor, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        {isAssignment ? 'Task Assignment' : 'Revision Requested'}
                     </h3>
                 </div>
 
@@ -76,9 +81,9 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
                         <button 
                             onClick={onClose}
                             className="w-8 h-8 flex items-center justify-center rounded-full transition-colors ml-2"
-                            style={{ background: `${C.error}11`, color: C.error }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = `${C.error}22`}
-                            onMouseLeave={(e) => e.currentTarget.style.background = `${C.error}11`}
+                            style={{ background: `${baseColor}11`, color: baseColor }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = `${baseColor}22`}
+                            onMouseLeave={(e) => e.currentTarget.style.background = `${baseColor}11`}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -93,9 +98,9 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
             <div className="px-6 py-5 flex flex-col gap-5">
                 {activeComments.map((comment, idx) => (
                     <div key={idx} className="flex gap-4">
-                        <div className="w-1.5 shrink-0 rounded-full" style={{ background: C.errorContainer }}></div>
+                        <div className="w-1.5 shrink-0 rounded-full" style={{ background: accentColor }}></div>
                         <div className="flex-1">
-                            <h4 className="text-sm font-bold uppercase tracking-widest mb-1.5" style={{ color: C.error }}>
+                            <h4 className="text-sm font-bold uppercase tracking-widest mb-1.5" style={{ color: baseColor }}>
                                 {comment.title}
                             </h4>
                             <p className="text-sm leading-relaxed" style={{ color: C.onSurface }}>
