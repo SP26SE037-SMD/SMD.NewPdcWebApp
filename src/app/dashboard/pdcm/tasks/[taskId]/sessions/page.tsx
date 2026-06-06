@@ -9,7 +9,7 @@ import { Loader2, RefreshCw, Plus, Trash2, CalendarDays, Pencil, Eye } from 'luc
 import { TaskService } from '@/services/task.service';
 import { SessionService, SessionItem } from '@/services/session.service';
 import { SyllabusService } from '@/services/syllabus.service';
-import { RegulationService } from '@/services/regulation.service';
+import { SettingService } from '@/services/setting.service';
 import { CloPloService } from '@/services/cloplo.service';
 import { MaterialService, MaterialItem } from '@/services/material.service';
 import { MappingService, CloSessionMapping } from '@/services/mapping.service';
@@ -94,9 +94,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         enabled: !!syllabusId
     });
 
-    const { data: regulationsData, isLoading: isRegLoading } = useQuery({
-        queryKey: ['regulations'],
-        queryFn: () => RegulationService.getRegulations(),
+    const { data: settingsData, isLoading: isSettingLoading } = useQuery({
+        queryKey: ['settings'],
+        queryFn: () => SettingService.getSettings(),
     });
 
     const { data: syllabusData, isLoading: isSyllabusLoading } = useQuery({
@@ -118,8 +118,16 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const credit = syllabusData?.data?.credit || syllabusData?.data?.noCredit || 0;
     
+    // Calculate recommendation for the hint
+    const settings = settingsData?.data?.content || [];
+    const sessionMinuteStr = settings.find((r: any) => r.code === 'SESSION_MINUTE')?.value;
+    const creditHourStr = settings.find((r: any) => r.code === 'CREDIT_HOUR')?.value;
+    const sessionMinute = sessionMinuteStr ? Number(sessionMinuteStr) : 50;
+    const creditHour = creditHourStr ? Number(creditHourStr) : 15;
+    const recommendedMax = Math.ceil((credit * creditHour * 60) / sessionMinute);
+
     useEffect(() => {
-        if (!isSessionLoading && !isFetchingSessions && !isRegLoading && !isSyllabusLoading && syllabusId && syllabusData?.data) {
+        if (!isSessionLoading && !isFetchingSessions && !isSettingLoading && !isSyllabusLoading && syllabusId && syllabusData?.data) {
             
             const rawData = sessionDataRes?.data as any;
             const apiSessions: any[] = Array.isArray(rawData?.content) ? rawData.content : [];
@@ -156,27 +164,21 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                     sessionNumber: apiSess.sessionNumber,
                     sessionTitle: apiSess.sessionTitle,
                     teachingMethods: apiSess.teachingMethods,
-                    duration: apiSess.duration,
+                    duration: apiSess.duration || sessionMinute,
                     content: JSON.stringify(selectionStates),
                     cloIds: apiSess.cloIds || [],
-                    sessionTopic: apiSess.sessionTopic || ""
+                    sessionTopic: (apiSess.sessionTopic || "").replace(/~/g, '\n'),
                 };
             }).sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
             dispatch(setSessions({ syllabusId, sessions: finalSessions }));
         }
-    }, [isSessionLoading, isFetchingSessions, isRegLoading, isSyllabusLoading, sessionDataRes, syllabusId, dispatch, regulationsData, syllabusData]);
-
-    // Calculate recommendation for the hint
-    const regs = regulationsData?.data?.content || [];
-    const rl1 = regs.find((r: any) => r.code === 'RL1')?.value || 50;
-    const rl2 = regs.find((r: any) => r.code === 'RL2')?.value || 15;
-    const recommendedMax = Math.ceil((credit * rl2 * 60) / rl1);
+    }, [isSessionLoading, isFetchingSessions, isSettingLoading, isSyllabusLoading, sessionDataRes, syllabusId, dispatch, settingsData, syllabusData, sessionMinute]);
 
     const sessions = reduxSessions || [];
-    const isLoading = isTaskLoading || isSessionLoading || isRegLoading || isSyllabusLoading;
-    const sessionDuration = sessions[0]?.duration ?? 50;
-    const totalHours = Math.round((sessions.length * (typeof sessionDuration === 'number' ? sessionDuration : 50)) / 60);
+    const isLoading = isTaskLoading || isSessionLoading || isSettingLoading || isSyllabusLoading;
+    const sessionDuration = sessions[0]?.duration ?? sessionMinute;
+    const totalHours = Math.round((sessions.length * (typeof sessionDuration === 'number' ? sessionDuration : sessionMinute)) / 60);
     const unsavedCount = sessions.filter(s => !s.sessionId).length;
     
     const subjectId = syllabusData?.data?.subjectId;
@@ -355,7 +357,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             teachingMethods: 'Lecture',
             sessionTopic: '',
             sessionType: 'THEORY',
-            duration: 50,
+            duration: sessionMinute,
             content: '',
             cloIds: []
         };
@@ -590,12 +592,12 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 </h4>
                                                 <div className="flex items-center gap-2 mt-1" style={{ color: '#5a6157' }}>
                                                     <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded text-[9px] font-black uppercase tracking-widest">{session.teachingMethods || 'Lecture'}</span>
-                                                    <span className="text-[9px] font-bold text-slate-400">• {session.duration || 50} MIN</span>
+                                                    <span className="text-[9px] font-bold text-slate-400">• {session.duration || sessionMinute} MIN</span>
                                                 </div>
                                             </div>
                                             <div className="col-span-6 pr-8">
                                                 {session.sessionTopic ? (
-                                                    <p className="text-sm line-clamp-3" style={{ color: 'rgba(90,97,87,0.8)' }}>
+                                                    <p className="text-sm line-clamp-3 whitespace-pre-line" style={{ color: 'rgba(90,97,87,0.8)' }}>
                                                         {session.sessionTopic}
                                                     </p>
                                                 ) : (
@@ -723,10 +725,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 <div className="md:col-span-3 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Duration (Mins)</label>
                                     <input
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
+                                        className="bg-slate-50 border-2 border-slate-200 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed outline-none font-medium"
                                         type="number"
-                                        value={draftSession.duration}
-                                        onChange={e => setDraftSession(prev => prev ? { ...prev, duration: Number(e.target.value) } : null)}
+                                        value={draftSession.duration ?? ''}
+                                        disabled
+                                        title="Duration is configured by system settings"
                                     />
                                 </div>
                                 <div className="md:col-span-6 flex flex-col gap-2">
@@ -796,7 +799,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
                                                 sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
-                                                duration: Number(draftSession.duration || 50),
+                                                duration: Number(draftSession.duration || sessionMinute),
                                             };
                                             const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
                                             const errorsArray = Array.isArray(validateRes) ? validateRes : (validateRes?.errors || validateRes?.data?.errors || []);
@@ -841,7 +844,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
                                                 sessionTopic: draftSession.sessionTopic || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
-                                                duration: Number(draftSession.duration || 50),
+                                                duration: Number(draftSession.duration || sessionMinute),
                                             };
 
                                             let res: any = null;
@@ -1063,7 +1066,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const parsedSessions = rows.map((row: any, index) => {
                                                     const rawNumber = Number(row['Session Number'] || row['sessionNumber'] || row['Session'] || row['session'] || (index + 1));
                                                     const rawTitle = String(row['Title'] || row['title'] || '').trim();
-                                                    const rawDuration = Number(row['Duration'] || row['duration'] || 50);
+                                                    const rawDuration = Number(row['Duration'] || row['duration'] || sessionMinute);
                                                     const rawMethods = String(row['Teaching Methods'] || row['teachingMethods'] || row['Methods'] || '').trim();
                                                     const rawTopic = String(row['Topic'] || row['topic'] || '').trim();
                                                     const rawType = String(row['Type'] || row['type'] || '').trim().toUpperCase();
