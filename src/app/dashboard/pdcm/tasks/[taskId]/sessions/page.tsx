@@ -167,7 +167,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                     duration: apiSess.duration || sessionMinute,
                     content: JSON.stringify(selectionStates),
                     cloIds: apiSess.cloIds || [],
-                    sessionTopic: apiSess.sessionTopic || ""
+                    sessionTopic: (apiSess.sessionTopic || "").replace(/~/g, '\n'),
                 };
             }).sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
@@ -597,7 +597,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             </div>
                                             <div className="col-span-6 pr-8">
                                                 {session.sessionTopic ? (
-                                                    <p className="text-sm line-clamp-3" style={{ color: 'rgba(90,97,87,0.8)' }}>
+                                                    <p className="text-sm line-clamp-3 whitespace-pre-line" style={{ color: 'rgba(90,97,87,0.8)' }}>
                                                         {session.sessionTopic}
                                                     </p>
                                                 ) : (
