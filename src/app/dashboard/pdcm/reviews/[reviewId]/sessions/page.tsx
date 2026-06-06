@@ -33,6 +33,29 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
     const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
     const dispatch = useDispatch();
 
+    const taskId = reviewId;
+
+    const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
+        queryKey: ['pdcm-task-detail', taskId],
+        queryFn: () => TaskService.getTaskById(taskId!),
+        enabled: !!taskId,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const taskData = routeTaskData?.data;
+    const syllabusId = taskData?.syllabus?.syllabusId || (taskData as any)?.syllabusId || taskData?.targetId || (taskData as any)?.target_id;
+
+    const { data: sessionsRes, isLoading: isSessionsLoading } = useQuery({
+        queryKey: ['pdcm-sessions', syllabusId],
+        queryFn: () => SessionService.getSessions(syllabusId || "", 0, 100),
+        enabled: !!syllabusId,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const rawData = sessionsRes?.data as any;
+    const sessions: any[] = Array.isArray(rawData?.content) ? rawData.content : (Array.isArray(rawData) ? rawData : []);
+    const sortedSessions = [...sessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
+
     useEffect(() => {
         if (isAiAuditing && sessionValidDataState) {
             if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
@@ -138,25 +161,6 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         }
     }, [isAiAuditing, aiProcessingStatus, aiProcessingData, aiProcessingMessage, sortedSessions, sessionValidDataState, dispatch, showToast, setSessionsReview, setSessionEvaluation]);
 
-    const taskId = reviewId;
-
-    const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
-        queryKey: ['pdcm-task-detail', taskId],
-        queryFn: () => TaskService.getTaskById(taskId!),
-        enabled: !!taskId,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const taskData = routeTaskData?.data;
-    const syllabusId = taskData?.syllabus?.syllabusId || (taskData as any)?.syllabusId || taskData?.targetId || (taskData as any)?.target_id;
-
-    const { data: sessionsRes, isLoading: isSessionsLoading } = useQuery({
-        queryKey: ['pdcm-sessions', syllabusId],
-        queryFn: () => SessionService.getSessions(syllabusId || "", 0, 100),
-        enabled: !!syllabusId,
-        staleTime: 5 * 60 * 1000,
-    });
-
     if (isTaskLoading || (!!syllabusId && isSessionsLoading)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -166,10 +170,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
         );
     }
 
-    const rawData = sessionsRes?.data as any;
-    const sessions: any[] = Array.isArray(rawData?.content) ? rawData.content : (Array.isArray(rawData) ? rawData : []);
     console.log("=== SESSIONS DATA ===", sessionsRes, sessions);
-    const sortedSessions = [...sessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
 
     const evaluatedCount = sessions.filter(s => {
         const ev = sessionEvaluations[s.sessionId];
