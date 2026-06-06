@@ -725,7 +725,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     <input
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="number"
-                                        value={draftSession.duration}
+                                        value={draftSession.duration ?? ''}
                                         onChange={e => setDraftSession(prev => prev ? { ...prev, duration: Number(e.target.value) } : null)}
                                     />
                                 </div>
