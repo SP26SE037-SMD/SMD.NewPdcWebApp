@@ -1353,7 +1353,6 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
         const doc = parser.parseFromString(html, 'text/html');
         const body = doc.body;
         const resultBlocks: Block[] = [];
-        let h2Count = 0;
 
         const checkFullyBold = (element: Element, text: string) => {
             if (!text) return false;
@@ -2010,15 +2009,6 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                                                         )}
                                                         {block.type === 'H2' && (
                                                             <div className="flex items-baseline gap-3 w-full mt-4 mb-2">
-                                                                <span className="font-bold select-none shrink-0" style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}>
-                                                                    {(() => {
-                                                                        let count = 1;
-                                                                        for (let i = 0; i < globalIndex; i++) {
-                                                                            if (blocks[i].type === 'H2') count++;
-                                                                        }
-                                                                        return `${count}.`;
-                                                                    })()}
-                                                                </span>
                                                                 <EditableBlock
                                                                     id={block.id}
                                                                     html={block.content}
