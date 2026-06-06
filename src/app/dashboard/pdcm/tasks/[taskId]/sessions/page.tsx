@@ -228,7 +228,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setSingleValidationErrors([]);
     }, [draftSession?.sessionNumber, draftSession?.sessionTitle, draftSession?.duration, draftSession?.teachingMethods, draftSession?.sessionTopic, draftSession?.sessionType]);
 
-    const { data: mappingsRes } = useQuery({
+    const { data: mappingsRes, refetch: refetchMappings } = useQuery({
         queryKey: ['session-mappings', syllabusId],
         queryFn: () => syllabusId ? MappingService.getSyllabusSessionMappings(syllabusId) : null,
         enabled: !!syllabusId,
@@ -393,6 +393,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         try {
             await SessionService.deleteSession(id);
             dispatch(removeSession({ syllabusId, index }));
+            if (refetchMappings) refetchMappings();
             showToast("Session deleted successfully", "success");
             setDeleteConfirm(null);
         } catch (error: any) {
@@ -875,6 +876,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
                                                 dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
                                                 refetchSessions();
+                                                if (refetchMappings) refetchMappings();
                                             }, 100);
 
                                             showToast("Session saved successfully!", "success");
@@ -1265,6 +1267,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             
                                             setTimeout(() => {
                                                 refetchSessions();
+                                                if (refetchMappings) refetchMappings();
                                             }, 500);
 
                                             setIsPreviewOpen(false);
