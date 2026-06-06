@@ -281,6 +281,15 @@ export const parseHtmlToBlocks = (html: string, alignmentStr: string = 'left'): 
 
     let finalContent = sanitizeBlockContent(el.innerHTML);
 
+    if (type === 'H2') {
+        const plainText = stripHtml(finalContent).trim();
+        const hasNumbering = /^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+/.test(plainText);
+        if (!hasNumbering) {
+            h2Count++;
+            finalContent = `${h2Count}. ` + finalContent;
+        }
+    }
+
     resultBlocks.push({
       id: crypto.randomUUID(),
       type,

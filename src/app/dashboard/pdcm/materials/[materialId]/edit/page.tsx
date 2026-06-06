@@ -1353,6 +1353,7 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
         const doc = parser.parseFromString(html, 'text/html');
         const body = doc.body;
         const resultBlocks: Block[] = [];
+        let h2Count = 0;
 
         const checkFullyBold = (element: Element, text: string) => {
             if (!text) return false;
@@ -1531,7 +1532,14 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
 
             let finalContent = sanitizeBlockContent(content);
 
-            // Handle H2 numbering has been moved to UI rendering
+            if (type === 'H2') {
+                const plainText = stripHtml(finalContent).trim();
+                const hasNumbering = /^(\d+[.)]|[A-Z]\.|[IVX]+\.|[a-z]\.)\s+/.test(plainText);
+                if (!hasNumbering) {
+                    h2Count++;
+                    finalContent = `${h2Count}. ` + finalContent;
+                }
+            }
 
             resultBlocks.push({
                 id: crypto.randomUUID(),
