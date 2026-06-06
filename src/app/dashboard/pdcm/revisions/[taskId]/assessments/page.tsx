@@ -1031,7 +1031,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                             const res = await AssessmentService.importAssessments(syllabusId, subjectId, importFile) as any;
                                             if (res && res.data && res.data.valid) {
                                                 showToast(`Successfully saved ${res.data.savedCount} assessments`, 'success');
-                                                setTimeout(() => { window.location.reload(); }, 500);
+                                                setTimeout(() => { refetchAssessments(); }, 500);
                                                 setIsPreviewOpen(false);
                                                 setPreviewData([]);
                                                 setImportFile(null);

@@ -1163,7 +1163,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                             showToast(`Successfully saved ${previewData.length} sessions`, 'success');
                                             
                                             setTimeout(() => {
-                                                window.location.reload();
+                                                refetchSessions();
                                             }, 500);
 
                                             setIsPreviewOpen(false);

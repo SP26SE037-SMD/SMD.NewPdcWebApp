@@ -1049,7 +1049,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ syllabus
                                             console.log("BULK CREATE ASSESSMENT PAYLOAD:", payload);
                                             await AssessmentService.bulkCreateAssessments(payload);
                                             showToast(`Successfully saved ${previewData.length} assessments`, 'success');
-                                            setTimeout(() => { window.location.reload(); }, 500);
+                                            setTimeout(() => { refetchAssessments(); }, 500);
                                             setIsPreviewOpen(false);
                                             setPreviewData([]);
                                         } catch (error) {

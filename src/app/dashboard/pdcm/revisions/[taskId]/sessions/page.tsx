@@ -899,6 +899,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
                                                 const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
                                                 dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
+                                                refetchSessions();
                                             }, 100);
 
                                             showToast("Session saved successfully!", "success");
@@ -1287,7 +1288,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                             showToast(`Successfully saved ${previewData.length} sessions`, 'success');
                                             
                                             setTimeout(() => {
-                                                window.location.reload();
+                                                refetchSessions();
                                             }, 500);
 
                                             setIsPreviewOpen(false);
