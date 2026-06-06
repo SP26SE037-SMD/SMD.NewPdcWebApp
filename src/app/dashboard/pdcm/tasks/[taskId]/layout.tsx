@@ -125,14 +125,25 @@ export default function TaskWorkspaceLayout({
             </div>
 
             <div className="flex flex-col gap-3 fixed bottom-10 right-10 z-50">
-                {realTask?.action === 'UPDATE' && (realTask?.description || realTask?.comment) && (
+                {realTask && (
+                    (realTask.action === 'UPDATE' && (realTask.description || realTask.comment)) ||
+                    (realTask.taskName?.toUpperCase().includes('CREATE NEW SYLLABUS') && realTask.description)
+                ) && (
                     <button
                         onClick={() => setIsRevisionModalOpen(true)}
                         className="h-10 pl-3 pr-4 rounded-full flex items-center gap-2 shadow-xl border-2 transition-all hover:scale-105"
-                        style={{ background: '#f59e0b', color: '#ffffff', borderColor: 'white' }}
+                        style={{ 
+                            background: realTask.action === 'UPDATE' ? '#f59e0b' : '#3b82f6', 
+                            color: '#ffffff', 
+                            borderColor: 'white' 
+                        }}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>rate_review</span>
-                        <span className="font-bold text-xs whitespace-nowrap">Revision Feedback</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                            {realTask.action === 'UPDATE' ? 'rate_review' : 'assignment'}
+                        </span>
+                        <span className="font-bold text-xs whitespace-nowrap">
+                            {realTask.action === 'UPDATE' ? 'Revision Feedback' : 'Task Requirement'}
+                        </span>
                     </button>
                 )}
 
@@ -155,6 +166,7 @@ export default function TaskWorkspaceLayout({
                 reviewer={realTask?.createdBy as any}
                 description={realTask?.description ?? undefined}
                 comment={realTask?.comment ?? undefined}
+                type={realTask?.action === 'UPDATE' ? 'revision' : 'assignment'}
             />
         </PDCMBaseLayout>
     );

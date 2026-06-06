@@ -9,6 +9,7 @@ interface RevisionRequestedModalProps {
     reviewer?: Reviewer;
     description?: string;
     comment?: string;
+    type?: 'revision' | 'assignment';
 }
 
 export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
@@ -16,7 +17,8 @@ export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
     onClose,
     reviewer,
     description,
-    comment
+    comment,
+    type = 'revision'
 }) => {
     useEffect(() => {
         if (isOpen) {
@@ -45,6 +47,7 @@ export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
                             { title: 'Additional Comments', content: comment }
                         ]}
                         onClose={onClose}
+                        type={type}
                     />
                 </div>
             </div>
