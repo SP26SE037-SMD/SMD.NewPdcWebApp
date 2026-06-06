@@ -1,6 +1,9 @@
 "use client";
 
-import React, { use, useState } from 'react';
+import React, { use, useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { clearAiProcessingMessage } from '@/store/slices/notificationSlice';
 import { CalendarDays, Clock, Target, ShieldCheck, Eye, Loader2, Info, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { SessionService } from '@/services/session.service';
@@ -24,7 +27,116 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
     const [isAiAuditing, setIsAiAuditing] = useState(false);
+    const [sessionValidDataState, setSessionValidDataState] = useState<any>(null);
     const { showToast } = useToast();
+
+    const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (isAiAuditing && sessionValidDataState) {
+            if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
+                try {
+                    const mappingValidData = aiProcessingData;
+                    
+                    const isSessionsValid = sessionValidDataState?.valid !== false;
+                    const sessionErrors = sessionValidDataState?.errors || [];
+                    const quotas = sessionValidDataState?.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 };
+
+                    const isMappingsValid = mappingValidData?.is_valid !== false;
+                    const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
+                    const isAllSessionsMapped = mappingValidData?.is_all_sessions_mapped !== false;
+                    const unmappedClos = mappingValidData?.unmapped_clos || [];
+                    const unmappedSessions = mappingValidData?.unmapped_sessions || [];
+                    const mappingsList = mappingValidData?.data || [];
+
+                    const errorCodeMap: Record<string, string> = {
+                        'THEORY_SURPLUS': 'Theory hours exceed the allowed limit',
+                        'THEORY_SHORTAGE': 'Theory hours fall short of the required amount',
+                        'PRACTICE_SURPLUS': 'Practice hours exceed the allowed limit',
+                        'PRACTICE_SHORTAGE': 'Practice hours fall short of the required amount',
+                        'SELF_STUDY_SURPLUS': 'Self-study hours exceed the allowed limit',
+                        'SELF_STUDY_SHORTAGE': 'Self-study hours fall short of the required amount',
+                    };
+
+                    let status = (isSessionsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+
+                    const auditResult = {
+                        recommendation: status,
+                        conclusion: status === 'PASS'
+                            ? 'Sessions meet all pacing and CLO-mapping standards. This section can be approved.'
+                            : 'Sessions have issues that must be resolved before approval.',
+                        sections: [
+                            {
+                                id: 'sessions',
+                                title: 'Session Time Allocation',
+                                status: isSessionsValid ? 'PASS' : 'FAIL',
+                                stats: [
+                                    { label: 'Total Sessions', value: `${sortedSessions.length}`, type: 'info' },
+                                    { label: 'Theory Hours', value: quotas.theory >= 0 ? `${quotas.theory} available` : `${Math.abs(quotas.theory)} exceeded`, type: quotas.theory >= 0 ? 'ok' : 'error' },
+                                    { label: 'Practice Hours', value: quotas.practice >= 0 ? `${quotas.practice} available` : `${Math.abs(quotas.practice)} exceeded`, type: quotas.practice >= 0 ? 'ok' : 'error' },
+                                    { label: 'Self-Study Hours', value: quotas.selfStudy >= 0 ? `${quotas.selfStudy}h available` : `${Math.abs(quotas.selfStudy)}h exceeded`, type: quotas.selfStudy >= 0 ? 'ok' : 'error' },
+                                ],
+                                warnings: sessionErrors.map((err: any) => ({
+                                    label: errorCodeMap[err.code] || err.code,
+                                    detail: err.message,
+                                })),
+                            },
+                            {
+                                id: 'mapping',
+                                title: 'CLO — Session Mapping',
+                                status: isMappingsValid ? 'PASS' : 'FAIL',
+                                stats: [
+                                    { label: 'CLOs Covered', value: isAllClosMapped ? 'All covered' : `${unmappedClos.length} missing`, type: isAllClosMapped ? 'ok' : 'error' },
+                                    { label: 'Sessions Linked', value: isAllSessionsMapped ? 'All linked' : `${unmappedSessions.length} unlinked`, type: isAllSessionsMapped ? 'ok' : 'error' },
+                                    { label: 'Total Links', value: `${mappingsList.length}`, type: 'info' },
+                                ],
+                                unmappedClos: unmappedClos.slice(0, 5).map((c: any) => ({
+                                    code: c.clo_code || c.cloCode || 'N/A',
+                                    suggestion: c.suggestion || 'Please map to an appropriate session.',
+                                })),
+                                unmappedSessions: unmappedSessions.slice(0, 5).map((s: any) => ({
+                                    title: s.chapter_title || s.chapterTitle || s.sessionTitle || 'N/A',
+                                    suggestion: s.suggestion || 'Please map to a corresponding CLO.',
+                                })),
+                            },
+                        ],
+                    };
+
+                    const noteJson = JSON.stringify({ aiResult: auditResult, reviewerComment: '' });
+                    setSessionsReview({ status: status as any, note: noteJson });
+                    setCachedAiResult(auditResult);
+
+                    if (status === 'PASS') {
+                        sortedSessions.forEach(s => {
+                            setSessionEvaluation(s.sessionId, {
+                                sessionId: s.sessionId,
+                                sessionTitle: s.sessionTitle || 'Session',
+                                status: 'ACCEPTED',
+                                note: ''
+                            });
+                        });
+                    }
+
+                    setIsAiAuditing(false);
+                    setSessionValidDataState(null);
+                    dispatch(clearAiProcessingMessage());
+                    showToast("AI analysis complete!", "success");
+                    setIsAiSuggestionModalOpen(true);
+                } catch (e: any) {
+                    setIsAiAuditing(false);
+                    setSessionValidDataState(null);
+                    dispatch(clearAiProcessingMessage());
+                    showToast("Error processing AI result.", "error");
+                }
+            } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
+                setIsAiAuditing(false);
+                setSessionValidDataState(null);
+                dispatch(clearAiProcessingMessage());
+                showToast(aiProcessingMessage || "AI suggestion failed.", "error");
+            }
+        }
+    }, [isAiAuditing, aiProcessingStatus, aiProcessingData, aiProcessingMessage, sortedSessions, sessionValidDataState, dispatch, showToast, setSessionsReview, setSessionEvaluation]);
 
     const taskId = reviewId;
 
@@ -129,96 +241,16 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                 sessionId: m.sessionId || m.session_id || ""
             })).filter((pair: any) => pair.cloId && pair.sessionId);
 
-            // 5. Call Mapping validate API (graceful fallback if it fails)
-            let mappingValidData: any = null;
+            // 5. Trigger Mapping validate API and wait for realtime response via useEffect
+            dispatch(clearAiProcessingMessage());
+            setSessionValidDataState(sessionValidData);
             try {
-                const mappingsValidateRes = await MappingService.validateSyllabusSessionMappings(syllabusId || "", mappingsPayload);
-                mappingValidData = mappingsValidateRes?.data;
+                await MappingService.validateSyllabusSessionMappings(syllabusId || "", mappingsPayload);
             } catch (err: any) {
-                console.warn("[Mappings] Validation API failed, using defaults:", err?.message);
+                setIsAiAuditing(false);
+                setSessionValidDataState(null);
+                showToast("Failed to start AI validation.", "error");
             }
-            const isMappingsValid = mappingValidData?.is_valid !== false;
-            const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
-            const isAllSessionsMapped = mappingValidData?.is_all_sessions_mapped !== false;
-            const unmappedClos = mappingValidData?.unmapped_clos || [];
-            const unmappedSessions = mappingValidData?.unmapped_sessions || [];
-            const mappingsList = mappingValidData?.data || [];
-
-            const errorCodeMap: Record<string, string> = {
-                'THEORY_SURPLUS': 'Theory hours exceed the allowed limit',
-                'THEORY_SHORTAGE': 'Theory hours fall short of the required amount',
-                'PRACTICE_SURPLUS': 'Practice hours exceed the allowed limit',
-                'PRACTICE_SHORTAGE': 'Practice hours fall short of the required amount',
-                'SELF_STUDY_SURPLUS': 'Self-study hours exceed the allowed limit',
-                'SELF_STUDY_SHORTAGE': 'Self-study hours fall short of the required amount',
-            };
-
-            // 6. Build Structured JSON
-            let status = (isSessionsValid && isMappingsValid) ? 'PASS' : 'FAIL';
-
-            const auditResult = {
-                recommendation: status,
-                conclusion: status === 'PASS'
-                    ? 'Sessions meet all pacing and CLO-mapping standards. This section can be approved.'
-                    : 'Sessions have issues that must be resolved before approval.',
-                sections: [
-                    {
-                        id: 'sessions',
-                        title: 'Session Time Allocation',
-                        status: isSessionsValid ? 'PASS' : 'FAIL',
-                        stats: [
-                            { label: 'Total Sessions', value: `${sortedSessions.length}`, type: 'info' },
-                            { label: 'Theory Hours', value: quotas.theory >= 0 ? `${quotas.theory} available` : `${Math.abs(quotas.theory)} exceeded`, type: quotas.theory >= 0 ? 'ok' : 'error' },
-                            { label: 'Practice Hours', value: quotas.practice >= 0 ? `${quotas.practice} available` : `${Math.abs(quotas.practice)} exceeded`, type: quotas.practice >= 0 ? 'ok' : 'error' },
-                            { label: 'Self-Study Hours', value: quotas.selfStudy >= 0 ? `${quotas.selfStudy}h available` : `${Math.abs(quotas.selfStudy)}h exceeded`, type: quotas.selfStudy >= 0 ? 'ok' : 'error' },
-                        ],
-                        warnings: sessionErrors.map((err: any) => ({
-                            label: errorCodeMap[err.code] || err.code,
-                            detail: err.message,
-                        })),
-                    },
-                    {
-                        id: 'mapping',
-                        title: 'CLO — Session Mapping',
-                        status: isMappingsValid ? 'PASS' : 'FAIL',
-                        stats: [
-                            { label: 'CLOs Covered', value: isAllClosMapped ? 'All covered' : `${unmappedClos.length} missing`, type: isAllClosMapped ? 'ok' : 'error' },
-                            { label: 'Sessions Linked', value: isAllSessionsMapped ? 'All linked' : `${unmappedSessions.length} unlinked`, type: isAllSessionsMapped ? 'ok' : 'error' },
-                            { label: 'Total Links', value: `${mappingsList.length}`, type: 'info' },
-                        ],
-                        unmappedClos: unmappedClos.slice(0, 5).map((c: any) => ({
-                            code: c.clo_code || c.cloCode || 'N/A',
-                            suggestion: c.suggestion || 'Please map to an appropriate session.',
-                        })),
-                        unmappedSessions: unmappedSessions.slice(0, 5).map((s: any) => ({
-                            title: s.chapter_title || s.chapterTitle || s.sessionTitle || 'N/A',
-                            suggestion: s.suggestion || 'Please map to a corresponding CLO.',
-                        })),
-                    },
-                ],
-            };
-
-            const noteJson = JSON.stringify({ aiResult: auditResult, reviewerComment: '' });
-
-            // Save to review state & cache AI result for the suggestion modal
-            setSessionsReview({ status: status as any, note: noteJson });
-            setCachedAiResult(auditResult);
-
-            // Set all individual session evaluations to ACCEPTED if status is PASS
-            if (status === 'PASS') {
-                sortedSessions.forEach(s => {
-                    setSessionEvaluation(s.sessionId, {
-                        sessionId: s.sessionId,
-                        sessionTitle: s.sessionTitle || 'Session',
-                        status: 'ACCEPTED',
-                        note: ''
-                    });
-                });
-            }
-
-            setIsAiAuditing(false);
-            showToast("AI analysis complete!", "success");
-            setIsAiSuggestionModalOpen(true);
 
         } catch (error: any) {
             console.error("AI API validation failed:", error);
