@@ -181,7 +181,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isMappingSaving, setIsMappingSaving] = useState(false);
     const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
 
-    const { data: mappingsRes } = useQuery({
+    const { data: mappingsRes, refetch: refetchMappings } = useQuery({
         queryKey: ['assessment-mappings', syllabusId],
         queryFn: () => syllabusId ? MappingService.getSyllabusAssessmentMappings(syllabusId) : null,
         enabled: !!syllabusId,
@@ -1023,7 +1023,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             const res = await AssessmentService.importAssessments(syllabusId, subjectId, importFile) as any;
                                             if (res && res.data && res.data.valid) {
                                                 showToast(`Successfully saved ${res.data.savedCount} assessments`, 'success');
-                                                setTimeout(() => { refetchAssessments(); }, 500);
+                                                setTimeout(() => { refetchAssessments(); refetchMappings(); }, 500);
                                                 setIsPreviewOpen(false);
                                                 setPreviewData([]);
                                                 setImportFile(null);
