@@ -130,4 +130,11 @@ export const AccountService = {
       payload,
     );
   },
+
+  async getAccountById(accountId: string): Promise<any> {
+    const response = await apiClient.get<any>(`/api/accounts/${accountId}`, {
+      credentials: "include",
+    });
+    return response?.data;
+  },
 };

@@ -599,9 +599,9 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                         <div className="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-bright">
                             <div>
                                 <h2 className="text-2xl font-extrabold text-on-surface">
-                                    Session {String(draftSession.sessionNumber).padStart(2, '0')}
+                                    {editingIndex === -1 ? 'Create New Session' : `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}`}
                                 </h2>
-                                <p className="text-sm text-on-surface-variant">View session timing, topics, and details.</p>
+                                <p className="text-sm text-on-surface-variant">Configure timing, topics, and pedagogical mappings.</p>
                             </div>
                             <button onClick={handleCloseModal}
                                 className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
@@ -611,15 +611,15 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                            {isSingleValidated && singleValidationErrors.length > 0 && (
+                            {singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
                                 <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
                                     <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                     <div>
-                                        <h4 className="font-bold text-sm">Validation Suggestions</h4>
-                                        <p className="text-xs mb-2">These are suggestions. You can still save the session.</p>
+                                        <h4 className="font-bold text-sm">Validation Errors</h4>
+                                        <p className="text-xs mb-2">Please fix these errors before saving.</p>
                                         <ul className="text-xs list-disc list-inside space-y-1">
                                             {singleValidationErrors[0]?.errors?.map((err: any, idx: number) => (
-                                                <li key={idx}>{err.errorMessage}</li>
+                                                <li key={idx}>{err.errorMessage || err.message}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -636,7 +636,10 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         pattern="[0-9]*"
                                         placeholder="0"
                                         value={draftSession.sessionNumber || ''}
-                                        readOnly
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setDraftSession(prev => prev ? { ...prev, sessionNumber: val === '' ? 0 : Number(val) } : null);
+                                        }}
                                     />
                                 </div>
                                 <div className="md:col-span-7 flex flex-col gap-2">
@@ -645,16 +648,17 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
                                         type="text"
                                         value={draftSession.sessionTitle || ''}
-                                        readOnly
+                                        onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTitle: e.target.value } : null)}
                                     />
                                 </div>
                                 <div className="md:col-span-3 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Duration (Mins)</label>
                                     <input
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
+                                        className="bg-slate-50 border-2 border-slate-200 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed outline-none font-medium"
                                         type="number"
-                                        value={draftSession.duration}
-                                        readOnly
+                                        value={draftSession.duration ?? ''}
+                                        disabled
+                                        title="Duration is configured by system settings"
                                     />
                                 </div>
                                 <div className="md:col-span-6 flex flex-col gap-2">
@@ -663,7 +667,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         <select
                                             className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
                                             value={draftSession.teachingMethods}
-                                            disabled
+                                            onChange={e => setDraftSession(prev => prev ? { ...prev, teachingMethods: e.target.value } : null)}
                                         >
                                             <option value="Lecture">Lecture</option>
                                             <option value="Laboratory">Laboratory</option>
@@ -682,7 +686,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         <select
                                             className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
                                             value={draftSession.sessionType || 'THEORY'}
-                                            disabled
+                                            onChange={e => setDraftSession(prev => prev ? { ...prev, sessionType: e.target.value } : null)}
                                         >
                                             <option value="THEORY">Theory</option>
                                             <option value="PRACTICE">Practice</option>
@@ -697,7 +701,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                         className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none resize-none h-24"
                                         placeholder="Enter the detailed topic for this session..."
                                         value={draftSession.sessionTopic || ''}
-                                        readOnly
+                                        onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTopic: e.target.value } : null)}
                                     />
                                 </div>
                             </section>
@@ -708,7 +712,162 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                         {/* Modal Footer Actions */}
                         <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end items-center gap-4 bg-surface-bright">
                             <button onClick={handleCloseModal}
-                                className="px-8 py-2.5 rounded-lg text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 transition-colors">Close</button>
+                                className="px-6 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Discard Changes</button>
+                            
+                            {!isSingleValidated ? (
+                                <button
+                                    onClick={async () => {
+                                        if (!draftSession || !syllabusId) return;
+                                        setIsSingleValidating(true);
+                                        try {
+                                            const { SessionService } = await import('@/services/session.service');
+                                            
+                                            // 1. Fetch existing sessions
+                                            const existingRes = await SessionService.getSessionsBySyllabusId(syllabusId);
+                                            const existingSessions = existingRes?.data || [];
+                                            
+                                            // 2. Prepare draft session payload
+                                            const draftMapped = {
+                                                syllabusId,
+                                                sessionNumber: Number(draftSession.sessionNumber),
+                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
+                                                teachingMethods: draftSession.teachingMethods || "Lecture",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
+                                                sessionType: draftSession.sessionType || "THEORY",
+                                                duration: Number(draftSession.duration || 50),
+                                            };
+
+                                            // 3. Combine payloads
+                                            let combinedPayload = [];
+                                            if (editingIndex === -1) {
+                                                combinedPayload = existingSessions.map((s: any) => ({
+                                                    syllabusId: s.syllabusId,
+                                                    sessionNumber: Number(s.sessionNumber),
+                                                    sessionTitle: s.sessionTitle,
+                                                    teachingMethods: s.teachingMethods,
+                                                    sessionTopic: s.sessionTopic,
+                                                    sessionType: s.sessionType,
+                                                    duration: Number(s.duration)
+                                                }));
+                                                combinedPayload.push(draftMapped);
+                                            } else {
+                                                combinedPayload = existingSessions.map((s: any) => {
+                                                    if (s.sessionId === draftSession.sessionId) return draftMapped;
+                                                    return {
+                                                        syllabusId: s.syllabusId,
+                                                        sessionNumber: Number(s.sessionNumber),
+                                                        sessionTitle: s.sessionTitle,
+                                                        teachingMethods: s.teachingMethods,
+                                                        sessionTopic: s.sessionTopic,
+                                                        sessionType: s.sessionType,
+                                                        duration: Number(s.duration)
+                                                    };
+                                                });
+                                            }
+
+                                            // 4. Validate
+                                            const validateRes = await SessionService.validateSessionsSyllabus(syllabusId!, combinedPayload) as any;
+                                            const resData = validateRes?.data || {};
+                                            const errorsArray = resData.errors || [];
+                                            const isValid = resData.valid === true && errorsArray.length === 0;
+                                            
+                                            setSingleValidationErrors([{ errors: errorsArray }]);
+                                            
+                                            if (isValid) {
+                                                setIsSingleValidated(true);
+                                                showToast('Session data is valid!', 'success');
+                                            } else {
+                                                setIsSingleValidated(false);
+                                                showToast('Validation failed. Please fix the errors.', 'error');
+                                            }
+                                        } catch (e: any) {
+                                            console.error("Validation error:", e);
+                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
+                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
+                                            setSingleValidationErrors([{ errors: errorsArray }]);
+                                            setIsSingleValidated(false);
+                                            showToast('Validation failed. Please fix the errors.', 'error');
+                                        } finally {
+                                            setIsSingleValidating(false);
+                                        }
+                                    }}
+                                    disabled={isSingleValidating}
+                                    className="bg-blue-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSingleValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">fact_check</span>}
+                                    Validate Session
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={async () => {
+                                        if (!draftSession || !syllabusId) return;
+                                        setIsSaving(true);
+                                        try {
+                                            const { SessionService } = await import('@/services/session.service');
+                                            
+                                            const basePayload = {
+                                                syllabusId,
+                                                sessionNumber: Number(draftSession.sessionNumber),
+                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
+                                                teachingMethods: draftSession.teachingMethods || "Lecture",
+                                                sessionTopic: draftSession.sessionTopic || "General Topic",
+                                                sessionType: draftSession.sessionType || "THEORY",
+                                                duration: Number(draftSession.duration || 50),
+                                            };
+
+                                            let res: any = null;
+                                            if (draftSession.sessionId) {
+                                                // UPDATE (PUT)
+                                                await SessionService.updateSession(draftSession.sessionId, basePayload);
+                                                // SUCCESS: Update Redux
+                                                dispatch(updateSession({ 
+                                                    syllabusId, 
+                                                    index: editingIndex, 
+                                                    updates: draftSession 
+                                                }));
+                                            } else {
+                                                // CREATE (POST)
+                                                res = await SessionService.createSession(basePayload) as any;
+                                                
+                                                if (res?.data?.sessionId || (Array.isArray(res?.data) && res.data[0]?.sessionId)) {
+                                                    const sessionId = res.data.sessionId || res.data[0].sessionId;
+                                                    const createdSession = { ...draftSession, sessionId };
+                                                    dispatch(addSession({ syllabusId, session: createdSession }));
+                                                }
+                                            }
+
+                                            // Force list sorting after save
+                                            setTimeout(() => {
+                                                const currentState = store.getState() as RootState;
+                                                const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
+                                                const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
+                                                dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
+                                                refetchSessions();
+                                            }, 100);
+
+                                            showToast("Session saved successfully!", "success");
+                                            handleCloseModal();
+                                        } catch (e: any) {
+                                            console.error("Save error:", e);
+                                            // Try to parse validation errors from backend
+                                            if (e?.response?.data?.data?.errors?.length > 0) {
+                                                const msg = e.response.data.data.errors[0].errors[0]?.errorMessage || "Validation error";
+                                                showToast(msg, "error");
+                                            } else {
+                                                const msg = e.message || "Failed to save session";
+                                                showToast(msg, "error");
+                                            }
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
+                                    }}
+                                    disabled={isSaving}
+                                    className="bg-primary-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
+                                    {draftSession.sessionId ? 'Update Session' : 'Create Session'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1015,12 +1174,12 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                     const hasError = rowErrors.length > 0;
                                                     
                                                     return (
-                                                    <tr key={idx} className={`transition-colors ${hasError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-primary/5'}`}>
+                                                    <tr key={idx} className={`transition-colors ${hasError ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-primary/5'}`}>
                                                         <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
                                                         <td className="px-4 py-3 font-bold text-slate-800">
                                                             <textarea 
                                                                 rows={2}
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTitle') ? 'border-amber-400 text-amber-700 focus:border-amber-600 focus:ring-amber-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
                                                                 value={item.sessionTitle} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1033,7 +1192,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                         <td className="px-4 py-3 text-slate-500">
                                                             <input 
                                                                 type="number"
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'duration') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'duration') ? 'border-amber-400 text-amber-700 focus:border-amber-600 focus:ring-amber-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
                                                                 value={item.duration} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1045,7 +1204,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                         </td>
                                                         <td className="px-4 py-3 text-slate-600 text-xs">
                                                             <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'teachingMethods') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'teachingMethods') ? 'border-amber-400 text-amber-700 focus:border-amber-600 focus:ring-amber-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
                                                                 value={item.teachingMethods || ''} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1058,7 +1217,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                         <td className="px-4 py-3 text-slate-600 text-xs">
                                                             <textarea 
                                                                 rows={3}
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionTopic') ? 'border-amber-400 text-amber-700 focus:border-amber-600 focus:ring-amber-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none resize-y text-xs`} 
                                                                 value={item.sessionTopic || ''} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1070,7 +1229,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                         </td>
                                                         <td className="px-4 py-3 text-slate-600 text-xs">
                                                             <input 
-                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionType') ? 'border-red-400 text-red-700 focus:border-red-600 focus:ring-red-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
+                                                                className={`w-full bg-transparent border-b ${hasError && rowErrors.some((e: any) => e.field === 'sessionType') ? 'border-amber-400 text-amber-700 focus:border-amber-600 focus:ring-amber-200' : 'border-transparent hover:border-slate-300 focus:border-primary'} px-1 py-0.5 outline-none`} 
                                                                 value={item.sessionType || ''} 
                                                                 onChange={(e) => {
                                                                     const newData = [...previewData];
@@ -1084,7 +1243,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                                                             {hasError && (
                                                                 <div className="flex flex-col gap-1">
                                                                     {rowErrors.map((err: any, i: number) => (
-                                                                        <span key={i} className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded leading-tight">
+                                                                        <span key={i} className="text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded leading-tight">
                                                                             • {err.message}
                                                                         </span>
                                                                     ))}

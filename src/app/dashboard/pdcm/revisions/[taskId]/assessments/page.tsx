@@ -1442,8 +1442,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
                 {/* Validation Results in Modal */}
                 {singleValidationErrors.length > 0 && (
-                    <div className="mx-8 mb-0 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl flex items-start gap-3">
-                        <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                    <div className="mx-8 mb-0 bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-start gap-3">
+                        <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                         <div>
                             <h4 className="font-bold text-sm">Validation Errors</h4>
                             <ul className="text-xs mt-1 list-disc list-inside space-y-0.5">
@@ -1451,7 +1451,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                     <li key={i}><span className="font-semibold">[{err.code || 'ERROR'}]</span> {err.message}</li>
                                 ))}
                             </ul>
-                            <p className="text-[10px] mt-2 italic text-red-600">Please fix these errors before saving.</p>
+                            <p className="text-[10px] mt-2 italic text-amber-600">Please fix these errors before saving.</p>
                         </div>
                     </div>
                 )}

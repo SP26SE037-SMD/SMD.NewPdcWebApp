@@ -11,6 +11,7 @@ import { TaskService, TASK_STATUS } from "@/services/task.service";
 import { ReviewTaskService } from "@/services/review-task.service";
 import { SyllabusService } from "@/services/syllabus.service";
 import { RootState } from "@/store";
+import { AccountService } from "@/services/account.service";
 import ExtensionRequestModal from "./ExtensionRequestModal";
 
 /* ─── Modern Design Tokens ─── */
@@ -590,7 +591,13 @@ export default function PDCMDashboardContent({
     },
   ];
 
-  const role = user?.role?.toUpperCase() || "";
+  const { data: accountData } = useQuery({
+    queryKey: ["account-role", user?.accountId],
+    queryFn: () => AccountService.getAccountById(user!.accountId),
+    enabled: !!user?.accountId,
+  });
+
+  const role = accountData?.role?.roleName?.toUpperCase() || user?.role?.toUpperCase() || "";
 
   return (
     <PDCMBaseLayout
@@ -628,13 +635,15 @@ export default function PDCMDashboardContent({
               >
                 Develop
               </button>
-              <button
-                onClick={() => router.push("/dashboard/pdcm/peer-review")}
-                className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === "peer-review" ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"}`}
-                style={navTab === "peer-review" ? { color: C.primary } : {}}
-              >
-                Review
-              </button>
+              {role !== 'COLLABORATOR' && (
+                <button
+                  onClick={() => router.push("/dashboard/pdcm/peer-review")}
+                  className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === "peer-review" ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"}`}
+                  style={navTab === "peer-review" ? { color: C.primary } : {}}
+                >
+                  Review
+                </button>
+              )}
             </div>
           </div>
         </header>

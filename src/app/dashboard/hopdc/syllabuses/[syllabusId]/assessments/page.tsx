@@ -1123,14 +1123,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
         let isMounted = true;
         const fetchMappings = async () => {
             if (assessment.assessmentId) {
-                console.log(`[FE] Fetching CLO mappings for Assessment: ${assessment.assessmentId}`);
                 try {
                     const res = await MappingService.getAssessmentMappings(assessment.assessmentId);
                     if (isMounted && res.data) {
                         const dbMappings = res.data;
                         const dbCloIds = dbMappings.map(m => m.cloId);
-
-                        console.log(`[FE] Found ${dbCloIds.length} mappings in DB:`, dbCloIds);
 
                         setExistingMappings(dbMappings);
                         // Always sync CLO IDs from the database when opening the modal for an existing assessment
@@ -1157,7 +1154,6 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
     const handleSave = async () => {
         const url = assessment.assessmentId ? `/api/assessments/${assessment.assessmentId}` : '/api/assessments';
-        console.log("ASSESSMENT MODAL SAVE ATTEMPT - URL:", url, "Data:", assessment);
 
         if (!assessment.weight || Number(assessment.weight) <= 0) {
             showToast("Assessment weight is required and must be greater than 0%", "warning");
@@ -1199,7 +1195,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                     <div className="space-y-1">
                         <div className="flex items-center gap-3">
                             <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-widest uppercase">
-                                Viewing
+                                {assessment.assessmentId ? 'Editing' : 'Drafting'}
                             </span>
                             <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                                 {assessment.categoryName || 'New Assessment'} - Part {assessment.part}
@@ -1220,7 +1216,14 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Category</label>
                             <select
                                 value={assessment.categoryId}
-                                disabled
+                                onChange={(e) => {
+                                    const cat = categories.find(c => c.categoryId === e.target.value);
+                                    onUpdate({
+                                        categoryId: e.target.value,
+                                        categoryName: cat?.categoryName,
+                                        typeId: "", typeName: "", questionType: ""
+                                    });
+                                }}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
                             >
                                 <option value="" disabled>Select Category</option>
@@ -1231,7 +1234,14 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Evaluation Type</label>
                             <select
                                 value={assessment.typeId}
-                                disabled
+                                onChange={(e) => {
+                                    const type = types.find(t => t.typeId === e.target.value);
+                                    onUpdate({
+                                        typeId: e.target.value,
+                                        typeName: type?.typeName,
+                                        questionType: ""
+                                    });
+                                }}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
                             >
                                 <option value="" disabled>Select Type</option>
@@ -1242,18 +1252,21 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Part #</label>
                             <input
                                 value={assessment.part}
+                                onChange={(e) => onUpdate({ part: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                                 type="number"
-                                readOnly
+                                min={1}
                             />
                         </div>
                         <div className="col-span-1 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Weight %</label>
                             <input
                                 value={assessment.weight}
+                                onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-emerald-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden font-bold text-primary"
                                 type="number"
-                                readOnly
+                                min={0}
+                                max={100}
                             />
                         </div>
 
@@ -1262,19 +1275,20 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Completion Criteria</label>
                             <input
                                 value={assessment.completionCriteria}
+                                onChange={(e) => onUpdate({ completionCriteria: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                                 placeholder="e.g., Minimum 70% accuracy on functional code snippets"
                                 type="text"
-                                readOnly
                             />
                         </div>
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Duration (mins)</label>
                             <input
                                 value={assessment.duration}
+                                onChange={(e) => onUpdate({ duration: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                                 type="number"
-                                readOnly
+                                min={0}
                             />
                         </div>
 
@@ -1283,8 +1297,8 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Question Type</label>
                             <select
                                 value={assessment.questionType}
+                                onChange={(e) => onUpdate({ questionType: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
-                                disabled
                             >
                                 <option value="" disabled>Select Methodology</option>
                                 {availableQuestionTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1296,20 +1310,20 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             {/* Knowledge Skill Text Input */}
                             <input
                                 value={assessment.knowledgeSkill || ""}
+                                onChange={(e) => onUpdate({ knowledgeSkill: e.target.value })}
                                 placeholder="Enter knowledge or skills"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                                 type="text"
-                                readOnly
                             />
                         </div>
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grading Guide</label>
                             <input
                                 value={assessment.gradingGuide}
+                                onChange={(e) => onUpdate({ gradingGuide: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
                                 placeholder="e.g., Standard Rubric V2"
                                 type="text"
-                                readOnly
                             />
                         </div>
 
@@ -1321,10 +1335,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             </div>
                             <textarea
                                 value={assessment.note}
+                                onChange={(e) => onUpdate({ note: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden resize-none"
                                 placeholder="Provide detailed instructions for the assessment facilitator..."
                                 rows={5}
-                                readOnly
                             ></textarea>
                         </div>
 
@@ -1333,17 +1347,17 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                 </div>
 
                 {/* Validation Results in Modal */}
-                {isSingleValidated && singleValidationErrors.length > 0 && (
+                {singleValidationErrors.length > 0 && (
                     <div className="mx-8 mb-0 bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-start gap-3">
-                        <span className="material-symbols-outlined text-amber-500 mt-0.5">info</span>
+                        <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                         <div>
-                            <h4 className="font-bold text-sm">Validation Suggestions</h4>
+                            <h4 className="font-bold text-sm">Validation Errors</h4>
                             <ul className="text-xs mt-1 list-disc list-inside space-y-0.5">
                                 {singleValidationErrors.map((err: any, i: number) => (
-                                    <li key={i}><span className="font-semibold">[{err.code}]</span> {err.message}</li>
+                                    <li key={i}><span className="font-semibold">[{err.code || 'ERROR'}]</span> {err.message}</li>
                                 ))}
                             </ul>
-                            <p className="text-[10px] mt-2 italic text-amber-600">These are suggestions only. You can still save.</p>
+                            <p className="text-[10px] mt-2 italic text-amber-600">Please fix these errors before saving.</p>
                         </div>
                     </div>
                 )}
@@ -1370,9 +1384,118 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
                         <div className="flex items-center gap-3 shrink-0">
                             <button onClick={() => onClose(false)} disabled={isSaving || isSingleValidating}
-                                className="px-8 py-3 text-sm font-semibold text-white bg-slate-800 rounded-xl hover:bg-slate-700 transition-all disabled:opacity-50">
-                                Close
+                                className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
+                                Cancel
                             </button>
+
+                            {!isSingleValidated ? (
+                                <button
+                                    onClick={async () => {
+                                        if (!syllabusId) return;
+                                        setIsSingleValidating(true);
+                                        try {
+                                            // 1. Fetch existing assessments
+                                            const existingRes = await AssessmentService.getAssessmentsBySyllabusId(syllabusId);
+                                            const existingAssessments = Array.isArray(existingRes?.data) ? existingRes.data : (existingRes?.data?.content || []);
+                                            
+                                            // 2. Prepare draft assessment
+                                            const draftMapped = {
+                                                categoryId: assessment.categoryId,
+                                                typeId: assessment.typeId,
+                                                syllabusId: assessment.syllabusId || syllabusId,
+                                                part: Number(assessment.part),
+                                                weight: Number(assessment.weight),
+                                                completionCriteria: assessment.completionCriteria || "",
+                                                duration: Number(assessment.duration || 0),
+                                                questionType: assessment.questionType || "",
+                                                knowledgeSkill: assessment.knowledgeSkill || "",
+                                                gradingGuide: assessment.gradingGuide || "",
+                                                note: assessment.note || "",
+                                            };
+
+                                            // 3. Combine existing with draft
+                                            let combinedPayload = [];
+                                            if (!assessment.assessmentId) {
+                                                combinedPayload = existingAssessments.map((a: any) => ({
+                                                    categoryId: a.categoryId,
+                                                    typeId: a.typeId,
+                                                    syllabusId: a.syllabusId,
+                                                    part: Number(a.part),
+                                                    weight: Number(a.weight),
+                                                    completionCriteria: a.completionCriteria || "",
+                                                    duration: Number(a.duration || 0),
+                                                    questionType: a.questionType || "",
+                                                    knowledgeSkill: a.knowledgeSkill || "",
+                                                    gradingGuide: a.gradingGuide || "",
+                                                    note: a.note || "",
+                                                }));
+                                                combinedPayload.push(draftMapped);
+                                            } else {
+                                                combinedPayload = existingAssessments.map((a: any) => {
+                                                    if (a.assessmentId === assessment.assessmentId) return draftMapped;
+                                                    return {
+                                                        categoryId: a.categoryId,
+                                                        typeId: a.typeId,
+                                                        syllabusId: a.syllabusId,
+                                                        part: Number(a.part),
+                                                        weight: Number(a.weight),
+                                                        completionCriteria: a.completionCriteria || "",
+                                                        duration: Number(a.duration || 0),
+                                                        questionType: a.questionType || "",
+                                                        knowledgeSkill: a.knowledgeSkill || "",
+                                                        gradingGuide: a.gradingGuide || "",
+                                                        note: a.note || "",
+                                                    };
+                                                });
+                                            }
+
+                                            // 4. Validate
+                                            const res = await AssessmentService.validateAssessmentsSyllabus(syllabusId, combinedPayload) as any;
+                                            const resData = res?.data || {};
+                                            const errorsArray = resData.errors || [];
+                                            const isValid = resData.valid === true && errorsArray.length === 0;
+
+                                            setSingleValidationErrors(errorsArray);
+                                            setSingleValidationSummary(resData.summary || null);
+
+                                            if (isValid) {
+                                                setIsSingleValidated(true);
+                                                showToast('Assessment is valid!', 'success');
+                                            } else {
+                                                setIsSingleValidated(false);
+                                                showToast('Validation failed. Please fix the errors.', 'error');
+                                            }
+                                        } catch (e: any) {
+                                            console.error("Validation error:", e);
+                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
+                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
+                                            setSingleValidationErrors(errorsArray);
+                                            setIsSingleValidated(false);
+                                            showToast('Validation failed. Please fix the errors.', 'error');
+                                        } finally {
+                                            setIsSingleValidating(false);
+                                        }
+                                    }}
+                                    disabled={isSingleValidating}
+                                    className="flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white bg-blue-500 hover:bg-blue-600 shadow-blue-500/20 hover:scale-[1.03]"
+                                >
+                                    {isSingleValidating ? <Loader2 size={20} className="animate-spin" /> : <span className="material-symbols-outlined text-[20px]">fact_check</span>}
+                                    Validate
+                                </button>
+                            ) : (
+                                <button onClick={handleSave} disabled={isSaving}
+                                    className={`flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white
+                                        ${isOverWeight ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary shadow-primary/20 hover:scale-[1.03]'}`}>
+                                    {isSaving ? (
+                                        <Loader2 size={20} className="animate-spin" />
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-[20px]">save</span>
+                                            Save
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </footer>
@@ -1432,7 +1555,7 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
                 <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex items-center gap-3">
                     <span className="material-symbols-outlined text-amber-500 text-lg">info</span>
                     <p className="text-[11px] text-slate-500 font-medium">
-                        View only. Mappings can only be modified by the person in charge of this syllabus.
+                        Changes here are temporary. Please click "Save Changes" at the top to persist your mappings.
                     </p>
                 </div>
             </div>
@@ -1496,40 +1619,49 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                         <div className="max-w-4xl mx-auto space-y-6">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h4 className="text-sm font-bold text-slate-900">Mapped Course Learning Outcomes</h4>
-                                    <p className="text-xs text-slate-500 mt-0.5">Learning outcomes assessed in this component</p>
+                                    <h4 className="text-sm font-bold text-slate-900">Select Course Learning Outcomes</h4>
+                                    <p className="text-xs text-slate-500 mt-0.5">Pick outcomes that are assessed in this component</p>
                                 </div>
                                 <button
                                     onClick={() => setIsExpanded(false)}
                                     className="text-xs font-bold text-slate-500 hover:text-slate-700"
                                 >
-                                    Close Viewer
+                                    Close Editor
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).length > 0 ? (
-                                    subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).map(clo => (
-                                        <div
+                                {subjectClos.map(clo => {
+                                    const isSelected = selectedCloIds.includes(clo.cloId);
+                                    return (
+                                        <button
                                             key={clo.cloId}
-                                            className="flex items-start gap-4 p-4 rounded-xl border bg-white border-slate-200 text-left transition-all"
+                                            onClick={() => {
+                                                const newIds = isSelected
+                                                    ? selectedCloIds.filter(id => id !== clo.cloId)
+                                                    : [...selectedCloIds, clo.cloId];
+                                                onSelectionChange(newIds);
+                                            }}
+                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${isSelected
+                                                    ? 'bg-white border-emerald-400 ring-1 ring-emerald-100 shadow-sm'
+                                                    : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
+                                                }`}
                                         >
+                                            <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'
+                                                }`}>
+                                                {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
+                                            </div>
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                                                <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-emerald-700' : 'text-slate-500'}`}>
                                                     {clo.cloCode}
                                                 </p>
-                                                <p className="text-xs leading-relaxed text-slate-600">
+                                                <p className={`text-xs leading-relaxed ${isSelected ? 'text-emerald-900' : 'text-slate-600'}`}>
                                                     {clo.description}
                                                 </p>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="col-span-1 md:col-span-2 py-8 text-center text-slate-500 bg-white rounded-xl border border-dashed border-slate-200">
-                                        <span className="material-symbols-outlined text-3xl opacity-20 mb-2">link_off</span>
-                                        <p className="text-sm font-medium">No learning outcomes mapped</p>
-                                    </div>
-                                )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </td>
@@ -1544,7 +1676,6 @@ function MappingValidationModal({ result, assessments, onClose }: {
     assessments: AssessmentItem[],
     onClose: () => void
 }) {
-    console.log("📦 Rendering MappingValidationModal with result:", result);
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div
