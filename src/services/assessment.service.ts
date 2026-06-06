@@ -89,6 +89,10 @@ export class AssessmentService {
         return apiClient.post(`/api/assessments/validate?syllabusId=${syllabusId}`, payload);
     }
 
+    static async validateAssessmentsSyllabus(syllabusId: string, payload: any[]) {
+        return apiClient.post(`/api/assessments/syllabus/${syllabusId}/validate`, payload);
+    }
+
     static async bulkCreateAssessments(payload: any[]) {
         return apiClient.post('/api/assessments/bluk', payload);
     }

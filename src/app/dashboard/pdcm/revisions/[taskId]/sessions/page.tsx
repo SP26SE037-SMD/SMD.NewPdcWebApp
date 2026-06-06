@@ -494,7 +494,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
                             >
                                 {isMappingValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">fact_check</span>}
-                                Validate Mapping
+                                {isMappingValidating ? (aiProcessingMessage || "Validating...") : "Validate Mapping"}
                             </button>
                             <button
                                 onClick={handleSaveAllMappings}
@@ -697,15 +697,15 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                            {isSingleValidated && singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
-                                <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
-                                    <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
+                            {singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
+                                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
                                     <div>
-                                        <h4 className="font-bold text-sm">Validation Suggestions</h4>
-                                        <p className="text-xs mb-2">These are suggestions. You can still save the session.</p>
+                                        <h4 className="font-bold text-sm">Validation Errors</h4>
+                                        <p className="text-xs mb-2">Please fix these errors before saving.</p>
                                         <ul className="text-xs list-disc list-inside space-y-1">
                                             {singleValidationErrors[0]?.errors?.map((err: any, idx: number) => (
-                                                <li key={idx}>{err.errorMessage}</li>
+                                                <li key={idx}>{err.errorMessage || err.message}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -817,7 +817,13 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         setIsSingleValidating(true);
                                         try {
                                             const { SessionService } = await import('@/services/session.service');
-                                            const basePayload = {
+                                            
+                                            // 1. Fetch existing sessions
+                                            const existingRes = await SessionService.getSessionsBySyllabusId(syllabusId);
+                                            const existingSessions = existingRes?.data || [];
+                                            
+                                            // 2. Prepare draft session payload
+                                            const draftMapped = {
                                                 syllabusId,
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
@@ -826,25 +832,57 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || 50),
                                             };
-                                            console.log("VALIDATE SINGLE SESSION PAYLOAD:", [basePayload]);
-                                            const validateRes = await SessionService.validateSessions(syllabusId!, [basePayload]) as any;
-                                            const errorsArray = Array.isArray(validateRes) ? validateRes : (validateRes?.errors || validateRes?.data?.errors || []);
+
+                                            // 3. Combine payloads
+                                            let combinedPayload = [];
+                                            if (editingIndex === -1) {
+                                                combinedPayload = existingSessions.map((s: any) => ({
+                                                    syllabusId: s.syllabusId,
+                                                    sessionNumber: Number(s.sessionNumber),
+                                                    sessionTitle: s.sessionTitle,
+                                                    teachingMethods: s.teachingMethods,
+                                                    sessionTopic: s.sessionTopic,
+                                                    sessionType: s.sessionType,
+                                                    duration: Number(s.duration)
+                                                }));
+                                                combinedPayload.push(draftMapped);
+                                            } else {
+                                                combinedPayload = existingSessions.map((s: any) => {
+                                                    if (s.sessionId === draftSession.sessionId) return draftMapped;
+                                                    return {
+                                                        syllabusId: s.syllabusId,
+                                                        sessionNumber: Number(s.sessionNumber),
+                                                        sessionTitle: s.sessionTitle,
+                                                        teachingMethods: s.teachingMethods,
+                                                        sessionTopic: s.sessionTopic,
+                                                        sessionType: s.sessionType,
+                                                        duration: Number(s.duration)
+                                                    };
+                                                });
+                                            }
+
+                                            // 4. Validate
+                                            const validateRes = await SessionService.validateSessionsSyllabus(syllabusId!, combinedPayload) as any;
+                                            const resData = validateRes?.data || {};
+                                            const errorsArray = resData.errors || [];
+                                            const isValid = resData.valid === true && errorsArray.length === 0;
                                             
-                                            setSingleValidationErrors(errorsArray);
-                                            setIsSingleValidated(true);
+                                            setSingleValidationErrors([{ errors: errorsArray }]);
                                             
-                                            if (errorsArray.length === 0) {
+                                            if (isValid) {
+                                                setIsSingleValidated(true);
                                                 showToast('Session data is valid!', 'success');
                                             } else {
-                                                showToast('Validation completed with suggestions', 'success');
+                                                setIsSingleValidated(false);
+                                                showToast('Validation failed. Please fix the errors.', 'error');
                                             }
                                         } catch (e: any) {
                                             console.error("Validation error:", e);
                                             const errorData = e.data || e.response?.data?.data || e.response?.data || {};
                                             const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
-                                            setSingleValidationErrors(errorsArray);
-                                            setIsSingleValidated(true);
-                                            showToast('Validation completed with suggestions', 'success');
+                                            setSingleValidationErrors([{ errors: errorsArray }]);
+                                            setIsSingleValidated(false);
+                                            showToast('Validation failed. Please fix the errors.', 'error');
                                         } finally {
                                             setIsSingleValidating(false);
                                         }
