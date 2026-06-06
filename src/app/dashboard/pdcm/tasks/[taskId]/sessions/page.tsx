@@ -1184,10 +1184,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                                 </td>
                                                             </tr>
                                                             {(hasError || hasWarning) && (
-                                                                <tr className={hasError ? "bg-red-50/50" : "bg-amber-50/50"}>
-                                                                    <td colSpan={6} className={`px-3 py-1.5 text-[11px] font-medium ${hasError ? 'text-red-600' : 'text-amber-600'}`}>
+                                                                <tr className="bg-amber-50/50">
+                                                                    <td colSpan={6} className="px-3 py-1.5 text-[11px] font-medium text-amber-600">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">{hasError ? 'error' : 'warning'}</span>
+                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
                                                                             {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
                                                                         </div>
                                                                     </td>

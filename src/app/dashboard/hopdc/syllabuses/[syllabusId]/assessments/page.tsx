@@ -990,10 +990,10 @@ export default function AssessmentsPage({ params }: { params: Promise<{ syllabus
                                                                 <td className="px-3 py-2"><input className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 outline-none text-xs" value={item.note || ''} onChange={e => { const d = [...previewData]; d[realIdx].note = e.target.value; setPreviewData(d); }} /></td>
                                                             </tr>
                                                             {item._importErrors && item._importErrors.length > 0 && (
-                                                                <tr key={`err-${idx}`} className="bg-red-50/50">
-                                                                    <td colSpan={8} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                <tr key={`err-${idx}`} className="bg-amber-50/50">
+                                                                    <td colSpan={8} className="px-3 py-1.5 text-[11px] text-amber-600 font-medium">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">error</span>
+                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
                                                                             {item._importErrors.join(" | ")}
                                                                         </div>
                                                                     </td>
