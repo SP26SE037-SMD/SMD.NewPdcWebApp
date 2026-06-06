@@ -1141,7 +1141,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
                                     {saveError && (
                                         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
-                                            <span className="material-symbols-outlined text-red-500 mt-0.5">warning</span>
+                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                             <div className="flex-1">
                                                 <p className="text-xs font-medium">{saveError}</p>
                                             </div>
@@ -1282,24 +1282,31 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             
                                             const importErrs = errorData?.importErrors || [];
                                             const validateErrs = errorData?.validateError?.errors || [];
-                                            const validateWarns = errorData?.validateError?.warnings || [];
+                                            const validateWarnsContent = errorData?.validateError?.warningsContent || [];
+                                            const validateWarnsCovered = errorData?.validateError?.warningsCovered || [];
                                             const legacyErrs = (errorData?.errors && Array.isArray(errorData?.errors)) ? errorData.errors : [];
                                             
                                             const allErrors = [
                                                 ...importErrs.map((e: any) => ({ ...e, type: 'error' })),
                                                 ...validateErrs.map((e: any) => ({ ...e, type: 'error' })),
-                                                ...validateWarns.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...validateWarnsContent.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...validateWarnsCovered.map((e: any) => ({ ...e, type: 'warning' })),
                                                 ...legacyErrs.map((e: any) => ({ ...e, type: 'error' }))
                                             ];
 
                                             if (allErrors.length > 0) {
+                                                 const globalErrs = allErrors.filter((e: any) => (!e.sessionNumber || e.sessionNumber === 0) && !e.rowNumber);
+                                                 if (globalErrs.length > 0) {
+                                                     setSaveError(globalErrs.map((e: any) => e.message).join("\n"));
+                                                 }
+                                                 
                                                  showToast(errorData?.message || 'Validation failed or import errors occurred.', 'error');
                                                  setPreviewData(prev => {
                                                      const newData = [...prev];
                                                      newData.forEach(item => { item._importErrors = []; item._importWarnings = []; });
                                                      allErrors.forEach((err: any) => {
                                                          const targetItem = newData.find(n => 
-                                                             (err.sessionNumber !== undefined && n.sessionNumber === err.sessionNumber) || 
+                                                             (err.sessionNumber !== undefined && err.sessionNumber > 0 && n.sessionNumber === err.sessionNumber) || 
                                                              (err.rowNumber !== undefined && n._rowNum === err.rowNumber - 1)
                                                          );
                                                          

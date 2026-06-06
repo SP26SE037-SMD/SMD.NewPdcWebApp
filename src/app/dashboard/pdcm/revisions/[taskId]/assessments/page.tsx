@@ -980,12 +980,12 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                                 <td className="px-3 py-2"><div title={String(item.note || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.note || ""}</div></td>
                                                                 <td className="px-3 py-2"><div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div></td>
                                                             </tr>
-                                                            {item._importErrors && item._importErrors.length > 0 && (
+                                                            {(item._importErrors?.length > 0 || item._importWarnings?.length > 0) && (
                                                                 <tr key={`err-${idx}`} className="bg-amber-50/50">
                                                                     <td colSpan={12} className="px-3 py-1.5 text-[11px] text-amber-600 font-medium">
                                                                         <div className="flex items-center gap-1.5">
                                                                             <span className="material-symbols-outlined text-[14px]">warning</span>
-                                                                            {item._importErrors.join(" | ")}
+                                                                            {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
                                                                         </div>
                                                                     </td>
                                                                 </tr>
@@ -1037,20 +1037,47 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 setImportFile(null);
                                             } else {
                                                 const errorData = res?.data;
-                                                if (errorData && errorData.errors && Array.isArray(errorData.errors)) {
-                                                    showToast(errorData.message || 'Validation failed or import errors occurred.', 'error');
-                                                    setPreviewData(prev => {
-                                                        const newData = [...prev];
-                                                        newData.forEach(item => item._importErrors = []);
-                                                        errorData.errors.forEach((err: any) => {
-                                                            const targetIndex = err.rowNumber - 2;
-                                                            if (targetIndex >= 0 && targetIndex < newData.length) {
-                                                                if (!newData[targetIndex]._importErrors) newData[targetIndex]._importErrors = [];
-                                                                newData[targetIndex]._importErrors.push(err.message);
-                                                            }
-                                                        });
-                                                        return newData;
-                                                    });
+                                                const importErrs = errorData?.importErrors || [];
+                                                const validateErrs = errorData?.validateError?.errors || [];
+                                                const validateWarnsContent = errorData?.validateError?.warningsContent || [];
+                                                const validateWarnsCovered = errorData?.validateError?.warningsCovered || [];
+                                                const legacyErrs = (errorData?.errors && Array.isArray(errorData?.errors)) ? errorData.errors : [];
+
+                                                const allErrors = [
+                                                    ...importErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                    ...validateErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                    ...validateWarnsContent.map((e: any) => ({ ...e, type: 'warning' })),
+                                                    ...validateWarnsCovered.map((e: any) => ({ ...e, type: 'warning' })),
+                                                    ...legacyErrs.map((e: any) => ({ ...e, type: 'error' }))
+                                                ];
+
+                                                if (allErrors.length > 0) {
+                                                     const globalErrs = allErrors.filter((e: any) => (!e.sessionNumber || e.sessionNumber === 0) && !e.rowNumber);
+                                                     let errorMsg = errorData?.message || 'Validation failed or import errors occurred.';
+                                                     if (globalErrs.length > 0) {
+                                                         errorMsg += '\n' + globalErrs.map((e: any) => e.message).join('\n');
+                                                     }
+                                                     showToast(errorMsg, 'error');
+                                                     setPreviewData(prev => {
+                                                         const newData = [...prev];
+                                                         newData.forEach(item => { item._importErrors = []; item._importWarnings = []; });
+                                                         allErrors.forEach((err: any) => {
+                                                             const targetItem = newData.find(n => 
+                                                                 (err.sessionNumber !== undefined && err.sessionNumber > 0 && n.sessionNumber === err.sessionNumber) || 
+                                                                 (err.rowNumber !== undefined && n._rowNum === err.rowNumber - 1)
+                                                             );
+                                                             if (targetItem) {
+                                                                 if (err.type === 'warning') {
+                                                                     if (!targetItem._importWarnings) targetItem._importWarnings = [];
+                                                                     targetItem._importWarnings.push(err.message);
+                                                                 } else {
+                                                                     if (!targetItem._importErrors) targetItem._importErrors = [];
+                                                                     targetItem._importErrors.push(err.message);
+                                                                 }
+                                                             }
+                                                         });
+                                                         return newData;
+                                                     });
                                                 } else {
                                                     showToast('Validation failed or import errors occurred.', 'error');
                                                 }
@@ -1058,16 +1085,43 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                         } catch (error: any) {
                                             // Validation errors are expected, no need to log the entire error to trigger the Next.js overlay
                                             const errorData = error.data?.data || error.data;
-                                            if (errorData && errorData.errors && Array.isArray(errorData.errors)) {
-                                                 showToast(errorData.message || 'Validation failed or import errors occurred.', 'error');
+                                            const importErrs = errorData?.importErrors || [];
+                                            const validateErrs = errorData?.validateError?.errors || [];
+                                            const validateWarnsContent = errorData?.validateError?.warningsContent || [];
+                                            const validateWarnsCovered = errorData?.validateError?.warningsCovered || [];
+                                            const legacyErrs = (errorData?.errors && Array.isArray(errorData?.errors)) ? errorData.errors : [];
+
+                                            const allErrors = [
+                                                ...importErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                ...validateErrs.map((e: any) => ({ ...e, type: 'error' })),
+                                                ...validateWarnsContent.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...validateWarnsCovered.map((e: any) => ({ ...e, type: 'warning' })),
+                                                ...legacyErrs.map((e: any) => ({ ...e, type: 'error' }))
+                                            ];
+
+                                            if (allErrors.length > 0) {
+                                                 const globalErrs = allErrors.filter((e: any) => (!e.sessionNumber || e.sessionNumber === 0) && !e.rowNumber);
+                                                 let errorMsg = errorData?.message || 'Validation failed or import errors occurred.';
+                                                 if (globalErrs.length > 0) {
+                                                     errorMsg += '\n' + globalErrs.map((e: any) => e.message).join('\n');
+                                                 }
+                                                 showToast(errorMsg, 'error');
                                                  setPreviewData(prev => {
                                                      const newData = [...prev];
-                                                     newData.forEach(item => item._importErrors = []);
-                                                     errorData.errors.forEach((err: any) => {
-                                                         const targetIndex = err.rowNumber - 2;
-                                                         if (targetIndex >= 0 && targetIndex < newData.length) {
-                                                             if (!newData[targetIndex]._importErrors) newData[targetIndex]._importErrors = [];
-                                                             newData[targetIndex]._importErrors.push(err.message);
+                                                     newData.forEach(item => { item._importErrors = []; item._importWarnings = []; });
+                                                     allErrors.forEach((err: any) => {
+                                                         const targetItem = newData.find(n => 
+                                                             (err.sessionNumber !== undefined && err.sessionNumber > 0 && n.sessionNumber === err.sessionNumber) || 
+                                                             (err.rowNumber !== undefined && n._rowNum === err.rowNumber - 1)
+                                                         );
+                                                         if (targetItem) {
+                                                             if (err.type === 'warning') {
+                                                                 if (!targetItem._importWarnings) targetItem._importWarnings = [];
+                                                                 targetItem._importWarnings.push(err.message);
+                                                             } else {
+                                                                 if (!targetItem._importErrors) targetItem._importErrors = [];
+                                                                 targetItem._importErrors.push(err.message);
+                                                             }
                                                          }
                                                      });
                                                      return newData;
