@@ -361,10 +361,11 @@ export default function PDCMReviewInformationPage({
                           </span>
                         )}
                         {url && (
-                          <div className="mt-1">
-                            <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 hover:underline flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[12px]">link</span>
-                              Link
+                          <div className="mt-2">
+                            <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" 
+                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-bold tracking-wide transition-all bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 w-fit shadow-sm border border-blue-100/50">
+                              <span className="material-symbols-outlined text-[14px]">link</span>
+                              <span>Access Resource</span>
                             </a>
                           </div>
                         )}
