@@ -698,8 +698,8 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                             {singleValidationErrors.length > 0 && singleValidationErrors[0]?.errors?.length > 0 && (
-                                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
-                                    <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                                <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                     <div>
                                         <h4 className="font-bold text-sm">Validation Errors</h4>
                                         <p className="text-xs mb-2">Please fix these errors before saving.</p>
@@ -1229,9 +1229,9 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                     
                                                     return (
                                                         <React.Fragment key={idx}>
-                                                            <tr className={`group transition-colors ${hasError ? 'bg-red-50/70 hover:bg-red-100/70' : hasWarning ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-primary/5'}`}>
+                                                            <tr className={`group transition-colors ${hasError ? 'bg-amber-50/70 hover:bg-amber-100/70' : hasWarning ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-primary/5'}`}>
                                                                 <td className="px-4 py-3 font-medium text-slate-700 text-center relative">
-                                                                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${hasError ? 'bg-red-100 text-red-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{item.sessionNumber}</span>
+                                                                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${hasError ? 'bg-amber-100 text-amber-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{item.sessionNumber}</span>
                                                                     {(hasError || hasWarning) && (
                                                                         <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 hidden group-hover:flex flex-col z-[60] min-w-[280px] max-w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl pointer-events-none animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200">
                                                                             {/* Caret pointing left */}

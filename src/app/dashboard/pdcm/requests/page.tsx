@@ -107,7 +107,7 @@ export default function RequestsPage() {
       sidebarItems={sidebarItems}
       headerTabs={[
         { id: "develop", label: "My Task", isActive: false, onClick: () => router.push("/dashboard/pdcm/develop") },
-        { id: "peer-review", label: "My Review Task", isActive: false, onClick: () => router.push("/dashboard/pdcm/peer-review") },
+        ...(user?.role?.toUpperCase() !== 'COLLABORATOR' ? [{ id: "peer-review", label: "My Review Task", isActive: false, onClick: () => router.push("/dashboard/pdcm/peer-review") }] : []),
         { id: "requests", label: "Requests", isActive: true, onClick: () => {} },
       ]}
     >

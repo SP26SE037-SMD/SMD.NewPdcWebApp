@@ -68,7 +68,7 @@ export const ROLE_PATHS: Record<string, string> = {
   HOPDC: "hopdc",
   HOCFDC: "hocfdc",
   VP: "vice-principal",
-  COLLABORATOR: "collaborator",
+  COLLABORATOR: "pdcm",
 };
 
 // Supported roles — only these roles are allowed to access the application
