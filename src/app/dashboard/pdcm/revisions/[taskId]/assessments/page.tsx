@@ -945,10 +945,30 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                             <tbody className="divide-y divide-outline-variant/10">
                                                 {previewData.slice((previewPage - 1) * 10, previewPage * 10).map((item, idx) => {
                                                     const realIdx = (previewPage - 1) * 10 + idx;
+                                                    const hasError = item._importErrors && item._importErrors.length > 0;
+                                                    const hasWarning = item._importWarnings && item._importWarnings.length > 0;
                                                     return (
                                                         <React.Fragment key={idx}>
-                                                            <tr className="hover:bg-primary/5 transition-colors">
-                                                                <td className="px-3 py-2 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">{realIdx + 1}</span></td>
+                                                            <tr className={`group transition-colors ${hasError ? 'bg-red-50/70 hover:bg-red-100/70' : hasWarning ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-primary/5'}`}>
+                                                                <td className="px-3 py-2 text-center relative">
+                                                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${hasError ? 'bg-red-100 text-red-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{realIdx + 1}</span>
+                                                                    {(hasError || hasWarning) && (
+                                                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex flex-col z-[60] min-w-[250px] max-w-[400px] bg-white border shadow-xl rounded-xl p-3 text-left pointer-events-none" style={{ borderColor: hasError ? '#fca5a5' : '#fcd34d' }}>
+                                                                            {item._importErrors?.map((err: string, i: number) => (
+                                                                                 <div key={`err-${i}`} className="flex gap-1.5 text-red-600 items-start text-[11px] leading-tight mb-1">
+                                                                                     <span className="material-symbols-outlined text-[14px] shrink-0">error</span>
+                                                                                     <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err}</span>
+                                                                                 </div>
+                                                                             ))}
+                                                                             {item._importWarnings?.map((warn: string, i: number) => (
+                                                                                 <div key={`warn-${i}`} className="flex gap-1.5 text-amber-600 items-start text-[11px] leading-tight mb-1">
+                                                                                     <span className="material-symbols-outlined text-[14px] shrink-0">warning</span>
+                                                                                     <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{warn}</span>
+                                                                                 </div>
+                                                                             ))}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
                                                                 <td className="px-3 py-2 text-xs">
                                                                     <select className="w-full bg-transparent outline-none text-xs appearance-none opacity-80 cursor-not-allowed" value={item.categoryId || ""} disabled>
                                                                         {ASSESSMENT_CATEGORIES.map((c: any) => (
@@ -980,16 +1000,6 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                                 <td className="px-3 py-2"><div title={String(item.note || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.note || ""}</div></td>
                                                                 <td className="px-3 py-2"><div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div></td>
                                                             </tr>
-                                                            {(item._importErrors?.length > 0 || item._importWarnings?.length > 0) && (
-                                                                <tr key={`err-${idx}`} className="bg-amber-50/50">
-                                                                    <td colSpan={12} className="px-3 py-1.5 text-[11px] text-amber-600 font-medium">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
-                                                                            {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            )}
                                                         </React.Fragment>
                                                     );
                                                 })}

@@ -1191,8 +1191,26 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                     
                                                     return (
                                                         <React.Fragment key={idx}>
-                                                            <tr className={`transition-colors hover:bg-primary/5`}>
-                                                                <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
+                                                            <tr className={`group transition-colors ${hasError ? 'bg-red-50/70 hover:bg-red-100/70' : hasWarning ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-primary/5'}`}>
+                                                                <td className="px-4 py-3 font-medium text-slate-700 text-center relative">
+                                                                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${hasError ? 'bg-red-100 text-red-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{item.sessionNumber}</span>
+                                                                    {(hasError || hasWarning) && (
+                                                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex flex-col z-[60] min-w-[250px] max-w-[400px] bg-white border shadow-xl rounded-xl p-3 text-left pointer-events-none" style={{ borderColor: hasError ? '#fca5a5' : '#fcd34d' }}>
+                                                                            {item._importErrors?.map((err: string, i: number) => (
+                                                                                 <div key={`err-${i}`} className="flex gap-1.5 text-red-600 items-start text-[11px] leading-tight mb-1">
+                                                                                     <span className="material-symbols-outlined text-[14px] shrink-0">error</span>
+                                                                                     <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err}</span>
+                                                                                 </div>
+                                                                             ))}
+                                                                             {item._importWarnings?.map((warn: string, i: number) => (
+                                                                                 <div key={`warn-${i}`} className="flex gap-1.5 text-amber-600 items-start text-[11px] leading-tight mb-1">
+                                                                                     <span className="material-symbols-outlined text-[14px] shrink-0">warning</span>
+                                                                                     <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{warn}</span>
+                                                                                 </div>
+                                                                             ))}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
                                                                 <td className="px-4 py-3 font-bold text-slate-800">
                                                                     <div title={String(item.sessionTitle || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTitle || ""}</div>
                                                                 </td>
@@ -1209,16 +1227,6 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                                     <div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div>
                                                                 </td>
                                                             </tr>
-                                                            {(hasError || hasWarning) && (
-                                                                <tr className="bg-amber-50/50">
-                                                                    <td colSpan={6} className="px-3 py-1.5 text-[11px] font-medium text-amber-600">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
-                                                                            {[...(item._importErrors || []), ...(item._importWarnings || [])].join(" | ")}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            )}
                                                         </React.Fragment>
                                                     );
                                                 })}
