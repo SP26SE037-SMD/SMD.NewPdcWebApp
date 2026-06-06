@@ -253,7 +253,10 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
         // 2. Remove trailing line breaks
         cleaned = cleaned.replace(/(<br\s*\/?>)+$/g, '').trim();
 
-        // 3. Optional: We could strip specific problematic attributes here if needed,
+        // 3. Remove garbage empty anchor tags (like <a id="_heading=..."></a>) from Mammoth/Google Docs
+        cleaned = cleaned.replace(/<a[^>]*><\/a>/gi, '');
+
+        // 4. Optional: We could strip specific problematic attributes here if needed,
         // but for now let's allow strong, em, u, span style=...
         return cleaned;
     };
@@ -555,7 +558,8 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                         else finalType = 'PARAGRAPH'; // Default to paragraph for any unknown type
 
                         const rawContent = b.contentText || '';
-                        const cleanContent = sanitizeBlockContent(rawContent);
+                        const contentToRender = parsedStyle.html || rawContent;
+                        const cleanContent = sanitizeBlockContent(contentToRender);
 
                         return {
                             id: crypto.randomUUID(),
@@ -664,11 +668,12 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                     else if (rawType.includes('QUOTE') || rawType === 'BLOCKQUOTE') finalType = 'QUOTE';
                     else if (rawType.includes('CODE')) finalType = 'CODE_BLOCK';
                     else if (rawType.includes('IMAGE') || rawType === 'IMG') finalType = 'IMAGE';
-                    else if (rawType.includes('DIVIDER') || rawType.includes('HR')) finalType = 'DIVIDER';
+                    else if (rawType.includes('DIVIDER') || rawType === 'HR') finalType = 'DIVIDER';
                     else if (rawType.includes('TABLE')) finalType = 'TABLE';
                     else finalType = 'PARAGRAPH';
 
-                    const cleanContent = sanitizeBlockContent(b.contentText || '');
+                    const contentToRender = parsedStyle.html || b.contentText || '';
+                    const cleanContent = sanitizeBlockContent(contentToRender);
 
                     return {
                         id: crypto.randomUUID(),
@@ -762,10 +767,10 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
 
     const updateBlockContent = (id: string, content: string) => {
         setBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
-        if (content === '/h1 ') updateBlockType(id, 'H1', '');
-        else if (content === '/h2 ') updateBlockType(id, 'H2', '');
-        else if (content === '/quote ') updateBlockType(id, 'QUOTE', '');
-        else if (content === '/code ') updateBlockType(id, 'CODE_BLOCK', '');
+        if (content === '/h1 ' || content === '# ') updateBlockType(id, 'H1', '');
+        else if (content === '/h2 ' || content === '## ') updateBlockType(id, 'H2', '');
+        else if (content === '/quote ' || content === '> ') updateBlockType(id, 'QUOTE', '');
+        else if (content === '/code ' || content === '``` ') updateBlockType(id, 'CODE_BLOCK', '');
         else if (content === '/ul ' || content === '- ') updateBlockType(id, 'BULLET_LIST', '');
         else if (content === '/ol ' || content === '1. ') updateBlockType(id, 'ORDERED_LIST', '');
         else if (content === '/div ' || content === '---') updateBlockType(id, 'DIVIDER', '');
@@ -875,9 +880,34 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                 await addBlock(index, 'PARAGRAPH');
             }
             return;
-        } else if (e.key === 'Backspace' && block.content === '' && index > 0) {
-            e.preventDefault();
-            removeBlock(block.id);
+        } else if (e.key === 'Backspace') {
+            const selection = window.getSelection();
+            const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+            
+            // If block is empty, delete it
+            if (stripHtml(block.content).trim() === '' && index > 0) {
+                e.preventDefault();
+                const prevBlockId = blocks[index - 1]?.id;
+                removeBlock(block.id);
+                if (prevBlockId) setFocusedBlockId(prevBlockId);
+            } 
+            // If at the start of a block, downgrade format or merge with previous
+            else if (range && range.startOffset === 0 && range.collapsed && index > 0) {
+                if (block.type !== 'PARAGRAPH') {
+                    // Downgrade to PARAGRAPH instead of merging immediately
+                    e.preventDefault();
+                    setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, type: 'PARAGRAPH' } : b));
+                } else {
+                    e.preventDefault();
+                    const prevBlock = blocks[index - 1];
+                    const currentContent = block.content;
+                    
+                    // Merge content
+                    setBlocks(prev => prev.map(b => b.id === prevBlock.id ? { ...b, content: prevBlock.content + currentContent } : b));
+                    removeBlock(block.id);
+                    setFocusedBlockId(prevBlock.id);
+                }
+            }
         } else if (e.key === 'ArrowDown') {
             const selection = window.getSelection();
             if (selection && selection.rangeCount > 0) {
@@ -1104,8 +1134,8 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
             const payload = {
                 idx: index,
                 blockType: block.type || 'PARAGRAPH',
-                blockStyle: JSON.stringify({ align: block.align || 'left', color: block.color, fontSize: block.fontSize }),
-                contentText: sanitized
+                blockStyle: JSON.stringify({ align: block.align || 'left', color: block.color, fontSize: block.fontSize, html: sanitized }),
+                contentText: stripHtml(sanitized)
             };
 
             // Nếu đã có ID trên hệ thống -> Update 1 Block
@@ -1171,13 +1201,13 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
             const requestBody = {
                 deleteBlockList: finalDeletedIds,
                 blocks: validBlocks.map((b, index) => {
-                const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content || "");
-                return {
-                    blockId: b.blockId || undefined,
+                    const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content || "").replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content || "");
+                    return {
+                        blockId: b.blockId || undefined,
                         idx: index,
                         blockType: b.type || 'PARAGRAPH',
-                        blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize }),
-                        contentText: sanitized
+                        blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize, html: sanitized }),
+                        contentText: stripHtml(sanitized)
                     };
                 })
             };
@@ -1424,23 +1454,7 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                     if (text.length > 0 || innerHtml.length > 0) {
                         let finalContent = sanitizeBlockContent(clone.innerHTML);
 
-                        if (liType === 'H2') {
-                            h2Count++;
-                            const plainText = stripHtml(finalContent).trim();
-                            if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
-                                const toRoman = (num: number) => {
-                                    const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
-                                    let str = '';
-                                    for (let i of Object.keys(roman)) {
-                                        let q = Math.floor(num / roman[i as keyof typeof roman]);
-                                        num -= q * roman[i as keyof typeof roman];
-                                        str += i.repeat(q);
-                                    }
-                                    return str;
-                                };
-                                finalContent = `${toRoman(h2Count)}. ${finalContent}`;
-                            }
-                        }
+                        // Handle H2 numbering has been moved to UI rendering
 
                         resultBlocks.push({
                             id: crypto.randomUUID(),
@@ -1518,25 +1532,7 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
 
             let finalContent = sanitizeBlockContent(content);
 
-            // Handle H2 numbering
-            if (type === 'H2') {
-                h2Count++;
-                const plainText = stripHtml(finalContent).trim();
-                // Only prepend if it doesn't already start with a number like "1. "
-                if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
-                    const toRoman = (num: number) => {
-                        const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
-                        let str = '';
-                        for (let i of Object.keys(roman)) {
-                            let q = Math.floor(num / roman[i as keyof typeof roman]);
-                            num -= q * roman[i as keyof typeof roman];
-                            str += i.repeat(q);
-                        }
-                        return str;
-                    };
-                    finalContent = `${toRoman(h2Count)}. ${finalContent}`;
-                }
-            }
+            // Handle H2 numbering has been moved to UI rendering
 
             resultBlocks.push({
                 id: crypto.randomUUID(),
@@ -2013,18 +2009,29 @@ const handleSaveDraft = async (blocksToSync?: Block[], deletedIdsToSync?: string
                                                             />
                                                         )}
                                                         {block.type === 'H2' && (
-                                                            <EditableBlock
-                                                                id={block.id}
-                                                                html={block.content}
-                                                                onFocus={() => setFocusedBlockId(block.id)}
-                                                                onBlur={() => autoSaveBlock(block.id, globalIndex)}
-                                                                onChange={val => updateBlockContent(block.id, val)}
-                                                                onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                onPaste={e => handlePaste(e, globalIndex, block)}
-                                                                placeholder=""
-                                                                className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 mt-4 mb-2 leading-tight min-h-[1em]`}
-                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
-                                                            />
+                                                            <div className="flex items-baseline gap-3 w-full mt-4 mb-2">
+                                                                <span className="font-bold select-none shrink-0" style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}>
+                                                                    {(() => {
+                                                                        let count = 1;
+                                                                        for (let i = 0; i < globalIndex; i++) {
+                                                                            if (blocks[i].type === 'H2') count++;
+                                                                        }
+                                                                        return `${count}.`;
+                                                                    })()}
+                                                                </span>
+                                                                <EditableBlock
+                                                                    id={block.id}
+                                                                    html={block.content}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    onBlur={() => autoSaveBlock(block.id, globalIndex)}
+                                                                    onChange={val => updateBlockContent(block.id, val)}
+                                                                    onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                    onPaste={e => handlePaste(e, globalIndex, block)}
+                                                                    placeholder=""
+                                                                    className={`flex-1 ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 leading-tight min-h-[1em]`}
+                                                                    style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
+                                                                />
+                                                            </div>
                                                         )}
                                                         {block.type === 'PARAGRAPH' && (
                                                             <EditableBlock
