@@ -529,7 +529,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
                 } else {
                     const sorted = [...backendBlocks].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
                     const mapped = sorted.map((b, i) => {
-                        let parsedStyle: { align?: 'left' | 'center' | 'right', color?: string, fontSize?: string } = {};
+                        let parsedStyle: { align?: 'left' | 'center' | 'right', color?: string, fontSize?: string, html?: string } = {};
                         try {
                             const styleJson = b.blockStyle || ''; // SWAPPED
                             if (styleJson && styleJson.startsWith('{')) {
@@ -645,7 +645,7 @@ export default function EditMaterialPage({ params }: { params: Promise<{ materia
             if (backendBlocks.length > 0) {
                 const sorted = [...backendBlocks].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
                 const mapped = sorted.map(b => {
-                    let parsedStyle: { align?: 'left' | 'center' | 'right', color?: string, fontSize?: string } = {};
+                    let parsedStyle: { align?: 'left' | 'center' | 'right', color?: string, fontSize?: string, html?: string } = {};
                     try {
                         const styleJson = b.blockStyle || ''; // SWAPPED
                         if (styleJson && styleJson.startsWith('{')) {
