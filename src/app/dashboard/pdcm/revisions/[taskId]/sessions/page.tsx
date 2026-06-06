@@ -1195,22 +1195,22 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                                 <td className="px-4 py-3 font-medium text-slate-700 text-center relative">
                                                                     <span className={`px-2 py-1 rounded-md text-xs font-bold ${hasError ? 'bg-red-100 text-red-700' : hasWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{item.sessionNumber}</span>
                                                                     {(hasError || hasWarning) && (
-                                                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 hidden group-hover:flex flex-col z-[60] min-w-[280px] max-w-[400px] bg-slate-800 text-white shadow-xl rounded-xl pointer-events-none animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200">
+                                                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 hidden group-hover:flex flex-col z-[60] min-w-[280px] max-w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl pointer-events-none animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200">
                                                                             {/* Caret pointing left */}
-                                                                            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-slate-800 rotate-45"></div>
+                                                                            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-white border-l border-b border-slate-200 rotate-45"></div>
                                                                             
                                                                             {/* Body */}
                                                                             <div className="p-3.5 flex flex-col gap-2.5 relative z-10">
                                                                                 {item._importErrors?.map((err: string, i: number) => (
                                                                                      <div key={`err-${i}`} className="flex gap-2 items-start text-[12px] leading-snug">
-                                                                                         <span className="material-symbols-outlined text-[14px] shrink-0 mt-0.5 text-red-400">error</span>
-                                                                                         <span className="text-slate-100" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err}</span>
+                                                                                         <span className="material-symbols-outlined text-[16px] shrink-0 text-red-600">error</span>
+                                                                                         <span className="text-red-700 font-medium" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err}</span>
                                                                                      </div>
                                                                                  ))}
                                                                                  {item._importWarnings?.map((warn: string, i: number) => (
                                                                                      <div key={`warn-${i}`} className="flex gap-2 items-start text-[12px] leading-snug">
-                                                                                         <span className="material-symbols-outlined text-[14px] shrink-0 mt-0.5 text-amber-400">warning</span>
-                                                                                         <span className="text-slate-100" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{warn}</span>
+                                                                                         <span className="material-symbols-outlined text-[16px] shrink-0 text-amber-500">warning</span>
+                                                                                         <span className="text-amber-600 font-medium" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{warn}</span>
                                                                                      </div>
                                                                                  ))}
                                                                             </div>
