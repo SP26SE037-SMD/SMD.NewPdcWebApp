@@ -98,9 +98,10 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
                 let sourcesReference: string[] = [];
                 const sourcesData = realTask?.subject?.sources;
                 if (sourcesData && Array.isArray(sourcesData)) {
-                    sourcesReference = sourcesData.map((s: any) =>
-                        `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`
-                    );
+                    sourcesReference = sourcesData.map((s: any) => {
+                        const text = `${s.author ? s.author + '. ' : ''}${s.sourceName}${s.publisher ? ' - ' + s.publisher : ''}${s.publishedYear ? ' (' + s.publishedYear + ')' : ''}`;
+                        return s.url ? `${text}|||${s.url}` : text;
+                    });
                 }
 
                 let closText: string[] = [];
@@ -217,18 +218,30 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
                             <ol key={ci} className="space-y-2">
                                 {col.map((ref, idx) => {
                                     const num = ci === 0 ? idx + 1 : half + idx + 1;
-                                    const yearMatch = ref.match(/\((\d{4})\)/);
+                                    const parts = ref.split('|||');
+                                    const refText = parts[0];
+                                    const url = parts[1];
+
+                                    const yearMatch = refText.match(/\((\d{4})\)/);
                                     const year = yearMatch ? yearMatch[0] : '';
-                                    const title = ref.replace(/\(\d{4}\)/, '').trim().replace(/\.$/, '').trim();
+                                    const title = refText.replace(/\(\d{4}\)/, '').trim().replace(/\.$/, '').trim();
                                     return (
                                         <li key={idx} className="flex items-start gap-2.5">
                                             <span className="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 mt-0.5"
                                                 style={{ background: C.surfaceContainer, color: C.primary }}>
                                                 {num}
                                             </span>
-                                            <div className="text-[10.5px] leading-snug">
+                                            <div className="text-[10.5px] leading-snug break-all">
                                                 <span className="font-bold" style={{ color: C.onSurface }}>{title}</span>
                                                 {year && <span className="ml-1.5 opacity-60" style={{ color: C.onSurfaceVariant }}>{year}</span>}
+                                                {url && (
+                                                    <div className="mt-1">
+                                                        <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 hover:underline flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[12px]">link</span>
+                                                            Link
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
                                         </li>
                                     );

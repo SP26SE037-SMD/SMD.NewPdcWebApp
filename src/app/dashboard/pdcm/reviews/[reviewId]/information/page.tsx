@@ -105,8 +105,10 @@ export default function PDCMReviewInformationPage({
         const taskSubjectSources = routeTaskData?.data?.subject?.sources;
         if (taskSubjectSources && taskSubjectSources.length > 0) {
           sourcesReference = taskSubjectSources.map(
-            (s) =>
-              `${s.author ? s.author + ". " : ""}${s.sourceName}${s.publisher ? " - " + s.publisher : ""}${s.publishedYear ? " (" + s.publishedYear + ")" : ""}`,
+            (s) => {
+              const text = `${s.author ? s.author + ". " : ""}${s.sourceName}${s.publisher ? " - " + s.publisher : ""}${s.publishedYear ? " (" + s.publishedYear + ")" : ""}`;
+              return s.url ? `${text}|||${s.url}` : text;
+            }
           );
         }
 
@@ -132,10 +134,13 @@ export default function PDCMReviewInformationPage({
             author: string;
             publisher: string;
             publishedYear: number;
+            url?: string;
           }>;
           sourcesReference = (sourcesData || []).map(
-            (s) =>
-              `${s.author ? s.author + ". " : ""}${s.sourceName}${s.publisher ? " - " + s.publisher : ""}${s.publishedYear ? " (" + s.publishedYear + ")" : ""}`,
+            (s) => {
+              const text = `${s.author ? s.author + ". " : ""}${s.sourceName}${s.publisher ? " - " + s.publisher : ""}${s.publishedYear ? " (" + s.publishedYear + ")" : ""}`;
+              return s.url ? `${text}|||${s.url}` : text;
+            }
           );
         }
 
@@ -318,9 +323,13 @@ export default function PDCMReviewInformationPage({
               <ol key={ci} className="space-y-2">
                 {col.map((ref, idx) => {
                   const num = ci === 0 ? idx + 1 : half + idx + 1;
-                  const yearMatch = ref.match(/\((\d{4})\)/);
+                  const parts = ref.split('|||');
+                  const refText = parts[0];
+                  const url = parts[1];
+
+                  const yearMatch = refText.match(/\((\d{4})\)/);
                   const year = yearMatch ? yearMatch[0] : "";
-                  const title = ref
+                  const title = refText
                     .replace(/\(\d{4}\)/, "")
                     .trim()
                     .replace(/\.$/, "")
@@ -336,7 +345,7 @@ export default function PDCMReviewInformationPage({
                       >
                         {num}
                       </span>
-                      <div className="text-[10.5px] leading-snug">
+                      <div className="text-[10.5px] leading-snug break-all">
                         <span
                           className="font-bold"
                           style={{ color: C.onSurface }}
@@ -350,6 +359,14 @@ export default function PDCMReviewInformationPage({
                           >
                             {year}
                           </span>
+                        )}
+                        {url && (
+                          <div className="mt-1">
+                            <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 hover:underline flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">link</span>
+                              Link
+                            </a>
+                          </div>
                         )}
                       </div>
                     </li>
