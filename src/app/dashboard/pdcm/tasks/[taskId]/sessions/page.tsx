@@ -118,6 +118,14 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const credit = syllabusData?.data?.credit || syllabusData?.data?.noCredit || 0;
     
+    // Calculate recommendation for the hint
+    const settings = settingsData?.data?.content || [];
+    const sessionMinuteStr = settings.find((r: any) => r.code === 'SESSION_MINUTE')?.value;
+    const creditHourStr = settings.find((r: any) => r.code === 'CREDIT_HOUR')?.value;
+    const sessionMinute = sessionMinuteStr ? Number(sessionMinuteStr) : 50;
+    const creditHour = creditHourStr ? Number(creditHourStr) : 15;
+    const recommendedMax = Math.ceil((credit * creditHour * 60) / sessionMinute);
+
     useEffect(() => {
         if (!isSessionLoading && !isFetchingSessions && !isSettingLoading && !isSyllabusLoading && syllabusId && syllabusData?.data) {
             
@@ -156,7 +164,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                     sessionNumber: apiSess.sessionNumber,
                     sessionTitle: apiSess.sessionTitle,
                     teachingMethods: apiSess.teachingMethods,
-                    duration: apiSess.duration,
+                    duration: apiSess.duration || sessionMinute,
                     content: JSON.stringify(selectionStates),
                     cloIds: apiSess.cloIds || [],
                     sessionTopic: apiSess.sessionTopic || ""
@@ -165,15 +173,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
             dispatch(setSessions({ syllabusId, sessions: finalSessions }));
         }
-    }, [isSessionLoading, isFetchingSessions, isSettingLoading, isSyllabusLoading, sessionDataRes, syllabusId, dispatch, settingsData, syllabusData]);
-
-    // Calculate recommendation for the hint
-    const settings = settingsData?.data?.content || [];
-    const sessionMinuteStr = settings.find((r: any) => r.code === 'SESSION_MINUTE')?.value;
-    const creditHourStr = settings.find((r: any) => r.code === 'CREDIT_HOUR')?.value;
-    const sessionMinute = sessionMinuteStr ? Number(sessionMinuteStr) : 50;
-    const creditHour = creditHourStr ? Number(creditHourStr) : 15;
-    const recommendedMax = Math.ceil((credit * creditHour * 60) / sessionMinute);
+    }, [isSessionLoading, isFetchingSessions, isSettingLoading, isSyllabusLoading, sessionDataRes, syllabusId, dispatch, settingsData, syllabusData, sessionMinute]);
 
     const sessions = reduxSessions || [];
     const isLoading = isTaskLoading || isSessionLoading || isSettingLoading || isSyllabusLoading;
