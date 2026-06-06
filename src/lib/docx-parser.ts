@@ -45,6 +45,10 @@ export const sanitizeBlockContent = (html: string): string => {
     .replace(/<\/div>/gi, '<br>');
 
   cleaned = cleaned.replace(/(<br\s*\/?>)+$/g, '').trim();
+
+  // 3. Remove garbage empty anchor tags (like <a id="_heading=..."></a>) from Mammoth/Google Docs
+  cleaned = cleaned.replace(/<a[^>]*><\/a>/gi, '');
+
   return cleaned;
 };
 

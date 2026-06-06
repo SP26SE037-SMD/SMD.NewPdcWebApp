@@ -620,25 +620,7 @@ function NewMaterialPageInner() {
                     if (text.length > 0 || innerHtml.length > 0) {
                         let finalContent = sanitizeBlockContent(clone.innerHTML);
 
-                        // Handle H2 numbering
-                        if (liType === 'H2') {
-                            h2Count++;
-                            const plainText = stripHtml(finalContent).trim();
-                            // Only prepend if it doesn't already start with a number like "1. "
-                            if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
-                                const toRoman = (num: number) => {
-                                    const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
-                                    let str = '';
-                                    for (let i of Object.keys(roman)) {
-                                        let q = Math.floor(num / roman[i as keyof typeof roman]);
-                                        num -= q * roman[i as keyof typeof roman];
-                                        str += i.repeat(q);
-                                    }
-                                    return str;
-                                };
-                                finalContent = `${toRoman(h2Count)}. ${finalContent}`;
-                            }
-                        }
+                        // Handle H2 numbering has been moved to UI rendering
 
                         resultBlocks.push({
                             id: crypto.randomUUID(),
@@ -714,25 +696,7 @@ function NewMaterialPageInner() {
 
             let finalContent = sanitizeBlockContent(content);
 
-            // Handle H2 numbering
-            if (type === 'H2') {
-                h2Count++;
-                const plainText = stripHtml(finalContent).trim();
-                // Only prepend if it doesn't already start with a number like "1. "
-                if (!/^\d+\.\s/.test(plainText) && !/^([IVX]+\.|[A-Z]\.)\s/.test(plainText)) {
-                    const toRoman = (num: number) => {
-                        const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
-                        let str = '';
-                        for (let i of Object.keys(roman)) {
-                            let q = Math.floor(num / roman[i as keyof typeof roman]);
-                            num -= q * roman[i as keyof typeof roman];
-                            str += i.repeat(q);
-                        }
-                        return str;
-                    };
-                    finalContent = `${toRoman(h2Count)}. ${finalContent}`;
-                }
-            }
+            // Handle H2 numbering has been moved to UI rendering
 
             resultBlocks.push({
                 id: crypto.randomUUID(),
@@ -769,6 +733,9 @@ function NewMaterialPageInner() {
 
         // 2. Remove trailing line breaks
         cleaned = cleaned.replace(/(<br\s*\/?>)+$/g, '').trim();
+
+        // 3. Remove garbage empty anchor tags (like <a id="_heading=..."></a>) from Mammoth/Google Docs
+        cleaned = cleaned.replace(/<a[^>]*><\/a>/gi, '');
 
         return cleaned;
     };
@@ -890,6 +857,15 @@ function NewMaterialPageInner() {
 
     const updateBlockContent = (id: string, content: string) => {
         setBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
+        if (content === '/h1 ' || content === '# ') updateBlockType(id, 'H1', '');
+        else if (content === '/h2 ' || content === '## ') updateBlockType(id, 'H2', '');
+        else if (content === '/quote ' || content === '> ') updateBlockType(id, 'QUOTE', '');
+        else if (content === '/code ' || content === '``` ') updateBlockType(id, 'CODE_BLOCK', '');
+        else if (content === '/ul ' || content === '- ') updateBlockType(id, 'BULLET_LIST', '');
+        else if (content === '/ol ' || content === '1. ') updateBlockType(id, 'ORDERED_LIST', '');
+        else if (content === '/div ' || content === '---') updateBlockType(id, 'DIVIDER', '');
+        else if (content === '/p ') updateBlockType(id, 'PARAGRAPH', '');
+        else if (content === '/table ') updateBlockType(id, 'TABLE', '');
     };
     const updateBlockType = (id: string, type: BlockType, contentOverride?: string) => {
         // Only show modal if we are switching TO table and don't have content yet
@@ -995,16 +971,22 @@ function NewMaterialPageInner() {
                 removeBlock(block.id);
                 if (prevBlockId) setFocusedBlockId(prevBlockId);
             }
-            // If at the start of a block, merge with previous
+            // If at the start of a block, downgrade format or merge with previous
             else if (range && range.startOffset === 0 && range.collapsed && index > 0) {
-                e.preventDefault();
-                const prevBlock = blocks[index - 1];
-                const currentContent = block.content;
+                if (block.type !== 'PARAGRAPH') {
+                    // Downgrade to PARAGRAPH instead of merging immediately
+                    e.preventDefault();
+                    setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, type: 'PARAGRAPH' } : b));
+                } else {
+                    e.preventDefault();
+                    const prevBlock = blocks[index - 1];
+                    const currentContent = block.content;
 
-                // Merge content
-                updateBlockContent(prevBlock.id, prevBlock.content + currentContent);
-                removeBlock(block.id);
-                setFocusedBlockId(prevBlock.id);
+                    // Merge content
+                    updateBlockContent(prevBlock.id, prevBlock.content + currentContent);
+                    removeBlock(block.id);
+                    setFocusedBlockId(prevBlock.id);
+                }
             }
         }
     };
@@ -1193,9 +1175,9 @@ function NewMaterialPageInner() {
                         const sanitized = b.type === 'H2' ? sanitizeBlockContent(b.content).replace(/\s+/g, ' ').trim() : sanitizeBlockContent(b.content);
                         return {
                             idx: i,
-                            contentText: sanitized,
+                            contentText: stripHtml(sanitized),
                             blockType: b.type || 'PARAGRAPH',
-                            blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize })
+                            blockStyle: JSON.stringify({ align: b.align || 'left', color: b.color, fontSize: b.fontSize, html: sanitized })
                         };
                     });
                     console.log("DEBUG: Payload with-idx:", JSON.stringify(requestBody, null, 2));
@@ -1585,19 +1567,30 @@ function NewMaterialPageInner() {
                                                             />
                                                         )}
                                                         {block.type === 'H2' && (
-                                                            <EditableBlock
-                                                                id={block.id}
-                                                                html={block.content}
-                                                                onFocus={() => setFocusedBlockId(block.id)}
-                                                                onChange={val => updateBlockContent(block.id, val)}
-                                                                onKeyDown={e => handleKeyDown(e, globalIndex, block)}
-                                                                onImagePaste={(file) => handleImagePaste(file, globalIndex)}
-                                                                onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
-                                                                placeholder="Heading 2..."
-                                                                shouldFocus={false}
-                                                                className={`w-full ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 mt-4 mb-2 leading-tight min-h-[1em]`}
-                                                                style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
-                                                            />
+                                                            <div className="flex items-baseline gap-3 w-full mt-4 mb-2">
+                                                                <span className="font-bold select-none shrink-0" style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}>
+                                                                    {(() => {
+                                                                        let count = 1;
+                                                                        for (let i = 0; i < globalIndex; i++) {
+                                                                            if (blocks[i].type === 'H2') count++;
+                                                                        }
+                                                                        return `${count}.`;
+                                                                    })()}
+                                                                </span>
+                                                                <EditableBlock
+                                                                    id={block.id}
+                                                                    html={block.content}
+                                                                    onFocus={() => setFocusedBlockId(block.id)}
+                                                                    onChange={val => updateBlockContent(block.id, val)}
+                                                                    onKeyDown={e => handleKeyDown(e, globalIndex, block)}
+                                                                    onImagePaste={(file) => handleImagePaste(file, globalIndex)}
+                                                                    onMultiPaste={parts => handleMultiPaste(globalIndex, parts)}
+                                                                    placeholder="Heading 2..."
+                                                                    shouldFocus={false}
+                                                                    className={`flex-1 ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : block.align === 'justify' ? 'text-justify' : 'text-left'} font-bold bg-transparent outline-none py-1 leading-tight min-h-[1em]`}
+                                                                    style={{ color: block.color || '#2d342b', fontSize: block.fontSize || '24px' }}
+                                                                />
+                                                            </div>
                                                         )}
                                                         {block.type === 'PARAGRAPH' && (
                                                             <EditableBlock

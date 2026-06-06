@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, UploadCloud, Loader2, CheckCircle2, XCircle, FileText, AlertTriangle } from "lucide-react";
 import { MaterialService } from "@/services/material.service";
 import { BlockService } from "@/services/block.service";
-import { parseDocxFile, ParsedBlock } from "@/lib/docx-parser";
+import { parseDocxFile, ParsedBlock, stripHtml } from "@/lib/docx-parser";
 
 const C = {
   primary: "#41683f",
@@ -149,9 +149,9 @@ export default function BulkImportMaterialModal({
         if (blocks.length > 0) {
           const blockPayload = blocks.map((b: ParsedBlock, idx: number) => ({
             idx: idx + 1,
-            blockStyle: b.align || "left",
+            blockStyle: JSON.stringify({ align: b.align || "left", color: b.color, fontSize: b.fontSize, html: b.content }),
             blockType: b.type,
-            contentText: b.content,
+            contentText: stripHtml(b.content).trim(),
           }));
           await BlockService.createBlocksWithIdx(materialId, blockPayload);
         }

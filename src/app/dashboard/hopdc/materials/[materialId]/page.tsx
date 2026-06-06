@@ -229,11 +229,12 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
                 parsedStyle = { align: 'left' };
             }
 
+            const htmlContent = parsedStyle.html || b.contentText || '';
             return {
                 id: `block-${b.blockId || idx}`,
                 blockId: b.blockId,
                 type: b.blockType?.toUpperCase() || 'PARAGRAPH',
-                content: b.contentText || '',
+                content: htmlContent,
                 align: parsedStyle.align || 'left',
                 color: parsedStyle.color,
                 fontSize: parsedStyle.fontSize,
@@ -484,14 +485,21 @@ function renderReadOnlyBlock(block: ParsedBlock, allBlocks: ParsedBlock[], globa
                     dangerouslySetInnerHTML={{ __html: content }}
                 />
             );
-        case 'H2':
+        case 'H2': {
+            const h2Count = allBlocks.filter((b, i) => b.type === 'H2' && i <= globalIndex).length;
             return (
-                <div
-                    className={`font-bold py-1 mt-4 mb-2 leading-tight ${alignClass}`}
-                    style={{ color: color || '#2d342b', fontSize: fontSize || '24px', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-                    dangerouslySetInnerHTML={{ __html: content }}
-                />
+                <div className={`flex items-baseline gap-3 w-full mt-4 mb-2 ${alignClass}`}>
+                    <span className="font-bold shrink-0" style={{ color: color || '#2d342b', fontSize: fontSize || '24px' }}>
+                        {h2Count}.
+                    </span>
+                    <div
+                        className="font-bold py-1 leading-tight flex-1"
+                        style={{ color: color || '#2d342b', fontSize: fontSize || '24px', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+                        dangerouslySetInnerHTML={{ __html: content }}
+                    />
+                </div>
             );
+        }
         case 'PARAGRAPH':
             return (
                 <div
