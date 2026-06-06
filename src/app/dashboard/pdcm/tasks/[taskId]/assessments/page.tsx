@@ -956,10 +956,10 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                                 <td className="px-3 py-2"><div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div></td>
                                                             </tr>
                                                             {item._importErrors && item._importErrors.length > 0 && (
-                                                                <tr key={`err-${idx}`} className="bg-red-50/50">
-                                                                    <td colSpan={12} className="px-3 py-1.5 text-[11px] text-red-600 font-medium">
+                                                                <tr key={`err-${idx}`} className="bg-amber-50/50">
+                                                                    <td colSpan={12} className="px-3 py-1.5 text-[11px] text-amber-600 font-medium">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="material-symbols-outlined text-[14px]">error</span>
+                                                                            <span className="material-symbols-outlined text-[14px]">warning</span>
                                                                             {item._importErrors.join(" | ")}
                                                                         </div>
                                                                     </td>
