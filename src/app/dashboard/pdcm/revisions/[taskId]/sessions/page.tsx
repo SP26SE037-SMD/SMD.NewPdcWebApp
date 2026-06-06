@@ -1192,19 +1192,19 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                                             <tr className={`transition-colors hover:bg-primary/5`}>
                                                                 <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
                                                                 <td className="px-4 py-3 font-bold text-slate-800">
-                                                                    <div title={String(item.sessionTitle || "")} className="w-full px-1 py-0.5 text-xs opacity-80 line-clamp-2" style={{ wordBreak: 'break-word' }}>{item.sessionTitle || ""}</div>
+                                                                    <div title={String(item.sessionTitle || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTitle || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <div title={String(item.teachingMethods || "")} className="w-full px-1 py-0.5 text-xs opacity-80 line-clamp-2" style={{ wordBreak: 'break-word' }}>{item.teachingMethods || ""}</div>
+                                                                    <div title={String(item.teachingMethods || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.teachingMethods || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <div title={String(item.sessionTopic || "")} className="w-full px-1 py-0.5 text-xs opacity-80 line-clamp-2" style={{ wordBreak: 'break-word' }}>{item.sessionTopic || ""}</div>
+                                                                    <div title={String(item.sessionTopic || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTopic || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <div title={String(item.sessionType || "")} className="w-full px-1 py-0.5 text-xs opacity-80 line-clamp-2" style={{ wordBreak: 'break-word' }}>{item.sessionType || ""}</div>
+                                                                    <div title={String(item.sessionType || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionType || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 line-clamp-2" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div>
+                                                                    <div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div>
                                                                 </td>
                                                             </tr>
                                                             {(hasError || hasWarning) && (
