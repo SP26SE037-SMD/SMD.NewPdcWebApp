@@ -945,15 +945,15 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                                         })()}
                                                                     </select>
                                                                 </td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.part || ""} /></td>
-                                                                <td className="px-3 py-2"><input type="number" readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.weight} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.completionCriteria || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-center cursor-not-allowed opacity-80" value={item.duration || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.questionType || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.knowledgeSkill || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.gradingGuide || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.note || ""} /></td>
-                                                                <td className="px-3 py-2"><input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.cloMapping || ""} /></td>
+                                                                <td className="px-3 py-2"><div title={String(item.part || "")} className="w-full px-1 py-0.5 text-center text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.part || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.weight)} className="w-full px-1 py-0.5 text-center text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.weight}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.completionCriteria || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.completionCriteria || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.duration || "")} className="w-full px-1 py-0.5 text-center text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.duration || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.questionType || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.questionType || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.knowledgeSkill || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.knowledgeSkill || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.gradingGuide || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.gradingGuide || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.note || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.note || ""}</div></td>
+                                                                <td className="px-3 py-2"><div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div></td>
                                                             </tr>
                                                             {item._importErrors && item._importErrors.length > 0 && (
                                                                 <tr key={`err-${idx}`} className="bg-red-50/50">
@@ -1006,7 +1006,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             const res = await AssessmentService.importAssessments(syllabusId, subjectId, importFile) as any;
                                             if (res && res.data && res.data.valid) {
                                                 showToast(`Successfully saved ${res.data.savedCount} assessments`, 'success');
-                                                setTimeout(() => { window.location.reload(); }, 500);
+                                                setTimeout(() => { refetchAssessments(); }, 500);
                                                 setIsPreviewOpen(false);
                                                 setPreviewData([]);
                                                 setImportFile(null);

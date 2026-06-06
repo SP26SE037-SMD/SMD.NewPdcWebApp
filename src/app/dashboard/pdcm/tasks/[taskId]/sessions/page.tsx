@@ -874,6 +874,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 const currentSessions = currentState.syllabus.sessionsDB[syllabusId as string] || [];
                                                 const sortedSessions = [...currentSessions].sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
                                                 dispatch(setSessions({ syllabusId: syllabusId as string, sessions: sortedSessions }));
+                                                refetchSessions();
                                             }, 100);
 
                                             showToast("Session saved successfully!", "success");
@@ -1167,19 +1168,19 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                             <tr className={`transition-colors hover:bg-primary/5`}>
                                                                 <td className="px-4 py-3 font-medium text-slate-700 text-center"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-xs font-bold">{item.sessionNumber}</span></td>
                                                                 <td className="px-4 py-3 font-bold text-slate-800">
-                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionTitle || ""} />
+                                                                    <div title={String(item.sessionTitle || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTitle || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.teachingMethods || ""} />
+                                                                    <div title={String(item.teachingMethods || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.teachingMethods || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionTopic || ""} />
+                                                                    <div title={String(item.sessionTopic || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionTopic || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.sessionType || ""} />
+                                                                    <div title={String(item.sessionType || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.sessionType || ""}</div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-slate-600 text-xs">
-                                                                    <input readOnly className="w-full bg-transparent px-1 py-0.5 outline-none text-xs cursor-not-allowed opacity-80" value={item.cloMapping || ""} />
+                                                                    <div title={String(item.cloMapping || "")} className="w-full px-1 py-0.5 text-xs opacity-80 whitespace-pre-wrap" style={{ wordBreak: 'break-word' }}>{item.cloMapping || ""}</div>
                                                                 </td>
                                                             </tr>
                                                             {(hasError || hasWarning) && (
@@ -1263,7 +1264,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                             showToast(`Successfully saved ${previewData.length} sessions`, 'success');
                                             
                                             setTimeout(() => {
-                                                window.location.reload();
+                                                refetchSessions();
                                             }, 500);
 
                                             setIsPreviewOpen(false);
