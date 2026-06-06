@@ -725,10 +725,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 <div className="md:col-span-3 flex flex-col gap-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Duration (Mins)</label>
                                     <input
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
+                                        className="bg-slate-50 border-2 border-slate-200 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed outline-none font-medium"
                                         type="number"
                                         value={draftSession.duration ?? ''}
-                                        onChange={e => setDraftSession(prev => prev ? { ...prev, duration: Number(e.target.value) } : null)}
+                                        disabled
+                                        title="Duration is configured by system settings"
                                     />
                                 </div>
                                 <div className="md:col-span-6 flex flex-col gap-2">
