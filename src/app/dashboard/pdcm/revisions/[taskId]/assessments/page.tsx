@@ -1441,17 +1441,17 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                 </div>
 
                 {/* Validation Results in Modal */}
-                {isSingleValidated && singleValidationErrors.length > 0 && (
-                    <div className="mx-8 mb-0 bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-start gap-3">
-                        <span className="material-symbols-outlined text-amber-500 mt-0.5">info</span>
+                {singleValidationErrors.length > 0 && (
+                    <div className="mx-8 mb-0 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl flex items-start gap-3">
+                        <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
                         <div>
-                            <h4 className="font-bold text-sm">Validation Suggestions</h4>
+                            <h4 className="font-bold text-sm">Validation Errors</h4>
                             <ul className="text-xs mt-1 list-disc list-inside space-y-0.5">
                                 {singleValidationErrors.map((err: any, i: number) => (
-                                    <li key={i}><span className="font-semibold">[{err.code}]</span> {err.message}</li>
+                                    <li key={i}><span className="font-semibold">[{err.code || 'ERROR'}]</span> {err.message}</li>
                                 ))}
                             </ul>
-                            <p className="text-[10px] mt-2 italic text-amber-600">These are suggestions only. You can still save.</p>
+                            <p className="text-[10px] mt-2 italic text-red-600">Please fix these errors before saving.</p>
                         </div>
                     </div>
                 )}
@@ -1488,7 +1488,12 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         if (!syllabusId) return;
                                         setIsSingleValidating(true);
                                         try {
-                                            const validatePayload = {
+                                            // 1. Fetch existing assessments
+                                            const existingRes = await AssessmentService.getAssessmentsBySyllabusId(syllabusId);
+                                            const existingAssessments = Array.isArray(existingRes?.data) ? existingRes.data : (existingRes?.data?.content || []);
+                                            
+                                            // 2. Prepare draft assessment
+                                            const draftMapped = {
                                                 categoryId: assessment.categoryId,
                                                 typeId: assessment.typeId,
                                                 syllabusId: assessment.syllabusId || syllabusId,
@@ -1501,20 +1506,66 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                                 gradingGuide: assessment.gradingGuide || "",
                                                 note: assessment.note || "",
                                             };
-                                            console.log("VALIDATE SINGLE ASSESSMENT PAYLOAD:", [validatePayload]);
-                                            const res = await AssessmentService.validateAssessments(syllabusId, [validatePayload]) as any;
-                                            setSingleValidationErrors(res?.data?.errors || []);
-                                            setSingleValidationSummary(res?.data?.summary || null);
-                                            setIsSingleValidated(true);
-                                            if (!res?.data?.errors || res.data.errors.length === 0) {
+
+                                            // 3. Combine existing with draft
+                                            let combinedPayload = [];
+                                            if (!assessment.assessmentId) {
+                                                combinedPayload = existingAssessments.map((a: any) => ({
+                                                    categoryId: a.categoryId,
+                                                    typeId: a.typeId,
+                                                    syllabusId: a.syllabusId,
+                                                    part: Number(a.part),
+                                                    weight: Number(a.weight),
+                                                    completionCriteria: a.completionCriteria || "",
+                                                    duration: Number(a.duration || 0),
+                                                    questionType: a.questionType || "",
+                                                    knowledgeSkill: a.knowledgeSkill || "",
+                                                    gradingGuide: a.gradingGuide || "",
+                                                    note: a.note || "",
+                                                }));
+                                                combinedPayload.push(draftMapped);
+                                            } else {
+                                                combinedPayload = existingAssessments.map((a: any) => {
+                                                    if (a.assessmentId === assessment.assessmentId) return draftMapped;
+                                                    return {
+                                                        categoryId: a.categoryId,
+                                                        typeId: a.typeId,
+                                                        syllabusId: a.syllabusId,
+                                                        part: Number(a.part),
+                                                        weight: Number(a.weight),
+                                                        completionCriteria: a.completionCriteria || "",
+                                                        duration: Number(a.duration || 0),
+                                                        questionType: a.questionType || "",
+                                                        knowledgeSkill: a.knowledgeSkill || "",
+                                                        gradingGuide: a.gradingGuide || "",
+                                                        note: a.note || "",
+                                                    };
+                                                });
+                                            }
+
+                                            // 4. Validate
+                                            const res = await AssessmentService.validateAssessmentsSyllabus(syllabusId, combinedPayload) as any;
+                                            const resData = res?.data || {};
+                                            const errorsArray = resData.errors || [];
+                                            const isValid = resData.valid === true && errorsArray.length === 0;
+
+                                            setSingleValidationErrors(errorsArray);
+                                            setSingleValidationSummary(resData.summary || null);
+
+                                            if (isValid) {
+                                                setIsSingleValidated(true);
                                                 showToast('Assessment is valid!', 'success');
                                             } else {
-                                                showToast('Validation completed with suggestions', 'warning');
+                                                setIsSingleValidated(false);
+                                                showToast('Validation failed. Please fix the errors.', 'error');
                                             }
                                         } catch (e: any) {
                                             console.error("Validation error:", e);
-                                            setIsSingleValidated(true);
-                                            showToast('Validation completed with suggestions', 'warning');
+                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
+                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
+                                            setSingleValidationErrors(errorsArray);
+                                            setIsSingleValidated(false);
+                                            showToast('Validation failed. Please fix the errors.', 'error');
                                         } finally {
                                             setIsSingleValidating(false);
                                         }
