@@ -1453,7 +1453,7 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId) || [];
+    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId && (d.confidence_score === undefined || d.confidence_score <= 0.8)) || [];
     const suggestedCloCodesStr = suggestionsForThisSession.map((d: any) => {
         const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
         return match ? match[1] : null;
@@ -1619,7 +1619,7 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
                                                             Session {sess?.sessionNumber}: {sess?.sessionTitle || 'Session'}
                                                         </p>
                                                         <p className="text-sm text-emerald-900 font-medium leading-relaxed">
-                                                            Suggested mapping to <span className="font-bold">{clos.find(c => c.cloId === item.clo_id)?.cloCode || 'CLO'}</span>. <span style={{ color: (item.confidence_score * 100) < 20 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
+                                                            AI Validation Result: <span className="font-bold">{clos.find(c => c.cloId === item.clo_id)?.cloCode || 'CLO'}</span>. <span style={{ color: (item.confidence_score * 100) < 50 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
                                                         </p>
                                                         
                                                         {(() => {
