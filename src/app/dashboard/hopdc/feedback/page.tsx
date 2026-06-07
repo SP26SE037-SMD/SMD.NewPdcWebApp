@@ -37,6 +37,8 @@ import {
 } from "@/services/feedback-form.service";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { FeedbackSubmissions } from "./_components/FeedbackSubmissions";
 import { FeedbackReport } from "./_components/FeedbackReport";
 
@@ -95,6 +97,8 @@ export default function HopdcFeedbackPage() {
   const [createMajorId, setCreateMajorId] = useState("");
   const [createCurriculumId, setCreateCurriculumId] = useState("");
   const [createFormName, setCreateFormName] = useState("");
+  const [createDescription, setCreateDescription] = useState("");
+  const user = useSelector((state: RootState) => state.auth.user);
   const [createCurriculums, setCreateCurriculums] = useState<CurriculumFramework[]>([]);
   const [loadingCreateCurriculums, setLoadingCreateCurriculums] = useState(false);
 
@@ -422,14 +426,15 @@ export default function HopdcFeedbackPage() {
 
   const handleCreateFeedback = async () => {
     const resolvedFormName = createFormName.trim();
-
-    if (!createMajorId || !createCurriculumId) {
-      setError("Please choose major and curriculum before creating feedback.");
-      return;
-    }
+    const resolvedDescription = createDescription.trim();
 
     if (!resolvedFormName) {
       setError("Please enter form name.");
+      return;
+    }
+
+    if (!user?.accountId) {
+      setError("User account not found. Please log in again.");
       return;
     }
 
@@ -438,16 +443,31 @@ export default function HopdcFeedbackPage() {
     setSuccess(null);
 
     try {
+      // Get departmentId
+      const { AccountService } = await import('@/services/account.service');
+      const accountRes = await AccountService.getAccountById(user.accountId);
+      const departmentId = accountRes?.data?.departmentId;
+
+      if (!departmentId) {
+         setError("Department ID not found for current user.");
+         setSubmitting(false);
+         return;
+      }
+
       const created = await FeedbackFormService.createForm({
-        curriculumId: createCurriculumId,
-        formType: resolvedFormName,
-      });
+        formName: resolvedFormName,
+        description: resolvedDescription,
+        departmentId: departmentId,
+      } as any); // Using as any since payload shape might slightly differ locally
+      
       setSuccess(`Feedback form created: ${created.id}`);
       showToast(`Feedback form created: ${created.id}`, "success");
       
       setIsCreateModalOpen(false);
+      setCreateFormName("");
+      setCreateDescription("");
       
-      // Navigate to designer instead of reloading forms
+      // Navigate to designer
       router.push(`/dashboard/hopdc/feedback/${created.id}/design`);
       
     } catch (err: any) {
@@ -1260,48 +1280,6 @@ export default function HopdcFeedbackPage() {
               <div className="space-y-5">
                 <div>
                   <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Select Major
-                  </label>
-                  <select
-                    value={createMajorId}
-                    onChange={(e) => handleCreateMajorChange(e.target.value)}
-                    disabled={loadingMajors || submitting}
-                    className="w-full rounded-2xl border border-outline/20 bg-white/70 px-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm"
-                  >
-                    <option value="">
-                      {loadingMajors ? "Loading majors..." : "Select major"}
-                    </option>
-                    {majors.map((m) => (
-                      <option key={m.majorId} value={m.majorId}>
-                        {m.majorCode} - {m.majorName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                    Select Curriculum
-                  </label>
-                  <select
-                    value={createCurriculumId}
-                    onChange={(e) => setCreateCurriculumId(e.target.value)}
-                    disabled={!createMajorId || loadingCreateCurriculums || submitting}
-                    className="w-full rounded-2xl border border-outline/20 bg-white/70 px-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm"
-                  >
-                    <option value="">
-                      {loadingCreateCurriculums ? "Loading curriculums..." : "Select curriculum"}
-                    </option>
-                    {createCurriculums.map((c) => (
-                      <option key={c.curriculumId} value={c.curriculumId}>
-                        {c.curriculumCode} - {c.curriculumName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
                     Form Name
                   </label>
                   <div className="relative">
@@ -1318,6 +1296,20 @@ export default function HopdcFeedbackPage() {
                   </div>
                 </div>
 
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Description
+                  </label>
+                  <textarea
+                    value={createDescription}
+                    onChange={(e) => setCreateDescription(e.target.value)}
+                    disabled={submitting}
+                    placeholder="Briefly describe the purpose of this feedback form..."
+                    rows={4}
+                    className="w-full rounded-2xl border border-outline/20 bg-white/70 p-4 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm placeholder:font-medium placeholder:text-on-surface-variant/50 resize-none"
+                  />
+                </div>
+
                 <div className="mt-8 flex items-center justify-end gap-3 pt-2">
                   <button
                     onClick={() => !submitting && setIsCreateModalOpen(false)}
@@ -1328,7 +1320,7 @@ export default function HopdcFeedbackPage() {
                   </button>
                   <button
                     onClick={handleCreateFeedback}
-                    disabled={submitting || !createCurriculumId || !createFormName.trim()}
+                    disabled={submitting || !createFormName.trim()}
                     className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary to-primary/80 px-8 py-2.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:scale-[1.02] hover:shadow-primary/40 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? (
