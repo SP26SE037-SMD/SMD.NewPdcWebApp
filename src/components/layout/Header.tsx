@@ -562,7 +562,7 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
                             </div>
                             <div className="hidden lg:block mr-1">
                                 <p className="text-[11px] font-bold text-on-surface leading-tight truncate max-w-[100px]">{user?.fullName || "Professor Archer"}</p>
-                                <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider opacity-60">PDCM</p>
+                                <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider opacity-60">{user?.role || "PDCM"}</p>
                             </div>
                             <ChevronDown size={14} className={`transition-transform duration-300 text-on-surface-variant ${isMenuOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -582,7 +582,7 @@ export function Header({ title, showSearch = true, hideLeft = false, className, 
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-on-surface line-clamp-1">{user?.fullName || "Professor Archer"}</p>
-                                                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest leading-tight">Member</p>
+                                                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest leading-tight">{user?.role || "Member"}</p>
                                             </div>
                                         </div>
                                     </div>
