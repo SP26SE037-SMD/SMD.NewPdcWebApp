@@ -66,8 +66,9 @@ export interface FeedbackFormDetail extends FeedbackFormRecord {
 }
 
 export interface FeedbackCreatePayload {
-  curriculumId: string;
-  formType: string;
+  departmentId: string;
+  formName: string;
+  description?: string;
 }
 
 export interface FeedbackTriggerBuildResponse {
