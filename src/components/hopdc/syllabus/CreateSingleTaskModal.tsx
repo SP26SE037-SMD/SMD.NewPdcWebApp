@@ -161,14 +161,14 @@ export function CreateSingleTaskModal({
           setSelectedSyllabusId(first.syllabusId);
           const suggested = suggestVersionIncrement(first.syllabusName);
           setSyllabusName(suggested);
-          setTaskName(`CREATE SYLLABUS: ${suggested}`);
+          setTaskName(`CREATE NEW SYLLABUS: ${suggested}`);
           setDescription(
             `Draft syllabus content for ${suggested} (Copied from ${first.syllabusName})`,
           );
         } else {
           setSelectedSyllabusId("");
           setSyllabusName(defaultSyllabusName);
-          setTaskName(`CREATE SYLLABUS: ${defaultSyllabusName}`);
+          setTaskName(`CREATE NEW SYLLABUS: ${defaultSyllabusName}`);
           setDescription(`Draft syllabus content for ${defaultSyllabusName}`);
         }
       }
@@ -195,7 +195,7 @@ export function CreateSingleTaskModal({
     } else if (action === "CREATE" && createMode === "COPY") {
       const suggested = suggestVersionIncrement(chosen.syllabusName);
       setSyllabusName(suggested);
-      setTaskName(`CREATE SYLLABUS: ${suggested}`);
+      setTaskName(`CREATE NEW SYLLABUS: ${suggested}`);
       setDescription(
         `Draft syllabus content for ${suggested} (Copied from ${chosen.syllabusName})`,
       );
@@ -537,9 +537,11 @@ export function CreateSingleTaskModal({
                   }`}
                   value={syllabusName}
                   onChange={(e) => {
-                    setSyllabusName(e.target.value);
-                    setTaskName(`CREATE SYLLABUS: ${e.target.value}`);
-                    setDescription(`Draft syllabus content for ${e.target.value}`);
+                    const val = e.target.value;
+                    setSyllabusName(val);
+                    const prefix = createMode === "COPY" ? "CREATE NEW SYLLABUS" : "CREATE SYLLABUS";
+                    setTaskName(`${prefix}: ${val}`);
+                    setDescription(`Draft syllabus content for ${val}`);
                   }}
                   placeholder="e.g. Computer Science Syllabus.v1"
                 />

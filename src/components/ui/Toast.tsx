@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { Toaster } from "sonner";
  
 type ToastType = "success" | "error" | "info" | "warning";
  
@@ -40,9 +41,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           ))}
         </AnimatePresence>
       </div>
+      <Toaster position="top-right" richColors />
     </ToastContext.Provider>
   );
 }
+
  
 export function useToast() {
   const context = useContext(ToastContext);

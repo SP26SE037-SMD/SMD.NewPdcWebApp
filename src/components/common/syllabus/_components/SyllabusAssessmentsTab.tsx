@@ -9,6 +9,7 @@ import {
   MessageSquare,
   AlertCircle,
   CheckCircle2,
+  Eye,
 } from "lucide-react";
 import { ReviewerFeedbackCard } from "./SyllabusMaterialsTab";
 import { AssessmentItem } from "@/services/assessment.service";
@@ -17,6 +18,7 @@ interface SyllabusAssessmentsTabProps {
   assessments: AssessmentItem[];
   evaluations?: Record<string, any>;
   overallFeedback?: { status: string; note: string };
+  onViewDetail?: (assessment: AssessmentItem) => void;
   onUpdateStatus?: (
     status: "APPROVED" | "REVISION_REQUESTED" | "PENDING_REVIEW",
   ) => void;
@@ -26,6 +28,7 @@ export function SyllabusAssessmentsTab({
   assessments,
   evaluations,
   overallFeedback,
+  onViewDetail,
   onUpdateStatus,
 }: SyllabusAssessmentsTabProps) {
   const [isCommentOpen, setIsCommentOpen] = useState(false);
@@ -249,24 +252,35 @@ export function SyllabusAssessmentsTab({
                     {assessment.categoryName} - {assessment.typeName}
                   </h3>
                 </div>
-                {(() => {
-                  const effectiveStatus =
-                    groupStatus && !isStatusPending(groupStatus)
-                      ? groupStatus
-                      : "PENDING_REVIEW";
-                  if (!isStatusPending(effectiveStatus)) {
-                    const style = getIndividualStatusStyle(effectiveStatus);
-                    return (
-                      <span
-                        className={`mr-10 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${style.color} ${style.border} ${style.bg}`}
-                        style={{ wordSpacing: "0.2em" }}
-                      >
-                        {style.label}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
+                <div className="flex items-center gap-2 shrink-0">
+                  {(() => {
+                    const effectiveStatus =
+                      groupStatus && !isStatusPending(groupStatus)
+                        ? groupStatus
+                        : "PENDING_REVIEW";
+                    if (!isStatusPending(effectiveStatus)) {
+                      const style = getIndividualStatusStyle(effectiveStatus);
+                      return (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${style.color} ${style.border} ${style.bg}`}
+                          style={{ wordSpacing: "0.2em" }}
+                        >
+                          {style.label}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                  {onViewDetail && (
+                    <button
+                      onClick={() => onViewDetail(assessment)}
+                      className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200 active:scale-90"
+                      title="View Assessment Details"
+                    >
+                      <Eye size={13} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">

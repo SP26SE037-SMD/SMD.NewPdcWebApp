@@ -125,7 +125,7 @@ export default function MappingMatrix({
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                       {po.code || `PO-${idx + 1}`}
                     </span>
-                    <div className="absolute opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-[240px] bg-zinc-900 text-white text-[10px] rounded-xl shadow-2xl p-4 z-[100] text-left pointer-events-none border border-zinc-800">
+                    <div className="absolute opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-[240px] bg-zinc-900 text-white text-xs rounded-xl shadow-2xl p-4 z-[100] text-left pointer-events-none border border-zinc-800">
                       <p className="font-black text-indigo-400 mb-1 tracking-widest uppercase border-b border-zinc-800 pb-2">
                         {po.code}
                       </p>

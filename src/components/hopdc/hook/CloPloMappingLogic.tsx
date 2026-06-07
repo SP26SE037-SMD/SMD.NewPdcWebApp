@@ -6,11 +6,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SubjectService } from "@/services/subject.service";
 import { CurriculumService } from "@/services/curriculum.service";
 import { CloPloService } from "@/services/cloplo.service";
+import { useToast } from "@/components/ui/Toast";
 
 export function useSubjectMappingLogic() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const subjectId = searchParams.get("subjectId") ?? searchParams.get("id");
   const curriculumId = searchParams.get("curriculumId");
@@ -95,7 +97,6 @@ export function useSubjectMappingLogic() {
     if (!subjectId || !curriculumId) return;
 
     setSubmittingKey("sync");
-    setMappingNotice("");
 
     const currentPersistedSet = new Set(
       persistedMappings.map((m) => `${m.cloId}:${m.ploId}`),
@@ -121,7 +122,7 @@ export function useSubjectMappingLogic() {
     });
 
     if (addedMappings.length === 0 && deletedMappings.length === 0) {
-      setMappingNotice("No changes to sync.");
+      showToast("No changes to sync.", "info");
       setSubmittingKey(null);
       return;
     }
@@ -132,13 +133,12 @@ export function useSubjectMappingLogic() {
         deletedMappings,
       });
 
-      setMappingNotice("Matrix synchronized successfully.");
+      showToast("Matrix synchronized successfully.", "success");
       await queryClient.invalidateQueries({
         queryKey: ["clo-plo-mappings", subjectId, curriculumId],
       });
-      setTimeout(() => setMappingNotice(""), 5000);
     } catch (err: any) {
-      setMappingNotice(err.message || "Failed to sync matrix.");
+      showToast(err.message || "Failed to sync matrix.", "error");
     } finally {
       setSubmittingKey(null);
     }
@@ -146,12 +146,10 @@ export function useSubjectMappingLogic() {
 
   const deleteClo = async (cloId: string) => {
     setDeletingCloId(cloId);
-    setMappingNotice("");
 
     try {
       await CloPloService.deleteClo(cloId);
-      setMappingNotice("CLO deleted successfully.");
-      setTimeout(() => setMappingNotice(""), 5000);
+      showToast("CLO deleted successfully.", "success");
       await queryClient.invalidateQueries({
         queryKey: ["subject-clos", subjectId],
       });
@@ -159,10 +157,11 @@ export function useSubjectMappingLogic() {
         queryKey: ["clo-plo-mappings", subjectId, curriculumId],
       });
     } catch (deleteError) {
-      setMappingNotice(
+      showToast(
         deleteError instanceof Error
           ? deleteError.message
           : "Failed to delete CLO.",
+        "error",
       );
     } finally {
       setDeletingCloId(null);
@@ -172,7 +171,6 @@ export function useSubjectMappingLogic() {
   const handleImportClos = async (file: File) => {
     if (!subjectId) return;
     setSubmittingKey("import");
-    setMappingNotice("");
 
     try {
       const response = await CloPloService.importClos(file);
@@ -180,19 +178,18 @@ export function useSubjectMappingLogic() {
       // If there are failures, we don't invalidate queries yet 
       // because we want the user to fix the file first
       if (response?.data && response.data.failed === 0) {
-        setMappingNotice("Successfully imported all CLOs from Excel.");
+        showToast("Successfully imported all CLOs from Excel.", "success");
         await queryClient.invalidateQueries({
           queryKey: ["subject-clos", subjectId],
         });
         await queryClient.invalidateQueries({
           queryKey: ["clo-plo-mappings", subjectId, curriculumId],
         });
-        setTimeout(() => setMappingNotice(""), 5000);
       }
 
       return response; // Return full response
     } catch (err: any) {
-      setMappingNotice(err.message || "Failed to import CLOs.");
+      showToast(err.message || "Failed to import CLOs.", "error");
       return { status: 500, message: err.message };
     } finally {
       setSubmittingKey(null);

@@ -4,6 +4,7 @@ import React from 'react';
 import { X, Clock, BookOpen, CheckCircle2, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { MappingService } from '@/services/mapping.service';
+import { CloPloService } from '@/services/cloplo.service';
 
 interface AssessmentItem {
     assessmentId: string;
@@ -23,18 +24,26 @@ interface AssessmentDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     assessment: AssessmentItem | null;
+    subjectId?: string;
 }
 
-export function AssessmentDetailModal({ isOpen, onClose, assessment }: AssessmentDetailModalProps) {
+export function AssessmentDetailModal({ isOpen, onClose, assessment, subjectId }: AssessmentDetailModalProps) {
     const { data: mappingRes, isLoading: isMappingLoading } = useQuery({
         queryKey: ['assessment-mappings', assessment?.assessmentId],
         queryFn: () => MappingService.getAssessmentMappings(assessment?.assessmentId || ""),
         enabled: !!isOpen && !!assessment?.assessmentId,
     });
 
+    const { data: subjectClosRes, isLoading: isClosLoading } = useQuery({
+        queryKey: ['subject-clos', subjectId],
+        queryFn: () => CloPloService.getSubjectClos(subjectId!, 0, 100),
+        enabled: !!isOpen && !!subjectId,
+    });
+
     if (!isOpen || !assessment) return null;
 
     const mappings = mappingRes?.data || [];
+    const subjectClos = subjectClosRes?.data?.content || [];
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6 animate-in fade-in duration-200">
@@ -62,61 +71,61 @@ export function AssessmentDetailModal({ isOpen, onClose, assessment }: Assessmen
                     <div className="grid grid-cols-6 gap-x-8 gap-y-10">
                         {/* Row 1: Essential Configuration */}
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Category</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Category</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold">
                                 {assessment.categoryName || 'N/A'}
                             </div>
                         </div>
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Evaluation Type</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Evaluation Type</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold">
                                 {assessment.typeName || 'N/A'}
                             </div>
                         </div>
                         <div className="col-span-1 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Part #</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium text-center">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Part #</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold text-center">
                                 {assessment.part || 1}
                             </div>
                         </div>
                         <div className="col-span-1 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Weight %</label>
-                            <div className="w-full bg-slate-50 border border-emerald-200 rounded-xl p-3.5 text-sm font-bold text-primary text-center">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Weight %</label>
+                            <div className="w-full bg-slate-50 border border-emerald-200 rounded-xl px-5 py-3 text-base font-bold text-primary text-center">
                                 {assessment.weight}%
                             </div>
                         </div>
 
                         {/* Row 2: Criteria & Duration */}
                         <div className="col-span-4 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Completion Criteria</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium min-h-[48px]">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Completion Criteria</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold min-h-[48px]">
                                 {assessment.completionCriteria || 'No criteria provided'}
                             </div>
                         </div>
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Duration (mins)</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium flex items-center gap-2">
-                                <Clock size={14} className="text-primary-500" />
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration (mins)</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold flex items-center gap-2">
+                                <Clock size={16} className="text-primary-500" />
                                 {assessment.duration || 0} min
                             </div>
                         </div>
 
                         {/* Row 3 */}
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Question Type</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Question Type</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold">
                                 {assessment.questionType || 'Standard'}
                             </div>
                         </div>
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Knowledge / Skill</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Knowledge / Skill</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold">
                                 {assessment.knowledgeSkill || 'N/A'}
                             </div>
                         </div>
                         <div className="col-span-2 space-y-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grading Guide</label>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 font-medium">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Grading Guide</label>
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-base text-slate-900 font-bold">
                                 {assessment.gradingGuide || 'N/A'}
                             </div>
                         </div>
@@ -124,10 +133,10 @@ export function AssessmentDetailModal({ isOpen, onClose, assessment }: Assessmen
                         {/* Note */}
                         <div className="col-span-6 space-y-2">
                             <div className="flex justify-between items-center">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Note / Description</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Note / Description</label>
                                 <span className="text-[10px] text-slate-400 italic">Read only</span>
                             </div>
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 font-medium leading-relaxed min-h-[100px]">
+                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-5 text-base text-slate-900 font-bold leading-relaxed min-h-[100px]">
                                 {assessment.note || 'No description provided.'}
                             </div>
                         </div>
@@ -135,40 +144,50 @@ export function AssessmentDetailModal({ isOpen, onClose, assessment }: Assessmen
                         {/* CLO Mapping Section — matches develop modal */}
                         <div className="col-span-6 space-y-4 pt-4 border-t border-slate-100">
                             <div className="flex items-center justify-between">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">target</span>
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-3 uppercase tracking-wider">
+                                    <div className="w-2 h-5 bg-slate-600 rounded-full"></div>
                                     Outcome Mapping (CLO)
-                                </label>
-                                <span className="text-[10px] text-slate-400 italic">
-                                    {isMappingLoading ? 'Loading...' : `${mappings.length} outcomes mapped`}
+                                </h3>
+                                <span className="text-xs font-black text-slate-500 py-1.5 px-3 bg-slate-100 rounded-lg border border-slate-200">
+                                    {isMappingLoading || isClosLoading ? 'Loading...' : `${mappings.length} Linked`}
                                 </span>
                             </div>
 
-                            {isMappingLoading ? (
+                            {isMappingLoading || isClosLoading ? (
                                 <div className="flex items-center gap-2 text-sm text-slate-400 p-4">
                                     <Loader2 size={16} className="animate-spin" />
                                     Loading CLOs...
                                 </div>
                             ) : mappings.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {mappings.map((mapping: any) => (
-                                        <div
-                                            key={mapping.id}
-                                            className="flex items-start gap-3 p-3 rounded-xl border text-left bg-emerald-50 border-emerald-200 ring-1 ring-emerald-200"
-                                        >
-                                            <div className="mt-0.5 shrink-0 w-4 h-4 rounded border bg-emerald-500 border-emerald-500 text-white flex items-center justify-center">
-                                                <span className="material-symbols-outlined text-[12px] font-bold">check</span>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">
-                                                    {mapping.cloCode}
-                                                </p>
-                                                <p className="text-[11px] line-clamp-2 leading-relaxed text-emerald-800">
+                                <div className="grid grid-cols-1 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {mappings.map((mapping: any) => {
+                                        const detailedClo = subjectClos.find((c: any) => c.cloId === mapping.cloId);
+                                        return (
+                                            <div
+                                                key={mapping.id}
+                                                className="p-5 rounded-2xl border border-slate-200 bg-slate-50/30 hover:bg-slate-50/80 transition-colors shadow-sm"
+                                            >
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-xs font-black text-slate-900 bg-slate-200 px-3 py-1 rounded-md uppercase tracking-widest">
+                                                        {mapping.cloCode}
+                                                    </span>
+                                                    {detailedClo?.bloomLevel && (
+                                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                                            Bloom {detailedClo.bloomLevel}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-base font-bold text-slate-900 mb-2">
                                                     {mapping.cloName}
                                                 </p>
+                                                {detailedClo?.description && detailedClo.description !== mapping.cloName && (
+                                                    <p className="text-sm text-slate-600 italic mt-3 border-l-3 border-slate-200 pl-4 leading-relaxed font-medium">
+                                                        {detailedClo.description}
+                                                    </p>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center">

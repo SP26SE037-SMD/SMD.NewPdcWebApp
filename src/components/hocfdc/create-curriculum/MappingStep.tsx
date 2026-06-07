@@ -187,7 +187,7 @@ export default function MappingStep({ onNext, onBack, curriculumIdProp }: StepPr
                       {pos.map((po, idx) => (
                         <th key={po.poId} className="p-4 bg-zinc-50 border-b border-zinc-200 text-center min-w-[120px] group/header relative">
                           <span className="text-[10px] font-black uppercase tracking-widest text-primary">{po.poCode || `PO-${idx + 1}`}</span>
-                          <div className="absolute opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-[240px] bg-zinc-900 text-white text-[10px] rounded-xl shadow-2xl p-4 z-[100] text-left pointer-events-none border border-zinc-800">
+                          <div className="absolute opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible transition-all duration-300 top-full left-1/2 -translate-x-1/2 mt-2 w-[240px] bg-zinc-900 text-white text-xs rounded-xl shadow-2xl p-4 z-[100] text-left pointer-events-none border border-zinc-800">
                             <p className="font-black text-indigo-400 mb-1 tracking-widest uppercase border-b border-zinc-800 pb-2">{po.poCode}</p>
                             <p className="font-medium leading-relaxed mt-2 text-zinc-300 line-clamp-4">{po.description}</p>
                           </div>

@@ -406,7 +406,7 @@ export default function TaskDetailPage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md border-b border-outline/15 px-6 py-4">
+      <div className="bg-surface border-b border-outline/15 px-6 py-4">
         <div className="max-w-7xl mx-auto">
           {/* Rejection banner removed as per user request, moved to button near title */}
 

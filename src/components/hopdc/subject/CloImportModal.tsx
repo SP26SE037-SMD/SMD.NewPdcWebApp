@@ -37,6 +37,18 @@ export function CloImportModal({ isOpen, onClose, onImport, plos, isImporting, s
     }
   }, [isOpen]);
 
+  const handleRemoveFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFile(null);
+    setWorkbookData({});
+    setErrorMap({});
+    setParsedClos([]);
+    setLocalError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -308,9 +320,17 @@ export function CloImportModal({ isOpen, onClose, onImport, plos, isImporting, s
                           <FileType2 size={32} />
                         </div>
                         <h3 className="text-lg font-black text-zinc-900 mb-1 truncate max-w-xs">{file.name}</h3>
-                        <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">
+                        <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest mb-4">
                           {(file.size / 1024).toFixed(2)} KB
                         </p>
+                        <button
+                          type="button"
+                          onClick={handleRemoveFile}
+                          className="px-4 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-xs font-black uppercase tracking-widest transition-all flex items-center gap-1.5 border border-primary/20"
+                        >
+                          <X size={12} />
+                          Remove File
+                        </button>
                       </>
                     )}
                   </div>
@@ -320,9 +340,9 @@ export function CloImportModal({ isOpen, onClose, onImport, plos, isImporting, s
                   <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400">Step 2: Review & Validation</h4>
                   <div className="space-y-3">
                     {localError && (
-                      <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-50 border border-red-100">
-                        <div className="mt-0.5"><AlertCircle size={16} className="text-red-500" /></div>
-                        <p className="text-xs text-red-700 leading-relaxed font-bold">
+                      <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                        <div className="mt-0.5"><AlertCircle size={16} className="text-amber-500" /></div>
+                        <p className="text-xs text-amber-700 leading-relaxed font-bold">
                           {localError}
                         </p>
                       </div>
@@ -330,7 +350,7 @@ export function CloImportModal({ isOpen, onClose, onImport, plos, isImporting, s
                     <div className="flex items-start gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
                       <div className="mt-0.5"><Info size={16} className="text-zinc-400" /></div>
                       <p className="text-xs text-zinc-600 leading-relaxed font-medium">
-                        Rows with <span className="text-red-500 font-bold underline">errors</span> will be skipped during the final import process.
+                        Rows with <span className="text-amber-500 font-bold underline">errors</span> will be skipped during the final import process.
                       </p>
                     </div>
                     <button
