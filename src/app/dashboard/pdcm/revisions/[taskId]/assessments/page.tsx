@@ -1704,7 +1704,7 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
         <>
             <tr
                 onClick={() => setIsExpanded(!isExpanded)}
-                className={`transition-colors group cursor-pointer ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50/50'}`}
+                className={`transition-colors group cursor-pointer border-l-4 ${suggestionsForThisAss.length > 0 ? 'bg-amber-50/50 hover:bg-amber-100/50 border-amber-400' : isExpanded ? 'bg-slate-50 border-transparent' : 'hover:bg-slate-50/50 border-transparent'}`}
             >
                 <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
@@ -1889,7 +1889,7 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                                                     {suggestion && (
                                                                         <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100/50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
                                                                             <span className="material-symbols-outlined text-[14px]">lightbulb</span>
-                                                                            Suggested: Map to {suggestion}
+                                                                            Suggested: {suggestion}
                                                                         </div>
                                                                     )}
                                                                 </>

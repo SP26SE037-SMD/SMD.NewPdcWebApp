@@ -663,6 +663,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                         subjectClos={clos}
                         mappingStates={mappingStates}
                         onMappingChange={(sessionId, cloIds) => setMappingStates(prev => ({ ...prev, [sessionId]: cloIds }))}
+                        validationResult={mappingValidationResult}
                     />
                 </div>
             </div>
@@ -1434,11 +1435,12 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 }
 
 // ── Session Mapping Tab Component ──
-function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChange }: { 
+function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChange, validationResult }: { 
     sessions: SessionItem[], 
     subjectClos: any[],
     mappingStates: Record<string, string[]>,
-    onMappingChange: (sessionId: string, cloIds: string[]) => void
+    onMappingChange: (sessionId: string, cloIds: string[]) => void,
+    validationResult?: any
 }) {
     return (
         <div className="bg-white border border-zinc-100 rounded-[32px] overflow-hidden shadow-sm">
@@ -1456,6 +1458,7 @@ function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChan
                         subjectClos={subjectClos}
                         selectedCloIds={mappingStates[session.sessionId || ''] || []}
                         onChange={(cloIds) => onMappingChange(session.sessionId || '', cloIds)}
+                        validationResult={validationResult}
                     />
                 ))}
             </div>
@@ -1464,16 +1467,23 @@ function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChan
 }
 
 // ── Session Mapping Row Component ──
-function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: { 
+function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, validationResult }: { 
     session: SessionItem, 
     subjectClos: any[],
     selectedCloIds: string[],
-    onChange: (cloIds: string[]) => void
+    onChange: (cloIds: string[]) => void,
+    validationResult?: any
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId) || [];
+    const suggestedCloCodesStr = suggestionsForThisSession.map((d: any) => {
+        const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
+        return match ? match[1] : null;
+    }).filter(Boolean).join(' ');
+
     return (
-        <div className={`transition-all ${isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10' : 'hover:bg-slate-50/50'}`}>
+        <div className={`transition-all border-l-4 ${suggestionsForThisSession.length > 0 ? 'bg-amber-50/50 hover:bg-amber-100/50 border-amber-400' : isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10 border-transparent' : 'hover:bg-slate-50/50 border-transparent'}`}>
             <div 
                 className="grid grid-cols-12 px-8 py-5 items-center cursor-pointer"
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -1517,35 +1527,49 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: {
                             Select Course Learning Outcomes
                         </h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {subjectClos.map(clo => (
-                                <label 
-                                    key={clo.cloId}
-                                    className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer group
-                                        ${selectedCloIds.includes(clo.cloId) 
-                                            ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
-                                            : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'}`}
-                                >
-                                    <input 
-                                        type="checkbox"
-                                        className="mt-1 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary transition-all"
-                                        checked={selectedCloIds.includes(clo.cloId)}
-                                        onChange={(e) => {
-                                            const newIds = e.target.checked 
-                                                ? [...selectedCloIds, clo.cloId]
-                                                : selectedCloIds.filter(id => id !== clo.cloId);
-                                            onChange(newIds);
-                                        }}
-                                    />
-                                    <div>
-                                        <p className={`text-xs font-black mb-1 transition-colors ${selectedCloIds.includes(clo.cloId) ? 'text-primary' : 'text-slate-500'}`}>
-                                            {clo.cloCode}
-                                        </p>
-                                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
+                            {subjectClos.map(clo => {
+                                const isSelected = selectedCloIds.includes(clo.cloId);
+                                const isSuggested = suggestedCloCodesStr.includes(clo.cloCode);
+                                
+                                return (
+                                    <label 
+                                        key={clo.cloId}
+                                        className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer group w-full
+                                            ${isSelected 
+                                                ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
+                                                : isSuggested
+                                                    ? 'border-blue-300 bg-blue-50/30 hover:bg-blue-50/50 shadow-sm shadow-blue-500/5'
+                                                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        <input 
+                                            type="checkbox"
+                                            className={`mt-1 w-4 h-4 rounded transition-all ${isSelected ? 'border-primary text-primary focus:ring-primary' : isSuggested ? 'border-blue-300 text-blue-500 focus:ring-blue-500' : 'border-slate-300 text-primary focus:ring-primary'}`}
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                                const newIds = e.target.checked 
+                                                    ? [...selectedCloIds, clo.cloId]
+                                                    : selectedCloIds.filter(id => id !== clo.cloId);
+                                                onChange(newIds);
+                                            }}
+                                        />
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-1 w-full">
+                                                <p className={`text-xs font-black transition-colors ${isSelected ? 'text-primary' : isSuggested ? 'text-blue-700' : 'text-slate-500'}`}>
+                                                    {clo.cloCode}
+                                                </p>
+                                                {isSuggested && (
+                                                    <span className="text-[9px] font-bold uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1 shrink-0">
+                                                        <span className="material-symbols-outlined text-[10px]">auto_awesome</span> Suggested
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className={`text-[11px] font-medium leading-relaxed line-clamp-2 ${isSelected ? 'text-slate-700' : isSuggested ? 'text-blue-800' : 'text-slate-600'}`}>
                                             {clo.description}
                                         </p>
                                     </div>
                                 </label>
-                            ))}
+                            );
+                        })}
                         </div>
                     </div>
                 </div>
@@ -1635,7 +1659,7 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
                                                                     {suggestion && (
                                                                         <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100/50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
                                                                             <span className="material-symbols-outlined text-[14px]">lightbulb</span>
-                                                                            Suggested: Map to {suggestion}
+                                                                            Suggested: {suggestion}
                                                                         </div>
                                                                     )}
                                                                 </>

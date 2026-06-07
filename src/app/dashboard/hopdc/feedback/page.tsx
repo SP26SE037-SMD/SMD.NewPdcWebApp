@@ -446,7 +446,7 @@ export default function HopdcFeedbackPage() {
       // Get departmentId
       const { AccountService } = await import('@/services/account.service');
       const accountRes = await AccountService.getAccountById(user.accountId);
-      const departmentId = accountRes?.data?.departmentId;
+      const departmentId = accountRes?.data?.department?.departmentId;
 
       if (!departmentId) {
          setError("Department ID not found for current user.");

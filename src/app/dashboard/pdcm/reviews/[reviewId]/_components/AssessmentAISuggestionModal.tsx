@@ -142,7 +142,7 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                                         {w.suggestion && (
                                                             <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-amber-200/60 bg-amber-100/50 text-amber-700 text-[10px] font-bold">
                                                                 <Sparkles size={10} className="text-amber-500" />
-                                                                Suggested: Map to {w.suggestion}
+                                                                Suggested: {w.suggestion}
                                                             </div>
                                                         )}
                                                     </div>
