@@ -293,7 +293,7 @@ export default function HopdcFeedbackPage() {
     try {
       const { AccountService } = await import('@/services/account.service');
       const accountRes = await AccountService.getAccountById(user.accountId);
-      const departmentId = accountRes?.department?.departmentId;
+      const departmentId = accountRes?.departmentId || accountRes?.department_id || accountRes?.department?.departmentId;
 
       if (!departmentId) {
         setError("Department ID not found for current user.");
@@ -352,7 +352,7 @@ export default function HopdcFeedbackPage() {
       // Get departmentId
       const { AccountService } = await import('@/services/account.service');
       const accountRes = await AccountService.getAccountById(user.accountId);
-      const departmentId = accountRes?.department?.departmentId;
+      const departmentId = accountRes?.departmentId || accountRes?.department_id || accountRes?.department?.departmentId;
 
       if (!departmentId) {
          setError("Department ID not found for current user.");
