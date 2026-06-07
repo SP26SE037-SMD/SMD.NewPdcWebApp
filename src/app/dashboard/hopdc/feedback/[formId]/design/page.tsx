@@ -739,9 +739,9 @@ export default function FormDesignPage({
 
     try {
       const created = await FeedbackFormService.createForm({
-        curriculumId,
-        formType: resolvedFormType,
-      });
+        formName: resolvedFormType,
+        description: "",
+      } as any);
       setSuccess(`Feedback form created: ${created.id}`);
       showToast(`Feedback form created: ${created.id}`, "success");
       setCustomFormType("");
