@@ -1139,9 +1139,9 @@ export default function HopdcFeedbackPage() {
           </div>
         </motion.div>
 
-        {deleteConfirm && (
+        {deleteConfirm && typeof document !== "undefined" && createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
             onClick={() => {
               if (!deleting) {
                 setDeleteConfirm(null);
@@ -1149,7 +1149,7 @@ export default function HopdcFeedbackPage() {
             }}
           >
             <div
-              className="w-full max-w-xl rounded-3xl border border-outline/20 bg-surface p-5 shadow-2xl"
+              className="w-full max-w-xl rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <h4 className="text-xl font-bold text-on-surface">
@@ -1178,7 +1178,8 @@ export default function HopdcFeedbackPage() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
         
         {isCreateModalOpen && typeof document !== "undefined" && createPortal(
