@@ -1382,31 +1382,9 @@ export default function FormDesignPage({
                                 >
                                   <option value="NEXT">Go to next section</option>
                                   <option value="SUBMIT">Submit the form</option>
-                                  <option value="GO_TO_SECTION">
-                                    Jump to specific section
-                                  </option>
                                 </select>
                               </div>
 
-                              {sectionForm.afterSectionAction ===
-                                "GO_TO_SECTION" && (
-                                <div>
-                                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant/80">
-                                    Target Section ID
-                                  </label>
-                                  <input
-                                    value={sectionForm.targetSectionId}
-                                    onChange={(e) =>
-                                      setSectionForm((prev) => ({
-                                        ...prev,
-                                        targetSectionId: e.target.value,
-                                      }))
-                                    }
-                                    placeholder="e.g. section_2"
-                                    className="w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none transition shadow-sm border border-outline/20 focus:border-primary focus:shadow-md"
-                                  />
-                                </div>
-                              )}
 
                               <button
                                 onClick={handleSaveSection}
@@ -1581,7 +1559,7 @@ export default function FormDesignPage({
                                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
                                     Question Label / Title
                                   </label>
-                                  <input
+                                  <textarea
                                     value={questionForm.content}
                                     onChange={(e) =>
                                       setQuestionForm((prev) => ({
@@ -1590,7 +1568,8 @@ export default function FormDesignPage({
                                       }))
                                     }
                                     placeholder="e.g. Rate your overall satisfaction"
-                                    className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md"
+                                    rows={4}
+                                    className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md resize-y"
                                   />
                                 </div>
 
@@ -1677,18 +1656,6 @@ export default function FormDesignPage({
                                               className="flex-1 border-b border-outline/20 bg-transparent py-1.5 text-sm outline-none transition focus:border-primary/50 text-on-surface"
                                             />
 
-                                            <input
-                                              value={option.nextSectionId}
-                                              onChange={(e) =>
-                                                updateQuestionOption(
-                                                  option.id,
-                                                  "nextSectionId",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              placeholder="Jump to Section ID (optional)"
-                                              className="flex-1 border-b border-outline/20 bg-transparent py-1.5 text-xs outline-none transition focus:border-primary/50 text-on-surface-variant"
-                                            />
 
                                             <button
                                               onClick={() =>
