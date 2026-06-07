@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   ArrowLeft,
   Eye,
+  MoreHorizontal,
 } from "lucide-react";
 
 import {
@@ -59,7 +60,7 @@ type QuestionOptionDraft = {
 };
 
 type DeleteConfirmState = {
-  kind: "section" | "question";
+  kind: "section" | "question" | "form";
   id: string;
   message: string;
 };
@@ -99,6 +100,24 @@ export default function HopdcFeedbackPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createFormName, setCreateFormName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
+  
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [editFormModal, setEditFormModal] = useState<{
+    isOpen: boolean;
+    formId: string;
+    title: string;
+    formType: string;
+    description: string;
+    closeAt: string;
+  }>({
+    isOpen: false,
+    formId: "",
+    title: "",
+    formType: "",
+    description: "",
+    closeAt: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<"manage" | "designer">(
     "manage",
   );
@@ -731,11 +750,18 @@ export default function HopdcFeedbackPage() {
         if (editingSectionId === deleteConfirm.id) {
           resetSectionEditor();
         }
-      } else {
+      } else if (deleteConfirm.kind === "question") {
         await FeedbackFormService.deleteQuestion(deleteConfirm.id);
         if (editingQuestionId === deleteConfirm.id) {
           resetQuestionEditor();
         }
+      } else if (deleteConfirm.kind === "form") {
+        await FeedbackFormService.deleteForm(deleteConfirm.id);
+        await loadForms();
+        setSuccess("Form deleted successfully.");
+        showToast("Form deleted successfully.", "success");
+        setDeleteConfirm(null);
+        return;
       }
 
       await loadDesignerSchema(designerFormId);
@@ -753,11 +779,64 @@ export default function HopdcFeedbackPage() {
         err?.message ||
         (deleteConfirm.kind === "section"
           ? "Failed to delete section"
+          : deleteConfirm.kind === "form" 
+          ? "Failed to delete form"
           : "Failed to delete question");
       setError(message);
       showToast(message, "error");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleEditForm = (form: any) => {
+    setEditFormModal({
+      isOpen: true,
+      formId: form.id,
+      title: form.title || "",
+      formType: form.formType || "",
+      description: form.description || "",
+      closeAt: form.closeAt ? new Date(form.closeAt).toISOString().slice(0, 16) : "",
+    });
+    setActiveMenuId(null);
+  };
+
+  const handleDeleteFormClick = (form: any) => {
+    setDeleteConfirm({
+      kind: "form",
+      id: form.id,
+      message: "Are you sure you want to delete this form and all related data?",
+    });
+    setActiveMenuId(null);
+  };
+
+  const handleSaveEditForm = async () => {
+    if (!editFormModal.formType.trim()) {
+      setError("Form Name is required");
+      return;
+    }
+
+    setSavingEdit(true);
+    setError(null);
+    try {
+      const payload: any = {
+        title: editFormModal.title,
+        formType: editFormModal.formType,
+        description: editFormModal.description,
+      };
+      if (editFormModal.closeAt) {
+        payload.closeAt = new Date(editFormModal.closeAt).toISOString();
+      }
+      
+      await FeedbackFormService.updateForm(editFormModal.formId, payload);
+      await loadForms();
+      setEditFormModal({ ...editFormModal, isOpen: false });
+      showToast("Form updated successfully", "success");
+    } catch (err: any) {
+      setError(err?.message || "Failed to update form");
+      showToast(err?.message || "Failed to update form", "error");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -933,8 +1012,8 @@ export default function HopdcFeedbackPage() {
                                       </p>
                                     </div>
 
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      {form.formUrl && (
+                                    <div className="flex items-center gap-2 relative">
+                                      {form.formUrl && form.isActive && (
                                         <a
                                           href={form.formUrl}
                                           target="_blank"
@@ -959,6 +1038,36 @@ export default function HopdcFeedbackPage() {
                                         )}
                                         {form.isActive ? "ACTIVE" : "DRAFT"}
                                       </span>
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveMenuId(activeMenuId === form.id ? null : form.id);
+                                        }}
+                                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                      >
+                                        <MoreHorizontal className="h-5 w-5" />
+                                      </button>
+
+                                      {activeMenuId === form.id && (
+                                        <>
+                                          <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
+                                          <div className="absolute right-0 top-10 z-50 w-36 rounded-xl border border-outline/10 bg-white py-1.5 shadow-xl">
+                                            <button
+                                              onClick={() => handleEditForm(form)}
+                                              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold text-on-surface hover:bg-primary/5 hover:text-primary transition-colors"
+                                            >
+                                              <Pencil className="h-4 w-4" /> Edit
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteFormClick(form)}
+                                              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold text-error hover:bg-error/10 transition-colors"
+                                            >
+                                              <Trash2 className="h-4 w-4" /> Delete
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
 
@@ -980,13 +1089,15 @@ export default function HopdcFeedbackPage() {
                                     </a>
                                   )}
 
-                                  <button
-                                    onClick={() => handleOpenDesigner(form.id)}
-                                    className="inline-flex items-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95"
-                                  >
-                                    <ListTree className="h-3.5 w-3.5" />
-                                    Design
-                                  </button>
+                                  {!form.isActive && (
+                                    <button
+                                      onClick={() => handleOpenDesigner(form.id)}
+                                      className="inline-flex items-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95"
+                                    >
+                                      <ListTree className="h-3.5 w-3.5" />
+                                      Design
+                                    </button>
+                                  )}
 
                                   {form.isActive && (
                                     <button
@@ -995,8 +1106,8 @@ export default function HopdcFeedbackPage() {
                                       }
                                       className="inline-flex items-center gap-1 rounded-xl bg-linear-to-r from-secondary to-secondary/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-secondary/10 transition duration-300 hover:scale-105 active:scale-95"
                                     >
-                                      <BarChart className="h-3.5 w-3.5" />
-                                      View Results
+                                      <Eye className="h-3.5 w-3.5" />
+                                      View
                                     </button>
                                   )}
                                   {!form.isActive && (
@@ -1145,6 +1256,89 @@ export default function HopdcFeedbackPage() {
                       <Plus className="h-5 w-5" />
                     )}
                     Create Form
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {editFormModal.isOpen && typeof document !== "undefined" && createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+            onClick={() => !savingEdit && setEditFormModal({ ...editFormModal, isOpen: false })}
+          >
+            <div
+              className="w-full max-w-lg rounded-3xl border border-outline/20 bg-white p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6 border-b border-outline/10 pb-4">
+                <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                  <Pencil className="h-5 w-5 text-primary" />
+                  Edit Form Information
+                </h3>
+                <button
+                  onClick={() => !savingEdit && setEditFormModal({ ...editFormModal, isOpen: false })}
+                  className="text-on-surface-variant hover:text-on-surface transition hover:bg-surface-container p-1 rounded-full"
+                  disabled={savingEdit}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Form Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                      <FileText className="h-4.5 w-4.5 text-primary/60" />
+                    </div>
+                    <input
+                      value={editFormModal.formType}
+                      onChange={(e) => setEditFormModal({ ...editFormModal, formType: e.target.value })}
+                      disabled={savingEdit}
+                      placeholder="e.g. Midterm Feedback"
+                      className="w-full rounded-2xl border border-outline/20 bg-white/70 pl-11 pr-4 py-3.5 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Description
+                  </label>
+                  <textarea
+                    value={editFormModal.description}
+                    onChange={(e) => setEditFormModal({ ...editFormModal, description: e.target.value })}
+                    disabled={savingEdit}
+                    placeholder="Form description..."
+                    rows={4}
+                    className="w-full rounded-2xl border border-outline/20 bg-white/70 p-4 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/15 shadow-sm resize-y"
+                  />
+                </div>
+
+                <div className="mt-8 flex items-center justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => !savingEdit && setEditFormModal({ ...editFormModal, isOpen: false })}
+                    disabled={savingEdit}
+                    className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEditForm}
+                    disabled={savingEdit || !editFormModal.formType.trim()}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-primary to-primary/80 px-8 py-2.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:scale-[1.02] hover:shadow-primary/40 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingEdit ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Pencil className="h-5 w-5" />
+                    )}
+                    Save Changes
                   </button>
                 </div>
               </div>

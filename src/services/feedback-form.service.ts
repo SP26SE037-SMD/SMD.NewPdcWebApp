@@ -145,6 +145,24 @@ export const FeedbackFormService = {
     });
   },
 
+  updateForm: async (
+    formId: string,
+    payload: { title?: string; formType?: string; description?: string; closeAt?: string }
+  ) => {
+    return apiClient.put<FeedbackFormRecord>(
+      `/api/v1/forms/${formId}`,
+      payload,
+      { credentials: "include" }
+    );
+  },
+
+  deleteForm: async (formId: string) => {
+    return apiClient.delete<{ message?: string }>(
+      `/api/v1/forms/${formId}`,
+      { credentials: "include" }
+    );
+  },
+
   getFormById: async (formId: string) => {
     return apiClient.get<FeedbackFormDetail>(`/api/v1/forms/${formId}`);
   },
