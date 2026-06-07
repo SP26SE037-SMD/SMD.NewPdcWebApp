@@ -694,7 +694,7 @@ export function HeaderRightActions() {
                     </div>
                     <div className="hidden lg:block mr-1">
                         <p className="text-[11px] font-bold text-[#2d342b] leading-tight truncate max-w-[100px]">{isMounted && user?.fullName ? user.fullName : "Professor Archer"}</p>
-                        <p className="text-[9px] text-[#5a6157] font-bold uppercase tracking-wider opacity-60">PDCM</p>
+                        <p className="text-[9px] text-[#5a6157] font-bold uppercase tracking-wider opacity-60">{user?.role || "PDCM"}</p>
                     </div>
                     <ChevronDown size={14} className={`transition-transform duration-300 text-[#5a6157] ${isMenuOpen ? 'rotate-180' : ''}`} />
                 </div>
@@ -715,7 +715,7 @@ export function HeaderRightActions() {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-[#2d342b] line-clamp-1">{user?.fullName || "Professor Archer"}</p>
-                                        <p className="text-[10px] text-[#5a6157] font-bold uppercase tracking-widest leading-tight">Member</p>
+                                        <p className="text-[10px] text-[#5a6157] font-bold uppercase tracking-widest leading-tight">{user?.role || "Member"}</p>
                                     </div>
                                 </div>
                             </div>
