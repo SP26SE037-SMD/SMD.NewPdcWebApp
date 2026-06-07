@@ -242,9 +242,16 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 showToast("Mapping validation complete", "success");
             }
         } catch (error: any) {
-            // Validation errors are expected, no need to log the entire error to trigger the Next.js overlay
-            const errMsg = error.message || "Failed to validate mappings";
-            showToast(errMsg, "error");
+            if (error.data?.data && typeof error.data.data.is_valid !== 'undefined') {
+                setMappingValidationResult(error.data.data);
+                setIsMappingResultModalOpen(true);
+            } else if (error.data && typeof error.data.is_valid !== 'undefined') {
+                setMappingValidationResult(error.data);
+                setIsMappingResultModalOpen(true);
+            } else {
+                const errMsg = error.message || "Failed to validate mappings";
+                showToast(errMsg, "error");
+            }
         } finally {
             setIsMappingValidating(false);
         }
