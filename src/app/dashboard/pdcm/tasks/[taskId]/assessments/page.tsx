@@ -1667,10 +1667,14 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
     const [isExpanded, setIsExpanded] = useState(false);
 
     const suggestionsForThisAss = validationResult?.data?.filter((d: any) => d.assessment_id === assessment.assessmentId && (d.confidence_score === undefined || d.confidence_score <= 0.8)) || [];
-    const suggestedCloCodes = suggestionsForThisAss.map((d: any) => {
-        const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: Map to (.*?)\]/i) : null;
-        return match ? match[1].trim() : null;
-    }).filter(Boolean);
+    const suggestedCloCodes = suggestionsForThisAss.flatMap((d: any) => {
+        const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
+        if (match) {
+            const extracted = match[1].match(/CLO\d+/gi);
+            return extracted ? extracted.map((s: string) => s.toUpperCase()) : [];
+        }
+        return [];
+    });
 
     return (
         <>
