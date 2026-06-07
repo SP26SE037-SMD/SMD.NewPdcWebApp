@@ -594,6 +594,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                         subjectClos={subjectClos}
                         mappingStates={mappingStates}
                         onMappingChange={(assessmentId, cloIds) => setMappingStates(prev => ({ ...prev, [assessmentId]: cloIds }))}
+                        validationResult={mappingValidationResult}
                     />
                 </div>
             </div>
@@ -1595,11 +1596,12 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 }
 
 // ── CLO Mapping Tab Component ──
-function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChange }: {
+function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChange, validationResult }: {
     assessments: AssessmentItem[],
     subjectClos: any[],
     mappingStates: Record<string, string[]>,
-    onMappingChange: (assessmentId: string, cloIds: string[]) => void
+    onMappingChange: (assessmentId: string, cloIds: string[]) => void,
+    validationResult?: any
 }) {
     const savedAssessments = assessments.filter(a => !!a.assessmentId);
 
@@ -1636,6 +1638,7 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
                                     subjectClos={subjectClos}
                                     selectedCloIds={mappingStates[ass.assessmentId!] || []}
                                     onSelectionChange={(ids) => onMappingChange(ass.assessmentId!, ids)}
+                                    validationResult={validationResult}
                                 />
                             ))}
                         </tbody>
@@ -1654,13 +1657,20 @@ function CloMappingTab({ assessments, subjectClos, mappingStates, onMappingChang
 }
 
 // ── Mapping Row Component (Inline Expandable) ──
-function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange }: {
+function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange, validationResult }: {
     assessment: AssessmentItem,
     subjectClos: any[],
     selectedCloIds: string[],
-    onSelectionChange: (ids: string[]) => void
+    onSelectionChange: (ids: string[]) => void,
+    validationResult?: any
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const suggestionsForThisAss = validationResult?.data?.filter((d: any) => d.assessment_id === assessment.assessmentId) || [];
+    const suggestedCloCodes = suggestionsForThisAss.map((d: any) => {
+        const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: Map to (.*?)\]/i) : null;
+        return match ? match[1].trim() : null;
+    }).filter(Boolean);
 
     return (
         <>
@@ -1675,7 +1685,7 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                                 {isExpanded ? 'expand_less' : 'expand_more'}
                             </span>
                         </div>
-                        <span className="font-bold text-slate-900">{assessment.categoryName} - Part {assessment.part}</span>
+                        <span className="font-bold text-slate-900">{assessment.categoryName} - {assessment.typeName} - Part {assessment.part}</span>
                     </div>
                 </td>
                 <td className="px-6 py-5">
@@ -1732,20 +1742,29 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
                                                     : [...selectedCloIds, clo.cloId];
                                                 onSelectionChange(newIds);
                                             }}
-                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group ${isSelected
+                                            className={`flex items-start gap-4 p-4 rounded-xl border text-left transition-all group w-full ${isSelected
                                                     ? 'bg-white border-emerald-400 ring-1 ring-emerald-100 shadow-sm'
-                                                    : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
+                                                    : suggestedCloCodes.includes(clo.cloCode)
+                                                        ? 'bg-blue-50/30 border-blue-300 ring-1 ring-blue-100 shadow-sm hover:bg-blue-50/50'
+                                                        : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/10'
                                                 }`}
                                         >
                                             <div className={`mt-0.5 shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'
                                                 }`}>
                                                 {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-emerald-700' : 'text-slate-500'}`}>
-                                                    {clo.cloCode}
-                                                </p>
-                                                <p className={`text-xs leading-relaxed ${isSelected ? 'text-emerald-900' : 'text-slate-600'}`}>
+                                            <div className="space-y-1 w-full">
+                                                <div className="flex justify-between items-center w-full">
+                                                    <p className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-emerald-700' : suggestedCloCodes.includes(clo.cloCode) ? 'text-blue-700' : 'text-slate-500'}`}>
+                                                        {clo.cloCode}
+                                                    </p>
+                                                    {suggestedCloCodes.includes(clo.cloCode) && (
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[10px]">auto_awesome</span> Suggested
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className={`text-xs leading-relaxed ${isSelected ? 'text-emerald-900' : suggestedCloCodes.includes(clo.cloCode) ? 'text-blue-800' : 'text-slate-600'}`}>
                                                     {clo.description}
                                                 </p>
                                             </div>
