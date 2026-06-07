@@ -1182,7 +1182,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
                                             <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
                                             <div className="flex-1">
-                                                <p className="text-xs font-medium">{saveError}</p>
+                                                <ul className="text-xs font-medium list-disc list-outside ml-3 space-y-1">
+                                                    {saveError.split('\n').map((err, i) => (
+                                                        <li key={i}>{err}</li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         </div>
                                     )}
