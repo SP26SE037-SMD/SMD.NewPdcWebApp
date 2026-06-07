@@ -1581,7 +1581,7 @@ export default function FormDesignPage({
                                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80">
                                     Question Label / Title
                                   </label>
-                                  <input
+                                  <textarea
                                     value={questionForm.content}
                                     onChange={(e) =>
                                       setQuestionForm((prev) => ({
@@ -1590,7 +1590,8 @@ export default function FormDesignPage({
                                       }))
                                     }
                                     placeholder="e.g. Rate your overall satisfaction"
-                                    className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md"
+                                    rows={4}
+                                    className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none transition shadow-sm border-b-2 border-transparent focus:border-primary focus:shadow-md resize-y"
                                   />
                                 </div>
 
