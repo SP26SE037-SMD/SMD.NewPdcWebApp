@@ -1477,10 +1477,15 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
     const [isExpanded, setIsExpanded] = useState(false);
 
     const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId && (d.confidence_score === undefined || d.confidence_score <= 0.8)) || [];
-    const suggestedCloCodesStr = suggestionsForThisSession.map((d: any) => {
+    const suggestedCloCodes = suggestionsForThisSession.flatMap((d: any) => {
         const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
-        return match ? match[1] : null;
-    }).filter(Boolean).join(' ');
+        if (match) {
+            const extracted = match[1].match(/CLO\d+/gi);
+            return extracted ? extracted.map((s: string) => s.toUpperCase()) : [];
+        }
+        return [];
+    });
+    const suggestedCloCodesStr = suggestedCloCodes.join(', ');
 
     return (
         <div className={`transition-all border-l-4 ${suggestionsForThisSession.length > 0 ? 'bg-amber-50/50 hover:bg-amber-100/50 border-amber-400' : isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10 border-transparent' : 'hover:bg-slate-50/50 border-transparent'}`}>
@@ -1537,7 +1542,7 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             {subjectClos.map(clo => {
                                 const isSelected = selectedCloIds.includes(clo.cloId);
-                                const isSuggested = suggestedCloCodesStr.includes(clo.cloCode);
+                                const isSuggested = suggestedCloCodes.includes(clo.cloCode);
                                 
                                 return (
                                     <label 
