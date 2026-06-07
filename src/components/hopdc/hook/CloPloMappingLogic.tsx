@@ -197,13 +197,15 @@ export function useSubjectMappingLogic() {
   };
 
   const goToReceiveTasks = () => {
-    const sprintId = searchParams.get("sprintId");
-    if (sprintId && curriculumId) {
+    const sprintId = searchParams.get("sprintId")?.trim();
+    const curriculumIdParam = searchParams.get("curriculumId")?.trim();
+    
+    if (sprintId && curriculumIdParam && sprintId !== "" && curriculumIdParam !== "") {
       router.push(
-        `/dashboard/hopdc/assignments?sprintId=${sprintId}&curriculumId=${curriculumId}`,
+        `/dashboard/hopdc/assignments?sprintId=${sprintId}&curriculumId=${curriculumIdParam}`,
       );
     } else {
-      router.push("/dashboard/hopdc/department-tasks?tab=sprint-tasks");
+      router.push("/dashboard/hopdc/department-tasks?tab=single-tasks");
     }
   };
 

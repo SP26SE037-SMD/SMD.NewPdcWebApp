@@ -379,7 +379,11 @@ export function TaskDetailModal({
   }, [task.taskId, isOpen]);
 
   const goToSubjectDetail = async () => {
-    if (task.status === TASK_STATUS.TO_DO) {
+    if (
+      task.status === TASK_STATUS.TO_DO &&
+      task.type === "SUBJECT" &&
+      currentUser?.role === "HOPDC"
+    ) {
       try {
         await TaskService.updateTaskStatus(
           task.taskId,
@@ -399,7 +403,11 @@ export function TaskDetailModal({
   };
 
   const goToSyllabusDetail = async () => {
-    if (task.status === TASK_STATUS.TO_DO) {
+    if (
+      task.status === TASK_STATUS.TO_DO &&
+      task.type === "SUBJECT" &&
+      currentUser?.role === "HOPDC"
+    ) {
       try {
         await TaskService.updateTaskStatus(
           task.taskId,
