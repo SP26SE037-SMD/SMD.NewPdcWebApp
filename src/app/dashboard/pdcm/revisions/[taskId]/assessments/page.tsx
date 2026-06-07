@@ -128,6 +128,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const [isDeleting, setIsDeleting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [validationSummary, setValidationSummary] = useState<any>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
 
     const reduxAssessments = useSelector((state: RootState) => syllabusId ? state.syllabus.assessmentsDB[syllabusId] : undefined);
@@ -677,7 +678,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
                     <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                        onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); setSaveError(null); } }}
                     />
 
                     <div
@@ -760,7 +761,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); } }}
+                                    onClick={() => { if (!isSaving) { setIsImportModalOpen(false); setIsPreviewOpen(false); setSaveError(null); } }}
                                     className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[#f8faf2] text-zinc-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
                                 >
                                     <span className="material-symbols-outlined">close</span>
@@ -900,8 +901,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     setIsImportModalOpen(true);
                                                     setIsValidated(false);
                                                     setValidationErrors([]);
-                                                    setValidationSummary(null);
-                                                }}
+                                                    setValidationSummary(null); setSaveError(null); }}
                                                 className="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
                                             >
                                                 <span className="material-symbols-outlined text-[14px]">delete</span> Delete & Upload New
@@ -919,6 +919,19 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 <div>Total Weight: <span className="font-bold">{validationSummary.currentTotalWeight}%</span></div>
                                                 <div>Total Count: <span className="font-bold">{validationSummary.totalAssessmentCount}</span></div>
                                                 <div>Formative: <span className="font-bold">{validationSummary.formativeCount}</span> | Final: <span className="font-bold">{validationSummary.finalCount}</span></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {saveError && (
+                                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-1">
+                                            <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
+                                            <div className="flex-1">
+                                                <ul className="text-xs font-medium list-disc list-outside ml-3 space-y-1">
+                                                    {saveError.split('\n').map((err, i) => (
+                                                        <li key={i}>{err}</li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         </div>
                                     )}
@@ -1051,6 +1064,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                 setIsPreviewOpen(false);
                                                 setPreviewData([]);
                                                 setImportFile(null);
+                                                setSaveError(null);
                                             } else {
                                                 const errorData = res?.data;
                                                 const importErrs = errorData?.importErrors || [];
@@ -1071,8 +1085,9 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                      const globalErrs = allErrors.filter((e: any) => (!e.sessionNumber || e.sessionNumber === 0) && !e.rowNumber);
                                                      let errorMsg = errorData?.message || 'Validation failed or import errors occurred.';
                                                      if (globalErrs.length > 0) {
-                                                         errorMsg += '\n' + globalErrs.map((e: any) => e.message).join('\n');
-                                                     }
+                                                     errorMsg += '\n' + globalErrs.map((e: any) => e.message).join('\n');
+                                                     setSaveError(globalErrs.map((e: any) => e.message).join('\n'));
+                                                 }
                                                      showToast(errorMsg, 'error');
                                                      setPreviewData(prev => {
                                                          const newData = [...prev];
@@ -1143,8 +1158,10 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                      return newData;
                                                  });
                                             } else {
-                                                 showToast(error?.message || 'Failed to import assessments', 'error');
-                                            }
+                                                 const errMsg = error?.message || 'Failed to import assessments';
+                                                 setSaveError(errMsg);
+                                                 showToast(errMsg, 'error');
+                                             }
                                         } finally {
                                             setIsSaving(false);
                                         }
