@@ -31,6 +31,7 @@ import { CurriculumGroupSubjectService } from "@/services/curriculum-group-subje
 import { CurriculumService } from "@/services/curriculum.service";
 import { CloPloMatrixModal } from "@/components/common/CloPloMatrixModal";
 import { SourceService } from "@/services/source.service";
+import { CloPloService } from "@/services/cloplo.service";
 
 const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.DRAFT]: "text-zinc-600 bg-zinc-50 border-zinc-200",
@@ -42,6 +43,23 @@ const STATUS_COLORS: Record<string, string> = {
   [SUBJECT_STATUS.COMPLETED]:
     "text-emerald-600 bg-emerald-50 border-emerald-100",
   [SUBJECT_STATUS.ARCHIVED]: "text-red-600 bg-red-50 border-red-100",
+};
+
+const formatCloDescription = (text: string) => {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const firstSpaceIdx = trimmed.indexOf(" ");
+  if (firstSpaceIdx === -1) {
+    return <span className="font-bold text-slate-900">{trimmed}</span>;
+  }
+  const firstWord = trimmed.substring(0, firstSpaceIdx);
+  const remainingText = trimmed.substring(firstSpaceIdx);
+  return (
+    <>
+      <span className="font-bold text-slate-900">{firstWord}</span>
+      {remainingText}
+    </>
+  );
 };
 
 export default function SubjectDetail({
@@ -81,6 +99,25 @@ export default function SubjectDetail({
   >([]);
   const [loadingCurricula, setLoadingCurricula] = useState(false);
   const [selectedCurriculumForMatrix, setSelectedCurriculumForMatrix] = useState<{ id: string; name: string; code: string } | null>(null);
+
+  const [clos, setClos] = useState<any[]>([]);
+  const [loadingClos, setLoadingClos] = useState(false);
+
+  useEffect(() => {
+    const fetchClos = async () => {
+      if (!subject?.subjectId) return;
+      setLoadingClos(true);
+      try {
+        const res = await CloPloService.getSubjectClos(subject.subjectId, 0, 100);
+        setClos(res?.data?.content || []);
+      } catch (err) {
+        console.error("Failed to load CLOs:", err);
+      } finally {
+        setLoadingClos(false);
+      }
+    };
+    fetchClos();
+  }, [subject?.subjectId]);
 
   const fetchSubject = async (showLoading = true) => {
     try {
@@ -469,6 +506,62 @@ export default function SubjectDetail({
                           <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">{subject.studentTasks}</p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* CLOs Section */}
+                    <div className="bg-white/70 backdrop-blur-xl rounded-[20px] border border-white/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 hover:bg-white/90 transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <Target size={20} />
+                          </div>
+                          <h2 className="text-lg font-black text-zinc-900 tracking-tight uppercase tracking-widest">
+                            Course Learning Outcomes (CLOs)
+                          </h2>
+                        </div>
+                        <span className="text-xs font-black text-zinc-500 py-1.5 px-3 bg-zinc-100 rounded-lg border border-zinc-200">
+                          {loadingClos ? "Loading..." : `${clos.length} CLOs`}
+                        </span>
+                      </div>
+
+                      {loadingClos ? (
+                        <div className="flex items-center gap-2 text-zinc-450 py-4">
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Loading outcomes...</span>
+                        </div>
+                      ) : clos.length === 0 ? (
+                        <p className="text-sm font-semibold text-zinc-450 italic">
+                          No learning outcomes defined for this subject yet.
+                        </p>
+                      ) : (
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                          {clos.map((clo) => (
+                            <div
+                              key={clo.cloId}
+                              className="p-5 rounded-2xl border border-slate-200 bg-slate-50/30 hover:bg-slate-50/80 transition-colors shadow-sm"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-black text-slate-900 bg-slate-200 px-3 py-1 rounded-md uppercase tracking-widest">
+                                  {clo.cloCode}
+                                </span>
+                                {clo.bloomLevel && (
+                                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                    Bloom: {clo.bloomLevel}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-base font-medium text-slate-900 mb-2">
+                                {formatCloDescription(clo.cloName || clo.description)}
+                              </p>
+                              {clo.description && clo.cloName && clo.description !== clo.cloName && (
+                                <p className="text-sm text-slate-650 italic mt-2 border-l-3 border-slate-200 pl-4 leading-relaxed font-medium">
+                                  {clo.description}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="relative overflow-hidden rounded-[20px] border border-white/60 bg-white/70 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl space-y-4 hover:bg-white/90 transition-all">

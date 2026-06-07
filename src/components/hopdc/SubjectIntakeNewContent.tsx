@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import  SubjectDetail from "@/components/hopdc/subject/SubjectDetail";
+import SubjectDetail from "@/components/hopdc/subject/SubjectDetail";
 import { CreateCloModal } from "@/components/hopdc/subject/CreateCloModal";
 import { UpdateCloModal } from "@/components/hopdc/subject/UpdateCloModal";
 import { CreateSyllabusModal } from "@/components/hopdc/subject/CreateSyllabusModal";
@@ -109,6 +109,22 @@ export default function NewSubjectContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const hasSprintAndCurriculum = useMemo(() => {
+    const sId = (searchParams.get("sprintId") || sprintId || "").toString().trim();
+    const cId = (searchParams.get("curriculumId") || curriculumId || "").toString().trim();
+    return (
+      sId !== "" &&
+      sId !== "null" &&
+      sId !== "undefined" &&
+      cId !== "" &&
+      cId !== "null" &&
+      cId !== "undefined"
+    );
+  }, [sprintId, curriculumId, searchParams]);
+
+  const resolvedActiveTab =
+    !hasSprintAndCurriculum && activeTab === "mapping" ? "subject" : activeTab;
   const isReadOnly =
     searchParams.get("readOnly") === "true" ||
     associatedTask?.status === "OVERDUE";
@@ -135,7 +151,8 @@ export default function NewSubjectContent() {
     associatedTask?.taskName?.toUpperCase().includes("REVIEW SYLLABUS") ||
     associatedTask?.action === "REVIEW";
 
-  const showFloatingDecision = isReviewTask && associatedTask?.isAccepted !== true;
+  const showFloatingDecision =
+    isReviewTask && associatedTask?.isAccepted !== true;
 
   const SYLLABUS_STATUS_STEPS = [
     {
@@ -228,7 +245,7 @@ export default function NewSubjectContent() {
           Back to Assign Tasks
         </button>
 
-        {!isSyllabusMode && (
+        {!isSyllabusMode && hasSprintAndCurriculum && (
           <div className="flex items-center p-1 bg-zinc-100 rounded-2xl w-fit self-center md:self-auto">
             <button
               onClick={() => setActiveTab("subject")}
@@ -272,18 +289,18 @@ export default function NewSubjectContent() {
       {/* Tab Content */}
       <div className="space-y-6">
         {/* Tab 0: Subject Information */}
-        {activeTab === "subject" && (
-            <SubjectDetail
-              id={subject.subjectId}
-              initialSubject={subject as any}
-              hideBackBtn={true}
-              hideCurriculumMapping={true}
-              hideManagementActions={true}
-            />
+        {resolvedActiveTab === "subject" && (
+          <SubjectDetail
+            id={subject.subjectId}
+            initialSubject={subject as any}
+            hideBackBtn={true}
+            hideCurriculumMapping={true}
+            hideManagementActions={true}
+          />
         )}
 
         {/* Tab 1: Curriculum & CLO-PLO Mapping */}
-        {activeTab === "mapping" && (
+        {resolvedActiveTab === "mapping" && (
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Curriculum PLO Catalog Section */}
             <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm p-6 md:p-7 space-y-5">
@@ -402,7 +419,7 @@ export default function NewSubjectContent() {
         )}
 
         {/* Tab 2: Syllabus */}
-        {activeTab === "syllabus" && (
+        {resolvedActiveTab === "syllabus" && (
           <div className="animate-in fade-in duration-300">
             <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm p-6 md:p-7 space-y-6">
               {(isTaskLoading || isPublishedSyllabusLoading) && (
