@@ -1453,7 +1453,7 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId && (d.confidence_score === undefined || d.confidence_score <= 0.8)) || [];
+    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId && (d.confidence_score === undefined || d.confidence_score < 0.8)) || [];
     const suggestedCloCodes = suggestionsForThisSession.flatMap((d: any) => {
         const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
         if (match) {
