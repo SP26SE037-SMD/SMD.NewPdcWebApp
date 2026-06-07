@@ -139,6 +139,12 @@ export function AssessmentAISuggestionModal({ isOpen, onClose, aiResult }: Asses
                                                     <div>
                                                         <p className="text-xs font-bold text-amber-800">{w.label}</p>
                                                         {w.detail && <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{w.detail}</p>}
+                                                        {w.suggestion && (
+                                                            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-amber-200/60 bg-amber-100/50 text-amber-700 text-[10px] font-bold">
+                                                                <Sparkles size={10} className="text-amber-500" />
+                                                                Suggested: Map to {w.suggestion}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
