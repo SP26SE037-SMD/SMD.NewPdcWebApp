@@ -215,7 +215,9 @@ export default function PDCMReviewAssessmentsPage({
               { label: 'Assessments Linked', value: isAllAssessmentsMapped ? 'All linked' : `${unmappedAssessments.length} missing`, type: isAllAssessmentsMapped ? 'ok' : 'error' },
               { label: 'Total Links', value: `${totalLinks}`, type: 'info' },
             ],
-            warnings: (mappingValidData?.data || []).map((m: any) => {
+            warnings: (mappingValidData?.data || [])
+              .filter((m: any) => m.confidence_score === undefined || m.confidence_score <= 0.8)
+              .map((m: any) => {
                const match = m.reasoning ? m.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
                return {
                   label: 'Alignment Issue',

@@ -1589,7 +1589,7 @@ function MappingRow({ assessment, subjectClos, selectedCloIds, onSelectionChange
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const suggestionsForThisAss = validationResult?.data?.filter((d: any) => d.assessment_id === assessment.assessmentId) || [];
+    const suggestionsForThisAss = validationResult?.data?.filter((d: any) => d.assessment_id === assessment.assessmentId && (d.confidence_score === undefined || d.confidence_score <= 0.8)) || [];
     const suggestedCloCodes = suggestionsForThisAss.map((d: any) => {
         const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: Map to (.*?)\]/i) : null;
         return match ? match[1].trim() : null;
@@ -1766,7 +1766,7 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                                             {ass?.categoryName || 'Assessment'} - Part {ass?.part}
                                                         </p>
                                                         <p className="text-sm text-emerald-900 font-medium leading-relaxed">
-                                                            Suggested mapping to CLO. <span style={{ color: (item.confidence_score * 100) < 20 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
+                                                            AI Validation Result. <span style={{ color: (item.confidence_score * 100) < 50 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
                                                         </p>
                                                         
                                                         {(() => {
