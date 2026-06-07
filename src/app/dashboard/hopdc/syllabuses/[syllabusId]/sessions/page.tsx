@@ -571,6 +571,7 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
                         subjectClos={clos}
                         mappingStates={mappingStates}
                         onMappingChange={(sessionId, cloIds) => setMappingStates(prev => ({ ...prev, [sessionId]: cloIds }))}
+                        validationResult={mappingValidationResult}
                     />
                 </div>
             </div>
@@ -1361,11 +1362,12 @@ export default function SessionsPage({ params }: { params: Promise<{ syllabusId:
 }
 
 // ── Session Mapping Tab Component ──
-function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChange }: { 
+function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChange, validationResult }: { 
     sessions: SessionItem[], 
     subjectClos: any[],
     mappingStates: Record<string, string[]>,
-    onMappingChange: (sessionId: string, cloIds: string[]) => void
+    onMappingChange: (sessionId: string, cloIds: string[]) => void,
+    validationResult?: any
 }) {
     return (
         <div className="bg-white border border-zinc-100 rounded-[32px] overflow-hidden shadow-sm">
@@ -1383,6 +1385,7 @@ function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChan
                         subjectClos={subjectClos}
                         selectedCloIds={mappingStates[session.sessionId || ''] || []}
                         onChange={(cloIds) => onMappingChange(session.sessionId || '', cloIds)}
+                        validationResult={validationResult}
                     />
                 ))}
             </div>
@@ -1391,16 +1394,23 @@ function SessionMappingTab({ sessions, subjectClos, mappingStates, onMappingChan
 }
 
 // ── Session Mapping Row Component ──
-function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: { 
+function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, validationResult }: { 
     session: SessionItem, 
     subjectClos: any[],
     selectedCloIds: string[],
-    onChange: (cloIds: string[]) => void
+    onChange: (cloIds: string[]) => void,
+    validationResult?: any
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const suggestionsForThisSession = validationResult?.data?.filter((d: any) => d.session_id === session.sessionId) || [];
+    const suggestedCloCodesStr = suggestionsForThisSession.map((d: any) => {
+        const match = d.reasoning ? d.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
+        return match ? match[1] : null;
+    }).filter(Boolean).join(' ');
+
     return (
-        <div className={`transition-all ${isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10' : 'hover:bg-slate-50/50'}`}>
+        <div className={`transition-all border-l-4 ${suggestionsForThisSession.length > 0 ? 'bg-amber-50/50 hover:bg-amber-100/50 border-amber-400' : isExpanded ? 'bg-primary/5 ring-1 ring-inset ring-primary/10 border-transparent' : 'hover:bg-slate-50/50 border-transparent'}`}>
             <div 
                 className="grid grid-cols-12 px-8 py-5 items-center cursor-pointer"
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -1444,26 +1454,43 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange }: {
                             Mapped Course Learning Outcomes
                         </h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).length > 0 ? (
-                                subjectClos.filter(clo => selectedCloIds.includes(clo.cloId)).map(clo => (
-                                    <div 
-                                        key={clo.cloId}
-                                        className="flex items-start gap-3 p-4 rounded-xl border-2 border-slate-100 bg-slate-50/50 group"
-                                    >
-                                        <div>
-                                            <p className="text-xs font-black mb-1 text-slate-700">
-                                                {clo.cloCode}
-                                            </p>
-                                            <p className="text-[11px] font-medium text-slate-600 leading-relaxed line-clamp-2">
-                                                {clo.description}
-                                            </p>
+                            {subjectClos.filter(clo => selectedCloIds.includes(clo.cloId) || suggestedCloCodesStr.includes(clo.cloCode)).length > 0 ? (
+                                subjectClos.filter(clo => selectedCloIds.includes(clo.cloId) || suggestedCloCodesStr.includes(clo.cloCode)).map(clo => {
+                                    const isSelected = selectedCloIds.includes(clo.cloId);
+                                    const isSuggested = suggestedCloCodesStr.includes(clo.cloCode);
+                                    
+                                    return (
+                                        <div 
+                                            key={clo.cloId}
+                                            className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all group w-full
+                                                ${isSelected 
+                                                    ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
+                                                    : isSuggested
+                                                        ? 'border-blue-300 bg-blue-50/30 shadow-sm shadow-blue-500/5'
+                                                        : 'border-slate-100 bg-slate-50/50'}`}
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-center mb-1 w-full">
+                                                    <p className={`text-xs font-black transition-colors ${isSelected ? 'text-primary' : isSuggested ? 'text-blue-700' : 'text-slate-500'}`}>
+                                                        {clo.cloCode}
+                                                    </p>
+                                                    {isSuggested && (
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1 shrink-0">
+                                                            <span className="material-symbols-outlined text-[10px]">auto_awesome</span> Suggested
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className={`text-[11px] font-medium leading-relaxed line-clamp-2 ${isSelected ? 'text-slate-700' : isSuggested ? 'text-blue-800' : 'text-slate-600'}`}>
+                                                    {clo.description}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="col-span-1 md:col-span-2 lg:col-span-3 py-6 text-center text-slate-500 rounded-xl border border-dashed border-slate-200">
                                     <span className="material-symbols-outlined text-2xl opacity-20 mb-1">link_off</span>
-                                    <p className="text-xs font-medium">No learning outcomes mapped</p>
+                                    <p className="text-xs font-bold">No mapped or suggested CLOs</p>
                                 </div>
                             )}
                         </div>
@@ -1556,7 +1583,7 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
                                                                     {suggestion && (
                                                                         <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100/50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
                                                                             <span className="material-symbols-outlined text-[14px]">lightbulb</span>
-                                                                            Suggested: Map to {suggestion}
+                                                                            Suggested: {suggestion}
                                                                         </div>
                                                                     )}
                                                                 </>
