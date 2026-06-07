@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 
+import { ToastProvider } from "@/components/ui/Toast";
+
 interface PDCMBaseLayoutProps {
     children: React.ReactNode;
     activeSidebarId?: string;
@@ -64,53 +66,56 @@ export function PDCMBaseLayout({
     const finalTabs = headerTabs || defaultTabs;
 
     return (
-        <div className="h-screen flex flex-col bg-white text-[#2d342b] font-sans selection:bg-[#c1eeba] selection:text-[#345a32] overflow-hidden">
-            {!hideHeader && (
-                <Header 
-                    title={headerTitle} 
-                    tabs={finalTabs}
+        <ToastProvider>
+            <div className="h-screen flex flex-col bg-white text-[#2d342b] font-sans selection:bg-[#c1eeba] selection:text-[#345a32] overflow-hidden">
+                {!hideHeader && (
+                    <Header 
+                        title={headerTitle} 
+                        tabs={finalTabs}
 
-                    // Removed actionButton from Header to move to Sidebar
-                />
-            )}
-
-            <div className={`flex flex-1 relative ${!hideHeader ? 'pt-16' : ''} overflow-hidden`}>
-                {sidebarItems && (
-                    <Sidebar 
-                        items={sidebarItems}
-                        subContent={sidebarSubContent}
-                        actionButton={actionButton}
+                        // Removed actionButton from Header to move to Sidebar
                     />
                 )}
 
-                <main className={`flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 ${sidebarItems ? 'ml-64' : ''} ${fullPage ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
-                    {fullPage ? children : (
-                        <div className="max-w-[1600px] mx-auto px-8 py-6">
-                            {pageHeaderContent && (
-                                <div className="mb-4">
-                                    {pageHeaderContent}
-                                </div>
-                            )}
-                            {onBack && (
-                                <button 
-                                    onClick={onBack}
-                                    className="flex items-center gap-2 mb-6 group hover:translate-x-[-4px] transition-transform duration-200"
-                                >
-                                    <span className="material-symbols-outlined text-[24px] text-[#41683f]">arrow_back</span>
-                                    <span className="text-lg font-bold text-[#41683f]">Back</span>
-                                </button>
-                            )}
-                            {children}
-                        </div>
+                <div className={`flex flex-1 relative ${!hideHeader ? 'pt-16' : ''} overflow-hidden`}>
+                    {sidebarItems && (
+                        <Sidebar 
+                            items={sidebarItems}
+                            subContent={sidebarSubContent}
+                            actionButton={actionButton}
+                        />
                     )}
-                </main>
-            </div>
 
-            {subContent && (
-                <div className="border-t border-outline-variant bg-surface-container-low px-8 py-4">
-                    {subContent}
+                    <main className={`flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 ${sidebarItems ? 'ml-64' : ''} ${fullPage ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
+                        {fullPage ? children : (
+                            <div className="max-w-[1600px] mx-auto px-8 py-6">
+                                {pageHeaderContent && (
+                                    <div className="mb-4">
+                                        {pageHeaderContent}
+                                    </div>
+                                )}
+                                {onBack && (
+                                    <button 
+                                        onClick={onBack}
+                                        className="flex items-center gap-2 mb-6 group hover:translate-x-[-4px] transition-transform duration-200"
+                                    >
+                                        <span className="material-symbols-outlined text-[24px] text-[#41683f]">arrow_back</span>
+                                        <span className="text-lg font-bold text-[#41683f]">Back</span>
+                                    </button>
+                                )}
+                                {children}
+                            </div>
+                        )}
+                    </main>
                 </div>
-            )}
-        </div>
+
+                {subContent && (
+                    <div className="border-t border-outline-variant bg-surface-container-low px-8 py-4">
+                        {subContent}
+                    </div>
+                )}
+            </div>
+        </ToastProvider>
     );
 }
+

@@ -6,6 +6,7 @@ import { SyllabusSessionsTab } from './_components/SyllabusSessionsTab';
 import { SyllabusAssessmentsTab } from './_components/SyllabusAssessmentsTab';
 import { Info, BookOpen, Calendar, ClipboardList, Loader2 } from 'lucide-react';
 import { SessionDetailModal } from '@/components/dashboard/SessionDetailModal';
+import { AssessmentDetailModal } from '@/components/dashboard/AssessmentDetailModal';
 
 export type WorkspaceMode = 'MONITOR' | 'SYNTHESIS';
 
@@ -40,6 +41,10 @@ export function SyllabusWorkspaceView({
     // Modal state for session detail (shared across modes)
     const [selectedSession, setSelectedSession] = useState<any>(null);
     const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+
+    // Modal state for assessment detail
+    const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
+    const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
 
     if (isLoading || !syllabusId) {
         return (
@@ -113,6 +118,10 @@ export function SyllabusWorkspaceView({
                         assessments={assessments} 
                         evaluations={evaluations?.assessments}
                         overallFeedback={overallFeedback?.assessments}
+                        onViewDetail={(a) => {
+                            setSelectedAssessment(a);
+                            setIsAssessmentModalOpen(true);
+                        }}
                         onUpdateStatus={onUpdateStatus ? (s) => onUpdateStatus('assessments', 'ALL', s) : undefined}
                     />
                 )}
@@ -123,6 +132,13 @@ export function SyllabusWorkspaceView({
                 isOpen={isSessionModalOpen}
                 onClose={() => setIsSessionModalOpen(false)}
                 session={selectedSession}
+                subjectId={syllabus?.subjectId}
+            />
+
+            <AssessmentDetailModal
+                isOpen={isAssessmentModalOpen}
+                onClose={() => setIsAssessmentModalOpen(false)}
+                assessment={selectedAssessment}
                 subjectId={syllabus?.subjectId}
             />
         </div>

@@ -419,7 +419,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
                 <CurriculumInformation id={id} isEmbedded={true} />
               )}
               {activeTab === "department-tasks" && (
-                <SprintsManagement curriculumId={id} isEmbedded={true} />
+                <SprintsManagement curriculumId={id} curriculum={curriculum} isEmbedded={true} />
               )}
             </motion.div>
           </AnimatePresence>

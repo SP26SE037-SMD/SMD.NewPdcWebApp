@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   GitBranch,
   Plus,
@@ -21,13 +21,14 @@ import {
   Target,
   Gauge,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { SubjectClo } from "@/services/cloplo.service";
 import { PLO } from "@/services/curriculum.service";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { MappingService } from "@/services/mapping.service";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/Toast";
 import { useSearchParams } from "next/navigation";
 
 const BLOOM_LEVEL_LABELS: Record<number, string> = {
@@ -276,6 +277,7 @@ export function CloPloMapping({
   const curriculumId = curriculumIdProp || searchParams.get("curriculumId");
   const subjectId =
     subjectIdProp || searchParams.get("subjectId") || searchParams.get("id");
+  const { showToast } = useToast();
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [cloToDelete, setCloToDelete] = useState<string | null>(null);
@@ -284,15 +286,13 @@ export function CloPloMapping({
 
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleValidate = async () => {
     if (!curriculumId || !subjectId) {
-      toast.error("Curriculum or Subject ID is missing");
+      showToast("Curriculum or Subject ID is missing", "error");
       return;
     }
     setIsValidating(true);
-    setValidationError(null);
 
     try {
       // Collect current mappings from matrixMappings
@@ -313,22 +313,27 @@ export function CloPloMapping({
       );
 
       if (res.status === 9001) {
-        setValidationError("Failed to validate with AI. Please try again.");
+        showToast("Failed to validate with AI. Please try again.", "error");
         setValidationResult(null);
         return;
       }
 
       setValidationResult(res.data);
-      toast.success("Validation completed!");
+      if (res.data?.is_logic_valid) {
+        showToast("Matrix is logically valid!", "success");
+      } else {
+        showToast("Logic issues found in the matrix!", "warning");
+      }
     } catch (error: any) {
       if (error?.status === 9001 || error?.response?.data?.status === 9001) {
-        setValidationError("Failed to validate with AI. Please try again.");
+        showToast("Failed to validate with AI. Please try again.", "error");
         setValidationResult(null);
       } else {
-        toast.error(
+        showToast(
           error?.response?.data?.message ||
             error?.message ||
             "Validation failed",
+          "error",
         );
       }
     } finally {
@@ -414,11 +419,6 @@ export function CloPloMapping({
               )}
               {isValidating ? "Validating..." : "Validate Mapping"}
             </button>
-            {validationError && (
-              <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest px-1 animate-in fade-in slide-in-from-top-1">
-                {validationError}
-              </p>
-            )}
           </div>
           {!hideImport && (
             <>
@@ -509,25 +509,7 @@ export function CloPloMapping({
         </div>
       </div>
 
-      {mappingNotice && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-2 border ${
-            mappingNotice.toLowerCase().includes("fail") ||
-            mappingNotice.toLowerCase().includes("error")
-              ? "bg-red-50 border-red-100 text-red-600"
-              : "bg-emerald-50 border-emerald-100 text-emerald-700"
-          }`}
-        >
-          {mappingNotice.toLowerCase().includes("success") ? (
-            <CheckCircle2 size={16} />
-          ) : (
-            <Info size={16} />
-          )}
-          {mappingNotice}
-        </motion.div>
-      )}
+
 
       <AnimatePresence>
         {validationResult && (
@@ -988,6 +970,107 @@ export function CloPloMapping({
           background: rgba(0, 0, 0, 0.1);
         }
       `}</style>
+
+      <AiValidationLoadingModal isOpen={isValidating} />
     </section>
+  );
+}
+
+function AiValidationLoadingModal({ isOpen }: { isOpen: boolean }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    "Initiating AI validator and preparing mapping data...",
+    "Analyzing course learning outcomes (CLOs) and program learning outcomes (PLOs)...",
+    "Running semantic consistency and cognitive level analysis (Bloom's Taxonomy)...",
+    "Identifying logic discrepancies and generating alignment recommendations...",
+  ];
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md"
+        >
+          <motion.div
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            className="relative max-w-md w-full bg-white rounded-[2.5rem] p-8 border border-emerald-100 shadow-2xl text-center space-y-6 overflow-hidden"
+          >
+            {/* Pulsing AI Logo Sphere */}
+            <div className="flex justify-center">
+              <div className="relative w-24 h-24 flex items-center justify-center">
+                <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping duration-1000 opacity-75" />
+                <div className="absolute inset-2 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-full animate-pulse shadow-lg shadow-emerald-200" />
+                <div className="relative z-10 text-white flex flex-col items-center justify-center">
+                  <Sparkles size={32} className="animate-bounce" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-zinc-900 tracking-tight font-sans">
+                AI Mapping Evaluation
+              </h3>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-pulse font-sans">
+                Consulting quality assurance model
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden relative">
+              <motion.div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+
+            {/* Stepper text */}
+            <div className="min-h-12 flex items-center justify-center px-4">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={step}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-sm font-semibold text-zinc-500 leading-relaxed font-sans"
+                >
+                  {steps[step]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+            
+            {/* Subtle micro-animation dots */}
+            <div className="flex justify-center gap-1.5 pt-2">
+              {steps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                    i === step ? "bg-emerald-500 w-4" : "bg-zinc-200"
+                  }`}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

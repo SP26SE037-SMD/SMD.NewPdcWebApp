@@ -44,13 +44,18 @@ export default function ExcelCloPreview({ workbookData, errorMap }: ExcelCloPrev
       <div className="flex-1 overflow-auto relative excel-scrollbar">
         {/* General Sheet Errors Banner */}
         {currentSheetErrors[-1] && (
-          <div className="sticky top-0 left-0 right-0 z-30 bg-red-50 border-b border-red-200 p-3 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div className="sticky top-0 left-0 right-0 z-30 bg-amber-50 border-b border-amber-200 p-3 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h4 className="text-[10px] font-black text-red-800 uppercase tracking-widest mb-1">Template Validation Error</h4>
-              <p className="text-xs text-red-700 font-bold whitespace-pre-wrap leading-relaxed">
-                {currentSheetErrors[-1]}
-              </p>
+              <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-1">Template Validation Error</h4>
+              <div className="text-xs text-amber-700 font-bold leading-relaxed space-y-1.5">
+                {String(currentSheetErrors[-1]).split(" | ").map((err, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5">
+                    <span className="text-amber-500 mt-0.5 shrink-0 select-none">•</span>
+                    <span className="whitespace-pre-wrap">{err.trim()}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -86,15 +91,15 @@ export default function ExcelCloPreview({ workbookData, errorMap }: ExcelCloPrev
                       isHeaderRow 
                         ? 'bg-zinc-50/50' 
                         : isErrorRow 
-                          ? 'bg-rose-50/50 hover:bg-rose-50' 
+                          ? 'bg-amber-50 hover:bg-amber-100/70' 
                           : 'hover:bg-zinc-50/30'
                     }`}
                   >
                     <td className={`border border-zinc-200 p-1 text-xs font-medium text-center select-none sticky left-0 z-10 ${
-                      isErrorRow ? 'bg-rose-100 text-rose-600 font-bold' : 'bg-zinc-50 text-zinc-400'
+                      isErrorRow ? 'bg-amber-100 text-amber-600 font-bold' : 'bg-zinc-50 text-zinc-400'
                     }`}>
                       <div className="flex items-center justify-center gap-1">
-                        {isErrorRow && <AlertCircle className="w-3 h-3 text-rose-600 shrink-0" />}
+                        {isErrorRow && <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />}
                         <span>{rowIndex + 1}</span>
                       </div>
                     </td>
@@ -111,7 +116,7 @@ export default function ExcelCloPreview({ workbookData, errorMap }: ExcelCloPrev
                           className={`border border-zinc-200 px-3 py-2 relative text-xs align-top ${
                             isHighlight ? 'bg-emerald-50/50 font-bold text-emerald-800' : ''
                           } ${
-                            isErrorRow ? 'text-rose-700' : 'text-zinc-600'
+                            isErrorRow ? 'bg-amber-50/30 text-amber-700' : 'text-zinc-600'
                           }`}
                         >
                           <div className="whitespace-normal break-words min-h-[1.2em]">
@@ -121,7 +126,7 @@ export default function ExcelCloPreview({ workbookData, errorMap }: ExcelCloPrev
                           {/* Error Tooltip */}
                           {isErrorRow && colIndex === 0 && (
                             <div className="absolute z-50 left-0 top-full mt-1 hidden group-hover:flex w-max max-w-sm p-3 bg-zinc-900 text-white text-[11px] rounded-xl shadow-2xl font-medium">
-                              <AlertCircle className="w-3.5 h-3.5 mr-2 shrink-0 text-rose-400" />
+                              <AlertCircle className="w-3.5 h-3.5 mr-2 shrink-0 text-amber-400" />
                               <span className="whitespace-normal leading-relaxed">{errorMsg}</span>
                             </div>
                           )}
@@ -143,7 +148,7 @@ export default function ExcelCloPreview({ workbookData, errorMap }: ExcelCloPrev
           <span>{currentSheetData.length} rows detected</span>
         </div>
         {Object.keys(currentSheetErrors).length > 0 && (
-          <div className="text-rose-500 flex items-center gap-1.5">
+          <div className="text-amber-500 flex items-center gap-1.5">
             <AlertCircle size={12} />
             {Object.keys(currentSheetErrors).length} rows have issues
           </div>

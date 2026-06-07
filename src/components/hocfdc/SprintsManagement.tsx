@@ -32,10 +32,12 @@ import { SprintListLayout } from "@/components/common/sprint/SprintListLayout";
 
 export const SprintsManagement = ({
   curriculumId,
-  isEmbedded = false
+  isEmbedded = false,
+  curriculum: curriculumProp
 }: {
   curriculumId: string;
   isEmbedded?: boolean;
+  curriculum?: any;
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -64,10 +66,12 @@ export const SprintsManagement = ({
   const { data: curriculumRes } = useQuery({
     queryKey: ["curriculum", curriculumId],
     queryFn: () => CurriculumService.getCurriculumById(curriculumId),
-    enabled: !!curriculumId,
+    enabled: !curriculumProp && !!curriculumId,
   });
 
-  const curriculum = curriculumRes?.data;
+  const curriculum = curriculumProp || curriculumRes?.data;
+  const curriculumStatus = curriculum?.curriculumStatus || curriculum?.status;
+
   const sprints = data?.data?.content || [];
   const totalPages = (data as any)?.data?.totalPages || 0;
 
@@ -174,13 +178,13 @@ export const SprintsManagement = ({
           <div className="flex flex-col items-end gap-2">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              disabled={curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP}
+              disabled={curriculumStatus !== CURRICULUM_STATUS.SYLLABUS_DEVELOP}
               className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
             >
               <Plus size={16} strokeWidth={3} />
               Create Department Task
             </button>
-            {curriculum?.status !== CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
+            {curriculumStatus !== CURRICULUM_STATUS.SYLLABUS_DEVELOP && (
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5 bg-amber-50/50 px-3 py-1 rounded-lg border border-amber-100">
                 <AlertCircle size={12} />
                 Available only in Syllabus Development status
