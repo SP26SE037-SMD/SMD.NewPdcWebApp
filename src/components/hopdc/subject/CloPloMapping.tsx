@@ -68,36 +68,43 @@ function formatBloomLevel(value?: string | number): string {
   return normalized;
 }
 
-function renderMarkdown(text: string) {
+function renderMarkdown(text: string, wrapInQuotes = false) {
   if (!text) return null;
   
-  const lines = text.split("\n");
+  let cleaned = text.trim();
+  if (wrapInQuotes) {
+    if (!cleaned.startsWith('"') && !cleaned.endsWith('"')) {
+      cleaned = `"${cleaned}"`;
+    }
+  }
+
+  const lines = cleaned.split("\n");
   return (
-    <div className="space-y-2 text-sm text-zinc-600 leading-relaxed font-medium">
+    <div className="space-y-1.5 text-xs text-zinc-600 leading-relaxed font-medium">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
-        if (!trimmed) return <div key={idx} className="h-2" />;
+        if (!trimmed) return <div key={idx} className="h-1.5" />;
         
         if (trimmed.startsWith("###")) {
           const headingText = trimmed.replace(/^###\s*/, "");
           return (
-            <h3 key={idx} className="text-xs font-black text-zinc-800 uppercase tracking-wider mt-4 mb-2">
+            <h3 key={idx} className="text-[10px] font-black text-zinc-800 uppercase tracking-wider mt-2 mb-1">
               {parseBoldText(headingText)}
             </h3>
           );
         }
         
-        if (trimmed.startsWith("-")) {
-          const itemText = trimmed.replace(/^-\s*/, "");
+        if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+          const itemText = trimmed.replace(/^[-*]\s*/, "");
           return (
-            <div key={idx} className="flex items-start gap-2 ml-2">
-              <span className="text-zinc-400 mt-2 shrink-0 block w-1 h-1 rounded-full bg-zinc-400" />
+            <div key={idx} className="flex items-start gap-1.5 ml-1.5 text-left">
+              <span className="text-zinc-400 mt-1.5 shrink-0 block w-1 h-1 rounded-full bg-zinc-400" />
               <span className="text-zinc-600">{parseBoldText(itemText)}</span>
             </div>
           );
         }
         
-        return <p key={idx} className="text-zinc-600">{parseBoldText(line)}</p>;
+        return <p key={idx} className="text-zinc-600 text-left">{parseBoldText(line)}</p>;
       })}
     </div>
   );
@@ -107,7 +114,7 @@ function parseBoldText(text: string) {
   const parts = text.split("**");
   return parts.map((part, idx) => {
     if (idx % 2 === 1) {
-      return <strong key={idx} className="font-extrabold text-zinc-900">{part}</strong>;
+      return <strong key={idx} className="font-extrabold text-zinc-950">{part}</strong>;
     }
     return part;
   });
@@ -116,46 +123,14 @@ function parseBoldText(text: string) {
 function renderWarningText(text: string, wrapInQuotes = false) {
   if (!text) return null;
 
+  // Normalize run-on sentences for Option 1 and Option 2 to place them on new lines
   const formattedText = text
-    .replace(/\. (Option 1:)/g, ".\nOption 1:")
-    .replace(/\. (Option 2:)/g, ".\nOption 2:");
+    .replace(/\. (Option 1:)/gi, ".\n* Option 1:")
+    .replace(/\. (Option 2:)/gi, ".\n* Option 2:")
+    .replace(/\. \* (Option 1:)/gi, ".\n* Option 1:")
+    .replace(/\. \* (Option 2:)/gi, ".\n* Option 2:");
 
-  const lines = formattedText.split("\n");
-
-  return (
-    <span className="block space-y-1 text-left">
-      {lines.map((line, idx) => {
-        const isFirst = idx === 0;
-        const isLast = idx === lines.length - 1;
-        const linePrefix = isFirst && wrapInQuotes ? '"' : '';
-        const lineSuffix = isLast && wrapInQuotes ? '"' : '';
-
-        if (line.startsWith("Option 1:")) {
-          const content = line.replace("Option 1:", "");
-          return (
-            <span key={idx} className="block">
-              <strong className="font-extrabold text-zinc-950">Option 1:</strong>
-              {linePrefix}{content}{lineSuffix}
-            </span>
-          );
-        }
-        if (line.startsWith("Option 2:")) {
-          const content = line.replace("Option 2:", "");
-          return (
-            <span key={idx} className="block">
-              <strong className="font-extrabold text-zinc-950">Option 2:</strong>
-              {linePrefix}{content}{lineSuffix}
-            </span>
-          );
-        }
-        return (
-          <span key={idx} className="block">
-            {linePrefix}{line}{lineSuffix}
-          </span>
-        );
-      })}
-    </span>
-  );
+  return renderMarkdown(formattedText, wrapInQuotes);
 }
 
 function renderReasonText(text: string) {
