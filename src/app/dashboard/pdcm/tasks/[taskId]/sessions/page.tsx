@@ -1472,7 +1472,7 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
                     <h4 className="text-sm font-bold text-slate-800 mb-0.5">{session.sessionTitle}</h4>
                     <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{session.teachingMethods} • {session.duration} MIN</p>
                 </div>
-                <div className="col-span-6 flex flex-wrap gap-1.5">
+                <div className="col-span-6 flex flex-wrap gap-1.5 items-center">
                     {selectedCloIds.length > 0 ? (
                         selectedCloIds.map(id => {
                             const clo = subjectClos.find(c => c.cloId === id);
@@ -1487,6 +1487,14 @@ function SessionMappingRow({ session, subjectClos, selectedCloIds, onChange, val
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                             No CLOs mapped
                         </span>
+                    )}
+                    {suggestedCloCodesStr && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 ml-2">
+                            <span className="material-symbols-outlined text-[14px] text-amber-500">auto_awesome</span>
+                            <span className="text-[10px] font-bold tracking-wide">
+                                Suggested: {suggestedCloCodesStr}
+                            </span>
+                        </div>
                     )}
                 </div>
                 <div className="col-span-1 flex justify-end">

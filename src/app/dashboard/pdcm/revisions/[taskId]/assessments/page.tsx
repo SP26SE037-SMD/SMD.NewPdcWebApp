@@ -1868,8 +1868,9 @@ function MappingValidationModal({ result, assessments, onClose }: {
                                                         <span className="material-symbols-outlined text-xl">link</span>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-900 mb-1">
-                                                            {ass?.categoryName || 'Assessment'} - Part {ass?.part}
+                                                        <p className="text-xs font-bold text-slate-900 mb-1 flex items-center gap-2">
+                                                            <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[10px] uppercase tracking-widest">{ass?.typeName || 'Evaluation'}</span>
+                                                            <span>{ass?.categoryName || 'Assessment'} - Part {ass?.part}</span>
                                                         </p>
                                                         <p className="text-sm text-emerald-900 font-medium leading-relaxed">
                                                             AI Validation Result. <span style={{ color: (item.confidence_score * 100) < 50 ? '#ef4444' : (item.confidence_score * 100) < 80 ? '#f59e0b' : '#10b981' }}>Confidence Score: <span className="font-bold">{(item.confidence_score * 100).toFixed(0)}%</span></span>
