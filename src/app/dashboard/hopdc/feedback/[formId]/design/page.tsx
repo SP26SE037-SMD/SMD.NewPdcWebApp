@@ -767,7 +767,6 @@ export default function FormDesignPage({
         response?.message || "Publish request sent successfully.",
         "success",
       );
-      await loadForms(curriculumId);
     } catch (err: any) {
       const message = err?.message || "Failed to publish feedback form";
       setError(message);
