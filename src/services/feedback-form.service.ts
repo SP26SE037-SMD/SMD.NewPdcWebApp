@@ -134,6 +134,11 @@ export const FeedbackFormService = {
     return apiClient.get<FeedbackFormRecord[]>(`/api/v1/forms?${query.toString()}`);
   },
 
+  getFormsByDepartmentId: async (departmentId: string) => {
+    const query = new URLSearchParams({ departmentId });
+    return apiClient.get<FeedbackFormRecord[]>(`/api/v1/forms/by-department?${query.toString()}`);
+  },
+
   createForm: async (payload: FeedbackCreatePayload) => {
     return apiClient.post<FeedbackFormRecord>("/api/v1/forms", payload, {
       credentials: "include",

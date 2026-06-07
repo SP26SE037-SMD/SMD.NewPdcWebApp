@@ -22,11 +22,7 @@ import {
   ArrowLeft,
   Eye,
 } from "lucide-react";
-import { Major, MajorService } from "@/services/major.service";
-import {
-  CurriculumFramework,
-  CurriculumService,
-} from "@/services/curriculum.service";
+
 import {
   FeedbackCreateQuestionPayload,
   FeedbackFormFullSchema,
@@ -89,25 +85,10 @@ const isValidQuestionType = (
 export default function HopdcFeedbackPage() {
   const { showToast } = useToast();
   const router = useRouter();
-  const [majorId, setMajorId] = useState("");
-  const [curriculumId, setCurriculumId] = useState("");
-  const [formName, setFormName] = useState(""); // Keeping this just in case, but using createFormName for modal
-  
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createMajorId, setCreateMajorId] = useState("");
-  const [createCurriculumId, setCreateCurriculumId] = useState("");
-  const [createFormName, setCreateFormName] = useState("");
-  const [createDescription, setCreateDescription] = useState("");
   const user = useSelector((state: RootState) => state.auth.user);
-  const [createCurriculums, setCreateCurriculums] = useState<CurriculumFramework[]>([]);
-  const [loadingCreateCurriculums, setLoadingCreateCurriculums] = useState(false);
 
-  const [majors, setMajors] = useState<Major[]>([]);
-  const [curriculums, setCurriculums] = useState<CurriculumFramework[]>([]);
   const [forms, setForms] = useState<FeedbackFormRecord[]>([]);
 
-  const [loadingMajors, setLoadingMajors] = useState(true);
-  const [loadingCurriculums, setLoadingCurriculums] = useState(false);
   const [loadingForms, setLoadingForms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [publishingFormId, setPublishingFormId] = useState<string | null>(null);
@@ -115,7 +96,9 @@ export default function HopdcFeedbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createFormName, setCreateFormName] = useState("");
+  const [createDescription, setCreateDescription] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<"manage" | "designer">(
     "manage",
   );
@@ -216,10 +199,7 @@ export default function HopdcFeedbackPage() {
   );
   const [deleting, setDeleting] = useState(false);
 
-  const selectedCurriculum = useMemo(
-    () => curriculums.find((item) => item.curriculumId === curriculumId),
-    [curriculums, curriculumId],
-  );
+
 
   const selectedSection = useMemo(
     () =>
@@ -301,51 +281,8 @@ export default function HopdcFeedbackPage() {
     setQuestionOptions([]);
   };
 
-  const loadMajors = async () => {
-    setLoadingMajors(true);
-    setError(null);
-
-    try {
-      const response = await MajorService.getMajors({ page: 0, size: 100 });
-      setMajors(response?.data?.content || []);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load majors");
-      setMajors([]);
-    } fillly: {
-      setLoadingMajors(false);
-    }
-  };
-
-  const loadCurriculums = async (nextMajorId: string) => {
-    if (!nextMajorId) {
-      setCurriculums([]);
-      setCurriculumId("");
-      return;
-    }
-
-    setLoadingCurriculums(true);
-    setError(null);
-
-    try {
-      const response = (await CurriculumService.getCurriculumsByMajorId(
-        nextMajorId,
-      )) as any;
-      const items = Array.isArray(response?.data)
-        ? response.data
-        : Array.isArray(response)
-          ? response
-          : [];
-      setCurriculums(items);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load curriculums");
-      setCurriculums([]);
-    } finally {
-      setLoadingCurriculums(false);
-    }
-  };
-
-  const loadForms = async (nextCurriculumId: string) => {
-    if (!nextCurriculumId) {
+  const loadForms = async () => {
+    if (!user?.accountId) {
       setForms([]);
       return;
     }
@@ -354,8 +291,18 @@ export default function HopdcFeedbackPage() {
     setError(null);
 
     try {
-      const response = (await FeedbackFormService.getFormsByCurriculumId(
-        nextCurriculumId,
+      const { AccountService } = await import('@/services/account.service');
+      const accountRes = await AccountService.getAccountById(user.accountId);
+      const departmentId = accountRes?.departmentId || accountRes?.department_id || accountRes?.department?.departmentId;
+
+      if (!departmentId) {
+        setError("Department ID not found for current user.");
+        setForms([]);
+        return;
+      }
+
+      const response = (await FeedbackFormService.getFormsByDepartmentId(
+        departmentId,
       )) as any;
       const items = Array.isArray(response)
         ? response
@@ -372,56 +319,15 @@ export default function HopdcFeedbackPage() {
   };
 
   useEffect(() => {
-    loadMajors();
-  }, []);
-
-  const handleMajorChange = async (value: string) => {
-    setMajorId(value);
-    setCurriculumId("");
-    setForms([]);
-    setSuccess(null);
-    setFilterFormType("ALL");
-    setActiveMainTab("manage");
-    setDesignerFormId("");
-    setSchema(null);
-    await loadCurriculums(value);
-  };
-
-  const handleCurriculumChange = async (value: string) => {
-    setCurriculumId(value);
-    setSuccess(null);
-    setFilterFormType("ALL");
-    setActiveMainTab("manage");
-    setDesignerFormId("");
-    setSchema(null);
-    await loadForms(value);
-  };
+    if (user?.accountId) {
+      loadForms();
+    }
+  }, [user?.accountId]);
 
   const openCreateModal = () => {
-    setCreateMajorId(majorId);
-    setCreateCurriculumId(curriculumId);
     setCreateFormName("");
-    setCreateCurriculums(curriculums);
+    setCreateDescription("");
     setIsCreateModalOpen(true);
-  };
-
-  const handleCreateMajorChange = async (value: string) => {
-    setCreateMajorId(value);
-    setCreateCurriculumId("");
-    if (!value) {
-      setCreateCurriculums([]);
-      return;
-    }
-    setLoadingCreateCurriculums(true);
-    try {
-      const response = (await CurriculumService.getCurriculumsByMajorId(value)) as any;
-      const items = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
-      setCreateCurriculums(items);
-    } catch (err) {
-      setCreateCurriculums([]);
-    } finally {
-      setLoadingCreateCurriculums(false);
-    }
   };
 
   const handleCreateFeedback = async () => {
@@ -446,7 +352,7 @@ export default function HopdcFeedbackPage() {
       // Get departmentId
       const { AccountService } = await import('@/services/account.service');
       const accountRes = await AccountService.getAccountById(user.accountId);
-      const departmentId = accountRes?.data?.department?.departmentId;
+      const departmentId = accountRes?.departmentId || accountRes?.department_id || accountRes?.department?.departmentId;
 
       if (!departmentId) {
          setError("Department ID not found for current user.");
@@ -491,7 +397,7 @@ export default function HopdcFeedbackPage() {
         response?.message || "Publish request sent successfully.",
         "success",
       );
-      await loadForms(curriculumId);
+      await loadForms();
     } catch (err: any) {
       const message = err?.message || "Failed to publish feedback form";
       setError(message);
@@ -886,8 +792,7 @@ export default function HopdcFeedbackPage() {
               Feedback Center
             </h1>
             <p className="text-on-surface-variant text-base max-w-xl">
-              Create and manage feedback forms by selecting major, then
-              curriculum.
+              Create and manage feedback forms for your department.
             </p>
           </div>
 
@@ -900,12 +805,8 @@ export default function HopdcFeedbackPage() {
               Create Form
             </button>
             <button
-              onClick={() => {
-                if (curriculumId) {
-                  loadForms(curriculumId);
-                }
-              }}
-              disabled={!curriculumId || loadingForms}
+              onClick={() => loadForms()}
+              disabled={loadingForms}
               className="inline-flex items-center gap-2 rounded-2xl border border-outline/30 bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
             >
               <RefreshCcw
@@ -928,85 +829,7 @@ export default function HopdcFeedbackPage() {
           transition={{ delay: 0.1 }}
           className="rounded-3xl border border-outline/20 bg-surface/40 shadow-xl shadow-black/5 backdrop-blur-2xl mb-6 flex flex-col"
         >
-          {/* Top section: Configuration */}
-          <div className="p-5 md:p-8">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-outline/10 pb-4">
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-primary">
-                  Configuration
-                </span>
-                <h2 className="text-lg font-bold text-on-surface mt-0.5">
-                  Select Major & Curriculum
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Major
-                </label>
-                <select
-                  value={majorId}
-                  onChange={(e) => handleMajorChange(e.target.value)}
-                  disabled={loadingMajors}
-                  className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
-                >
-                  <option value="">
-                    {loadingMajors ? "Loading majors..." : "Select major"}
-                  </option>
-                  {majors.map((major) => (
-                    <option key={major.majorId} value={major.majorId}>
-                      {major.majorCode} - {major.majorName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Curriculum
-                </label>
-                <select
-                  value={curriculumId}
-                  onChange={(e) => handleCurriculumChange(e.target.value)}
-                  disabled={!majorId || loadingCurriculums}
-                  className="w-full rounded-xl border border-outline/20 bg-white/70 px-4 py-3 text-[15px] font-semibold text-on-surface outline-none transition focus:border-primary/40 focus:bg-white focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs"
-                >
-                  <option value="">
-                    {loadingCurriculums
-                      ? "Loading curriculums..."
-                      : "Select curriculum"}
-                  </option>
-                  {curriculums.map((curriculum) => (
-                    <option
-                      key={curriculum.curriculumId}
-                      value={curriculum.curriculumId}
-                    >
-                      {curriculum.curriculumCode} - {curriculum.curriculumName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {selectedCurriculum && (
-              <div className="mt-4 rounded-xl border border-outline/10 bg-surface-container-lowest/90 px-4 py-3.5 text-sm font-bold text-on-surface-variant shadow-inner flex items-center gap-2">
-                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/10 shadow-xs">
-                  Selected
-                </span>
-                <span>
-                  {selectedCurriculum.curriculumCode} -{" "}
-                  {selectedCurriculum.curriculumName}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="h-px w-full bg-outline/10" />
-
-          {/* Disabled overlay when no curriculum selected */}
-          <div className={`p-5 md:p-8 transition-all duration-300 ${!curriculumId ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+          <div className="p-5 md:p-8 transition-all duration-300">
             <>
 
               {activeMainTab === "manage" && (
@@ -1077,13 +900,6 @@ export default function HopdcFeedbackPage() {
                       <div className="flex flex-col items-center justify-center gap-3 py-16 text-on-surface-variant">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <p className="text-sm font-medium">Loading forms...</p>
-                      </div>
-                    ) : !curriculumId ? (
-                      <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-outline/30 py-14 text-center text-on-surface-variant">
-                        <ClipboardList className="h-8 w-8 text-outline" />
-                        <p className="text-sm font-semibold">
-                          Choose a curriculum to view forms.
-                        </p>
                       </div>
                     ) : forms.length === 0 ? (
                       <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-outline/30 py-14 text-center text-on-surface-variant">
