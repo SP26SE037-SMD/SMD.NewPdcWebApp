@@ -123,6 +123,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isValidated, setIsValidated] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+    const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
     const [selectedAssessments, setSelectedAssessments] = useState<string[]>([]);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [validationSummary, setValidationSummary] = useState<any>(null);
@@ -373,31 +374,9 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
         }
     };
 
-    const handleBulkDeleteAssessments = async () => {
+    const handleBulkDeleteAssessments = () => {
         if (selectedAssessments.length === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedAssessments.length} assessment(s)?`)) return;
-
-        setIsDeletingBulk(true);
-        try {
-            const remoteIds = assessments
-                .filter((a, i) => selectedAssessments.includes(a.assessmentId || `local-${i}`))
-                .map(a => a.assessmentId)
-                .filter(Boolean) as string[];
-
-            if (remoteIds.length > 0) {
-                await AssessmentService.bulkDeleteAssessments(remoteIds);
-            }
-
-            const updatedAssessments = assessments.filter((a, i) => !selectedAssessments.includes(a.assessmentId || `local-${i}`));
-            dispatch(setAssessments({ syllabusId: syllabusId!, assessments: updatedAssessments }));
-            setSelectedAssessments([]);
-            showToast(`Successfully deleted ${selectedAssessments.length} assessment(s)`, "success");
-        } catch (error) {
-            console.error("Failed to bulk delete assessments:", error);
-            showToast("Failed to bulk delete assessments", "error");
-        } finally {
-            setIsDeletingBulk(false);
-        }
+        setIsBulkDeleteModalOpen(true);
     };
 
     const handleDeleteApi = (assessmentId: string, index: number) => {
@@ -1247,6 +1226,61 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                     </div>
                 </div>
             )}
+        {/* ── Bulk Delete Confirmation Modal ── */}
+        {isBulkDeleteModalOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="mx-auto w-20 h-20 bg-red-50 text-red-500 rounded-[24px] flex items-center justify-center mb-6">
+                        <span className="material-symbols-outlined text-4xl">warning</span>
+                    </div>
+                    <div className="text-center space-y-2 mb-8">
+                        <h3 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Delete Selected Items?</h3>
+                        <p className="text-sm text-slate-500 font-medium">
+                            Are you sure you want to delete {selectedAssessments.length} selected item(s)? This action cannot be undone.
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={async () => {
+                                setIsBulkDeleteModalOpen(false);
+                                setIsDeletingBulk(true);
+                                try {
+                                    const remoteIds = assessments
+                                        .filter((a, i) => selectedAssessments.includes(a.assessmentId || `local-${i}`))
+                                        .map(a => a.assessmentId)
+                                        .filter(Boolean) as string[];
+
+                                    if (remoteIds.length > 0) {
+                                        await AssessmentService.bulkDeleteAssessments(remoteIds);
+                                    }
+
+                                    const updatedAssessments = assessments.filter((a, i) => !selectedAssessments.includes(a.assessmentId || `local-${i}`));
+                                    dispatch(setAssessments({ syllabusId: syllabusId!, assessments: updatedAssessments }));
+                                    setSelectedAssessments([]);
+                                    showToast(`Successfully deleted ${selectedAssessments.length} assessment(s)`, "success");
+                                    refetchAssessments();
+                                    refetchMappings();
+                                } catch (error) {
+                                    console.error("Failed to bulk delete assessments:", error);
+                                    showToast("Failed to bulk delete assessments", "error");
+                                } finally {
+                                    setIsDeletingBulk(false);
+                                }
+                            }}
+                            className="w-full bg-red-500 text-white font-bold py-3.5 rounded-2xl hover:bg-red-600 transition-all active:scale-[0.98] shadow-lg shadow-red-500/25"
+                        >
+                            Yes, delete
+                        </button>
+                        <button
+                            onClick={() => setIsBulkDeleteModalOpen(false)}
+                            className="w-full bg-slate-100 text-slate-700 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-all active:scale-[0.98]"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
