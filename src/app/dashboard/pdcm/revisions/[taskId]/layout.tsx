@@ -132,7 +132,7 @@ export default function RevisionWorkspaceLayout({
                         style={{ background: '#f59e0b', color: '#ffffff', borderColor: 'white' }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>rate_review</span>
-                        <span className="font-bold text-xs whitespace-nowrap">Revision Feedback</span>
+                        <span className="font-bold text-xs whitespace-nowrap">Revision Requested</span>
                     </button>
                 )}
 

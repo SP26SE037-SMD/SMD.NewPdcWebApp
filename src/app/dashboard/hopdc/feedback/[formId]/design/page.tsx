@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
@@ -401,6 +401,9 @@ export default function FormDesignPage({
 }) {
   const { formId } = React.use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isReadonly = searchParams.get("readonly") === "true";
+  
   const { showToast } = useToast();
   const [majorId, setMajorId] = useState("");
   const [curriculumId, setCurriculumId] = useState("");
@@ -1201,10 +1204,14 @@ export default function FormDesignPage({
             </button>
             <div className="mt-6 flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-black tracking-tight text-on-surface">Form Designer</h1>
-                <p className="mt-2 text-sm text-on-surface-variant/70 font-medium">Design custom feedback forms, configure sections, and set navigation rules with ease.</p>
+                <h1 className="text-4xl font-black tracking-tight text-on-surface">
+                  {isReadonly ? "Form Viewer" : "Form Designer"}
+                </h1>
+                <p className="mt-2 text-sm text-on-surface-variant/70 font-medium">
+                  {isReadonly ? "View the details of your feedback form in a read-only mode." : "Design custom feedback forms, configure sections, and set navigation rules with ease."}
+                </p>
               </div>
-              {schema && (
+              {schema && !isReadonly && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setScheduleModalOpen(true)}
@@ -1307,13 +1314,15 @@ export default function FormDesignPage({
                                 </button>
                               );
                             })}
-                            <button
-                              onClick={() => { resetSectionEditor(); setSectionMode("create"); setSelectedSectionId(""); }}
-                              className="flex items-center gap-1.5 px-4 py-3 text-sm font-bold text-primary/70 hover:text-primary transition-colors border-b-2 border-transparent -mb-[1px]"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Add Section
-                            </button>
+                            {!isReadonly && (
+                              <button
+                                onClick={() => { resetSectionEditor(); setSectionMode("create"); setSelectedSectionId(""); }}
+                                className="flex items-center gap-1.5 px-4 py-3 text-sm font-bold text-primary/70 hover:text-primary transition-colors border-b-2 border-transparent -mb-[1px]"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Add Section
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1415,7 +1424,7 @@ export default function FormDesignPage({
                           <h3 className="text-2xl font-black text-on-surface flex items-center gap-3">
                             {selectedSection?.title || "Untitled Section"}
                           </h3>
-                          {selectedSection && (
+                          {selectedSection && !isReadonly && (
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleEditSection(selectedSection)}
@@ -1462,22 +1471,24 @@ export default function FormDesignPage({
                                             )}
                                           </div>
 
-                                          <div className="flex items-center gap-1 opacity-0 group-hover/q:opacity-100 transition-opacity">
-                                            <button
-                                              onClick={() => handleEditQuestion(question)}
-                                              className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#f59e0b]"
-                                              title="Edit question"
-                                            >
-                                              <Pencil className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                              onClick={() => handleDeleteQuestion(question.questionId)}
-                                              className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#ef4444]"
-                                              title="Delete question"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </button>
-                                          </div>
+                                          {!isReadonly && (
+                                            <div className="flex items-center gap-1 opacity-0 group-hover/q:opacity-100 transition-opacity">
+                                              <button
+                                                onClick={() => handleEditQuestion(question)}
+                                                className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#f59e0b]"
+                                                title="Edit question"
+                                              >
+                                                <Pencil className="h-4 w-4" />
+                                              </button>
+                                              <button
+                                                onClick={() => handleDeleteQuestion(question.questionId)}
+                                                className="rounded p-1.5 text-on-surface-variant/50 transition hover:text-[#ef4444]"
+                                                title="Delete question"
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
 
                                         <p className="text-base font-bold text-on-surface break-all">
@@ -1693,7 +1704,7 @@ export default function FormDesignPage({
                               </div>
                             )}
 
-                            {questionMode === "view" && (
+                            {questionMode === "view" && !isReadonly && (
                               <button
                                 onClick={() => {
                                   resetQuestionEditor();
@@ -1721,13 +1732,15 @@ export default function FormDesignPage({
                                     return "Continue to next section";
                                   })()}
                                 </span>
-                                <button
-                                  onClick={() => handleEditSection(selectedSection)}
-                                  className="p-1.5 hover:bg-primary/10 rounded-full transition-colors text-primary"
-                                  title="Change action"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
+                                {!isReadonly && (
+                                  <button
+                                    onClick={() => handleEditSection(selectedSection)}
+                                    className="p-1.5 hover:bg-primary/10 rounded-full transition-colors text-primary"
+                                    title="Change action"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
