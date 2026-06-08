@@ -429,6 +429,7 @@ export default function PDCMDashboardContent({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { latestRealtimeNotification } = useSelector((state: RootState) => state.notification);
 
   const navTab = defaultTab;
   const [statusTab, setStatusTab] = useState<
@@ -451,6 +452,17 @@ export default function PDCMDashboardContent({
       setStatusTab("all");
     }
   }, [navTab, statusTab]);
+
+  // Refetch tasks when a new task notification arrives
+  React.useEffect(() => {
+    if (latestRealtimeNotification) {
+      const type = (latestRealtimeNotification.type || "").toUpperCase();
+      const entityType = (latestRealtimeNotification.relatedEntityType || "").toUpperCase();
+      if (type.includes("TASK") || entityType.includes("TASK") || entityType === "SYLLABUS_DEVELOP" || entityType === "SYLLABUS") {
+        queryClient.invalidateQueries({ queryKey: ["pdcm-tasks"] });
+      }
+    }
+  }, [latestRealtimeNotification, queryClient]);
 
   const developStatusMapping: Record<string, string | string[] | undefined> = {
     all: undefined,
