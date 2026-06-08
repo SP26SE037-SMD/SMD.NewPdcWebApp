@@ -1251,7 +1251,7 @@ export function TaskDetailModal({
                           onClick={async () => {
                             if (
                               window.confirm(
-                                "WARNING: Resetting decision will clear approval status, revert to IN PROGRESS, and unlock actions. Continue?",
+                                "WARNING: Resetting decision will clear approval status and unlock actions. Continue?",
                               )
                             ) {
                               try {

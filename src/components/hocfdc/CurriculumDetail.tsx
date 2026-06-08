@@ -154,8 +154,8 @@ const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
         );
       })}
     </div>
-    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-[10px] z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-[10px] z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
   </div>
 );
 
@@ -260,7 +260,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-zinc-50/50 flex flex-col font-sans">
       {/* Universal Header */}
-      <div className="bg-white border-b border-zinc-200 sticky top-0 z-20">
+      <div className="bg-white border-b border-zinc-200">
         <div className="max-w-[1600px] mx-auto px-5 pt-3 pb-0 flex flex-col gap-2">
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-2">
             <div className="flex items-start gap-3">
@@ -298,7 +298,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
                 <button
                   onClick={handleSubmitFinalReview}
                   disabled={isSubmittingRequest || statusMutation.isPending}
-                  className="px-5 py-2.5 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2.5 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-[10px] hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSubmittingRequest ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -317,7 +317,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
                       showToast("Exporting curriculum to PDF...", "success");
                       window.open(`/api/curricula/${id}/export-pdf`, "_blank");
                     }}
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black uppercase tracking-widest rounded-[10px] transition-all shadow-md hover:shadow-lg flex items-center gap-2"
                   >
                     <FileDown size={14} />
                     Export to PDF
@@ -376,14 +376,14 @@ export default function CurriculumDetail({ id }: { id: string }) {
       </div>
 
       {/* Main Content Layout */}
-      <div className="flex-1 w-full flex flex-col p-4 relative h-full">
+      <div className="flex-1 w-full flex flex-col p-4">
         {isFromRejected && feedback && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 bg-rose-50 border border-rose-100 rounded-3xl flex items-start gap-4 shadow-sm"
+            className="mb-6 p-5 bg-rose-50 border border-rose-100 rounded-[10px] flex items-start gap-4 shadow-sm"
           >
-            <div className="w-12 h-12 shrink-0 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500 shadow-inner">
+            <div className="w-12 h-12 shrink-0 bg-rose-100 rounded-[10px] flex items-center justify-center text-rose-500 shadow-inner">
               <FileText size={24} />
             </div>
             <div className="flex-1">
@@ -398,7 +398,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
         )}
 
         {/* Tab Content Area */}
-        <div className="flex-1 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden min-h-[500px] relative flex flex-col">
+        <div className="flex-1 bg-white rounded-[10px] border border-zinc-200 shadow-sm min-h-[500px] flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -406,7 +406,7 @@ export default function CurriculumDetail({ id }: { id: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 overflow-y-auto"
+              className="w-full h-full flex flex-col"
             >
               {activeTab === "info" && (
                 <CurriculumBriefInfo id={id} isEmbedded={true} />

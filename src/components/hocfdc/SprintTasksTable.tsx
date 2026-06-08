@@ -296,12 +296,6 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Tag size={10} className="text-zinc-300" />
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                      {task.taskId.split("-")[1]}
-                    </span>
-                  </div>
                 </div>
               </td>
 
