@@ -183,7 +183,7 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
                 <ReviewerFeedback 
                     reviewer={realTask.createdBy as any}
                     comments={[
-                        { title: 'Task Requirement / Description', content: realTask.description ?? undefined },
+                        { title: 'Requirement', content: realTask.description ?? undefined },
                         { title: 'Additional Comments', content: realTask.comment ?? undefined }
                     ]}
                 />

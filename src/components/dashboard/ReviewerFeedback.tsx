@@ -32,8 +32,8 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
     }
 
     const isAssignment = type === 'assignment';
-    const baseColor = isAssignment ? '#3b82f6' : C.error;
-    const accentColor = isAssignment ? '#60a5fa' : C.errorContainer;
+    const baseColor = isAssignment ? '#3b82f6' : '#f59e0b';
+    const accentColor = isAssignment ? '#60a5fa' : '#fbbf24';
 
     return (
         <div className="mb-8 rounded-2xl overflow-hidden border shadow-sm animate-in fade-in slide-in-from-top-4 duration-500"
