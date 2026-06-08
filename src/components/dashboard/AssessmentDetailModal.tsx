@@ -7,7 +7,7 @@ import { MappingService } from '@/services/mapping.service';
 import { CloPloService } from '@/services/cloplo.service';
 
 interface AssessmentItem {
-    assessmentId: string;
+    assessmentId?: string;
     categoryName?: string;
     typeName?: string;
     part?: number;

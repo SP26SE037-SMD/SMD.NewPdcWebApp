@@ -84,7 +84,14 @@ export default function RequestsWorkspaceDetailModal({
           );
         }
       } else {
-        toast.error("Failed to retrieve sprint and curriculum information.");
+        onClose();
+        if (role === "HoPDC") {
+          router.push("/dashboard/hopdc/department-tasks?tab=single-tasks");
+        } else if (role === "HoCFDC") {
+          router.push("/dashboard/hocfdc/tasks");
+        } else {
+          toast.error("Failed to retrieve sprint and curriculum information.");
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to load task details");
