@@ -104,6 +104,7 @@ export function DiffAssessments({ assessments }: DiffAssessmentsProps) {
                                     {isAdded && <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Plus size={12}/> Added</span>}
                                     {isRemoved && <span className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Minus size={12}/> Removed</span>}
                                     {isModified && !isAdded && !isRemoved && <span className="px-2 py-1 rounded bg-amber-100 text-amber-700 text-[10px] font-black uppercase inline-flex items-center gap-1"><Edit2 size={12}/> Mod</span>}
+                                    {(!isAdded && !isRemoved && !isModified) && <span className="px-2 py-1 rounded bg-slate-100 text-slate-500 text-[10px] font-black uppercase inline-flex items-center gap-1">Unchanged</span>}
                                 </div>
                             </div>
 

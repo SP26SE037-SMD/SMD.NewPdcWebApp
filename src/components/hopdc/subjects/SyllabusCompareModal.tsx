@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { X, Check, ArrowRight, ShieldAlert, AlertTriangle, FileText, CalendarDays, ClipboardCheck, AlignLeft, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { SyllabusService, CompareResult, ComparisonResultContent } from "@/services/syllabus.service";
 import { MaterialTextCompareModal } from './MaterialTextCompareModal';
@@ -36,6 +36,14 @@ export default function SyllabusCompareModal({
   const [activeTab, setActiveTab] = useState<TabType>('summary');
   const [comparingMaterial, setComparingMaterial] = useState<{ oldId?: string, newId?: string, title: string } | null>(null);
   const [hasSaved, setHasSaved] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleClose = () => {
+    if (isSummaryError) {
+      queryClient.invalidateQueries({ queryKey: ["compare-syllabus", oldSyllabusId, newSyllabusId] });
+    }
+    onClose();
+  };
 
   // AI Summary
   const { data: response, isLoading: isSummaryLoading, isError: isSummaryError } = useQuery({
@@ -51,16 +59,16 @@ export default function SyllabusCompareModal({
   });
 
   // Materials
-  const { data: oldMaterialsRes, isLoading: isOldMatLoading } = useQuery({ queryKey: ["materials", oldSyllabusId], queryFn: () => MaterialService.getMaterialsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
-  const { data: newMaterialsRes, isLoading: isNewMatLoading } = useQuery({ queryKey: ["materials", newSyllabusId], queryFn: () => MaterialService.getMaterialsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
+  const { data: oldMaterialsRes, isLoading: isOldMatLoading } = useQuery({ queryKey: ["materials", oldSyllabusId, "compare"], queryFn: () => MaterialService.getMaterialsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
+  const { data: newMaterialsRes, isLoading: isNewMatLoading } = useQuery({ queryKey: ["materials", newSyllabusId, "compare"], queryFn: () => MaterialService.getMaterialsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
 
   // Sessions
-  const { data: oldSessionsRes, isLoading: isOldSesLoading } = useQuery({ queryKey: ["sessions", oldSyllabusId], queryFn: () => SessionService.getSessions(oldSyllabusId, 0, 100), enabled: isOpen && !!oldSyllabusId });
-  const { data: newSessionsRes, isLoading: isNewSesLoading } = useQuery({ queryKey: ["sessions", newSyllabusId], queryFn: () => SessionService.getSessions(newSyllabusId, 0, 100), enabled: isOpen && !!newSyllabusId });
+  const { data: oldSessionsRes, isLoading: isOldSesLoading } = useQuery({ queryKey: ["sessions", oldSyllabusId, "compare"], queryFn: () => SessionService.getSessions(oldSyllabusId, 0, 1000), enabled: isOpen && !!oldSyllabusId });
+  const { data: newSessionsRes, isLoading: isNewSesLoading } = useQuery({ queryKey: ["sessions", newSyllabusId, "compare"], queryFn: () => SessionService.getSessions(newSyllabusId, 0, 1000), enabled: isOpen && !!newSyllabusId });
 
   // Assessments
-  const { data: oldAssessmentsRes, isLoading: isOldAssLoading } = useQuery({ queryKey: ["assessments", oldSyllabusId], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
-  const { data: newAssessmentsRes, isLoading: isNewAssLoading } = useQuery({ queryKey: ["assessments", newSyllabusId], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
+  const { data: oldAssessmentsRes, isLoading: isOldAssLoading } = useQuery({ queryKey: ["assessments", oldSyllabusId, "compare"], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(oldSyllabusId), enabled: isOpen && !!oldSyllabusId });
+  const { data: newAssessmentsRes, isLoading: isNewAssLoading } = useQuery({ queryKey: ["assessments", newSyllabusId, "compare"], queryFn: () => AssessmentService.getAssessmentsBySyllabusId(newSyllabusId), enabled: isOpen && !!newSyllabusId });
 
   const apiData = (response as any)?.data || response;
   const compareResult: ComparisonResultContent | undefined = apiData?.comparisonResult;
@@ -169,8 +177,8 @@ export default function SyllabusCompareModal({
     const pairs: { old: AssessmentItem | null, new: AssessmentItem | null, status: 'ADDED' | 'REMOVED' | 'UNCHANGED' | 'MODIFIED', changes?: string[] }[] = [];
 
     oldAss.forEach(oldItem => {
-      const key = `${oldItem.categoryName}-${oldItem.part}`;
-      const match = newAss.find(newItem => `${newItem.categoryName}-${newItem.part}` === key && !matched.has(key));
+      const key = `${oldItem.categoryName}-${oldItem.typeName}-${oldItem.part}`;
+      const match = newAss.find(newItem => `${newItem.categoryName}-${newItem.typeName}-${newItem.part}` === key && !matched.has(key));
       if (match) {
         matched.add(key);
         // Try to match by typeName - Part since that's what backend might return
@@ -184,7 +192,7 @@ export default function SyllabusCompareModal({
     });
 
     newAss.forEach(newItem => {
-      const key = `${newItem.categoryName}-${newItem.part}`;
+      const key = `${newItem.categoryName}-${newItem.typeName}-${newItem.part}`;
       if (!matched.has(key)) {
         pairs.push({ old: null, new: newItem, status: 'ADDED' });
       }
@@ -199,14 +207,14 @@ export default function SyllabusCompareModal({
 
   const assessmentResultPayload = useMemo(() => {
     return {
-      addedAssessments: assessmentPairs.filter(p => p.status === 'ADDED').map(p => `${p.new?.categoryName}-${p.new?.part}`),
-      removedAssessments: assessmentPairs.filter(p => p.status === 'REMOVED').map(p => `${p.old?.categoryName}-${p.old?.part}`),
+      addedAssessments: assessmentPairs.filter(p => p.status === 'ADDED').map(p => `${p.new?.categoryName}-${p.new?.typeName}-${p.new?.part}`),
+      removedAssessments: assessmentPairs.filter(p => p.status === 'REMOVED').map(p => `${p.old?.categoryName}-${p.old?.typeName}-${p.old?.part}`),
       changedAssessments: assessmentPairs.filter(p => p.status === 'MODIFIED').map(p => {
         const changes = [];
         if (p.old?.weight !== p.new?.weight) changes.push(`Weight changed from ${p.old?.weight} to ${p.new?.weight}`);
         if (p.old?.completionCriteria !== p.new?.completionCriteria) changes.push(`Completion Criteria changed`);
         return {
-          assessmentIdentifier: `${p.old?.categoryName}-${p.old?.part}`,
+          assessmentIdentifier: `${p.old?.categoryName}-${p.old?.typeName}-${p.old?.part}`,
           detailChanges: changes
         };
       })
@@ -272,7 +280,7 @@ export default function SyllabusCompareModal({
               </div>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
             >
               <X size={24} />
@@ -479,13 +487,13 @@ export default function SyllabusCompareModal({
               </p>
             )}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSaving}
               className="px-6 py-2.5 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors shadow-sm disabled:opacity-50"
             >
               Close
             </button>
-            {!hasSaved && (
+            {!hasSaved && !isSummaryError && (
               <button
                 onClick={() => saveCompare()}
                 disabled={isSaving || !response || isValidationLoading || validationRes?.data === false}
