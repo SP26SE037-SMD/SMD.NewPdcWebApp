@@ -164,7 +164,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
     const hasDecisionBeenMade = createSyllabusTask && (createSyllabusTask.isAccepted !== null && createSyllabusTask.isAccepted !== undefined);
 
     const activeTaskForDecision = taskIdFromUrl ? urlTask : createSyllabusTask;
-    const showFloatingDecision = !!syllabusId && (!!createSyllabusTask || !!taskIdFromUrl) && activeTaskForDecision?.isAccepted !== true;
+    const showFloatingDecision = !!syllabusId && !!taskIdFromUrl && !!activeTaskForDecision && activeTaskForDecision.isAccepted !== true;
 
     // 1. Fetch Material details
     const { data: materialRes, isLoading: isMaterialLoading } = useQuery({

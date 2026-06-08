@@ -35,9 +35,10 @@ const getInitials = (name?: string) => {
 
 interface RequestsWorkspaceProps {
   role: "HoCFDC" | "HoPDC" | "VP";
+  defaultSource?: "CREATED" | "RECEIVED";
 }
 
-export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
+export default function RequestsWorkspace({ role, defaultSource }: RequestsWorkspaceProps) {
   const { user } = useSelector((state: RootState) => state.auth);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
@@ -51,7 +52,7 @@ export default function RequestsWorkspace({ role }: RequestsWorkspaceProps) {
 
   // Split tabs for createdBy (CREATED) and receiveBy (RECEIVED)
   const [requestSource, setRequestSource] = useState<"CREATED" | "RECEIVED">(
-    role === "VP" ? "RECEIVED" : "CREATED",
+    defaultSource || (role === "VP" ? "RECEIVED" : "CREATED"),
   );
   const [sortBy, setSortBy] = useState<string>("date-desc");
 

@@ -5,8 +5,15 @@ import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  BookOpen, Filter,
-  GitCompare, CheckSquare, Square, Eye, CheckCircle2, Loader2
+  BookOpen,
+  Filter,
+  GitCompare,
+  CheckSquare,
+  Square,
+  Eye,
+  CheckCircle2,
+  Loader2,
+  RefreshCcw,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,7 +32,13 @@ const STATUS_COLORS: Record<string, string> = {
 import SyllabusCompareModal from "./SyllabusCompareModal";
 import SyllabusCompareHistoryModal from "./SyllabusCompareHistoryModal";
 
-export default function SyllabusListBySubject({ subjectId, hideHeader = false }: { subjectId: string; hideHeader?: boolean }) {
+export default function SyllabusListBySubject({
+  subjectId,
+  hideHeader = false,
+}: {
+  subjectId: string;
+  hideHeader?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const isHocfdc = pathname.includes("/hocfdc");
@@ -38,9 +51,15 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   const [selectedSyllabusIds, setSelectedSyllabusIds] = useState<string[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [publishingSyllabusId, setPublishingSyllabusId] = useState<string | null>(null);
-  const [publishingSyllabus, setPublishingSyllabus] = useState<{ id: string; name: string } | null>(null);
+  const [publishingSyllabusId, setPublishingSyllabusId] = useState<
+    string | null
+  >(null);
+  const [publishingSyllabus, setPublishingSyllabus] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -48,7 +67,11 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   }, []);
 
   // Fetch Subject details
-  const { data: subjectResp, isLoading: subjectLoading } = useQuery({
+  const {
+    data: subjectResp,
+    isLoading: subjectLoading,
+    refetch: refetchSubject,
+  } = useQuery({
     queryKey: ["subject-detail", subjectId],
     queryFn: () => SubjectService.getSubjectById(subjectId),
     enabled: !!subjectId,
@@ -56,13 +79,33 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   const subject = subjectResp?.data;
 
   // Fetch Syllabuses
-  const { data: syllabiResp, isLoading: syllabiLoading } = useQuery({
+  const {
+    data: syllabiResp,
+    isLoading: syllabiLoading,
+    refetch: refetchSyllabi,
+  } = useQuery({
     queryKey: ["subject-syllabi", subjectId],
     queryFn: () => SyllabusService.getSyllabiBySubject(subjectId),
     enabled: !!subjectId,
   });
 
-  const syllabuses = useMemo(() => syllabiResp?.data || [], [syllabiResp?.data]);
+  const handleReload = async () => {
+    setIsReloading(true);
+    try {
+      await Promise.all([refetchSubject(), refetchSyllabi()]);
+      showToast("Syllabuses reloaded successfully!", "success");
+    } catch (error) {
+      console.error("Failed to reload data:", error);
+      showToast("Failed to reload data.", "error");
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
+  const syllabuses = useMemo(
+    () => syllabiResp?.data || [],
+    [syllabiResp?.data],
+  );
 
   const hasPublishedSyllabus = useMemo(() => {
     return syllabuses.some((s) => s.status === "PUBLISHED");
@@ -76,8 +119,12 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
     try {
       await SyllabusService.publishSyllabus(id);
       showToast("Syllabus published successfully!", "success");
-      queryClient.invalidateQueries({ queryKey: ["subject-syllabi", subjectId] });
-      queryClient.invalidateQueries({ queryKey: ["subject-detail", subjectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["subject-syllabi", subjectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["subject-detail", subjectId],
+      });
       setPublishingSyllabus(null);
     } catch (err: any) {
       console.error("Failed to publish syllabus:", err);
@@ -88,18 +135,35 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   };
 
   useEffect(() => {
-    if (syllabuses.length > 0 && selectedSyllabusIds.length === 0 && !isCompareMode) {
+    if (
+      syllabuses.length > 0 &&
+      selectedSyllabusIds.length === 0 &&
+      !isCompareMode
+    ) {
       const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
       if (pubSyllabus) {
-        const archivedSyllabuses = syllabuses.filter((s) => s.status === "ARCHIVED");
+        const archivedSyllabuses = syllabuses.filter(
+          (s) => s.status === "ARCHIVED",
+        );
         if (archivedSyllabuses.length > 0) {
-          const pubDate = new Date(pubSyllabus.approvedDate || pubSyllabus.createdAt || 0).getTime();
+          const pubDate = new Date(
+            pubSyllabus.approvedDate || pubSyllabus.createdAt || 0,
+          ).getTime();
           const closestArchived = archivedSyllabuses.reduce((prev, curr) => {
-            const prevDate = new Date(prev.approvedDate || prev.createdAt || 0).getTime();
-            const currDate = new Date(curr.approvedDate || curr.createdAt || 0).getTime();
-            return Math.abs(currDate - pubDate) < Math.abs(prevDate - pubDate) ? curr : prev;
+            const prevDate = new Date(
+              prev.approvedDate || prev.createdAt || 0,
+            ).getTime();
+            const currDate = new Date(
+              curr.approvedDate || curr.createdAt || 0,
+            ).getTime();
+            return Math.abs(currDate - pubDate) < Math.abs(prevDate - pubDate)
+              ? curr
+              : prev;
           });
-          setSelectedSyllabusIds([pubSyllabus.syllabusId, closestArchived.syllabusId]);
+          setSelectedSyllabusIds([
+            pubSyllabus.syllabusId,
+            closestArchived.syllabusId,
+          ]);
           setIsCompareMode(true);
         }
       }
@@ -121,23 +185,34 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   const { targetHistorySyllabusId, isGetCompareEnabled } = useMemo(() => {
     let enabled = false;
     if (selectedSyllabusIds.length === 2) {
-      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
-      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
-      
+      const s1 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[0],
+      );
+      const s2 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[1],
+      );
+
       if (s1 && s2) {
-        const isOnePublishedAndOneArchived = 
+        const isOnePublishedAndOneArchived =
           (s1.status === "PUBLISHED" && s2.status === "ARCHIVED") ||
           (s2.status === "PUBLISHED" && s1.status === "ARCHIVED");
-          
+
         if (isOnePublishedAndOneArchived) {
           const archivedSyllabus = s1.status === "ARCHIVED" ? s1 : s2;
           const sortedDates = [...syllabuses].sort((a, b) => {
-            const dateA = a.approvedDate ? new Date(a.approvedDate).getTime() : 0;
-            const dateB = b.approvedDate ? new Date(b.approvedDate).getTime() : 0;
+            const dateA = a.approvedDate
+              ? new Date(a.approvedDate).getTime()
+              : 0;
+            const dateB = b.approvedDate
+              ? new Date(b.approvedDate).getTime()
+              : 0;
             return dateB - dateA;
           });
           const secondMostRecent = sortedDates[1];
-          if (secondMostRecent && archivedSyllabus.syllabusId === secondMostRecent.syllabusId) {
+          if (
+            secondMostRecent &&
+            archivedSyllabus.syllabusId === secondMostRecent.syllabusId
+          ) {
             enabled = true;
           }
         }
@@ -145,8 +220,12 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
     }
 
     if (selectedSyllabusIds.length === 2) {
-      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
-      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
+      const s1 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[0],
+      );
+      const s2 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[1],
+      );
       if (s1 && s2) {
         let newerId = s1.syllabusId;
         if (s1.status === "PUBLISHED" && s2.status !== "PUBLISHED") {
@@ -158,18 +237,31 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           const time2 = new Date(s2.createdAt || 0).getTime();
           newerId = time1 > time2 ? s1.syllabusId : s2.syllabusId;
         }
-        return { targetHistorySyllabusId: newerId, isGetCompareEnabled: enabled };
+        return {
+          targetHistorySyllabusId: newerId,
+          isGetCompareEnabled: enabled,
+        };
       }
     }
-    
+
     if (selectedSyllabusIds.length === 1) {
-      return { targetHistorySyllabusId: selectedSyllabusIds[0], isGetCompareEnabled: enabled };
+      return {
+        targetHistorySyllabusId: selectedSyllabusIds[0],
+        isGetCompareEnabled: enabled,
+      };
     }
 
     const pubSyllabus = syllabuses.find((s) => s.status === "PUBLISHED");
-    if (pubSyllabus) return { targetHistorySyllabusId: pubSyllabus.syllabusId, isGetCompareEnabled: enabled };
-    
-    return { targetHistorySyllabusId: syllabuses[0]?.syllabusId || null, isGetCompareEnabled: enabled };
+    if (pubSyllabus)
+      return {
+        targetHistorySyllabusId: pubSyllabus.syllabusId,
+        isGetCompareEnabled: enabled,
+      };
+
+    return {
+      targetHistorySyllabusId: syllabuses[0]?.syllabusId || null,
+      isGetCompareEnabled: enabled,
+    };
   }, [selectedSyllabusIds, syllabuses]);
 
   const handleToggleSelect = (id: string) => {
@@ -186,9 +278,13 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
   const handleCompareClick = () => {
     if (selectedSyllabusIds.length === 2) {
-      const s1 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[0]);
-      const s2 = syllabuses.find(s => s.syllabusId === selectedSyllabusIds[1]);
-      
+      const s1 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[0],
+      );
+      const s2 = syllabuses.find(
+        (s) => s.syllabusId === selectedSyllabusIds[1],
+      );
+
       if (s1 && s2) {
         let oldId = s1.syllabusId;
         let newId = s2.syllabusId;
@@ -207,9 +303,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
             newId = s1.syllabusId;
           }
         }
-        
+
         setSelectedSyllabusIds([oldId, newId]);
-        
+
         // Use timeout to ensure state updates before opening modal
         setTimeout(() => {
           setIsCompareModalOpen(true);
@@ -219,17 +315,27 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
   };
 
   const getSyllabusName = (id: string) => {
-    return syllabuses.find((s) => s.syllabusId === id)?.syllabusName || "Unknown";
+    return (
+      syllabuses.find((s) => s.syllabusId === id)?.syllabusName || "Unknown"
+    );
   };
 
   return (
     <div className="flex flex-col h-full bg-transparent">
-      <div className={`px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${hideHeader ? 'py-0' : 'pt-6 pb-4'}`}>
+      <div
+        className={`px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${hideHeader ? "py-0" : "pt-6 pb-4"}`}
+      >
         {!hideHeader ? (
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400">Subject</p>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400">
+              Subject
+            </p>
             <h2 className="mt-2 text-2xl font-black text-zinc-900">
-              {subjectLoading ? "Loading subject..." : subject ? `${subject.subjectCode} - ${subject.subjectName}` : subjectId}
+              {subjectLoading
+                ? "Loading subject..."
+                : subject
+                  ? `${subject.subjectCode} - ${subject.subjectName}`
+                  : subjectId}
             </h2>
           </div>
         ) : (
@@ -237,6 +343,19 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
         )}
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleReload}
+            disabled={isReloading || syllabiLoading || subjectLoading}
+            className="px-4 py-2 rounded-xl text-xs font-bold tracking-widest flex items-center gap-2 border bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+            title="Reload Syllabuses"
+          >
+            <RefreshCcw
+              size={14}
+              className={isReloading || syllabiLoading ? "animate-spin" : ""}
+            />
+            Refresh
+          </button>
+
           <div className="flex items-center gap-2 bg-white rounded-xl p-1 border border-zinc-100 shadow-sm">
             <Filter size={14} className="ml-2 text-zinc-400" />
             <select
@@ -279,7 +398,8 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
             <div className="px-8 py-4 flex items-center justify-between">
               <p className="text-sm font-bold text-emerald-800 flex items-center gap-2">
                 <GitCompare size={16} />
-                Select exactly 2 syllabuses to compare ({selectedSyllabusIds.length}/2 selected)
+                Select exactly 2 syllabuses to compare (
+                {selectedSyllabusIds.length}/2 selected)
               </p>
               <div className="flex items-center gap-3">
                 <button
@@ -312,7 +432,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 Select
               </div>
             )}
-            <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} text-xs font-black uppercase tracking-widest text-zinc-500`}>
+            <div
+              className={`${isCompareMode ? "col-span-4" : "col-span-5"} text-xs font-black uppercase tracking-widest text-zinc-500`}
+            >
               Syllabus Name
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
@@ -332,7 +454,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           {syllabiLoading ? (
             <div className="py-20 text-center flex flex-col items-center">
               <div className="w-8 h-8 border-4 border-zinc-200 border-t-primary rounded-full animate-spin mb-4" />
-              <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Loading Syllabuses...</p>
+              <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                Loading Syllabuses...
+              </p>
             </div>
           ) : filteredSyllabuses.length > 0 ? (
             filteredSyllabuses.map((syllabus, idx) => (
@@ -341,15 +465,19 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${isCompareMode && selectedSyllabusIds.includes(syllabus.syllabusId)
+                className={`grid grid-cols-12 px-8 py-5 border-b border-zinc-50 last:border-b-0 items-center transition-colors cursor-pointer ${
+                  isCompareMode &&
+                  selectedSyllabusIds.includes(syllabus.syllabusId)
                     ? "bg-emerald-50/50"
                     : "hover:bg-zinc-50/80"
-                  }`}
+                }`}
                 onClick={() => {
                   if (isCompareMode) {
                     handleToggleSelect(syllabus.syllabusId);
                   } else {
-                    router.push(`${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`);
+                    router.push(
+                      `${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`,
+                    );
                   }
                 }}
               >
@@ -360,11 +488,15 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                         e.stopPropagation();
                         handleToggleSelect(syllabus.syllabusId);
                       }}
-                      disabled={selectedSyllabusIds.length === 2 && !selectedSyllabusIds.includes(syllabus.syllabusId)}
-                      className={`transition-colors ${selectedSyllabusIds.includes(syllabus.syllabusId)
+                      disabled={
+                        selectedSyllabusIds.length === 2 &&
+                        !selectedSyllabusIds.includes(syllabus.syllabusId)
+                      }
+                      className={`transition-colors ${
+                        selectedSyllabusIds.includes(syllabus.syllabusId)
                           ? "text-emerald-600"
                           : "text-zinc-300 hover:text-zinc-500 disabled:opacity-30"
-                        }`}
+                      }`}
                     >
                       {selectedSyllabusIds.includes(syllabus.syllabusId) ? (
                         <CheckSquare size={20} />
@@ -375,7 +507,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                   </div>
                 )}
 
-                <div className={`${isCompareMode ? "col-span-4" : "col-span-5"} space-y-0.5`}>
+                <div
+                  className={`${isCompareMode ? "col-span-4" : "col-span-5"} space-y-0.5`}
+                >
                   <p className="text-base font-black text-zinc-900 group-hover:text-primary transition-colors">
                     {syllabus.syllabusName}
                   </p>
@@ -383,13 +517,17 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
 
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
-                    {syllabus.createdAt ? new Date(syllabus.createdAt).toLocaleDateString() : "N/A"}
+                    {syllabus.createdAt
+                      ? new Date(syllabus.createdAt).toLocaleDateString()
+                      : "N/A"}
                   </span>
                 </div>
 
                 <div className="col-span-2">
                   <span className="text-sm font-bold text-zinc-700">
-                    {syllabus.approvedDate ? new Date(syllabus.approvedDate).toLocaleDateString() : "-"}
+                    {syllabus.approvedDate
+                      ? new Date(syllabus.approvedDate).toLocaleDateString()
+                      : "-"}
                   </span>
                 </div>
 
@@ -402,27 +540,36 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
                 </div>
 
                 <div className="col-span-1 flex justify-end">
-                  {syllabus.status === "APPROVED" && canPublishApprovedSyllabus && (
-                    <button
-                      disabled={publishingSyllabusId !== null}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPublishingSyllabus({ id: syllabus.syllabusId, name: syllabus.syllabusName });
-                      }}
-                      className="mr-2 p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
-                      title="Publish Syllabus"
-                    >
-                      {publishingSyllabusId === syllabus.syllabusId ? (
-                        <Loader2 className="w-[18px] h-[18px] animate-spin text-emerald-600" />
-                      ) : (
-                        <CheckCircle2 size={18} className="text-emerald-600" />
-                      )}
-                    </button>
-                  )}
+                  {syllabus.status === "APPROVED" &&
+                    canPublishApprovedSyllabus && (
+                      <button
+                        disabled={publishingSyllabusId !== null}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPublishingSyllabus({
+                            id: syllabus.syllabusId,
+                            name: syllabus.syllabusName,
+                          });
+                        }}
+                        className="mr-2 p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                        title="Publish Syllabus"
+                      >
+                        {publishingSyllabusId === syllabus.syllabusId ? (
+                          <Loader2 className="w-[18px] h-[18px] animate-spin text-emerald-600" />
+                        ) : (
+                          <CheckCircle2
+                            size={18}
+                            className="text-emerald-600"
+                          />
+                        )}
+                      </button>
+                    )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`);
+                      router.push(
+                        `${dashboardPrefix}/syllabuses/${syllabus.syllabusId}/information`,
+                      );
                     }}
                     className="p-2 bg-white text-zinc-400 border border-zinc-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 rounded-xl shadow-sm transition-all active:scale-95"
                     title="View Details"
@@ -435,7 +582,9 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
           ) : (
             <div className="py-20 text-center text-zinc-400 flex flex-col items-center">
               <BookOpen size={32} strokeWidth={1} className="mb-4 opacity-50" />
-              <p className="font-black text-sm uppercase tracking-widest">No syllabuses found</p>
+              <p className="font-black text-sm uppercase tracking-widest">
+                No syllabuses found
+              </p>
             </div>
           )}
         </div>
@@ -461,70 +610,84 @@ export default function SyllabusListBySubject({ subjectId, hideHeader = false }:
       )}
 
       {/* Custom Publish Confirmation Modal */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {publishingSyllabus && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                onClick={() => publishingSyllabusId === null && setPublishingSyllabus(null)}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col p-6 text-center space-y-6"
-              >
-                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 size={36} />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-zinc-900 tracking-tight">
-                    Publish Syllabus
-                  </h3>
-                  <p className="text-sm text-zinc-500 font-medium leading-relaxed">
-                    Are you sure you want to publish the syllabus <span className="text-emerald-700 font-extrabold">"{publishingSyllabus.name}"</span>?
-                  </p>
-                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-left text-xs font-semibold text-amber-800 flex gap-2.5 items-start">
-                    <span className="material-symbols-outlined text-[18px] text-amber-600 mt-0.5">warning</span>
-                    <p>
-                      This action will replace the currently published syllabus for this subject. The previous syllabus will automatically be archived.
-                    </p>
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {publishingSyllabus && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                  onClick={() =>
+                    publishingSyllabusId === null && setPublishingSyllabus(null)
+                  }
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col p-6 text-center space-y-6"
+                >
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                    <CheckCircle2 size={36} />
                   </div>
-                </div>
 
-                <div className="flex gap-3">
-                  <button
-                    disabled={publishingSyllabusId !== null}
-                    onClick={() => setPublishingSyllabus(null)}
-                    className="flex-1 py-3 border border-zinc-200 text-zinc-500 font-bold text-sm rounded-xl hover:bg-zinc-50 transition-colors disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    disabled={publishingSyllabusId !== null}
-                    onClick={() => handlePublishSyllabus(publishingSyllabus.id)}
-                    className="flex-1 py-3 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {publishingSyllabusId !== null ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" /> Publishing...
-                      </>
-                    ) : (
-                      "Confirm & Publish"
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black text-zinc-900 tracking-tight">
+                      Publish Syllabus
+                    </h3>
+                    <p className="text-sm text-zinc-500 font-medium leading-relaxed">
+                      Are you sure you want to publish the syllabus{" "}
+                      <span className="text-emerald-700 font-extrabold">
+                        "{publishingSyllabus.name}"
+                      </span>
+                      ?
+                    </p>
+                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-left text-xs font-semibold text-amber-800 flex gap-2.5 items-start">
+                      <span className="material-symbols-outlined text-[18px] text-amber-600 mt-0.5">
+                        warning
+                      </span>
+                      <p>
+                        This action will replace the currently published
+                        syllabus for this subject. The previous syllabus will
+                        automatically be archived.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      disabled={publishingSyllabusId !== null}
+                      onClick={() => setPublishingSyllabus(null)}
+                      className="flex-1 py-3 border border-zinc-200 text-zinc-500 font-bold text-sm rounded-xl hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      disabled={publishingSyllabusId !== null}
+                      onClick={() =>
+                        handlePublishSyllabus(publishingSyllabus.id)
+                      }
+                      className="flex-1 py-3 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {publishingSyllabusId !== null ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />{" "}
+                          Publishing...
+                        </>
+                      ) : (
+                        "Confirm & Publish"
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </div>
   );
 }
