@@ -43,7 +43,7 @@ export const RevisionRequestedModal: React.FC<RevisionRequestedModalProps> = ({
                     <ReviewerFeedback 
                         reviewer={reviewer}
                         comments={[
-                            { title: 'Task Requirement / Description', content: description },
+                            { title: 'Task Requirement', content: description },
                             { title: 'Additional Comments', content: comment }
                         ]}
                         onClose={onClose}

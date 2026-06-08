@@ -49,6 +49,8 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     const [existingMappings, setExistingMappings] = useState<CloSessionMapping[]>([]);
     const [isValidated, setIsValidated] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+    const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
     const [isValidating, setIsValidating] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [remainingQuotas, setRemainingQuotas] = useState<any[]>([]);
@@ -346,6 +348,39 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     };
 
 
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedSessions(sessions.map(s => s.sessionNumber || 0));
+        } else {
+            setSelectedSessions([]);
+        }
+    };
+
+    const handleBulkDeleteSessions = async () => {
+        if (selectedSessions.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedSessions.length} session(s)?`)) return;
+
+        setIsDeletingBulk(true);
+        try {
+            const sessionsToDelete = sessions.filter(s => selectedSessions.includes(s.sessionNumber || 0));
+            const remoteSessionNumbers = sessionsToDelete.filter(s => s.sessionId).map(s => s.sessionNumber || 0);
+
+            if (remoteSessionNumbers.length > 0 && syllabusId) {
+                await SessionService.batchDeleteSessions(syllabusId, remoteSessionNumbers);
+            }
+
+            const updatedSessions = sessions.filter(s => !selectedSessions.includes(s.sessionNumber || 0));
+            dispatch(setSessions({ syllabusId: syllabusId as string, sessions: updatedSessions }));
+            setSelectedSessions([]);
+            showToast(`Successfully deleted ${selectedSessions.length} session(s)`, "success");
+        } catch (error) {
+            console.error("Failed to bulk delete sessions:", error);
+            showToast("Failed to bulk delete sessions", "error");
+        } finally {
+            setIsDeletingBulk(false);
+        }
+    };
+
     const handleStartEdit = (index: number) => {
         const session = sessions[index];
         setDraftSession({ ...session });
@@ -464,6 +499,16 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                 <div className="flex gap-4 self-start md:self-end">
                     {activeTab === 'list' && (
                         <>
+                            {selectedSessions.length > 0 && (
+                                <button
+                                    onClick={handleBulkDeleteSessions}
+                                    disabled={isDeletingBulk}
+                                    className="bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:bg-red-600 disabled:opacity-50 text-sm shadow-sm"
+                                >
+                                    {isDeletingBulk ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                    Delete Selected ({selectedSessions.length})
+                                </button>
+                            )}
                             <button
                                 onClick={() => setIsImportModalOpen(true)}
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
@@ -567,7 +612,15 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                         <div className="space-y-6">
                             {/* Table Header */}
                             <div className="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 border-b border-outline-variant/10">
-                                <div className="col-span-1">No.</div>
+                                <div className="col-span-1 flex items-center gap-3">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary" 
+                                        checked={sessions.length > 0 && selectedSessions.length === sessions.length}
+                                        onChange={handleSelectAll}
+                                    />
+                                    <span>No.</span>
+                                </div>
                                 <div className="col-span-3">Session Title</div>
                                 <div className="col-span-6">Session Topic</div>
                                 <div className="col-span-2 text-right">Actions</div>
@@ -604,8 +657,21 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         <div key={session.sessionId || `local-${index}`}
                                             className="grid grid-cols-12 items-center px-6 py-3 bg-surface-container-lowest rounded-xl hover:shadow-lg hover:shadow-on-surface/5 transition-all group border border-transparent hover:border-primary/10"
                                         >
-                                            <div className="col-span-1 font-black text-sm" style={{ color: '#adb4a8' }}>
-                                                {session.sessionNumber}
+                                            <div className="col-span-1 flex items-center gap-3 font-black text-sm" style={{ color: '#adb4a8' }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary" 
+                                                    checked={selectedSessions.includes(session.sessionNumber || 0)}
+                                                    onChange={(e) => {
+                                                        const no = session.sessionNumber || 0;
+                                                        if (e.target.checked) {
+                                                            setSelectedSessions([...selectedSessions, no]);
+                                                        } else {
+                                                            setSelectedSessions(selectedSessions.filter(s => s !== no));
+                                                        }
+                                                    }}
+                                                />
+                                                <span>{session.sessionNumber}</span>
                                             </div>
                                             <div className="col-span-3">
                                                 <h4 className="text-sm font-black leading-tight uppercase tracking-tight" style={{ color: '#2d342b', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>

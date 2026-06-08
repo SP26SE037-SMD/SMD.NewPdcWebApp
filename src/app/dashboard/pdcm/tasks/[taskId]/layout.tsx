@@ -98,7 +98,6 @@ export default function TaskWorkspaceLayout({
 
     const sidebarSubContent = (
         <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Developing Syllabus</p>
             <p className="text-sm font-bold text-on-surface leading-tight break-words">
                 {displayTitle}
             </p>
