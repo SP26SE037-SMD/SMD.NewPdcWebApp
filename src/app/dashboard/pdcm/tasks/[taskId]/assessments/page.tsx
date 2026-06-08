@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { setAssessments, addAssessment, updateAssessment, removeAssessment } from '@/store/slices/syllabusSlice';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { TaskService } from '@/services/task.service';
 import { AssessmentService, AssessmentItem, AssessmentCategory, AssessmentType } from '@/services/assessment.service';
 import { SyllabusService } from '@/services/syllabus.service';
@@ -122,6 +122,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isValidating, setIsValidating] = useState(false);
     const [isValidated, setIsValidated] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+    const [selectedAssessments, setSelectedAssessments] = useState<string[]>([]);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [validationSummary, setValidationSummary] = useState<any>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -363,6 +365,41 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
         setDeleteConfirm({ id: null, index });
     };
 
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedAssessments(assessments.map((a, i) => a.assessmentId || `local-${i}`));
+        } else {
+            setSelectedAssessments([]);
+        }
+    };
+
+    const handleBulkDeleteAssessments = async () => {
+        if (selectedAssessments.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedAssessments.length} assessment(s)?`)) return;
+
+        setIsDeletingBulk(true);
+        try {
+            const remoteIds = assessments
+                .filter((a, i) => selectedAssessments.includes(a.assessmentId || `local-${i}`))
+                .map(a => a.assessmentId)
+                .filter(Boolean) as string[];
+
+            if (remoteIds.length > 0) {
+                await AssessmentService.bulkDeleteAssessments(remoteIds);
+            }
+
+            const updatedAssessments = assessments.filter((a, i) => !selectedAssessments.includes(a.assessmentId || `local-${i}`));
+            dispatch(setAssessments({ syllabusId: syllabusId!, assessments: updatedAssessments }));
+            setSelectedAssessments([]);
+            showToast(`Successfully deleted ${selectedAssessments.length} assessment(s)`, "success");
+        } catch (error) {
+            console.error("Failed to bulk delete assessments:", error);
+            showToast("Failed to bulk delete assessments", "error");
+        } finally {
+            setIsDeletingBulk(false);
+        }
+    };
+
     const handleDeleteApi = (assessmentId: string, index: number) => {
         if (!syllabusId) return;
         setDeleteConfirm({ id: assessmentId, index });
@@ -418,6 +455,16 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                 <div className="flex gap-4 self-start md:self-end">
                     {activeTab === 'list' && (
                         <>
+                            {selectedAssessments.length > 0 && (
+                                <button
+                                    onClick={handleBulkDeleteAssessments}
+                                    disabled={isDeletingBulk}
+                                    className="bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:bg-red-600 disabled:opacity-50 text-sm shadow-sm"
+                                >
+                                    {isDeletingBulk ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                    Delete Selected ({selectedAssessments.length})
+                                </button>
+                            )}
                             <button
                                 onClick={() => setIsImportModalOpen(true)}
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
@@ -514,6 +561,17 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             <div className={activeTab === 'list' ? 'block' : 'hidden'}>
                 <>
                     {/* ── Scrollable Bento Grid List of Assessments ── */}
+                    {assessments.length > 0 && (
+                        <div className="flex items-center gap-2 mb-3 px-2">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+                                checked={assessments.length > 0 && selectedAssessments.length === assessments.length}
+                                onChange={handleSelectAll}
+                            />
+                            <span className="text-sm font-bold text-on-surface-variant">Select All Assessments</span>
+                        </div>
+                    )}
                     <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-3 custom-scrollbar">
                         {assessments.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-zinc-400 bg-surface-container-lowest rounded-3xl border-2 border-dashed border-outline-variant/30 animate-in fade-in zoom-in duration-500">
@@ -528,6 +586,19 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                         className="group relative bg-surface-container-lowest p-0.5 rounded-xl transition-all duration-300 hover:shadow-lg border border-transparent hover:border-primary/10">
                                         <div className="flex items-center justify-between p-3">
                                             <div className="flex items-center space-x-3">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary" 
+                                                    checked={selectedAssessments.includes(ass.assessmentId || `local-${index}`)}
+                                                    onChange={(e) => {
+                                                        const id = ass.assessmentId || `local-${index}`;
+                                                        if (e.target.checked) {
+                                                            setSelectedAssessments([...selectedAssessments, id]);
+                                                        } else {
+                                                            setSelectedAssessments(selectedAssessments.filter(a => a !== id));
+                                                        }
+                                                    }}
+                                                />
                                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${ass.typeName?.toLowerCase().includes('formative') ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'}`}>
                                                     <span className="material-symbols-outlined text-xl">
                                                         {ass.typeName?.toLowerCase().includes('formative') ? 'edit_note' : 'history_edu'}

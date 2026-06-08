@@ -125,4 +125,8 @@ export class SessionService {
     static async deleteSession(sessionId: string) {
         return apiClient.delete(`/api/sessions/${sessionId}`);
     }
+
+    static async batchDeleteSessions(syllabusId: string, sessionNumbers: number[]) {
+        return apiClient.delete(`/api/sessions/batch?syllabusId=${syllabusId}`, { body: JSON.stringify({ sessionNumbers }) });
+    }
 }

@@ -102,4 +102,8 @@ export class AssessmentService {
         formData.append('file', file);
         return apiClient.postFormData(`/api/assessments/import?syllabusId=${syllabusId}&subjectId=${subjectId}`, formData);
     }
+
+    static async bulkDeleteAssessments(assessmentIds: string[]) {
+        return apiClient.delete('/api/assessments/bulk', { body: JSON.stringify(assessmentIds) });
+    }
 }
