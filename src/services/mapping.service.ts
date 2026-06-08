@@ -55,7 +55,7 @@ export class MappingService {
     }
 
     static async validateAssessmentMappings(syllabusId: string, mappings: { cloId: string; assessmentId: string }[]): Promise<ApiResponse<any>> {
-        return apiClient.post<ApiResponse<any>>(`/api/clo-assessment-mappings/validate?syllabusId=${syllabusId}`, mappings);
+        return apiClient.post<ApiResponse<any>>(`/api/clo-assessment-mappings/syllabus/${syllabusId}/validate`, mappings);
     }
 
     static async validateSessionMappings(syllabusId: string, mappings: { cloId: string; sessionId: string }[]): Promise<ApiResponse<any>> {
