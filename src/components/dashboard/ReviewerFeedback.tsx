@@ -44,17 +44,6 @@ export const ReviewerFeedback: React.FC<ReviewerFeedbackProps> = ({ reviewer, co
                 style={{ borderColor: `${baseColor}22`, background: `${baseColor}11` }}>
 
                 <div className="flex items-center gap-3">
-                    {isAssignment && (
-                        <>
-                            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                                style={{ background: baseColor, color: 'white' }}>
-                                <span className="material-symbols-outlined text-[18px]">assignment</span>
-                            </span>
-                            <h3 className="font-bold text-lg" style={{ color: baseColor, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                Task Assignment
-                            </h3>
-                        </>
-                    )}
                 </div>
 
                 <div className="flex items-center gap-4">

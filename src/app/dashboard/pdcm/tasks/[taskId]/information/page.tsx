@@ -241,7 +241,7 @@ info: {
                     reviewer={realTask.createdBy as any}
                     type={realTask.action === 'UPDATE' ? 'revision' : 'assignment'}
                     comments={[
-                        { title: 'Task Requirement / Description', content: realTask.description ?? undefined },
+                        { title: 'Task Requirement', content: realTask.description ?? undefined },
                         { title: 'Additional Comments', content: realTask.comment ?? undefined }
                     ]}
                 />
