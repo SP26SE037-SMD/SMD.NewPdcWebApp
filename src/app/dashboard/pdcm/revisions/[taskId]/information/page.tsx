@@ -179,12 +179,11 @@ export default function RevisionInformationPage({ params }: { params: Promise<{ 
 
     return (
         <div className="space-y-7">
-            {realTask && (realTask.description || realTask.comment) && (
+            {realTask && realTask.description && (
                 <ReviewerFeedback 
                     reviewer={realTask.createdBy as any}
                     comments={[
-                        { title: 'Requirement', content: realTask.description ?? undefined },
-                        { title: 'Additional Comments', content: realTask.comment ?? undefined }
+                        { title: 'Requirement', content: realTask.description ?? undefined }
                     ]}
                 />
             )}
