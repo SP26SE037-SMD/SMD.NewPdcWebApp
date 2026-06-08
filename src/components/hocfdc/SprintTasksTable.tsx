@@ -397,7 +397,7 @@ export const SprintTasksTable: React.FC<SprintTasksTableProps> = ({
                             size={14}
                             className="text-emerald-100 group-hover/btn:scale-110 transition-transform"
                           />
-                          recheck subject
+                          check subject
                         </button>
                       ) : task.isAccepted === true ? (
                         <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-200 flex items-center gap-1.5 ml-auto shadow-sm">
