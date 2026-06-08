@@ -540,8 +540,8 @@ export default function PDCMDashboardContent({
         );
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pdcm-tasks"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["pdcm-tasks"] });
       setIsAccepting(null);
     },
     onError: () => setIsAccepting(null),
