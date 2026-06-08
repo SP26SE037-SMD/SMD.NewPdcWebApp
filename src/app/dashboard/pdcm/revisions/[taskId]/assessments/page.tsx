@@ -419,7 +419,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
             <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Revision: Assessments
+                        Assessments
                     </h1>
                     <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
                         <span>{assessments.length} assessments created</span>

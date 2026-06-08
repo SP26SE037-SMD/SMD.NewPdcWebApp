@@ -451,7 +451,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
             <div className="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div>
                     <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Revision: Sessions
+                        Sessions
                     </h1>
                     <p className="text-[12px] font-bold text-zinc-900 flex items-center gap-2">
                         <span>{sessions.length} sessions created</span>
