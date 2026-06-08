@@ -12,6 +12,7 @@ import { CloPloService } from '@/services/cloplo.service';
 import { MappingService, CloAssessmentMapping } from '@/services/mapping.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
+import { clearAiProcessingMessage } from '@/store/slices/notificationSlice';
 import * as XLSX from 'xlsx';
 import { useRevisionRequest } from '@/hooks/useRevisionRequest';
 import { ReviewerFeedback } from '@/components/dashboard/ReviewerFeedback';
@@ -187,6 +188,25 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const [isMappingSaving, setIsMappingSaving] = useState(false);
     const [isMappingResultModalOpen, setIsMappingResultModalOpen] = useState(false);
 
+
+    const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
+
+    useEffect(() => {
+        if (isMappingValidating) {
+            if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
+                setMappingValidationResult(aiProcessingData);
+                setIsMappingResultModalOpen(true);
+                setIsMappingValidating(false);
+                showToast("Mapping validation complete", "success");
+                dispatch(clearAiProcessingMessage());
+            } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
+                setIsMappingValidating(false);
+                showToast(aiProcessingMessage || "Mapping validation failed", "error");
+                dispatch(clearAiProcessingMessage());
+            }
+        }
+    }, [aiProcessingStatus, aiProcessingData, aiProcessingMessage, dispatch, showToast, isMappingValidating]);
+
     const { data: mappingsRes, refetch: refetchMappings } = useQuery({
         queryKey: ['assessment-mappings', syllabusId],
         queryFn: () => syllabusId ? MappingService.getSyllabusAssessmentMappings(syllabusId) : null,
@@ -225,6 +245,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const handleValidateMappings = async () => {
         if (!syllabusId) return;
         setIsMappingValidating(true);
+        dispatch(clearAiProcessingMessage());
         try {
             const payload = Object.entries(mappingStates).flatMap(([assessmentId, cloIds]) =>
                 cloIds.map(cloId => ({ assessmentId, cloId }))
@@ -234,13 +255,8 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 setIsMappingValidating(false);
                 return;
             }
-            const res = await MappingService.validateAssessmentMappings(syllabusId, payload);
-            if (res.data) {
-                console.log("✅ Mapping validation result received:", res.data);
-                setMappingValidationResult(res.data);
-                setIsMappingResultModalOpen(true);
-                showToast("Mapping validation complete", "success");
-            }
+            await MappingService.validateAssessmentMappings(syllabusId, payload);
+            showToast("Validation started. Please wait...", "info");
         } catch (error: any) {
             if (error.data?.data && typeof error.data.data.is_valid !== 'undefined') {
                 setMappingValidationResult(error.data.data);
@@ -252,8 +268,6 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                 const errMsg = error.message || "Failed to validate mappings";
                 showToast(errMsg, "error");
             }
-        } finally {
-            setIsMappingValidating(false);
         }
     };
 
