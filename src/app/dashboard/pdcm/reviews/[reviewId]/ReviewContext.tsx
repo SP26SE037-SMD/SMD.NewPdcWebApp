@@ -79,10 +79,25 @@ export function ReviewProvider({ children, reviewId }: { children: ReactNode; re
         }
     };
 
-    const [syllabusReview, setSyllabusReview] = useState<SectionReview>(() => loadSaved(`pdcm-review-syllabus-summary-${reviewId}`) as SectionReview || { status: 'PENDING', note: '' });
-    const [materialsReview, setMaterialsReview] = useState<SectionReview>(() => loadSaved(`pdcm-review-materials-summary-${reviewId}`) as SectionReview || { status: 'PENDING', note: '' });
-    const [sessionsReview, setSessionsReview] = useState<SectionReview>(() => loadSaved(`pdcm-review-sessions-summary-${reviewId}`) as SectionReview || { status: 'PENDING', note: '' });
-    const [assessmentsReview, setAssessmentsReview] = useState<SectionReview>(() => loadSaved(`pdcm-review-assessments-summary-${reviewId}`) as SectionReview || { status: 'PENDING', note: '' });
+    const sanitizeSavedReview = (saved: SectionReview | undefined): SectionReview => {
+        if (!saved) return { status: 'PENDING', note: '' };
+        if (saved.note) {
+            try {
+                const parsed = JSON.parse(saved.note);
+                if (parsed.aiResult) {
+                    return { ...saved, note: JSON.stringify({ reviewerComment: parsed.reviewerComment || '' }) };
+                }
+            } catch {
+                // not JSON, keep as is
+            }
+        }
+        return saved;
+    };
+
+    const [syllabusReview, setSyllabusReview] = useState<SectionReview>(() => sanitizeSavedReview(loadSaved(`pdcm-review-syllabus-summary-${reviewId}`) as SectionReview));
+    const [materialsReview, setMaterialsReview] = useState<SectionReview>(() => sanitizeSavedReview(loadSaved(`pdcm-review-materials-summary-${reviewId}`) as SectionReview));
+    const [sessionsReview, setSessionsReview] = useState<SectionReview>(() => sanitizeSavedReview(loadSaved(`pdcm-review-sessions-summary-${reviewId}`) as SectionReview));
+    const [assessmentsReview, setAssessmentsReview] = useState<SectionReview>(() => sanitizeSavedReview(loadSaved(`pdcm-review-assessments-summary-${reviewId}`) as SectionReview));
     const [itemFeedbacks, setItemFeedbacks] = useState<Record<string, string>>({});
 
     // Initialize from local storage based on reviewId
