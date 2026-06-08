@@ -1506,12 +1506,12 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                     const updatedSessions = sessions.filter(s => !selectedSessions.includes(s.sessionNumber || 0));
                                     dispatch(setSessions({ syllabusId: syllabusId as string, sessions: updatedSessions }));
                                     setSelectedSessions([]);
-                                    showToast(`Successfully deleted ${selectedSessions.length} session(s)`, "success");
+                                    showToast(`Successfully deleted ${selectedSessions.length} session(s).`, "success");
                                     refetchSessions();
                                     refetchMappings();
                                 } catch (error) {
                                     console.error("Failed to bulk delete sessions:", error);
-                                    showToast("Failed to bulk delete sessions", "error");
+                                    showToast("Failed to delete sessions. Please try again.", "error");
                                 } finally {
                                     setIsDeletingBulk(false);
                                 }

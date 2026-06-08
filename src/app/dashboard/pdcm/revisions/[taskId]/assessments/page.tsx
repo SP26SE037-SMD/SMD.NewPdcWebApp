@@ -1280,12 +1280,12 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                     const updatedAssessments = assessments.filter((a, i) => !selectedAssessments.includes(a.assessmentId || `local-${i}`));
                                     dispatch(setAssessments({ syllabusId: syllabusId!, assessments: updatedAssessments }));
                                     setSelectedAssessments([]);
-                                    showToast(`Successfully deleted ${selectedAssessments.length} assessment(s)`, "success");
+                                    showToast(`Successfully deleted ${selectedAssessments.length} assessment(s).`, "success");
                                     refetchAssessments();
                                     refetchMappings();
                                 } catch (error) {
                                     console.error("Failed to bulk delete assessments:", error);
-                                    showToast("Failed to bulk delete assessments", "error");
+                                    showToast("Failed to delete assessments. Please try again.", "error");
                                 } finally {
                                     setIsDeletingBulk(false);
                                 }
