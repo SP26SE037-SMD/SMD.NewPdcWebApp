@@ -50,6 +50,7 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
     const [isValidated, setIsValidated] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+    const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
     const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
     const [isValidating, setIsValidating] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
@@ -356,29 +357,9 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
         }
     };
 
-    const handleBulkDeleteSessions = async () => {
+    const handleBulkDeleteSessions = () => {
         if (selectedSessions.length === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedSessions.length} session(s)?`)) return;
-
-        setIsDeletingBulk(true);
-        try {
-            const sessionsToDelete = sessions.filter(s => selectedSessions.includes(s.sessionNumber || 0));
-            const remoteSessionNumbers = sessionsToDelete.filter(s => s.sessionId).map(s => s.sessionNumber || 0);
-
-            if (remoteSessionNumbers.length > 0 && syllabusId) {
-                await SessionService.batchDeleteSessions(syllabusId, remoteSessionNumbers);
-            }
-
-            const updatedSessions = sessions.filter(s => !selectedSessions.includes(s.sessionNumber || 0));
-            dispatch(setSessions({ syllabusId: syllabusId as string, sessions: updatedSessions }));
-            setSelectedSessions([]);
-            showToast(`Successfully deleted ${selectedSessions.length} session(s)`, "success");
-        } catch (error) {
-            console.error("Failed to bulk delete sessions:", error);
-            showToast("Failed to bulk delete sessions", "error");
-        } finally {
-            setIsDeletingBulk(false);
-        }
+        setIsBulkDeleteModalOpen(true);
     };
 
     const handleStartEdit = (index: number) => {
@@ -1496,6 +1477,59 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                 </div>
             )}
 
+        {/* ── Bulk Delete Confirmation Modal ── */}
+        {isBulkDeleteModalOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="mx-auto w-20 h-20 bg-red-50 text-red-500 rounded-[24px] flex items-center justify-center mb-6">
+                        <span className="material-symbols-outlined text-4xl">warning</span>
+                    </div>
+                    <div className="text-center space-y-2 mb-8">
+                        <h3 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Delete Selected Items?</h3>
+                        <p className="text-sm text-slate-500 font-medium">
+                            Are you sure you want to delete {selectedSessions.length} selected item(s)? This action cannot be undone.
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={async () => {
+                                setIsBulkDeleteModalOpen(false);
+                                setIsDeletingBulk(true);
+                                try {
+                                    const sessionsToDelete = sessions.filter(s => selectedSessions.includes(s.sessionNumber || 0));
+                                    const remoteSessionNumbers = sessionsToDelete.filter(s => s.sessionId).map(s => s.sessionNumber || 0);
+
+                                    if (remoteSessionNumbers.length > 0 && syllabusId) {
+                                        await SessionService.batchDeleteSessions(syllabusId, remoteSessionNumbers);
+                                    }
+
+                                    const updatedSessions = sessions.filter(s => !selectedSessions.includes(s.sessionNumber || 0));
+                                    dispatch(setSessions({ syllabusId: syllabusId as string, sessions: updatedSessions }));
+                                    setSelectedSessions([]);
+                                    showToast(`Successfully deleted ${selectedSessions.length} session(s).`, "success");
+                                    refetchSessions();
+                                    refetchMappings();
+                                } catch (error) {
+                                    console.error("Failed to bulk delete sessions:", error);
+                                    showToast("Failed to delete sessions. Please try again.", "error");
+                                } finally {
+                                    setIsDeletingBulk(false);
+                                }
+                            }}
+                            className="w-full bg-red-500 text-white font-bold py-3.5 rounded-2xl hover:bg-red-600 transition-all active:scale-[0.98] shadow-lg shadow-red-500/25"
+                        >
+                            Yes, delete
+                        </button>
+                        <button
+                            onClick={() => setIsBulkDeleteModalOpen(false)}
+                            className="w-full bg-slate-100 text-slate-700 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-all active:scale-[0.98]"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
@@ -1844,4 +1878,3 @@ function SessionMappingValidationModal({ result, sessions, clos, onClose }: {
         </div>
     );
 }
-
