@@ -167,7 +167,7 @@ export default function RevisionMaterialsPage({ params }: { params: Promise<{ ta
             <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: C.onSurface, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        Revision: Materials
+                        Materials
                     </h1>
                     <p className="text-xs font-semibold flex items-center gap-2" style={{ color: C.onSurfaceVariant }}>
                         <span>{materials.length} item{materials.length !== 1 ? 's' : ''} total</span>
