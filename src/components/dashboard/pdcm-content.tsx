@@ -624,18 +624,18 @@ export default function PDCMDashboardContent({
                 style={{ color: C.onSurfaceVariant }}
               ></p>
             </div>
-            <div
-              className="flex gap-1 p-1 rounded-xl"
-              style={{ background: C.surfaceContainerHigh }}
-            >
-              <button
-                onClick={() => router.push("/dashboard/pdcm/develop")}
-                className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === "develop" ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"}`}
-                style={navTab === "develop" ? { color: C.primary } : {}}
+            {role !== 'COLLABORATOR' && (
+              <div
+                className="flex gap-1 p-1 rounded-xl"
+                style={{ background: C.surfaceContainerHigh }}
               >
-                Develop
-              </button>
-              {role !== 'COLLABORATOR' && (
+                <button
+                  onClick={() => router.push("/dashboard/pdcm/develop")}
+                  className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === "develop" ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"}`}
+                  style={navTab === "develop" ? { color: C.primary } : {}}
+                >
+                  Develop
+                </button>
                 <button
                   onClick={() => router.push("/dashboard/pdcm/peer-review")}
                   className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${navTab === "peer-review" ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"}`}
@@ -643,8 +643,8 @@ export default function PDCMDashboardContent({
                 >
                   Review
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </header>
 
