@@ -84,7 +84,7 @@ const ALL_STATUS_ORDER = [
 
 const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
   <div className="relative group/stepper max-w-[550px]">
-    <div className="flex items-center px-6 py-4 bg-white border border-zinc-100 rounded-3xl shadow-sm overflow-x-auto no-scrollbar scroll-smooth snap-x">
+    <div className="flex items-center px-6 py-4 bg-white border border-zinc-100 rounded-[10px] shadow-sm overflow-x-auto no-scrollbar scroll-smooth snap-x">
       {ALL_STATUS_ORDER.map((statusItem, idx) => {
         const isCompleted = idx < safeCurrentIdx;
         const isActive = idx === safeCurrentIdx;
@@ -160,8 +160,8 @@ const StatusStepper = ({ safeCurrentIdx }: { safeCurrentIdx: number }) => (
       })}
     </div>
 
-    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
-    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-3xl z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none rounded-l-[10px] z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
+    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-r-[10px] z-20 opacity-0 group-hover/stepper:opacity-100 transition-opacity" />
   </div>
 );
 
@@ -295,7 +295,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 flex items-center justify-center bg-white border border-zinc-100 rounded-xl text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group"
+              className="w-10 h-10 flex items-center justify-center bg-white border border-zinc-100 rounded-[10px] text-zinc-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm group"
             >
               <ChevronLeft
                 className="group-hover:-translate-x-0.5 transition-transform"
@@ -327,7 +327,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                   `/dashboard/hocfdc/curriculums/${id}/mapping/po-plo`,
                 )
               }
-              className="px-6 py-3 bg-zinc-100 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2.5"
+              className="px-6 py-3 bg-zinc-100 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-[10px] hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2.5"
             >
               <Target size={16} /> Matrix
             </button>
@@ -339,7 +339,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 onClick={() =>
                   router.push(`/dashboard/hocfdc/framework-execution/${id}`)
                 }
-                className="px-6 py-3 bg-zinc-100 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2.5"
+                className="px-6 py-3 bg-zinc-100 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-[10px] hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2.5"
               >
                 <Rocket size={16} /> Department Tasks
               </button>
@@ -347,7 +347,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
 
             {/* Combo Simulator Widget */}
             {combos.length > 0 && (
-              <div className="flex items-center gap-2 bg-indigo-50/50 border border-indigo-100 px-3 py-1.5 rounded-xl ml-2 text-indigo-900">
+              <div className="flex items-center gap-2 bg-indigo-50/50 border border-indigo-100 px-3 py-1.5 rounded-[10px] ml-2 text-indigo-900">
                 <Sparkles size={14} className="text-indigo-500" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-900/50">
                   Combo Flow:
@@ -377,7 +377,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 onClick={() =>
                   handleStatusTransition(CURRICULUM_STATUS.FINAL_REVIEW)
                 }
-                className="px-5 py-2.5 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-600 transition-all shadow-sm flex items-center gap-2"
+                className="px-5 py-2.5 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-[10px] hover:bg-amber-600 transition-all shadow-sm flex items-center gap-2"
               >
                 Submit Final Review <CheckCircle2 size={14} />
               </button>
@@ -393,7 +393,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
           {/* Embedded Toolbar for Combo Selector */}
           {isEmbedded && combos.length > 0 && (
             <div className="flex items-center justify-end px-8 pt-4 pb-2 sticky top-0 bg-zinc-50/90 backdrop-blur z-20">
-              <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl text-indigo-900 shadow-sm">
+              <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-[10px] text-indigo-900 shadow-sm">
                 <Sparkles size={14} className="text-indigo-500" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-900/50">
                   Combo Flow:
@@ -432,7 +432,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 <div key={semester.semesterNo} className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-white border border-zinc-200 text-zinc-700 flex items-center justify-center font-black text-sm shadow-sm">
+                      <div className="w-11 h-11 rounded-[10px] bg-white border border-zinc-200 text-zinc-700 flex items-center justify-center font-black text-sm shadow-sm">
                         {semester.semesterNo}
                       </div>
                       <div>
@@ -454,7 +454,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     </div>
                   </div>
 
-                  <div className="bg-white border border-zinc-200 rounded-4xl p-4 flex flex-col gap-3 min-h-[420px] shadow-sm">
+                  <div className="bg-white border border-zinc-200 rounded-[10px] p-4 flex flex-col gap-3 min-h-[420px] shadow-sm">
                     {(() => {
                       const subjects = semester.subjects || [];
                       const standalones = subjects.filter(
@@ -492,7 +492,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                             <div
                               key={sub.subjectId}
                               onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
-                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all duration-200 group hover:border-zinc-300 hover:shadow-md cursor-pointer"
+                              className="p-5 rounded-[10px] bg-white border border-zinc-200 shadow-sm transition-all duration-200 group hover:border-zinc-300 hover:shadow-md cursor-pointer"
                             >
                               <div className="flex justify-between items-start mb-3">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">
@@ -525,7 +525,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                             <div
                               key={`combo-${sub.subjectId}`}
                               onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
-                              className="p-5 rounded-3xl bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-indigo-200 hover:shadow-md cursor-pointer"
+                              className="p-5 rounded-[10px] bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-indigo-200 hover:shadow-md cursor-pointer"
                             >
                               <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-200" />
                               <div className="flex justify-between items-start mb-3 pl-1">
@@ -577,9 +577,9 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                                     subjects: groupSubs,
                                   })
                                 }
-                                className="p-5 rounded-3xl bg-white border border-emerald-200 shadow-sm transition-all cursor-pointer relative overflow-hidden group hover:bg-emerald-50/40 hover:shadow-md"
+                                className="p-5 rounded-[10px] bg-white border border-emerald-200 shadow-sm transition-all cursor-pointer relative overflow-hidden group hover:bg-emerald-50/40 hover:shadow-md"
                               >
-                                <div className="absolute top-0 right-4 w-12 h-2 bg-emerald-200 rounded-b-lg opacity-50" />
+                                <div className="absolute top-0 right-4 w-12 h-2 bg-emerald-200 rounded-b-[10px] opacity-50" />
                                 <div className="flex justify-between items-start mb-3">
                                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
                                     {group.groupCode}
@@ -600,7 +600,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                           })}
 
                           {(!subjects || subjects.length === 0) && (
-                            <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200 rounded-4xl py-12 bg-white">
+                            <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200 rounded-[10px] py-12 bg-white">
                               <Box size={24} strokeWidth={1} />
                               <p className="text-[10px] font-black uppercase tracking-widest mt-2">
                                 Zero Registry
@@ -621,7 +621,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
         <div className="w-[400px] border-l border-zinc-200 bg-white flex flex-col shrink-0 h-fit">
           <div className="p-8 space-y-10">
             {/* Summary Stats */}
-            <section className="space-y-6 rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <section className="space-y-6 rounded-[10px] border border-zinc-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
                   Framework Summary
@@ -629,7 +629,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 <Target size={16} className="text-emerald-300" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 bg-white border border-emerald-100 rounded-3xl shadow-sm">
+                <div className="p-5 bg-white border border-emerald-100 rounded-[10px] shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {totalCredits}
                   </p>
@@ -637,7 +637,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     Total Credits
                   </p>
                 </div>
-                <div className="p-5 bg-white border border-indigo-100 rounded-3xl shadow-sm">
+                <div className="p-5 bg-white border border-indigo-100 rounded-[10px] shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {totalSubjects}
                   </p>
@@ -645,7 +645,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     Subjects
                   </p>
                 </div>
-                <div className="p-5 bg-white border border-zinc-200 rounded-3xl shadow-sm">
+                <div className="p-5 bg-white border border-zinc-200 rounded-[10px] shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {semesterCount}
                   </p>
@@ -653,7 +653,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     Semesters
                   </p>
                 </div>
-                <div className="p-5 bg-white border border-amber-100 rounded-3xl shadow-sm">
+                <div className="p-5 bg-white border border-amber-100 rounded-[10px] shadow-sm">
                   <p className="text-2xl font-black text-zinc-900 leading-none mb-1">
                     {curriculum.startYear}
                   </p>
@@ -682,11 +682,11 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden w-full max-w-4xl max-h-[85vh] flex flex-col border border-zinc-100"
+              className="bg-white rounded-[10px] shadow-2xl overflow-hidden w-full max-w-4xl max-h-[85vh] flex flex-col border border-zinc-100"
             >
               <div className="px-8 py-6 flex items-center justify-between border-b border-zinc-100 bg-emerald-50/30">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-[10px] bg-emerald-100 text-emerald-600 flex items-center justify-center">
                     <Layers size={24} />
                   </div>
                   <div>
@@ -705,7 +705,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                 </div>
                 <button
                   onClick={() => setActiveElectiveGroup(null)}
-                  className="w-10 h-10 rounded-xl bg-white border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 flex items-center justify-center transition-all shadow-sm"
+                  className="w-10 h-10 rounded-[10px] bg-white border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 flex items-center justify-center transition-all shadow-sm"
                 >
                   <X size={20} />
                 </button>
@@ -717,7 +717,7 @@ export default function CurriculumDetail({ id, isEmbedded = false }: { id: strin
                     <div
                       key={sub.subjectId}
                       onClick={() => router.push(`/dashboard/hocfdc/subjects/${sub.subjectId}`)}
-                      className="p-5 rounded-[1.5rem] bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-emerald-300 hover:shadow-md cursor-pointer"
+                      className="p-5 rounded-[10px] bg-white border border-zinc-200 shadow-sm transition-all relative overflow-hidden group hover:border-emerald-300 hover:shadow-md cursor-pointer"
                     >
                       <div className="flex justify-between items-start mb-3">
                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">

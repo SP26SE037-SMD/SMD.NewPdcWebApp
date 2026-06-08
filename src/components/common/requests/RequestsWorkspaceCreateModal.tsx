@@ -36,7 +36,7 @@ export default function RequestsWorkspaceCreateModal({
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
 
   const [createForm, setCreateForm] = useState({
-    title: "Finalize Task & Recheck Subject",
+    title: "Finalize Task & Check Subject",
     content: "",
     comment: "",
     status: "PENDING",
@@ -262,7 +262,7 @@ export default function RequestsWorkspaceCreateModal({
       majorId,
       curriculumId: "",
       targetId: "",
-      title: "Finalize Task & Recheck Subject",
+      title: "Finalize Task & Check Subject",
     }));
     await fetchCurriculumsByMajor(majorId);
   };
@@ -312,7 +312,7 @@ export default function RequestsWorkspaceCreateModal({
 
   const handleCloseModal = () => {
     setCreateForm({
-      title: "Finalize Task & Recheck Subject",
+      title: "Finalize Task & Check Subject",
       content: "",
       comment: "",
       status: "PENDING",
@@ -376,7 +376,7 @@ export default function RequestsWorkspaceCreateModal({
                     setCreateForm((prev) => ({
                       ...prev,
                       type: newType,
-                      title: "Finalize Task & Recheck Subject",
+                      title: "Finalize Task & Check Subject",
                       targetId: "",
                       majorId: "",
                       curriculumId: "",
@@ -418,7 +418,7 @@ export default function RequestsWorkspaceCreateModal({
                         targetId: taskId,
                         title: selectedTask?.subject
                           ? `Check ${selectedTask.subject.subjectCode || ""} - ${selectedTask.subject.subjectName || ""}`
-                          : "Finalize Task & Recheck Subject",
+                          : "Finalize Task & Check Subject",
                       }));
                     }}
                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
@@ -533,7 +533,7 @@ export default function RequestsWorkspaceCreateModal({
                           targetId: currId,
                           title: selectedCurriculum && selectedMajor
                             ? `Check ${selectedCurriculum.curriculumCode || ""} of new ${selectedMajor.majorName || ""}`
-                            : "Finalize Task & Recheck Subject",
+                            : "Finalize Task & Check Subject",
                         }));
                       }}
                       disabled={!createForm.majorId || loadingCurriculums}

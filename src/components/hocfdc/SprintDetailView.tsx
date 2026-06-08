@@ -260,8 +260,7 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
 
   const resetDecisionMutation = useMutation({
     mutationFn: async (task: TaskItem) => {
-      await TaskService.acceptTask(task.taskId, null, "");
-      return TaskService.updateTaskStatus(task.taskId, TASK_STATUS.IN_PROGRESS);
+      return TaskService.acceptTask(task.taskId, null, "");
     },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {

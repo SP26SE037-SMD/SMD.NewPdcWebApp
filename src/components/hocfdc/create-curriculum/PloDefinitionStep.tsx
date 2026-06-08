@@ -286,21 +286,7 @@ export default function PloDefinitionStep({ onNext, onBack, curriculumIdProp }: 
                 : "● PLOs Synced"}
             </span>
           </div>
-          <div className="flex flex-col gap-1">
-            <button
-              onClick={handleValidate}
-              disabled={isValidating || outcomes.length === 0}
-              className="flex items-center gap-2 px-6 py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl font-bold hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
-            >
-              {isValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck size={18} />}
-              Validate PLOs
-            </button>
-            {validationError && (
-              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest px-2 animate-in fade-in slide-in-from-top-1">
-                {validationError}
-              </p>
-            )}
-          </div>
+
           <button
             onClick={() => handleSaveDraft(false)}
             disabled={saveMutation.isPending || pendingOutcomes.length === 0}
