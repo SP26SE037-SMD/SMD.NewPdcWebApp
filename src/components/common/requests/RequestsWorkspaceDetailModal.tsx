@@ -94,7 +94,12 @@ export default function RequestsWorkspaceDetailModal({
         }
       }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to load task details");
+      if (err?.data?.status === 23001) {
+        onClose();
+        router.push("/dashboard/hopdc/department-tasks?tab=single-tasks");
+      } else {
+        toast.error(err?.message || "Failed to load task details");
+      }
     } finally {
       setViewTaskLoading(false);
     }

@@ -93,6 +93,15 @@ export default function SyllabusListBySubject({
     setIsReloading(true);
     try {
       await Promise.all([refetchSubject(), refetchSyllabi()]);
+      
+      // Clear comparison query cache
+      queryClient.removeQueries({ queryKey: ["compare-syllabus"] });
+      queryClient.removeQueries({ queryKey: ["validate-compare-version"] });
+      queryClient.removeQueries({ queryKey: ["compare-history"] });
+      
+      // Clear selected syllabus selection
+      setSelectedSyllabusIds([]);
+
       showToast("Syllabuses reloaded successfully!", "success");
     } catch (error) {
       console.error("Failed to reload data:", error);
