@@ -1558,18 +1558,66 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                 </div>
 
                 {/* Validation Results in Modal */}
-                {singleValidationErrors.length > 0 && (
-                    <div className="mx-8 mb-0 bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-start gap-3">
-                        <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
-                        <div>
-                            <h4 className="font-bold text-sm">Validation Errors</h4>
-                            <ul className="text-xs mt-1 list-disc list-inside space-y-0.5">
-                                {singleValidationErrors.map((err: any, i: number) => (
-                                    <li key={i}><span className="font-semibold">[{err.code || 'ERROR'}]</span> {err.message}</li>
-                                ))}
-                            </ul>
-                            <p className="text-[10px] mt-2 italic text-amber-600">Please fix these errors before saving.</p>
-                        </div>
+                {(singleValidationErrors.length > 0 || singleValidationSummary) && (
+                    <div className="mx-8 mb-4">
+                        {singleValidationSummary && (
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                                <div className={`border rounded-xl p-3 flex flex-col justify-center text-center transition-colors ${singleValidationSummary.currentTotalWeight === 100 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${singleValidationSummary.currentTotalWeight === 100 ? 'text-emerald-700' : 'text-rose-700'}`}>Total Weight</span>
+                                    <span className={`text-xl font-black mt-0.5 ${singleValidationSummary.currentTotalWeight === 100 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {singleValidationSummary.currentTotalWeight}%
+                                    </span>
+                                </div>
+                                <div className={`border rounded-xl p-3 flex flex-col justify-center text-center transition-colors ${singleValidationSummary.hasFormativeAssessment ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${singleValidationSummary.hasFormativeAssessment ? 'text-emerald-700' : 'text-rose-700'}`}>Formative</span>
+                                    <span className={`text-xl font-black mt-0.5 ${singleValidationSummary.hasFormativeAssessment ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {singleValidationSummary.formativeCount ?? (singleValidationSummary.hasFormativeAssessment ? 'Yes' : '0')}
+                                    </span>
+                                </div>
+                                <div className={`border rounded-xl p-3 flex flex-col justify-center text-center transition-colors ${singleValidationSummary.hasFinalAssessment && (singleValidationSummary.finalCount === undefined || singleValidationSummary.finalCount <= 2) ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${singleValidationSummary.hasFinalAssessment && (singleValidationSummary.finalCount === undefined || singleValidationSummary.finalCount <= 2) ? 'text-emerald-700' : 'text-rose-700'}`}>Final / Summative</span>
+                                    <span className={`text-xl font-black mt-0.5 ${singleValidationSummary.hasFinalAssessment && (singleValidationSummary.finalCount === undefined || singleValidationSummary.finalCount <= 2) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {singleValidationSummary.finalCount ?? (singleValidationSummary.hasFinalAssessment ? 'Yes' : '0')}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {singleValidationErrors.length > 0 && (
+                            <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="material-symbols-outlined text-rose-500 text-lg">error</span>
+                                    <h4 className="font-bold text-sm text-rose-900">Validation Errors ({singleValidationErrors.length})</h4>
+                                </div>
+                                <div className="space-y-2">
+                                    {singleValidationErrors.map((err: any, i: number) => {
+                                        const friendlyErrors: Record<string, string> = {
+                                            'MULTIPLE_FINAL_ASSESSMENTS': 'Too Many Final Assessments',
+                                            'TOO_MANY_ASSESSMENTS': 'Assessment Limit Exceeded',
+                                            'WEIGHT_SURPLUS': 'Total Weight Exceeded',
+                                            'WEIGHT_SHORTAGE': 'Weight Shortage',
+                                            'MISSING_FINAL_ASSESSMENT': 'Missing Final Assessment',
+                                            'MISSING_FORMATIVE_ASSESSMENT': 'Missing Formative Assessment'
+                                        };
+                                        const codeLabel = friendlyErrors[err.code] || err.code?.replace(/_/g, ' ') || 'Error';
+                                        
+                                        return (
+                                            <div key={i} className="flex flex-col bg-white/60 p-2.5 rounded-lg border border-rose-100">
+                                                <span className="text-xs font-black text-rose-800 uppercase tracking-wide mb-0.5">{codeLabel}</span>
+                                                <span className="text-[11px] text-rose-700 leading-snug">{err.message}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {singleValidationErrors.length === 0 && singleValidationSummary && (
+                            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-center gap-2 text-emerald-700 animate-in fade-in slide-in-from-top-2">
+                                <span className="material-symbols-outlined text-emerald-500">check_circle</span>
+                                <span className="text-sm font-bold">Assessment is valid and ready to save!</span>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -1661,7 +1709,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                             }
 
                                             // 4. Validate
-                                            const res = await AssessmentService.validateAssessmentsSyllabus(syllabusId, combinedPayload) as any;
+                                            const res = await AssessmentService.validateAssessments(syllabusId, combinedPayload) as any;
                                             const resData = res?.data || {};
                                             const errorsArray = resData.errors || [];
                                             const isValid = resData.valid === true && errorsArray.length === 0;

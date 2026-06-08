@@ -1,6 +1,9 @@
 "use client";
 
-import React, { use, useState } from "react";
+import React, { use, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { clearAiProcessingMessage } from "@/store/slices/notificationSlice";
 import {
   BookOpen,
   AlertCircle,
@@ -37,7 +40,11 @@ export default function PDCMReviewAssessmentsPage({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isAiAuditing, setIsAiAuditing] = useState(false);
+  const [assessmentValidDataState, setAssessmentValidDataState] = useState<any>(null);
   const { showToast } = useToast();
+
+  const { aiProcessingStatus, aiProcessingData, aiProcessingMessage } = useSelector((state: RootState) => state.notification);
+  const dispatch = useDispatch();
 
   const taskId = reviewId;
 
@@ -159,103 +166,138 @@ export default function PDCMReviewAssessmentsPage({
         .map((m: any) => ({ cloId: m.cloId, assessmentId: m.assessmentId }))
         .filter((p: any) => p.cloId && p.assessmentId);
 
-      // 4. Call CLO-Assessment mapping validate API (graceful fallback)
-      let mappingValidData: any = null;
+      // 4. Trigger Mapping validate API and wait for realtime response via useEffect
+      dispatch(clearAiProcessingMessage());
+      setAssessmentValidDataState({
+          assessmentValidData,
+          totalWeight,
+          assessmentsCount: assessments.length
+      });
       try {
-        const mappingRes = await MappingService.validateAssessmentMappings(syllabusId || "", mappingsPayload);
-        mappingValidData = (mappingRes as any)?.data;
+        await MappingService.validateAssessmentMappings(syllabusId || "", mappingsPayload);
       } catch (err: any) {
-        console.warn("[Mapping] CLO-Assessment Validate API failed, using defaults:", err?.message);
+        setIsAiAuditing(false);
+        setAssessmentValidDataState(null);
+        showToast("Failed to start AI validation.", "error");
       }
-      const isMappingsValid = mappingValidData?.is_valid !== false;
-      const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
-      const isAllAssessmentsMapped = mappingValidData?.is_all_assessments_mapped !== false;
-      const unmappedClos: any[] = mappingValidData?.unmapped_clos || [];
-      const unmappedAssessments: any[] = mappingValidData?.unmapped_assessments || [];
-      const totalLinks: number = (mappingValidData?.data || []).length;
-
-      // 5. Error code map
-      const errorCodeMap: Record<string, string> = {
-        'WEIGHT_SHORTAGE': 'Total assessment weight is below 100%',
-        'WEIGHT_SURPLUS': 'Total assessment weight exceeds 100%',
-        'MISSING_FINAL_ASSESSMENT': 'No final (summative) assessment found',
-        'MISSING_FORMATIVE_ASSESSMENT': 'No formative assessment found',
-        'ASSESSMENT_COUNT_EXCEEDED': 'Too many assessment components (max 8)',
-      };
-
-      // 6. Build structured audit result
-      const overallStatus = (isAssessmentsValid && isMappingsValid) ? 'PASS' : 'FAIL';
-
-      const auditResult = {
-        conclusion: overallStatus === 'PASS'
-          ? 'Assessments meet all weight and CLO-mapping standards. This section looks good.'
-          : 'Assessments have issues that should be reviewed before approval.',
-        sections: [
-          {
-            id: 'assessments',
-            title: 'Assessment Weight & Structure',
-            status: isAssessmentsValid ? 'PASS' : 'FAIL',
-            stats: [
-              { label: 'Total Components', value: `${assessments.length}`, type: 'info' },
-              { label: 'Total Weight', value: `${summary.currentTotalWeight ?? totalWeight}%`, type: (summary.currentTotalWeight ?? totalWeight) === 100 ? 'ok' : 'error' },
-              { label: 'Has Final Exam', value: summary.hasFinalAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFinalAssessment !== false ? 'ok' : 'error' },
-              { label: 'Has Formative', value: summary.hasFormativeAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFormativeAssessment !== false ? 'ok' : 'error' },
-            ],
-            warnings: assessmentErrors.map((err: any) => ({
-              label: errorCodeMap[err.code] || err.code,
-              detail: err.message,
-            })),
-          },
-          {
-            id: 'mapping',
-            title: 'CLO — Assessment Mapping',
-            status: isMappingsValid ? 'PASS' : 'FAIL',
-            stats: [
-              { label: 'CLOs Covered', value: isAllClosMapped ? 'All covered' : `${unmappedClos.length} missing`, type: isAllClosMapped ? 'ok' : 'error' },
-              { label: 'Assessments Linked', value: isAllAssessmentsMapped ? 'All linked' : `${unmappedAssessments.length} missing`, type: isAllAssessmentsMapped ? 'ok' : 'error' },
-              { label: 'Total Links', value: `${totalLinks}`, type: 'info' },
-            ],
-            warnings: (mappingValidData?.data || [])
-              .filter((m: any) => m.confidence_score === undefined || m.confidence_score <= 0.8)
-              .map((m: any) => {
-               const match = m.reasoning ? m.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
-               return {
-                  label: 'Alignment Issue',
-                  detail: match ? m.reasoning.replace(/\s*\[Suggested alternative: .*?\]/i, '').trim() : m.reasoning,
-                  suggestion: match ? match[1] : null,
-               };
-            }),
-            unmappedClos: unmappedClos.map((c: any) => ({ code: c.clo_code, suggestion: c.suggestion })),
-            unmappedAssessments: unmappedAssessments.map((a: any) => ({ questionType: a.question_type, suggestion: a.suggestion })),
-          },
-        ],
-      };
-
-      const noteJson = JSON.stringify({ aiResult: auditResult, reviewerComment: '' });
-      setAssessmentsReview({ status: overallStatus as any, note: noteJson });
-      setCachedAiResult(auditResult);
-
-      if (overallStatus === 'PASS') {
-        assessments.forEach(a => {
-          setAssessmentEvaluation(a.assessmentId, {
-            assessmentId: a.assessmentId,
-            categoryName: a.categoryName || 'General',
-            status: 'ACCEPTED',
-            note: ''
-          });
-        });
-      }
-
-      setIsAiAuditing(false);
-      showToast("AI analysis complete!", "success");
-      setIsAiSuggestionModalOpen(true);
-
     } catch (error: any) {
       console.error("AI assessment audit failed:", error);
       showToast(`AI suggestion failed: ${error.message || 'Please try again.'}`, "error");
       setIsAiAuditing(false);
+      setAssessmentValidDataState(null);
     }
   };
+
+  useEffect(() => {
+      if (isAiAuditing && assessmentValidDataState) {
+          if (aiProcessingStatus === "VALIDATE_MAPPING_SUCCESS") {
+              try {
+                  const mappingValidData = aiProcessingData;
+                  const assessmentValidData = assessmentValidDataState.assessmentValidData;
+                  const totalWeightValue = assessmentValidDataState.totalWeight;
+                  const assessmentsCount = assessmentValidDataState.assessmentsCount;
+                  
+                  const isAssessmentsValid = assessmentValidData?.valid !== false;
+                  const assessmentErrors: any[] = assessmentValidData?.errors || [];
+                  const summary = assessmentValidData?.summary || {};
+
+                  const isMappingsValid = mappingValidData?.is_valid !== false;
+                  const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
+                  const isAllAssessmentsMapped = mappingValidData?.is_all_assessments_mapped !== false;
+                  const unmappedClos: any[] = mappingValidData?.unmapped_clos || [];
+                  const unmappedAssessments: any[] = mappingValidData?.unmapped_assessments || [];
+                  const totalLinks: number = (mappingValidData?.data || []).length;
+
+                  // 5. Error code map
+                  const errorCodeMap: Record<string, string> = {
+                    'WEIGHT_SHORTAGE': 'Total assessment weight is below 100%',
+                    'WEIGHT_SURPLUS': 'Total assessment weight exceeds 100%',
+                    'MISSING_FINAL_ASSESSMENT': 'No final (summative) assessment found',
+                    'MISSING_FORMATIVE_ASSESSMENT': 'No formative assessment found',
+                    'ASSESSMENT_COUNT_EXCEEDED': 'Too many assessment components (max 8)',
+                  };
+
+                  const overallStatus = (isAssessmentsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+
+                  const auditResult = {
+                    conclusion: overallStatus === 'PASS'
+                      ? 'Assessments meet all weight and CLO-mapping standards. This section looks good.'
+                      : 'Assessments have issues that should be reviewed before approval.',
+                    sections: [
+                      {
+                        id: 'assessments',
+                        title: 'Assessment Weight & Structure',
+                        status: isAssessmentsValid ? 'PASS' : 'FAIL',
+                        stats: [
+                          { label: 'Total Components', value: `${assessmentsCount}`, type: 'info' },
+                          { label: 'Total Weight', value: `${summary.currentTotalWeight ?? totalWeightValue}%`, type: (summary.currentTotalWeight ?? totalWeightValue) === 100 ? 'ok' : 'error' },
+                          { label: 'Has Final Exam', value: summary.hasFinalAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFinalAssessment !== false ? 'ok' : 'error' },
+                          { label: 'Has Formative', value: summary.hasFormativeAssessment !== false ? 'Yes' : 'Missing', type: summary.hasFormativeAssessment !== false ? 'ok' : 'error' },
+                        ],
+                        warnings: assessmentErrors.map((err: any) => ({
+                          label: errorCodeMap[err.code] || err.code,
+                          detail: err.message,
+                        })),
+                      },
+                      {
+                        id: 'mapping',
+                        title: 'CLO — Assessment Mapping',
+                        status: isMappingsValid ? 'PASS' : 'FAIL',
+                        stats: [
+                          { label: 'CLOs Covered', value: isAllClosMapped ? 'All covered' : `${unmappedClos.length} missing`, type: isAllClosMapped ? 'ok' : 'error' },
+                          { label: 'Assessments Linked', value: isAllAssessmentsMapped ? 'All linked' : `${unmappedAssessments.length} missing`, type: isAllAssessmentsMapped ? 'ok' : 'error' },
+                          { label: 'Total Links', value: `${totalLinks}`, type: 'info' },
+                        ],
+                        warnings: (mappingValidData?.data || [])
+                          .filter((m: any) => m.confidence_score === undefined || m.confidence_score <= 0.8)
+                          .map((m: any) => {
+                           const match = m.reasoning ? m.reasoning.match(/\[Suggested alternative: (.*?)\]/i) : null;
+                           return {
+                              label: 'Alignment Issue',
+                              detail: match ? m.reasoning.replace(/\s*\[Suggested alternative: .*?\]/i, '').trim() : m.reasoning,
+                              suggestion: match ? match[1] : null,
+                           };
+                        }),
+                        unmappedClos: unmappedClos.map((c: any) => ({ code: c.clo_code || c.cloCode, suggestion: c.suggestion })),
+                        unmappedAssessments: unmappedAssessments.map((a: any) => ({ questionType: a.question_type || a.questionType, suggestion: a.suggestion })),
+                      },
+                    ],
+                  };
+
+                  const noteJson = JSON.stringify({ aiResult: auditResult, reviewerComment: '' });
+                  setAssessmentsReview({ status: overallStatus as any, note: noteJson });
+                  setCachedAiResult(auditResult);
+
+                  if (overallStatus === 'PASS') {
+                    assessments.forEach(a => {
+                      setAssessmentEvaluation(a.assessmentId, {
+                        assessmentId: a.assessmentId,
+                        categoryName: a.categoryName || 'General',
+                        status: 'ACCEPTED',
+                        note: ''
+                      });
+                    });
+                  }
+
+                  setIsAiAuditing(false);
+                  setAssessmentValidDataState(null);
+                  dispatch(clearAiProcessingMessage());
+                  showToast("AI analysis complete!", "success");
+                  setIsAiSuggestionModalOpen(true);
+              } catch (e: any) {
+                  setIsAiAuditing(false);
+                  setAssessmentValidDataState(null);
+                  dispatch(clearAiProcessingMessage());
+                  showToast("Error processing AI result.", "error");
+              }
+          } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
+              setIsAiAuditing(false);
+              setAssessmentValidDataState(null);
+              dispatch(clearAiProcessingMessage());
+              showToast(aiProcessingMessage || "AI suggestion failed.", "error");
+          }
+      }
+  }, [isAiAuditing, aiProcessingStatus, aiProcessingData, aiProcessingMessage, assessments, assessmentValidDataState, dispatch, showToast, setAssessmentsReview, setAssessmentEvaluation]);
 
   if (
     isTaskLoading ||

@@ -28,8 +28,8 @@ export function AssessmentEvaluateModal({ isOpen, onClose, taskId }: AssessmentE
             const rawNote = assessmentsReview.note || '';
             try {
                 const parsed = JSON.parse(rawNote);
-                if (parsed.aiResult) {
-                    setAiResult(parsed.aiResult);
+                if (parsed && typeof parsed === 'object' && ('aiResult' in parsed || 'reviewerComment' in parsed)) {
+                    setAiResult(parsed.aiResult || null);
                     setReviewerComment(parsed.reviewerComment || '');
                 } else {
                     setAiResult(null);

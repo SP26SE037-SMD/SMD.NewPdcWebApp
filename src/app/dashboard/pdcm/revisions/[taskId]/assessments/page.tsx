@@ -1688,7 +1688,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                             }
 
                                             // 4. Validate
-                                            const res = await AssessmentService.validateAssessmentsSyllabus(syllabusId, combinedPayload) as any;
+                                            const res = await AssessmentService.validateAssessments(syllabusId, combinedPayload) as any;
                                             const resData = res?.data || {};
                                             const errorsArray = resData.errors || [];
                                             const isValid = resData.valid === true && errorsArray.length === 0;
