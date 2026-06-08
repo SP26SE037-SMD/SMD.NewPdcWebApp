@@ -28,6 +28,9 @@ export const AuthService = {
      * Logout via BFF route. Next.js server handles cookie clearing.
      */
     async logout(): Promise<void> {
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("hopdc_show_done_filter");
+        }
         await fetch('/api/auth/logout', { method: 'POST' });
     },
 

@@ -127,6 +127,23 @@ export function TaskList({
   const [showDone, setShowDone] = useState(false);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<string[]>([]);
+  const [isFilterLoaded, setIsFilterLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hopdc_show_done_filter");
+      if (saved !== null) {
+        setShowDone(saved === "true");
+      }
+      setIsFilterLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isFilterLoaded && typeof window !== "undefined") {
+      localStorage.setItem("hopdc_show_done_filter", String(showDone));
+    }
+  }, [showDone, isFilterLoaded]);
 
   // ─── Collapsed group state ─────────────────────────────────────────────────
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
