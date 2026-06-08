@@ -43,8 +43,8 @@ export interface PaginatedResponse<T> {
 }
 
 export class AssessmentService {
-    static async getAssessmentsBySyllabusId(syllabusId: string) {
-        let url = `/api/assessments/syllabus/${syllabusId}`;
+    static async getAssessmentsBySyllabusId(syllabusId: string, page: number = 0, size: number = 1000) {
+        let url = `/api/assessments/syllabus/${syllabusId}?page=${page}&size=${size}`;
         console.log("ASSESSMENT SERVICE GET URL:", url);
         let response: any;
         try {

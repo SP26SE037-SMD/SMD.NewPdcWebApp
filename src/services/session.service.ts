@@ -64,10 +64,10 @@ export class SessionService {
         return response;
     }
 
-    static async getSessionsBySyllabusId(syllabusId: string) {
+    static async getSessionsBySyllabusId(syllabusId: string, page: number = 0, size: number = 1000) {
         let response: any;
         try {
-            response = await apiClient.get<any>(`/api/sessions/syllabus/${syllabusId}`);
+            response = await apiClient.get<any>(`/api/sessions/syllabus/${syllabusId}?page=${page}&size=${size}`);
         } catch (err) {
             console.warn("API call for sessions by syllabus failed, providing mock container", err);
             response = { status: 200, message: "Mock Container", data: [] };
