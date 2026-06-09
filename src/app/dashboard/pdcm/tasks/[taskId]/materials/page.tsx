@@ -180,8 +180,7 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
 
                     <button
                         onClick={() => setIsImportModalOpen(true)}
-                        className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border"
-                        style={{ borderColor: `${C.primary}40`, color: C.primary, background: `${C.primary}08` }}
+                        className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                     >
                         <span className="material-symbols-outlined text-[18px]">upload_file</span>
                         Import File
@@ -189,10 +188,9 @@ export default function MaterialsPage({ params }: { params: Promise<{ taskId: st
 
                     <button
                         onClick={() => router.push(`/dashboard/pdcm/materials/new?syllabusId=${syllabusId}&taskId=${taskId}`)}
-                        className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md text-sm text-white"
-                        style={{ background: C.primary, boxShadow: `0 4px 12px ${C.primary}40` }}
+                        className="bg-[#00966d] text-white px-7 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-[15px]"
                     >
-                        <Plus size={18} />
+                        <Plus size={20} />
                         New Material
                     </button>
                 </div>

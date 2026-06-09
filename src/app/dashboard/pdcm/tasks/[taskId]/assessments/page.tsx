@@ -1409,10 +1409,9 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 {assessment.assessmentId ? 'Editing' : 'Drafting'}
                             </span>
                             <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                {assessment.categoryName || 'New Assessment'} - Part {assessment.part}
+                                {assessment.categoryName || 'New Assessment'}
                             </h2>
                         </div>
-                        <p className="text-sm text-slate-500 font-medium">Syllabus Component Configuration</p>
                     </div>
                     <button onClick={() => onClose(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
                         <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
