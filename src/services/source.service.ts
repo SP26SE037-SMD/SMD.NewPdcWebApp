@@ -11,20 +11,6 @@ export interface SourcePayload {
 }
 
 export const SourceService = {
-  async getSyllabusSources(
-    syllabusId: string,
-  ): Promise<ApiResponse<unknown[]>> {
-    const response = await fetch(`/api/syllabus-sources/${syllabusId}`, {
-      method: "GET",
-      credentials: "include",
-      headers: { accept: "*/*" },
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData?.message || "Failed to fetch syllabus sources");
-    }
-    return response.json();
-  },
 
   async getSubjectSources(
     subjectId: string,

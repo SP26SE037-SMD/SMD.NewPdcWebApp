@@ -31,6 +31,8 @@ interface ManageSyllabusSourcesModalProps {
   isOpen: boolean;
   onClose: () => void;
   hideAddButton?: boolean;
+  preloadedSources?: SourceItem[];
+  subjectId?: string;
 }
 
 export function ManageSyllabusSourcesModal({
@@ -39,6 +41,8 @@ export function ManageSyllabusSourcesModal({
   isOpen,
   onClose,
   hideAddButton = false,
+  preloadedSources,
+  subjectId,
 }: ManageSyllabusSourcesModalProps) {
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,10 +50,11 @@ export function ManageSyllabusSourcesModal({
   const { showToast } = useToast();
 
   const fetchSources = useCallback(async () => {
-    if (!syllabusId) return;
+    const targetId = subjectId;
+    if (!targetId) return;
     setIsLoading(true);
     try {
-      const res = await SourceService.getSyllabusSources(syllabusId);
+      const res = await SourceService.getSubjectSources(targetId);
       const data = res?.data;
       if (Array.isArray(data)) {
         setSources(data as SourceItem[]);
@@ -59,17 +64,25 @@ export function ManageSyllabusSourcesModal({
       }
     } catch (err) {
       console.error("Failed to fetch sources:", err);
-      showToast("Failed to load reference materials", "error");
+      showToast("Failed to load reference sources", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [syllabusId, showToast]);
+  }, [subjectId, showToast]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchSources();
+      if (preloadedSources) {
+        setSources(preloadedSources);
+        setIsLoading(false);
+      } else if (subjectId) {
+        fetchSources();
+      } else {
+        setSources([]);
+        setIsLoading(false);
+      }
     }
-  }, [isOpen, fetchSources]);
+  }, [isOpen, fetchSources, preloadedSources, subjectId]);
 
   const handleDelete = async (sourceId: string) => {
     if (
@@ -95,7 +108,7 @@ export function ManageSyllabusSourcesModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-100 p-6 shrink-0 bg-white">
@@ -105,7 +118,7 @@ export function ManageSyllabusSourcesModal({
               </div>
               <div>
                 <h2 className="text-lg font-black text-zinc-900 leading-tight">
-                  Reference Materials
+                  Reference Sources
                 </h2>
                 <p className="text-xs font-bold text-zinc-400 truncate max-w-[300px]">
                   {syllabusName || "Syllabus Sources"}
@@ -146,11 +159,11 @@ export function ManageSyllabusSourcesModal({
                   <BookText size={32} />
                 </div>
                 <p className="text-base font-bold text-zinc-400">
-                  No reference materials found
+                  No reference sources found
                 </p>
                 <p className="text-xs font-medium text-zinc-300 mt-1 mb-6">
                   {hideAddButton
-                    ? "Contact HoPDC to manage reference materials"
+                    ? "Contact HoPDC to manage reference sources"
                     : "Add textbooks or other documents to this syllabus"}
                 </p>
                 {!hideAddButton && (
@@ -213,13 +226,15 @@ export function ManageSyllabusSourcesModal({
                         </a>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleDelete(source.sourceId)}
-                      className="p-2.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      title="Delete from system"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {!hideAddButton && (
+                      <button
+                        onClick={() => handleDelete(source.sourceId)}
+                        className="p-2.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Delete from system"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

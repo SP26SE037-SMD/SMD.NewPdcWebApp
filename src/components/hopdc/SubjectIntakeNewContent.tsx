@@ -568,6 +568,8 @@ export default function NewSubjectContent() {
           setSelectedSyllabusIdForSources("");
         }}
         hideAddButton={true}
+        preloadedSources={subject?.sources}
+        subjectId={subject?.subjectId}
       />
 
       <CloImportModal

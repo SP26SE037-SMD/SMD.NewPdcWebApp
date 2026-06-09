@@ -51,7 +51,7 @@ export function SessionDetailModal({ isOpen, onClose, session, subjectId }: Sess
 
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200">
                 {/* Header */}
                 <header className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">

@@ -229,11 +229,13 @@ export const SprintCard = ({
                     backgroundRepeat: 'no-repeat',
                   }}
                 >
-                  {Object.values(SPRINT_STATUS).map((status) => (
-                    <option key={status} value={status} className="bg-white text-zinc-800">
-                      {status.replace("_", " ")}
-                    </option>
-                  ))}
+                  {Object.values(SPRINT_STATUS)
+                    .filter((status) => status !== SPRINT_STATUS.CANCELLED)
+                    .map((status) => (
+                      <option key={status} value={status} className="bg-white text-zinc-800">
+                        {status.replace("_", " ")}
+                      </option>
+                    ))}
                 </select>
               ) : (
                 <span
@@ -242,9 +244,6 @@ export const SprintCard = ({
                   {sprint.status.replace("_", " ")}
                 </span>
               )}
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/80 px-2 py-0.5 rounded-md">
-                #{sprint.sprintId.substring(0, 6)}
-              </span>
             </div>
 
             {isEditing ? (
@@ -431,11 +430,6 @@ export const SprintCard = ({
                       className="flex items-center justify-between p-4 bg-white border border-zinc-100 shadow-sm group/task hover:shadow-md hover:border-zinc-300 transition-all rounded-[16px]"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-100 shrink-0">
-                          <span className="text-[9px] font-black text-zinc-400 uppercase">
-                            #{task.taskId.substring(0, 4)}
-                          </span>
-                        </div>
                         <span className="text-[13px] font-bold text-zinc-700 group-hover/task:text-[#409b43] transition-colors">
                           {task.taskName}
                         </span>

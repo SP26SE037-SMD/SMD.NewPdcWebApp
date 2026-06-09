@@ -171,10 +171,8 @@ info: {
     const sourcesCol1 = displayInfo.sourcesReference.slice(0, half);
     const sourcesCol2 = displayInfo.sourcesReference.slice(half);
 
-    // CLO badge color cycling
+    // CLO badge color — consistent primary style
     const CLO_COLORS = [
-        { bg: C.secondaryContainer, text: C.onSecondaryContainer },
-        { bg: C.tertiaryContainer, text: C.onTertiaryContainer },
         { bg: C.primaryContainer, text: C.onPrimaryContainer },
     ];
 
