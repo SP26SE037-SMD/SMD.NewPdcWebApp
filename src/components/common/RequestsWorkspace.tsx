@@ -20,6 +20,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { RequestItem, RequestService } from "@/services/request.service";
+import { TaskService } from "@/services/task.service";
 import RequestsWorkspaceCreateModal from "./requests/RequestsWorkspaceCreateModal";
 import RequestsWorkspaceDetailModal from "./requests/RequestsWorkspaceDetailModal";
 
@@ -61,6 +62,8 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null,
   );
+  const [prefetchedTasks, setPrefetchedTasks] = useState<any[]>([]);
+  const [loadingPrefetchedTasks, setLoadingPrefetchedTasks] = useState(false);
 
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
     ALL: 0,
@@ -208,6 +211,26 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
     }
   };
 
+  const fetchPrefetchedTasks = async () => {
+    if (!user?.accountId || role !== "HoPDC") return;
+    setLoadingPrefetchedTasks(true);
+    try {
+      const response = await TaskService.getTasks({
+        assignTo: user.accountId,
+        size: 100,
+      });
+      const filtered = (response.content || []).filter(
+        (task) => task.isAccepted === null || task.isAccepted === undefined
+      );
+      setPrefetchedTasks(filtered);
+    } catch (err) {
+      console.error("Failed to prefetch tasks", err);
+      setPrefetchedTasks([]);
+    } finally {
+      setLoadingPrefetchedTasks(false);
+    }
+  };
+
   useEffect(() => {
     fetchStatusCounts();
   }, [search, requestSource, user?.accountId]);
@@ -215,6 +238,12 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
   useEffect(() => {
     fetchRequests();
   }, [search, activeTab, page, requestSource, sortBy, user?.accountId]);
+
+  useEffect(() => {
+    if (user?.accountId) {
+      fetchPrefetchedTasks();
+    }
+  }, [user?.accountId]);
 
   const openCreateModal = () => {
     setShowCreateModal(true);
@@ -228,6 +257,7 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
   const handleSuccess = () => {
     fetchRequests();
     fetchStatusCounts();
+    fetchPrefetchedTasks();
   };
 
   const handleSourceTabChange = (source: "CREATED" | "RECEIVED") => {
@@ -643,6 +673,8 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
         user={user}
         requests={requests}
         onSuccess={handleSuccess}
+        prefetchedTasks={prefetchedTasks}
+        loadingPrefetchedTasks={loadingPrefetchedTasks}
       />
 
       <RequestsWorkspaceDetailModal
