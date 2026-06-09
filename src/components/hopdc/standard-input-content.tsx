@@ -125,9 +125,9 @@ export const StandardInputContent = () => {
   const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
 
   const { data: sourceRes, isLoading: isSourcesLoading } = useQuery({
-    queryKey: ["syllabus-sources", syllabusId],
-    queryFn: () => SourceService.getSyllabusSources(syllabusId),
-    enabled: !!syllabusId,
+    queryKey: ["subject-sources", subjectId],
+    queryFn: () => SourceService.getSubjectSources(subjectId),
+    enabled: !!subjectId,
   });
 
   const { user } = useSelector((state: RootState) => state.auth);
@@ -172,7 +172,7 @@ export const StandardInputContent = () => {
   const handleCreateSourceSuccess = async () => {
     setIsCreateSourceModalOpen(false);
     await queryClient.invalidateQueries({
-      queryKey: ["syllabus-sources", syllabusId],
+      queryKey: ["subject-sources", subjectId],
     });
   };
 
@@ -193,7 +193,7 @@ export const StandardInputContent = () => {
         res?.message || "Source deleted successfully.",
       );
       await queryClient.invalidateQueries({
-        queryKey: ["syllabus-sources", syllabusId],
+        queryKey: ["subject-sources", subjectId],
       });
     } catch (error) {
       showTimedNotice(

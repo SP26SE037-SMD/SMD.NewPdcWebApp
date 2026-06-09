@@ -46,7 +46,7 @@ export function AssessmentDetailModal({ isOpen, onClose, assessment, subjectId }
     const subjectClos = subjectClosRes?.data?.content || [];
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-6 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-4xl max-h-[95vh] rounded-2xl flex flex-col overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-slate-200">
                 {/* Modal Header — matches develop edit modal */}
                 <header className="px-8 py-6 flex justify-between items-start bg-slate-50 border-b border-slate-100">

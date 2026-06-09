@@ -7,6 +7,8 @@ import {
   CurriculumService,
   CURRICULUM_STATUS,
 } from "@/services/curriculum.service";
+import { SprintService } from "@/services/sprint.service";
+import { TaskService, TASK_STATUS } from "@/services/task.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -234,7 +236,28 @@ export default function CurriculumDetail({ id }: { id: string }) {
 
     setIsSubmittingRequest(true);
     try {
-      // 1. Update curriculum status to FINAL_REVIEW
+      // 1. Fetch sprints for this curriculum
+      const sprintsRes = await SprintService.getSprints({ curriculumId: id, size: 100 });
+      const sprints = sprintsRes?.data?.content || [];
+
+      // 2. Fetch tasks of type SUBJECT for all sprints
+      const tasksPromises = sprints.map((s) =>
+        TaskService.getTasksBySprintId(s.sprintId, undefined, "SUBJECT")
+      );
+      const tasksResponses = await Promise.all(tasksPromises);
+      const allSubjectTasks = tasksResponses.flatMap((res) => res?.content || []);
+
+      // 3. Verify all SUBJECT tasks are DONE
+      const unfinishedTasks = allSubjectTasks.filter((t) => t.status !== TASK_STATUS.DONE);
+      if (unfinishedTasks.length > 0) {
+        showToast(
+          `Cannot move to Final Review. There are ${unfinishedTasks.length} unfinished subject task(s).`,
+          "error"
+        );
+        return;
+      }
+
+      // 4. Update curriculum status to FINAL_REVIEW
       await statusMutation.mutateAsync(CURRICULUM_STATUS.FINAL_REVIEW);
     } catch (err: any) {
       console.error("Final review submission error:", err);

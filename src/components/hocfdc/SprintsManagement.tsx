@@ -142,7 +142,9 @@ export const SprintsManagement = ({
 
   const statusOptions = [
     { id: "ALL", label: "ALL" },
-    ...Object.values(SPRINT_STATUS).map((s) => ({ id: s, label: s })),
+    ...Object.values(SPRINT_STATUS)
+      .filter((s) => s !== SPRINT_STATUS.CANCELLED)
+      .map((s) => ({ id: s, label: s })),
   ];
 
   return (

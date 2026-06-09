@@ -27,11 +27,15 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { User } from "@/lib/auth";
 import { SprintService, SPRINT_STATUS } from "@/services/sprint.service";
-import { TaskService, TaskItem, TASK_STATUS, TaskStatus } from "@/services/task.service";
+import {
+  TaskService,
+  TaskItem,
+  TASK_STATUS,
+  TaskStatus,
+} from "@/services/task.service";
 import { SubjectService, SUBJECT_STATUS } from "@/services/subject.service";
 import { AccountService } from "@/services/account.service";
 import { SyllabusService } from "@/services/syllabus.service";
-import { CloPloService } from "@/services/cloplo.service";
 import { SprintTasksTable } from "./SprintTasksTable";
 import { useToast } from "@/components/ui/Toast";
 import { CreateTaskModal } from "./CreateTaskModal";
@@ -54,17 +58,24 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   const { user } = useSelector((state: RootState) => state.auth);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
-  const [isQuickLaunchConfirmOpen, setIsQuickLaunchConfirmOpen] = useState(false);
+  const [isQuickLaunchConfirmOpen, setIsQuickLaunchConfirmOpen] =
+    useState(false);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedDetailTask, setSelectedDetailTask] = useState<(TaskItem & { children?: TaskItem[] }) | null>(null);
+  const [selectedDetailTask, setSelectedDetailTask] = useState<
+    (TaskItem & { children?: TaskItem[] }) | null
+  >(null);
   const [taskHistory, setTaskHistory] = useState<TaskItem[]>([]);
 
   const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
-  const [subtaskModalMode, setSubtaskModalMode] = useState<"CREATE" | "UPDATE" | "REVIEW">("CREATE");
-  const [subtaskParentTask, setSubtaskParentTask] = useState<TaskItem | null>(null);
+  const [subtaskModalMode, setSubtaskModalMode] = useState<
+    "CREATE" | "UPDATE" | "REVIEW"
+  >("CREATE");
+  const [subtaskParentTask, setSubtaskParentTask] = useState<TaskItem | null>(
+    null,
+  );
 
   const { data: sprintRes, isLoading: sprintLoading } = useQuery({
     queryKey: ["sprint", sprintId],
@@ -77,8 +88,14 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   });
 
   const { data: departmentAccounts = [] } = useQuery({
-    queryKey: ["assignments-department-accounts", sprintRes?.data?.departmentId],
-    queryFn: () => AccountService.getAccountsByDepartment(sprintRes?.data?.departmentId || ""),
+    queryKey: [
+      "assignments-department-accounts",
+      sprintRes?.data?.departmentId,
+    ],
+    queryFn: () =>
+      AccountService.getAccountsByDepartment(
+        sprintRes?.data?.departmentId || "",
+      ),
     enabled: !!sprintRes?.data?.departmentId,
   });
 
@@ -117,7 +134,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         for (const node of list) {
           if (node.taskId === id) return node;
           if (node.children) {
-            const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+            const found = findInTree(
+              node.children as (TaskItem & { children?: TaskItem[] })[],
+              id,
+            );
             if (found) return found;
           }
         }
@@ -132,14 +152,14 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
 
   const totalTasks = rootTasks.length;
 
-  const allTasksDone = totalTasks > 0 && rootTasks.every((t) => t.status === "DONE");
-  const pendingSubjectsCount = rootTasks.filter((t) =>
-    t.status === "DONE" &&
-    t.subjectStatus !== "COMPLETED"
+  const allTasksDone =
+    totalTasks > 0 && rootTasks.every((t) => t.status === "DONE");
+  const pendingSubjectsCount = rootTasks.filter(
+    (t) => t.status === "DONE" && t.subjectStatus !== "COMPLETED",
   ).length;
 
-  const readyTasks = rootTasks.filter((t) =>
-    t.status === "DONE" && t.subjectStatus === "COMPLETED"
+  const readyTasks = rootTasks.filter(
+    (t) => t.status === "DONE" && t.subjectStatus === "COMPLETED",
   ).length;
 
   const isSprintReadyToComplete = totalTasks > 0 && readyTasks === totalTasks;
@@ -152,7 +172,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         showToast(`Department Task updated to ${res.data?.status}`, "success");
         queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] });
 
-        if (res.data?.status === SPRINT_STATUS.COMPLETED && sprint?.curriculumId) {
+        if (
+          res.data?.status === SPRINT_STATUS.COMPLETED &&
+          sprint?.curriculumId
+        ) {
           window.location.href = `/dashboard/hocfdc/framework-execution/${sprint.curriculumId}`;
         }
       } else {
@@ -164,8 +187,13 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   });
 
   const updateTaskStatusMutation = useMutation({
-    mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
-      TaskService.updateTaskStatus(taskId, status),
+    mutationFn: async ({
+      taskId,
+      status,
+    }: {
+      taskId: string;
+      status: TaskStatus;
+    }) => TaskService.updateTaskStatus(taskId, status),
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
         localStorage.removeItem(`final_decision_comment_${variables.taskId}`);
@@ -184,7 +212,13 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   });
 
   const acceptSyllabusMutation = useMutation({
-    mutationFn: async ({ taskId, comment }: { taskId: string; comment: string }) => {
+    mutationFn: async ({
+      taskId,
+      comment,
+    }: {
+      taskId: string;
+      comment: string;
+    }) => {
       return TaskService.acceptTask(taskId, true, comment);
     },
     onSuccess: async (_, variables) => {
@@ -210,112 +244,41 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       assignTo,
       dueDate,
       comment,
-      action,
     }: {
       task: TaskItem;
       assignTo: string;
       dueDate: string;
       comment: string;
-      action?: string;
     }) => {
-      const isSubjectTask = task.type === "SUBJECT";
+      const cleanTaskName =
+        task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
+      await TaskService.createTask({
+        sprintId: sprintId || "",
+        assignTo,
+        taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
+        description: comment,
+        action: "UPDATE",
+        priority: task.priority || "NORMAL",
+        type: "SYLLABUS",
+        targetId: task.targetId || task.syllabusId || undefined,
+        rootTaskId: task.rootTaskId || undefined,
+        dueDate,
+      });
 
-      if (isSubjectTask) {
-        const cleanSubjectName =
-          task.taskName
-            ?.replace("CREATE SUBJECT: ", "")
-            ?.replace("UPDATE SUBJECT: ", "")
-            ?.replace("MODIFY SUBJECT: ", "") || "";
-        const actionType = action || "UPDATE";
-
-        // 1. Create the new UPDATE/MODIFY SUBJECT task
-        await TaskService.createTask({
-          sprintId: sprintId || "",
-          assignTo,
-          taskName: `${actionType} SUBJECT: ${cleanSubjectName}`,
-          description: comment,
-          action: actionType as any,
-          priority: task.priority || "NORMAL",
-          type: "SUBJECT",
-          targetId: task.subjectId || task.targetId || undefined,
-          rootTaskId: task.rootTaskId || undefined,
-          dueDate,
-        });
-
-        // 2. If actionType is MODIFY, transition subject to WAITING_SYLLABUS and its CLOs to DRAFT
-        const targetSubjectId = task.subjectId || task.targetId;
-        if (actionType === "MODIFY" && targetSubjectId) {
-          try {
-            await SubjectService.updateSubjectStatus(targetSubjectId, "WAITING_SYLLABUS");
-          } catch (statusErr) {
-            console.warn("Failed to update subject status to WAITING_SYLLABUS:", statusErr);
-          }
-
-          try {
-            const closRes = await CloPloService.getSubjectClos(targetSubjectId, 0, 100);
-            const responseData = closRes.data;
-            const closList = Array.isArray(responseData?.content)
-              ? responseData.content
-              : Array.isArray(responseData)
-              ? responseData
-              : Array.isArray(closRes)
-              ? closRes
-              : [];
-
-            for (const clo of closList) {
-              if (clo?.cloId) {
-                await CloPloService.updateClo(clo.cloId, {
-                  cloCode: clo.cloCode,
-                  cloName: clo.cloCode,
-                  description: clo.description,
-                  bloomLevel: String(clo.bloomLevel),
-                  subjectId: targetSubjectId,
-                  status: "DRAFT",
-                });
-              }
-            }
-          } catch (cloErr) {
-            console.warn("Failed to update CLOs to DRAFT:", cloErr);
-          }
-        }
-      } else {
-        const cleanTaskName = task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
-        await TaskService.createTask({
-          sprintId: sprintId || "",
-          assignTo,
-          taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
-          description: comment,
-          action: "UPDATE",
-          priority: task.priority || "NORMAL",
-          type: "SYLLABUS",
-          targetId: task.targetId || task.syllabusId || undefined,
-          rootTaskId: task.rootTaskId || undefined,
-          dueDate,
-        });
-
-        // Transition the syllabus to DRAFT status
-        const syllabusId = task.targetId || task.syllabusId || task.syllabus?.syllabusId;
-        if (syllabusId && user?.accountId) {
-          try {
-            await SyllabusService.updateSyllabusStatus(syllabusId, user.accountId, "DRAFT");
-          } catch (error) {
-            console.warn("Soft fail: Unable to update syllabus status to DRAFT", error);
-          }
-        }
-
-        const targetSubjectId = task.subjectId || task.subject?.subjectId;
-        if (targetSubjectId) {
-          try {
-            await CloPloService.updateSubjectClosStatus(
-              targetSubjectId,
-              "INTERNAL_REVIEW",
-            );
-          } catch (cloStatusErr) {
-            console.warn(
-              "Soft fail: Failed to update CLOs status to INTERNAL_REVIEW",
-              cloStatusErr,
-            );
-          }
+      const syllabusId =
+        task.targetId || task.syllabusId || task.syllabus?.syllabusId;
+      if (syllabusId && user?.accountId) {
+        try {
+          await SyllabusService.updateSyllabusStatus(
+            syllabusId,
+            user.accountId,
+            "DRAFT",
+          );
+        } catch (error) {
+          console.warn(
+            "Soft fail: Unable to update syllabus status to DRAFT",
+            error,
+          );
         }
       }
 
@@ -323,19 +286,16 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
-        localStorage.removeItem(`final_decision_comment_${variables.task.taskId}`);
+        localStorage.removeItem(
+          `final_decision_comment_${variables.task.taskId}`,
+        );
         window.dispatchEvent(
           new CustomEvent("final-decision-comment-updated", {
             detail: { taskId: variables.task.taskId, comment: "" },
           }),
         );
       }
-      showToast(
-        variables.task.type === "SUBJECT"
-          ? "Subject task rejected and update task assigned"
-          : "Syllabus rejected and update task assigned",
-        "success",
-      );
+      showToast("Syllabus rejected and update task assigned", "success");
       await queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] });
     },
     onError: (error: any) => {
@@ -387,7 +347,9 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         SUBJECT_STATUS.DRAFT,
       );
       if (statusRes.status !== 1000) {
-        throw new Error("Tasks generated, but failed to sync subject statuses.");
+        throw new Error(
+          "Tasks generated, but failed to sync subject statuses.",
+        );
       }
       return batchRes;
     },
@@ -398,14 +360,17 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     },
     onError: (err: any) => {
       const isAlreadyAdded = err.status === 400 && err.data?.status === 25006;
-      showToast(isAlreadyAdded ? "All subjects already added" : (err.data?.message || err.message), "error");
+      showToast(
+        isAlreadyAdded
+          ? "All subjects already added"
+          : err.data?.message || err.message,
+        "error",
+      );
     },
   });
 
   const sprint = sprintRes?.data;
   const isLoading = sprintLoading;
-
-
 
   React.useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {
@@ -414,12 +379,20 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
       const target = e.target as HTMLElement;
       const anchor = target.closest("a");
 
-      if (anchor && anchor.href && !anchor.href.includes("#") && !anchor.getAttribute("target")) {
+      if (
+        anchor &&
+        anchor.href &&
+        !anchor.href.includes("#") &&
+        !anchor.getAttribute("target")
+      ) {
         const currentUrl = window.location.href;
         const targetUrl = anchor.href;
 
         // Only block if it's actually leaving the current planning page
-        if (targetUrl !== currentUrl && !targetUrl.includes(window.location.pathname)) {
+        if (
+          targetUrl !== currentUrl &&
+          !targetUrl.includes(window.location.pathname)
+        ) {
           e.preventDefault();
           setPendingHref(targetUrl);
           setIsLeaveConfirmOpen(true);
@@ -435,7 +408,9 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
     if (sprint?.status === SPRINT_STATUS.PLANNING) {
       setIsLeaveConfirmOpen(true);
     } else {
-      router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`);
+      router.push(
+        `/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`,
+      );
     }
   };
 
@@ -455,7 +430,9 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
   if (!sprint) {
     return (
       <div className="p-8 text-center border border-zinc-100 bg-white rounded-2xl shadow-sm">
-        <p className="font-bold text-zinc-500">Deliverable Package not found.</p>
+        <p className="font-bold text-zinc-500">
+          Deliverable Package not found.
+        </p>
       </div>
     );
   }
@@ -495,7 +472,9 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               <div className="flex items-center gap-3">
                 <select
                   value={sprint.status}
-                  onChange={(e) => handleStatusChange(sprint.sprintId, e.target.value)}
+                  onChange={(e) =>
+                    handleStatusChange(sprint.sprintId, e.target.value)
+                  }
                   disabled={updateStatusMutation.isPending}
                   className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border outline-none cursor-pointer transition-all active:scale-95 disabled:opacity-50 ${
                     sprint.status === SPRINT_STATUS.IN_PROGRESS
@@ -509,10 +488,30 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                             : "bg-zinc-50 text-zinc-600 border-zinc-200"
                   }`}
                 >
-                  <option value={SPRINT_STATUS.PLANNING} className="bg-white text-zinc-800">PLANNING</option>
-                  <option value={SPRINT_STATUS.IN_PROGRESS} className="bg-white text-zinc-800">IN PROGRESS</option>
-                  <option value={SPRINT_STATUS.COMPLETED} className="bg-white text-zinc-800">COMPLETED</option>
-                  <option value={SPRINT_STATUS.CANCELLED} className="bg-white text-zinc-800">CANCELLED</option>
+                  <option
+                    value={SPRINT_STATUS.PLANNING}
+                    className="bg-white text-zinc-800"
+                  >
+                    PLANNING
+                  </option>
+                  <option
+                    value={SPRINT_STATUS.IN_PROGRESS}
+                    className="bg-white text-zinc-800"
+                  >
+                    IN PROGRESS
+                  </option>
+                  <option
+                    value={SPRINT_STATUS.COMPLETED}
+                    className="bg-white text-zinc-800"
+                  >
+                    COMPLETED
+                  </option>
+                  <option
+                    value={SPRINT_STATUS.CANCELLED}
+                    className="bg-white text-zinc-800"
+                  >
+                    CANCELLED
+                  </option>
                 </select>
               </div>
               <div className="space-y-1">
@@ -565,7 +564,6 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         </div>
       </div>
 
-
       {/* Task List Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -576,8 +574,12 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
             <button
               onClick={async () => {
                 await Promise.all([
-                  queryClient.invalidateQueries({ queryKey: ["tasks", sprintId] }),
-                  queryClient.invalidateQueries({ queryKey: ["sprint", sprintId] })
+                  queryClient.invalidateQueries({
+                    queryKey: ["tasks", sprintId],
+                  }),
+                  queryClient.invalidateQueries({
+                    queryKey: ["sprint", sprintId],
+                  }),
                 ]);
                 showToast("Tasks refreshed", "success");
               }}
@@ -585,7 +587,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               className="p-2 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 transition-all rounded-xl shadow-sm flex items-center justify-center disabled:opacity-50 animate-in fade-in zoom-in-95 duration-200"
               title="Refresh Tasks"
             >
-              <RefreshCw size={14} className={tasksLoading || sprintLoading ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={tasksLoading || sprintLoading ? "animate-spin" : ""}
+              />
             </button>
           </div>
         </div>
@@ -646,10 +651,18 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
             setIsSubtaskModalOpen(true);
           }}
           onAcceptSyllabus={async (t, comment) => {
-            await acceptSyllabusMutation.mutateAsync({ taskId: t.taskId, comment });
+            await acceptSyllabusMutation.mutateAsync({
+              taskId: t.taskId,
+              comment,
+            });
           }}
-          onRejectSyllabus={async (t, assignTo, dueDate, comment, action) => {
-            await rejectSyllabusMutation.mutateAsync({ task: t, assignTo, dueDate, comment, action });
+          onRejectSyllabus={async (t, assignTo, dueDate, comment) => {
+            await rejectSyllabusMutation.mutateAsync({
+              task: t,
+              assignTo,
+              dueDate,
+              comment,
+            });
           }}
           onResetDecision={async (t) => {
             await resetDecisionMutation.mutateAsync(t);
@@ -665,7 +678,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               for (const node of list) {
                 if (node.taskId === id) return node;
                 if (node.children) {
-                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  const found = findInTree(
+                    node.children as (TaskItem & { children?: TaskItem[] })[],
+                    id,
+                  );
                   if (found) return found;
                 }
               }
@@ -687,7 +703,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
               for (const node of list) {
                 if (node.taskId === id) return node;
                 if (node.children) {
-                  const found = findInTree(node.children as (TaskItem & { children?: TaskItem[] })[], id);
+                  const found = findInTree(
+                    node.children as (TaskItem & { children?: TaskItem[] })[],
+                    id,
+                  );
                   if (found) return found;
                 }
               }
@@ -714,7 +733,10 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
         sprintId={sprintId}
         rootTaskId={subtaskParentTask?.taskId || null}
         subjectId={subtaskParentTask?.subjectId}
-        subjectName={subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "")}
+        subjectName={subtaskParentTask?.taskName?.replace(
+          "CREATE SUBJECT: ",
+          "",
+        )}
         targetId={
           subtaskParentTask?.targetId ||
           subtaskParentTask?.syllabus?.syllabusId ||
@@ -733,18 +755,18 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
                 assignTo: subtaskParentTask?.account?.accountId,
               }
             : subtaskModalMode === "REVIEW"
-            ? {
-                taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
-                priority: "NORMAL",
-                dueDate: subtaskParentTask?.deadline,
-                excludeAccountId: subtaskParentTask?.account?.accountId,
-              }
-            : {
-                taskName: `CREATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                description: `Draft syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
-                priority: "NORMAL",
-              }
+              ? {
+                  taskName: `REVIEW SYLLABUS: ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                  description: `Review syllabus content for ${subtaskParentTask?.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || ""}`,
+                  priority: "NORMAL",
+                  dueDate: subtaskParentTask?.deadline,
+                  excludeAccountId: subtaskParentTask?.account?.accountId,
+                }
+              : {
+                  taskName: `CREATE SYLLABUS: ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                  description: `Draft syllabus content for ${subtaskParentTask?.taskName?.replace("CREATE SUBJECT: ", "") || ""} Syllabus.v1`,
+                  priority: "NORMAL",
+                }
         }
       />
 
@@ -774,7 +796,9 @@ export const SprintDetailView: React.FC<SprintDetailViewProps> = ({
           if (pendingHref) {
             window.location.href = pendingHref;
           } else {
-            router.push(`/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`);
+            router.push(
+              `/dashboard/hocfdc/curriculums/${curriculumId}?tab=department-tasks`,
+            );
           }
         }}
         onClose={() => setIsLeaveConfirmOpen(false)}

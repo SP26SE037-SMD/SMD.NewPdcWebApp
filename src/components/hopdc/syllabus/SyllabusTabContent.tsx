@@ -203,26 +203,23 @@ export function SyllabusTabContent({
                   <p className="text-base font-black text-cyan-900">
                     {publishedSyllabus.syllabusName}
                   </p>
+                  <button
+                    onClick={() => {
+                      setSelectedSyllabusIdForSources(publishedSyllabus.syllabusId);
+                      setSelectedSyllabusNameForSources(publishedSyllabus.syllabusName);
+                      setIsSourcesModalOpen(true);
+                    }}
+                    className="mt-3 w-fit flex items-center gap-2 rounded-xl bg-cyan-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700 hover:bg-cyan-200 transition-all border border-cyan-200 shadow-sm shadow-cyan-50"
+                  >
+                    <BookText size={14} />
+                    {isReadOnly ? "View Sources" : "Manage Sources"}
+                  </button>
                 </div>
               </div>
 
               <div className="flex-1 max-w-md bg-transparent">
                 <StatusStepper currentStatus={SYLLABUS_STATUS.PUBLISHED} />
               </div>
-
-              {!isReadOnly && (
-                <button
-                  onClick={() => {
-                    setSelectedSyllabusIdForSources(publishedSyllabus.syllabusId);
-                    setSelectedSyllabusNameForSources(publishedSyllabus.syllabusName);
-                    setIsSourcesModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 rounded-xl bg-cyan-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700 hover:bg-cyan-200 transition-all border border-cyan-200 shadow-sm shadow-cyan-50"
-                >
-                  <BookText size={14} />
-                  Manage Sources
-                </button>
-              )}
             </div>
 
             <div className="pt-8 border-t border-zinc-100 mt-6">
@@ -282,6 +279,21 @@ export function SyllabusTabContent({
                       Responsible: <span className="font-semibold text-zinc-700">{assigneeName}</span>
                     </p>
                   )}
+                  <button
+                    onClick={() => {
+                      const resolvedSyllabusId = currentSyllabus?.syllabusId || associatedTask?.syllabus?.syllabusId || associatedTask?.targetId;
+                      const resolvedSyllabusName = currentSyllabus?.syllabusName || associatedTask?.syllabus?.syllabusName || "Syllabus";
+                      if (resolvedSyllabusId) {
+                        setSelectedSyllabusIdForSources(resolvedSyllabusId);
+                        setSelectedSyllabusNameForSources(resolvedSyllabusName);
+                        setIsSourcesModalOpen(true);
+                      }
+                    }}
+                    className="mt-3 w-fit flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#0b7a47] hover:bg-[#f1f5eb] transition-all border border-[#dee1d8]/50 shadow-sm shadow-[#f8faf2]"
+                  >
+                    <BookText size={14} />
+                    {isReadOnly ? "View Sources" : "Manage Sources"}
+                  </button>
                 </div>
               </div>
 
@@ -292,21 +304,6 @@ export function SyllabusTabContent({
                   }
                 />
               </div>
-
-              {!isReadOnly && (
-                <button
-                  onClick={() => {
-                    if (currentSyllabus) {
-                      setSelectedSyllabusIdForSources(currentSyllabus.syllabusId);
-                      setSelectedSyllabusNameForSources(currentSyllabus.syllabusName);
-                      setIsSourcesModalOpen(true);
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#0b7a47] hover:bg-[#f1f5eb] transition-all border border-[#dee1d8]/50 shadow-sm shadow-[#f8faf2]"
-                >
-                  <BookText size={14} />
-                </button>
-              )}
             </div>
           )}
 
