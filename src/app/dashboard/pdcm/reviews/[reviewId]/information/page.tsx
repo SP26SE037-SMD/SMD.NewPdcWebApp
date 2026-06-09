@@ -493,7 +493,7 @@ export default function PDCMReviewInformationPage({
             const codeMatch = clo.match(/^\[([^\]]+)\]/);
             const code = codeMatch ? codeMatch[1] : `CLO${idx + 1}`;
             const description = clo.replace(/^\[[^\]]+\]\s*/, "");
-            const colorStyle = CLO_COLORS[idx % CLO_COLORS.length];
+            const colorStyle = CLO_COLORS[2];
             return (
               <div
                 key={idx}

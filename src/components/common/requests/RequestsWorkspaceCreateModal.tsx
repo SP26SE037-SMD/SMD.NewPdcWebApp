@@ -19,6 +19,8 @@ interface RequestsWorkspaceCreateModalProps {
   user: any;
   requests: any[];
   onSuccess: () => void;
+  prefetchedTasks?: any[];
+  loadingPrefetchedTasks?: boolean;
 }
 
 export default function RequestsWorkspaceCreateModal({
@@ -28,6 +30,8 @@ export default function RequestsWorkspaceCreateModal({
   user,
   requests,
   onSuccess,
+  prefetchedTasks,
+  loadingPrefetchedTasks,
 }: RequestsWorkspaceCreateModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [majors, setMajors] = useState<Major[]>([]);
@@ -36,7 +40,7 @@ export default function RequestsWorkspaceCreateModal({
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
 
   const [createForm, setCreateForm] = useState({
-    title: "Finalize Task & Check Subject",
+    title: role === "HoPDC" ? "" : "Finalize Task & Check Subject",
     content: "",
     comment: "",
     status: "PENDING",
@@ -47,13 +51,25 @@ export default function RequestsWorkspaceCreateModal({
     curriculumId: "",
   });
 
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [tasks, setTasks] = useState<TaskItem[]>(prefetchedTasks || []);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sprints, setSprints] = useState<SprintItem[]>([]);
 
-  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(loadingPrefetchedTasks || false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [loadingSprints, setLoadingSprints] = useState(false);
+
+  useEffect(() => {
+    if (prefetchedTasks) {
+      setTasks(prefetchedTasks);
+    }
+  }, [prefetchedTasks]);
+
+  useEffect(() => {
+    if (loadingPrefetchedTasks !== undefined) {
+      setLoadingTasks(loadingPrefetchedTasks);
+    }
+  }, [loadingPrefetchedTasks]);
 
   // Fetch majors on mount
   useEffect(() => {
@@ -210,6 +226,7 @@ export default function RequestsWorkspaceCreateModal({
   };
 
   const fetchTasksOptions = async () => {
+    if (prefetchedTasks) return; // Skip if parent already prefetches tasks
     if (!user?.accountId) return;
     setLoadingTasks(true);
     try {
@@ -217,7 +234,7 @@ export default function RequestsWorkspaceCreateModal({
         assignTo: user.accountId,
         size: 100,
       });
-      setTasks(response.content || []);
+      setTasks((response.content || []).filter((task) => task.isAccepted === null || task.isAccepted === undefined));
     } catch (err) {
       setTasks([]);
     } finally {
@@ -312,7 +329,7 @@ export default function RequestsWorkspaceCreateModal({
 
   const handleCloseModal = () => {
     setCreateForm({
-      title: "Finalize Task & Check Subject",
+      title: role === "HoPDC" ? "" : "Finalize Task & Check Subject",
       content: "",
       comment: "",
       status: "PENDING",
@@ -376,7 +393,7 @@ export default function RequestsWorkspaceCreateModal({
                     setCreateForm((prev) => ({
                       ...prev,
                       type: newType,
-                      title: "Finalize Task & Check Subject",
+                      title: newType === "TASK" ? "" : "Finalize Task & Check Subject",
                       targetId: "",
                       majorId: "",
                       curriculumId: "",
@@ -408,36 +425,56 @@ export default function RequestsWorkspaceCreateModal({
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
                     Select Task
                   </label>
-                  <select
-                    value={createForm.targetId}
-                    onChange={(e) => {
-                      const taskId = e.target.value;
-                      const selectedTask = tasks.find((t) => t.taskId === taskId);
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        targetId: taskId,
-                        title: selectedTask?.subject
-                          ? `Check ${selectedTask.subject.subjectCode || ""} - ${selectedTask.subject.subjectName || ""}`
-                          : "Finalize Task & Check Subject",
-                      }));
-                    }}
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 1rem center",
-                      backgroundSize: "1.25rem",
-                    }}
-                  >
-                    <option value="">
-                      {loadingTasks ? "Loading tasks..." : "Select task"}
-                    </option>
-                    {tasks.map((task) => (
-                      <option key={task.taskId} value={task.taskId}>
-                        {task.taskName} ({task.type})
+                  {tasks.length === 0 && !loadingTasks ? (
+                    <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold text-zinc-500 flex items-center justify-center gap-2">
+                      <span>No tasks currently need requests to the HoCFDC</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={createForm.targetId}
+                      onChange={async (e) => {
+                        const taskId = e.target.value;
+                        const selectedTask = tasks.find((t) => t.taskId === taskId);
+                        let receiverId = selectedTask?.createdBy?.accountId || "";
+
+                        if (taskId && !receiverId) {
+                          try {
+                            const res = await TaskService.getTaskById(taskId);
+                            if (res.data?.createdBy?.accountId) {
+                              receiverId = res.data.createdBy.accountId;
+                            }
+                          } catch (err) {
+                            console.error("Failed to fetch full task detail for createdBy", err);
+                          }
+                        }
+
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          targetId: taskId,
+                          receivedById: receiverId || prev.receivedById,
+                          title: selectedTask?.subject
+                            ? `Check ${selectedTask.subject.subjectCode || ""} - ${selectedTask.subject.subjectName || ""}`
+                            : "",
+                        }));
+                      }}
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "right 1rem center",
+                        backgroundSize: "1.25rem",
+                      }}
+                    >
+                      <option value="">
+                        {loadingTasks ? "Loading tasks..." : "Select task"}
                       </option>
-                    ))}
-                  </select>
+                      {tasks.map((task) => (
+                        <option key={task.taskId} value={task.taskId}>
+                          {task.taskName} ({task.status})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
 

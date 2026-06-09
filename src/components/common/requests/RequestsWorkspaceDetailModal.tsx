@@ -129,7 +129,7 @@ export default function RequestsWorkspaceDetailModal({
       );
       toast.success(
         newStatus === "APPROVED"
-          ? "Request approved successfully!"
+          ? "Request accepted successfully!"
           : "Request rejected successfully!",
       );
       onClose();
@@ -302,7 +302,7 @@ export default function RequestsWorkspaceDetailModal({
                       {selectedRequest.status === "REJECTED" && (
                         <XCircle size={11} />
                       )}
-                      {selectedRequest.status}
+                      {selectedRequest.status === "APPROVED" ? "ACCEPTED" : selectedRequest.status}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-zinc-400 font-semibold">
@@ -477,7 +477,7 @@ export default function RequestsWorkspaceDetailModal({
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <CheckCircle2 className="h-4 w-4" />
-                  Approve
+                  Accept
                 </button>
               </div>
             ) : (

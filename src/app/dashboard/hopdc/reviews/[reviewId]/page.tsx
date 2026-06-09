@@ -318,7 +318,7 @@ export default function HoPDCReviewSynthesisPage({
 
   const handleSaveSynthesis = async () => {
     if (isAccepted === null) {
-      showToast("Please select Approve or Reject before submitting.", "error");
+      showToast("Please select Accept or Reject before submitting.", "error");
       return;
     }
 
@@ -350,7 +350,7 @@ export default function HoPDCReviewSynthesisPage({
 
     if (hasPendingSession || hasPendingAssessment || hasPendingMaterial) {
       showToast(
-        "Every item must be explicitly reviewed. Please set all Sessions, Assessments, and Materials to either APPROVED or REVISION REQUESTED.",
+        "Every item must be explicitly reviewed. Please set all Sessions, Assessments, and Materials to either ACCEPTED or REVISION REQUIRED.",
         "error"
       );
       return;
@@ -364,7 +364,7 @@ export default function HoPDCReviewSynthesisPage({
 
       if (!allSessionsApproved || !allAssessmentsApproved || !allMaterialsApproved) {
         showToast(
-          "Cannot approve review task while some items are still set to REVISION REQUESTED.",
+          "Cannot accept review task while some items are still set to REVISION REQUESTED.",
           "error",
         );
         return;
@@ -508,7 +508,7 @@ export default function HoPDCReviewSynthesisPage({
             >
               <ShieldCheck size={20} />
               <span className="text-[12px] font-black uppercase tracking-widest">
-                {task.status}
+                {task.status === "APPROVED" ? "ACCEPTED" : task.status}
               </span>
             </div>
           </div>
@@ -587,7 +587,7 @@ export default function HoPDCReviewSynthesisPage({
                         Accept Review
                       </span>
                       <span className="text-[8px] font-bold opacity-70 uppercase tracking-tighter">
-                        Result: {task.status === "APPROVED" ? "APPROVED" : "REVISION REQUESTED"}
+                        Result: {task.status === "APPROVED" ? "ACCEPTED" : "REVISION REQUESTED"}
                       </span>
                     </div>
                   </button>
@@ -615,7 +615,7 @@ export default function HoPDCReviewSynthesisPage({
                         Override Review
                       </span>
                       <span className="text-[8px] font-bold opacity-70 uppercase tracking-tighter">
-                        Result: {task.status === "APPROVED" ? "REVISION REQUESTED" : "APPROVED"}
+                        Result: {task.status === "APPROVED" ? "REVISION REQUESTED" : "ACCEPTED"}
                       </span>
                     </div>
                   </button>

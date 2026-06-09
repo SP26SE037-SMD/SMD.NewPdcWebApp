@@ -71,10 +71,10 @@ export default function SprintManagementContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam === "sprint-tasks" || tabParam === "curriculum") {
-      setActiveTab("sprint-tasks");
-    } else if (tabParam === "single-tasks") {
+    if (tabParam === "sprint-tasks" || tabParam === "single-tasks") {
       setActiveTab("single-tasks");
+    } else if (tabParam === "curriculum") {
+      setActiveTab("sprint-tasks");
     }
   }, [searchParams]);
 

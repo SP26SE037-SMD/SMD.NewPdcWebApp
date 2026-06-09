@@ -60,7 +60,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     { id: 3, type: 'success', title: 'Review Accepted', content: 'Your review for "Urbanism Landscapes" has been accepted by the PDC board.', date: '1 day ago', unread: false },
     { id: 4, type: 'info', title: 'New Material Added', content: 'New reference materials have been added to session 4 of your syllabus.', date: '2 days ago', unread: false },
     { id: 5, type: 'warning', title: 'Comment on Section 2', content: 'Dr. Vos left a comment on your recent syllabus submission regarding CLOs.', date: '3 days ago', unread: false },
-    { id: 6, type: 'success', title: 'Syllabus Approved', content: 'Your syllabus for "Micro-Economics 101" was officially approved.', date: '4 days ago', unread: false },
+    { id: 6, type: 'success', title: 'Syllabus Accepted', content: 'Your syllabus for "Micro-Economics 101" was officially accepted.', date: '4 days ago', unread: false },
     { id: 7, type: 'system', title: 'Assignment Reminder', content: 'Don\'t forget to assign a reviewer for the new semester tasks.', date: '5 days ago', unread: false },
     { id: 8, type: 'system', title: 'System Maintenance', content: 'System will be down for maintenance this Sunday at 2 AM for 2 hours.', date: '1 week ago', unread: false },
     { id: 9, type: 'info', title: 'Welcome to PDCM', content: 'Explore the new dashboard features and manage your academic projects.', date: '2 weeks ago', unread: false },

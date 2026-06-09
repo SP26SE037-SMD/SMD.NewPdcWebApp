@@ -44,7 +44,7 @@ export const StatusStepper = ({ currentStatus }: { currentStatus: string }) => {
     },
     {
       id: SYLLABUS_STATUS.PUBLISHED,
-      label: "Approved",
+      label: "Accepted",
       icon: CheckCircle2,
       color: "#06b6d4",
     },

@@ -175,7 +175,7 @@ export default function NewSubjectContent() {
     },
     {
       id: SYLLABUS_STATUS.APPROVED,
-      label: "Approved",
+      label: "Accepted",
       icon: CheckCircle2,
       color: "#10b981",
     },

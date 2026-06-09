@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { AccountService } from "@/services/account.service";
 import { SprintService } from "@/services/sprint.service";
 import { SyllabusService } from "@/services/syllabus.service";
+import { SubjectService } from "@/services/subject.service";
 import { CloPloService } from "@/services/cloplo.service";
 import {
   TASK_STATUS,
@@ -431,8 +432,7 @@ export function TaskList({
       taskId: string;
       comment: string;
     }) => {
-      await TaskService.acceptTask(taskId, true, comment);
-      return TaskService.updateTaskStatus(taskId, TASK_STATUS.DONE);
+      return TaskService.acceptTask(taskId, true, comment);
     },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
@@ -457,56 +457,121 @@ export function TaskList({
       assignTo,
       dueDate,
       comment,
+      action,
     }: {
       task: TaskItem;
       assignTo: string;
       dueDate: string;
       comment: string;
+      action?: string;
     }) => {
-      const cleanTaskName =
-        task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
-      await TaskService.createTask({
-        sprintId: sprintId || "",
-        assignTo,
-        taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
-        description: comment,
-        action: "UPDATE",
-        priority: task.priority || "NORMAL",
-        type: "SYLLABUS",
-        targetId: task.targetId || task.syllabusId || undefined,
-        rootTaskId: task.rootTaskId || undefined,
-        dueDate,
-      });
+      const isSubjectTask = task.type === "SUBJECT";
 
-      const syllabusId =
-        task.targetId || task.syllabusId || task.syllabus?.syllabusId;
-      if (syllabusId && user?.accountId) {
-        try {
-          await SyllabusService.updateSyllabusStatus(
-            syllabusId,
-            user.accountId,
-            "DRAFT",
-          );
-        } catch (error) {
-          console.warn(
-            "Soft fail: Unable to update syllabus status to DRAFT",
-            error,
-          );
+      if (isSubjectTask) {
+        const cleanSubjectName =
+          task.taskName
+            ?.replace("CREATE SUBJECT: ", "")
+            ?.replace("UPDATE SUBJECT: ", "")
+            ?.replace("MODIFY SUBJECT: ", "") || "";
+        const actionType = action || "UPDATE";
+
+        // 1. Create the new UPDATE/MODIFY SUBJECT task
+        await TaskService.createTask({
+          sprintId: sprintId || "",
+          assignTo,
+          taskName: `${actionType} SUBJECT: ${cleanSubjectName}`,
+          description: comment,
+          action: actionType as any,
+          priority: task.priority || "NORMAL",
+          type: "SUBJECT",
+          targetId: task.subjectId || task.targetId || undefined,
+          rootTaskId: task.rootTaskId || undefined,
+          dueDate,
+        });
+
+        // 2. If actionType is MODIFY, transition subject to WAITING_SYLLABUS and its CLOs to DRAFT
+        const targetSubjectId = task.subjectId || task.targetId;
+        if (actionType === "MODIFY" && targetSubjectId) {
+          try {
+            await SubjectService.updateSubjectStatus(targetSubjectId, "WAITING_SYLLABUS");
+          } catch (statusErr) {
+            console.warn("Failed to update subject status to WAITING_SYLLABUS:", statusErr);
+          }
+
+          try {
+            const closRes = await CloPloService.getSubjectClos(targetSubjectId, 0, 100);
+            const responseData = closRes.data;
+            const closList = Array.isArray(responseData?.content)
+              ? responseData.content
+              : Array.isArray(responseData)
+              ? responseData
+              : Array.isArray(closRes)
+              ? closRes
+              : [];
+
+            for (const clo of closList) {
+              if (clo?.cloId) {
+                await CloPloService.updateClo(clo.cloId, {
+                  cloCode: clo.cloCode,
+                  cloName: clo.cloCode,
+                  description: clo.description,
+                  bloomLevel: String(clo.bloomLevel),
+                  subjectId: targetSubjectId,
+                  status: "DRAFT",
+                });
+              }
+            }
+          } catch (cloErr) {
+            console.warn("Failed to update CLOs to DRAFT:", cloErr);
+          }
         }
-      }
+      } else {
+        const cleanTaskName =
+          task.taskName?.replace(/^(CREATE|UPDATE) SYLLABUS: /, "") || "";
+        await TaskService.createTask({
+          sprintId: sprintId || "",
+          assignTo,
+          taskName: `UPDATE SYLLABUS: ${cleanTaskName}`,
+          description: comment,
+          action: "UPDATE",
+          priority: task.priority || "NORMAL",
+          type: "SYLLABUS",
+          targetId: task.targetId || task.syllabusId || undefined,
+          rootTaskId: task.rootTaskId || undefined,
+          dueDate,
+        });
 
-      const targetSubjectId = task.subjectId || task.subject?.subjectId;
-      if (targetSubjectId) {
-        try {
-          await CloPloService.updateSubjectClosStatus(
-            targetSubjectId,
-            "INTERNAL_REVIEW",
-          );
-        } catch (cloStatusErr) {
-          console.warn(
-            "Soft fail: Failed to update CLOs status to INTERNAL_REVIEW",
-            cloStatusErr,
-          );
+        // Transition the syllabus to DRAFT status
+        const syllabusId =
+          task.targetId || task.syllabusId || task.syllabus?.syllabusId;
+        if (syllabusId && user?.accountId) {
+          try {
+            await SyllabusService.updateSyllabusStatus(
+              syllabusId,
+              user.accountId,
+              "DRAFT",
+            );
+          } catch (error) {
+            console.warn(
+              "Soft fail: Unable to update syllabus status to DRAFT",
+              error,
+            );
+          }
+        }
+
+        const targetSubjectId = task.subjectId || task.subject?.subjectId;
+        if (targetSubjectId) {
+          try {
+            await CloPloService.updateSubjectClosStatus(
+              targetSubjectId,
+              "INTERNAL_REVIEW",
+            );
+          } catch (cloStatusErr) {
+            console.warn(
+              "Soft fail: Failed to update CLOs status to INTERNAL_REVIEW",
+              cloStatusErr,
+            );
+          }
         }
       }
 
@@ -523,7 +588,12 @@ export function TaskList({
           }),
         );
       }
-      showToast("Syllabus rejected and update task assigned", "success");
+      showToast(
+        variables.task.type === "SUBJECT"
+          ? "Subject task rejected and update task assigned"
+          : "Syllabus rejected and update task assigned",
+        "success",
+      );
       await invalidateAssignments();
     },
     onError: (error: any) => {
@@ -533,7 +603,7 @@ export function TaskList({
 
   const resetDecisionMutation = useMutation({
     mutationFn: async (task: TaskItem) => {
-      return TaskService.acceptTask(task.taskId, null, "");
+      return TaskService.resetTaskDecision(task.taskId);
     },
     onSuccess: async (_, variables) => {
       if (typeof window !== "undefined") {
@@ -881,12 +951,13 @@ export function TaskList({
               comment,
             });
           }}
-          onRejectSyllabus={async (t, assignTo, dueDate, comment) => {
+          onRejectSyllabus={async (t, assignTo, dueDate, comment, action) => {
             await rejectSyllabusMutation.mutateAsync({
               task: t,
               assignTo,
               dueDate,
               comment,
+              action,
             });
           }}
           onResetDecision={async (t) => {

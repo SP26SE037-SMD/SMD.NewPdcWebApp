@@ -54,7 +54,7 @@ export function SyllabusAssessmentsTab({
     const s = status?.toUpperCase();
     if (s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE") {
       return {
-        label: "Approved",
+        label: "Accepted",
         color: "text-emerald-600",
         bg: "bg-emerald-50",
         border: "border-emerald-100",
@@ -101,7 +101,7 @@ export function SyllabusAssessmentsTab({
     const s = indStatus?.toUpperCase();
     if (s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE") {
       return {
-        label: s,
+        label: s === "APPROVED" ? "ACCEPTED" : s,
         color: "text-emerald-600",
         bg: "bg-emerald-50",
         border: "border-emerald-100",
@@ -131,7 +131,7 @@ export function SyllabusAssessmentsTab({
       {/* Dynamic Peer Review Box inside Assessments Monitor */}
       {evalStatus && (
         <div className="mb-4">
-          {evalStatus === "APPROVED" ? (
+          {(evalStatus === "APPROVED" || evalStatus === "ACCEPTED") ? (
             <div className="p-3.5 rounded-xl border border-emerald-100 bg-emerald-50/15 flex items-center justify-between shadow-sm max-w-xl">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
@@ -197,7 +197,7 @@ export function SyllabusAssessmentsTab({
                     ? "bg-[#4caf50] text-white shadow-lg shadow-emerald-500/20"
                     : "bg-[#f1f5eb] text-[#4caf50] hover:bg-[#c8e6c9]"
                 }`}
-                title="Approve Set"
+                title="Accept Set"
               >
                 <Check size={16} />
               </button>

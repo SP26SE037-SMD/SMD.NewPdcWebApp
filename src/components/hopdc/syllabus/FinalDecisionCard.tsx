@@ -224,7 +224,7 @@ export function FinalDecisionCard({
       await TaskService.acceptTask(
         targetTaskId,
         true,
-        commentText.trim() || "Approved",
+        commentText.trim() || "Accepted",
       );
       if (typeof window !== "undefined") {
         localStorage.removeItem(`final_decision_comment_${targetTaskId}`);
@@ -534,7 +534,7 @@ export function FinalDecisionCard({
             <span
               className={`text-[10px] font-black uppercase tracking-widest block leading-none ${isAccepted ? "text-emerald-700" : "text-rose-700"}`}
             >
-              {isAccepted ? "Syllabus Approved" : "Syllabus Rejected"}
+              {isAccepted ? "Syllabus Accepted" : "Syllabus Rejected"}
             </span>
             <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider mt-0.5 block">
               Review Decision Completed
@@ -573,7 +573,7 @@ export function FinalDecisionCard({
               })
             ) : (
               <span className="text-zinc-400 italic">
-                {isAccepted ? "Approved" : "No comments provided"}
+                {isAccepted ? "Accepted" : "No comments provided"}
               </span>
             )}
           </div>

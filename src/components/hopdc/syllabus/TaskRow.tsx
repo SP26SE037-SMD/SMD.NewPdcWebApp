@@ -272,6 +272,18 @@ export function TaskRow({
                 Rejected
               </span>
             )}
+            {task.isAccepted == null &&
+              children.some(
+                (c) =>
+                  c.action === "REVIEW" &&
+                  c.type === "SYLLABUS" &&
+                  c.status === "DONE",
+              ) && (
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 rounded-md uppercase tracking-wider shrink-0 animate-pulse">
+                <AlertCircle size={8} />
+                Decision Required
+              </span>
+            )}
           </div>
         </div>
 
