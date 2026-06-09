@@ -21,7 +21,7 @@ export async function POST(
                 accept: "*/*",
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify([{}]),
             cache: "no-store",
         });
 

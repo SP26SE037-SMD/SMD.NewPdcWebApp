@@ -212,26 +212,15 @@ function PDCMReviewContent({
                 children
             ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
-                    <div className="mb-6 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white bg-primary-500 shadow-lg shadow-primary-500/20">
-                            <span className="material-symbols-outlined text-[20px]">
-                                {activeTab?.id === 'information' ? 'info' :
-                                    activeTab?.id === 'materials' ? 'menu_book' :
-                                        activeTab?.id === 'sessions' ? 'calendar_today' :
-                                            activeTab?.id === 'assessments' ? 'assignment' : 'rate_review'}
-                            </span>
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-[#2d342b] tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                {activeTab?.label || "Workspace"}
-                            </h2>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-[9px] font-black text-primary-500 uppercase tracking-[0.1em]">verification workflow active</p>
-                                <span className="text-[#dee1d8]">•</span>
-                                <p className="text-[9px] font-bold text-[#5a6157] uppercase tracking-[0.1em]">{task?.taskName || (task as any)?.titleTask || "Syllabus Audit"}</p>
+                    {activeTab?.id === 'information' && (
+                        <div className="mb-6 flex items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-black text-[#2d342b] tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                    {activeTab?.label || "Workspace"}
+                                </h2>
                             </div>
                         </div>
-                    </div>
+                    )}
                     {children}
                 </div>
             )}
@@ -310,7 +299,7 @@ export default function PDCMReviewLayout({
     const sidebarSubContent = (
         <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Reviewing Task</p>
-            <p className="text-sm font-bold text-on-surface leading-tight line-clamp-2">
+            <p className="text-sm font-bold text-on-surface leading-tight">
                 {task?.taskName || (task as any)?.titleTask || "Syllabus Audit"}
             </p>
         </div>

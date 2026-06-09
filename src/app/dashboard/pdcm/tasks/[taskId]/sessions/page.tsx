@@ -75,7 +75,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                 setMappingValidationResult(aiProcessingData);
                 setIsMappingResultModalOpen(true);
                 setIsMappingValidating(false);
-                showToast("Mapping validation complete", "success");
+                showToast(aiProcessingMessage || "Mapping validation complete", "success");
                 dispatch(clearAiProcessingMessage());
             } else if (aiProcessingStatus === "VALIDATE_MAPPING_FAIL") {
                 setIsMappingValidating(false);
@@ -286,19 +286,30 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                 setIsMappingValidating(false);
                 return;
             }
-            await MappingService.validateSessionMappings(syllabusId, payload);
-            showToast("Validation started. Please wait...", "info");
+            const res: any = await MappingService.validateSessionMappings(syllabusId, payload);
+            console.log("[Validate Mapping] Success Response:", res);
+            
+            if (res?.data) {
+                setMappingValidationResult(res.data);
+                setIsMappingResultModalOpen(true);
+            }
+            showToast(res?.message || "Mapping validation complete", "success");
         } catch (error: any) {
+            console.error("[Validate Mapping] Error Response:", error);
             if (error.data?.data && typeof error.data.data.is_valid !== 'undefined') {
                 setMappingValidationResult(error.data.data);
                 setIsMappingResultModalOpen(true);
+                showToast(error.message || error.data?.message || "Validation completed with issues", "warning");
             } else if (error.data && typeof error.data.is_valid !== 'undefined') {
                 setMappingValidationResult(error.data);
                 setIsMappingResultModalOpen(true);
+                showToast(error.message || error.data?.message || "Validation completed with issues", "warning");
             } else {
-                const errMsg = error.message || "Failed to validate mappings";
+                const errMsg = error.message || error.data?.message || "Failed to validate mappings";
                 showToast(errMsg, "error");
             }
+        } finally {
+            setIsMappingValidating(false);
         }
     };
 

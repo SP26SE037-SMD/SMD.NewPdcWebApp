@@ -49,7 +49,7 @@ export function SessionAISuggestionModal({ isOpen, onClose, aiResult }: SessionA
                 {/* ── Header ── */}
                 <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-start justify-between shrink-0">
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Sectional Audit</p>
+
                         <h2 className="text-xl font-black text-gray-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                             AI Suggestion
                         </h2>
@@ -136,7 +136,7 @@ export function SessionAISuggestionModal({ isOpen, onClose, aiResult }: SessionA
                                                     <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                                                     <div>
                                                         <p className="text-xs font-bold text-amber-800">{w.label}</p>
-                                                        {w.detail && <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{w.detail}</p>}
+                                                        {w.detail && <p className="text-[11px] text-amber-700 mt-1 leading-relaxed whitespace-pre-wrap">{w.detail.replace(/\.\s*(Step \d+)/g, '.\n$1')}</p>}
                                                     </div>
                                                 </div>
                                             ))}

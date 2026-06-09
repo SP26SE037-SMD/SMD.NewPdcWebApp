@@ -58,7 +58,10 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                 
                 section.warnings?.forEach((w: any) => {
                     text += `⚠️ Warning: ${w.label}\n`;
-                    if (w.detail) text += `   ${w.detail}\n`;
+                    if (w.detail) {
+                        const formattedDetail = w.detail.replace(/\.\s*(Step \d+)/g, '.\n   $1');
+                        text += `   ${formattedDetail}\n`;
+                    }
                 });
                 
                 if (section.unmappedClos?.length > 0) {
@@ -113,7 +116,7 @@ export function SessionEvaluateModal({ isOpen, onClose, taskId }: SessionEvaluat
                 {/* ── Header ─────────────────────────────── */}
                 <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-start justify-between shrink-0">
                     <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sectional Audit</p>
+
                         <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                             Sessions Review
                         </h2>
