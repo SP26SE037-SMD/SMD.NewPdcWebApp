@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify([{}]),
         });
 
         console.log("[Validate Proxy] Backend Status:", response.status);

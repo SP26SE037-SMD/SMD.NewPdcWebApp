@@ -391,21 +391,14 @@ function renderReadOnlyBlock(block: ParsedBlock, allBlocks: ParsedBlock[], globa
                     dangerouslySetInnerHTML={{ __html: content }}
                 />
             );
-        case 'H2': {
-            const h2Count = allBlocks.filter((b, i) => b.type === 'H2' && i <= globalIndex).length;
+        case 'H2':
             return (
-                <div className={`flex items-baseline gap-3 w-full mt-4 mb-2 ${alignClass}`}>
-                    <span className="font-bold shrink-0" style={{ color: color || '#2d342b', fontSize: fontSize || '24px' }}>
-                        {h2Count}.
-                    </span>
-                    <div
-                        className="font-bold py-1 leading-tight flex-1"
-                        style={{ color: color || '#2d342b', fontSize: fontSize || '24px', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-                        dangerouslySetInnerHTML={{ __html: content }}
-                    />
-                </div>
+                <div
+                    className={`font-bold py-1 mt-4 mb-2 leading-tight w-full ${alignClass}`}
+                    style={{ color: color || '#2d342b', fontSize: fontSize || '24px', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
             );
-        }
         case 'PARAGRAPH':
             return (
                 <div

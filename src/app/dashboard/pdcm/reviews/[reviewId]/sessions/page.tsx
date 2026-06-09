@@ -64,6 +64,8 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                     
                     const isSessionsValid = sessionValidDataState?.valid !== false;
                     const sessionErrors = sessionValidDataState?.errors || [];
+                    const warningsContent = sessionValidDataState?.warningsContent || [];
+                    const warningsCovered = sessionValidDataState?.warningsCovered || [];
                     const quotas = sessionValidDataState?.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 };
 
                     const isMappingsValid = mappingValidData?.is_valid !== false;
@@ -74,15 +76,43 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                     const mappingsList = mappingValidData?.data || [];
 
                     const errorCodeMap: Record<string, string> = {
-                        'THEORY_SURPLUS': 'Theory hours exceed the allowed limit',
-                        'THEORY_SHORTAGE': 'Theory hours fall short of the required amount',
-                        'PRACTICE_SURPLUS': 'Practice hours exceed the allowed limit',
-                        'PRACTICE_SHORTAGE': 'Practice hours fall short of the required amount',
-                        'SELF_STUDY_SURPLUS': 'Self-study hours exceed the allowed limit',
-                        'SELF_STUDY_SHORTAGE': 'Self-study hours fall short of the required amount',
+                        'THEORY_SURPLUS': 'Theory Hours Exceed Limit',
+                        'THEORY_SHORTAGE': 'Theory Hours Shortage',
+                        'PRACTICE_SURPLUS': 'Practice Hours Exceed Limit',
+                        'PRACTICE_SHORTAGE': 'Practice Hours Shortage',
+                        'SELF_STUDY_SURPLUS': 'Self-study Hours Exceed Limit',
+                        'SELF_STUDY_SHORTAGE': 'Self-study Hours Shortage',
+                        'SESSION_CONTENT_LINE_MISMATCH': 'Session Content Mismatch',
+                        'CHAPTER_OMISSION': 'Missing Chapter Coverage',
+                        'CONTENT_WARNING': 'Content Warning',
+                        'COVERAGE_WARNING': 'Coverage Warning',
+                    };
+
+                    const formatMessage = (msg: string) => {
+                        if (!msg) return "";
+                        let formatted = msg;
+                        if (formatted.startsWith("CRITICAL: ")) {
+                            formatted = formatted.replace("CRITICAL: ", "");
+                        }
+                        return formatted.charAt(0).toUpperCase() + formatted.slice(1);
                     };
 
                     let status = (isSessionsValid && isMappingsValid) ? 'PASS' : 'FAIL';
+                    
+                    const combinedWarnings = [
+                        ...sessionErrors.map((err: any) => ({
+                            label: errorCodeMap[err.code] || err.code,
+                            detail: formatMessage(err.message),
+                        })),
+                        ...warningsContent.map((w: any) => ({
+                            label: errorCodeMap[w.code] || w.code || 'Content Warning',
+                            detail: formatMessage(w.message),
+                        })),
+                        ...warningsCovered.map((w: any) => ({
+                            label: errorCodeMap[w.code] || w.code || 'Coverage Warning',
+                            detail: formatMessage(w.message),
+                        }))
+                    ];
 
                     const auditResult = {
                         recommendation: status,
@@ -100,10 +130,7 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                                     { label: 'Practice Hours', value: quotas.practice >= 0 ? `${quotas.practice} available` : `${Math.abs(quotas.practice)} exceeded`, type: quotas.practice >= 0 ? 'ok' : 'error' },
                                     { label: 'Self-Study Hours', value: quotas.selfStudy >= 0 ? `${quotas.selfStudy}h available` : `${Math.abs(quotas.selfStudy)}h exceeded`, type: quotas.selfStudy >= 0 ? 'ok' : 'error' },
                                 ],
-                                warnings: sessionErrors.map((err: any) => ({
-                                    label: errorCodeMap[err.code] || err.code,
-                                    detail: err.message,
-                                })),
+                                warnings: combinedWarnings,
                             },
                             {
                                 id: 'mapping',

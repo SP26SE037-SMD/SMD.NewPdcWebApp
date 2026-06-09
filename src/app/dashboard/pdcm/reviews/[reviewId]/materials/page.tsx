@@ -135,20 +135,13 @@ export default function PDCMReviewMaterialsPage({ params }: { params: Promise<{ 
                                                             {material.title}
                                                         </h3>
                                                         <div className="flex flex-wrap gap-1.5 mt-3">
-                                                            {badge ? (
+                                                            {badge && (
                                                                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide flex items-center gap-1"
                                                                     style={{ background: badge.bg, color: badge.color }}>
                                                                     <ShieldCheck size={10} />
                                                                     {badge.label}
                                                                 </span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 bg-primary-50/50 text-primary-600 rounded text-[10px] font-black uppercase tracking-wide border border-primary-500/10">
-                                                                    {material.status || "IDLE"}
-                                                                </span>
                                                             )}
-                                                            <span className="px-2 py-1 bg-gray-50 text-gray-400 rounded text-[10px] font-bold uppercase tracking-wide border border-gray-100">
-                                                                v{material.version || '1.0'}
-                                                            </span>
                                                         </div>
                                                     </div>
                                                     <button
