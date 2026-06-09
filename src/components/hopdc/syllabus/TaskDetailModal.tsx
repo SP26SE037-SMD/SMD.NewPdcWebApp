@@ -64,6 +64,7 @@ interface TaskDetailModalProps {
     assignTo: string,
     dueDate: string,
     comment: string,
+    action?: string,
   ) => Promise<void>;
   onResetDecision: (task: TaskItem) => Promise<void>;
   onSelectTask: (task: TaskItem) => void;
@@ -510,7 +511,7 @@ export function TaskDetailModal({
             </span>
             {task.isAccepted === true && (
               <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-200">
-                APPROVED
+                ACCEPTED
               </span>
             )}
             {task.isAccepted === false && (
@@ -615,7 +616,7 @@ export function TaskDetailModal({
               </span>
               {task.isAccepted === true && (
                 <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-200">
-                  APPROVED
+                  ACCEPTED
                 </span>
               )}
               {task.isAccepted === false && (
@@ -1153,7 +1154,7 @@ export function TaskDetailModal({
                             try {
                               await onAcceptSyllabus(
                                 task,
-                                commentText.trim() || "Approved",
+                                commentText.trim() || "Accepted",
                               );
                             } catch (err) {}
                           }}
@@ -1234,7 +1235,7 @@ export function TaskDetailModal({
                             }`}
                           >
                             {task.isAccepted
-                              ? "Approved"
+                              ? "Accepted"
                               : "Revision Requested"}
                           </span>
                         </div>
@@ -1256,7 +1257,9 @@ export function TaskDetailModal({
                             ) {
                               try {
                                 await onResetDecision(task);
-                              } catch (err) {}
+                              } catch (err) {
+                                console.error("Error resetting decision:", err);
+                              }
                             }
                           }}
                           className="w-full py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-800 font-black uppercase tracking-wider rounded-xl transition-colors border border-zinc-200 text-[10px]"
@@ -1406,8 +1409,8 @@ export function TaskDetailModal({
       <RejectDecisionModal
         isOpen={isRowRejectModalOpen}
         onClose={() => setIsRowRejectModalOpen(false)}
-        onConfirm={async (assignTo, dueDate, comment) => {
-          await onRejectSyllabus(task, assignTo, dueDate, comment);
+        onConfirm={async (assignTo, dueDate, comment, action) => {
+          await onRejectSyllabus(task, assignTo, dueDate, comment, action);
           setIsRowRejectModalOpen(false);
           onClose(); // Close task details modal on successful reject
         }}

@@ -377,7 +377,7 @@ export default function SyllabusListBySubject({
               <option value="IN_PROGRESS">In Progress</option>
               <option value="PENDING_REVIEW">Pending Review</option>
               <option value="REVISION_REQUESTED">Revision Requested</option>
-              <option value="APPROVED">Approved</option>
+              <option value="APPROVED">Accepted</option>
               <option value="PUBLISHED">Published</option>
               <option value="ARCHIVED">Archived</option>
             </select>
@@ -450,7 +450,7 @@ export default function SyllabusListBySubject({
               Created At
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
-              Approved At
+              Accepted At
             </div>
             <div className="col-span-2 text-xs font-black uppercase tracking-widest text-zinc-500">
               Status
@@ -544,7 +544,7 @@ export default function SyllabusListBySubject({
                   <span
                     className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border whitespace-nowrap shadow-sm ${STATUS_COLORS[syllabus.status || "DRAFT"] || STATUS_COLORS.DRAFT}`}
                   >
-                    {(syllabus.status || "DRAFT").replace(/_/g, " ")}
+                    {syllabus.status === "APPROVED" ? "ACCEPTED" : (syllabus.status || "DRAFT").replace(/_/g, " ")}
                   </span>
                 </div>
 

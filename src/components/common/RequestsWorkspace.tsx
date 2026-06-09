@@ -74,7 +74,7 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
   const tabs = [
     { id: "ALL", label: "All Requests" },
     { id: "PENDING", label: "Pending" },
-    { id: "APPROVED", label: "Approved" },
+    { id: "APPROVED", label: "Accepted" },
   ];
 
   useEffect(() => {
@@ -585,7 +585,7 @@ export default function RequestsWorkspace({ role, defaultSource }: RequestsWorks
                             {req.status === "REJECTED" && (
                               <XCircle className="h-3 w-3" />
                             )}
-                            {req.status}
+                            {req.status === "APPROVED" ? "ACCEPTED" : req.status}
                           </span>
                         </td>
                         <td className="px-5 py-6 text-on-surface-variant">

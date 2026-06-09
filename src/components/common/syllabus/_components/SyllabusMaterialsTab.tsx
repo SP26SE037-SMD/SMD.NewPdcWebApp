@@ -86,9 +86,17 @@ export function SyllabusMaterialsTab({
 
   const getStatusStyle = (status: string) => {
     const s = status?.toUpperCase();
-    if (s === "APPROVED" || s === "ACCEPTED" || s === "ACTIVE") {
+    if (s === "ACCEPTED") {
       return {
-        label: "Approved",
+        label: "Accepted",
+        color: "#10b981",
+        bg: "#ecfdf5",
+        border: "#10b98133",
+      };
+    }
+    if (s === "APPROVED" || s === "ACTIVE") {
+      return {
+        label: "Accepted",
         color: "#10b981",
         bg: "#ecfdf5",
         border: "#10b98133",
@@ -139,7 +147,11 @@ export function SyllabusMaterialsTab({
       ev = evaluations[firstKey];
     }
 
-    if (!ev || isStatusPending(ev.status)) return null;
+    if (!ev) {
+      return getStatusStyle("ACCEPTED");
+    }
+
+    if (isStatusPending(ev.status)) return null;
     return getStatusStyle(ev.status);
   };
 
@@ -169,6 +181,11 @@ export function SyllabusMaterialsTab({
             const ev = evaluations[firstKey];
             currentEvalStatus = ev?.status;
             evaluationComment = ev?.comment || ev?.note;
+          }
+
+          if (evaluations && !currentEvalStatus) {
+            currentEvalStatus = "ACCEPTED";
+            evaluationComment = "Accepted";
           }
 
           const isExpanded = !!expandedComments[material.materialId];
@@ -286,11 +303,12 @@ export function SyllabusMaterialsTab({
                     }
                     className={`flex-1 h-8 rounded-lg transition-all flex items-center justify-center ${
                       currentEvalStatus === "APPROVED" ||
-                      (material.status === "APPROVED" && !currentEvalStatus)
+                      currentEvalStatus === "ACCEPTED" ||
+                      ((material.status === "APPROVED" || material.status === "ACCEPTED") && !currentEvalStatus)
                         ? "bg-[#4caf50] text-white shadow-lg shadow-emerald-500/20"
                         : "bg-[#f1f5eb] text-[#4caf50] hover:bg-[#c8e6c9]"
                     }`}
-                    title="Approve"
+                    title="Accept"
                   >
                     <Check size={16} />
                   </button>
@@ -342,6 +360,7 @@ export const ReviewerFeedbackCard = ({
   const hasNote =
     feedback.note &&
     feedback.note !== "Approved" &&
+    feedback.note !== "Accepted" &&
     feedback.note !== "No comments";
 
   const rawLines = hasNote ? feedback.note.split("\n") : [];

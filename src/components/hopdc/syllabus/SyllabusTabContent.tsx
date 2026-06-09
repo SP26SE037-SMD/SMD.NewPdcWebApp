@@ -39,7 +39,15 @@ interface ParsedReview {
 function checkIfApproved(text: string): boolean {
   const normalized = text.toLowerCase().trim();
   if (!normalized) return true;
-  return normalized.includes("accept");
+  return (
+    normalized.includes("accept") ||
+    normalized.includes("pass") ||
+    normalized.includes("approved") ||
+    normalized === "all are accepted." ||
+    normalized === "no items evaluated." ||
+    normalized === "no session review." ||
+    normalized === "no assessment review."
+  );
 }
 
 function parseReviewComment(comment: string | null | undefined): ParsedReview {

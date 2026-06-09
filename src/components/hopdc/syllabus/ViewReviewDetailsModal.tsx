@@ -28,7 +28,7 @@ interface ParsedReview {
   materials: Array<{
     id: string;
     name: string;
-    status: "APPROVED" | "REVISION_REQUIRED";
+    status: "APPROVED" | "ACCEPTED" | "REVISION_REQUIRED";
     comment: string;
   }>;
   sessions: { status: "APPROVED" | "REVISION_REQUIRED"; comment: string };
@@ -170,13 +170,35 @@ export function ViewReviewDetailsModal({
   const dbMaterialsList = materialsRes?.data || [];
 
   // Map parsed materials to their actual names if available
-  const materials = parsedReview.materials.map((mat) => {
-    const found = dbMaterialsList.find((m: any) => m.materialId === mat.id);
+  const materials = dbMaterialsList.map((dbMat: any) => {
+    const foundReview = parsedReview.materials.find((m) => m.id === dbMat.materialId);
+    if (foundReview) {
+      return {
+        id: dbMat.materialId,
+        name: dbMat.title,
+        status: foundReview.status,
+        comment: foundReview.comment,
+      };
+    }
     return {
-      ...mat,
-      name: found ? found.title : mat.name,
+      id: dbMat.materialId,
+      name: dbMat.title,
+      status: "ACCEPTED" as const,
+      comment: "Accepted",
     };
   });
+
+  // Keep any parsed general reviews or unmatched reviews
+  const generalOrUnmatched = parsedReview.materials
+    .filter((m) => m.id === "general" || !dbMaterialsList.some((dbMat: any) => dbMat.materialId === m.id))
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      status: m.status,
+      comment: m.comment,
+    }));
+
+  const allMaterials = [...materials, ...generalOrUnmatched];
 
   const hasReviewData = reviews.length > 0 && rawComment.trim().length > 0;
   const isLoading = isReviewsLoading || (!!syllabusId && isMaterialsLoading);
@@ -265,12 +287,12 @@ export function ViewReviewDetailsModal({
                   <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">
                     Material Items Review Status
                   </h4>
-                  {materials.length === 0 ? (
+                  {allMaterials.length === 0 ? (
                     <div className="p-4 rounded-xl border border-zinc-200 border-dashed bg-zinc-50/50 text-center text-xs font-bold text-zinc-500">
                       No material comments found.
                     </div>
                   ) : (
-                    materials.map((mat, idx) => (
+                    allMaterials.map((mat, idx) => (
                       <div
                         key={`${mat.id}-${idx}`}
                         className={`p-4 rounded-xl border transition-all ${
@@ -292,15 +314,15 @@ export function ViewReviewDetailsModal({
                           </div>
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                              mat.status === "APPROVED"
+                              (mat.status === "APPROVED" || mat.status === "ACCEPTED")
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-200"
                                 : "bg-rose-50 text-rose-600 border-rose-200"
                             }`}
                           >
-                            {mat.status === "APPROVED" ? (
+                            {(mat.status === "APPROVED" || mat.status === "ACCEPTED") ? (
                               <>
                                 <CheckCircle2 size={10} />
-                                Approved
+                                Accepted
                               </>
                             ) : (
                               <>
@@ -351,7 +373,7 @@ export function ViewReviewDetailsModal({
                         {parsedReview.sessions.status === "APPROVED" ? (
                           <>
                             <CheckCircle2 size={10} />
-                            Approved
+                            Accepted
                           </>
                         ) : (
                           <>
@@ -406,7 +428,7 @@ export function ViewReviewDetailsModal({
                         {parsedReview.assessments.status === "APPROVED" ? (
                           <>
                             <CheckCircle2 size={10} />
-                            Approved
+                            Accepted
                           </>
                         ) : (
                           <>

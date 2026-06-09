@@ -87,7 +87,7 @@ export default function SubjectRecheckView() {
       return Promise.resolve();
     },
     onSuccess: () => {
-      showToast("Subject approved successfully", "success");
+      showToast("Subject accepted successfully", "success");
       setIsApproveModalOpen(false);
 
       const effectiveSprintId = taskDetailResp?.data?.sprintId || sprintId;
@@ -100,7 +100,7 @@ export default function SubjectRecheckView() {
       }, 500);
     },
     onError: (error: any) => {
-      showToast(error?.message || "Failed to approve subject", "error");
+      showToast(error?.message || "Failed to accept subject", "error");
     },
   });
 
@@ -481,7 +481,7 @@ export default function SubjectRecheckView() {
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                            Approved Cycle
+                            Accepted Cycle
                           </p>
                           <p className="text-sm font-black text-zinc-900">
                             {subject.approvedDate
@@ -953,10 +953,10 @@ export default function SubjectRecheckView() {
               <CheckCircle2 className="text-emerald-500" size={32} />
             </div>
             <h3 className="text-3xl font-extrabold text-zinc-900 mb-3 tracking-tight text-center">
-              Confirm Approval?
+              Confirm Acceptance?
             </h3>
             <p className="text-zinc-500 leading-relaxed mb-10 font-medium text-center">
-              Are you sure you want to approve this subject? This will set the
+              Are you sure you want to accept this subject? This will set the
               status to{" "}
               <span className="text-emerald-600 font-bold">COMPLETED</span> and
               move the workflow forward.

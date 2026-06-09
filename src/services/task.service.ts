@@ -579,6 +579,14 @@ export const TaskService = {
     );
   },
 
+  resetTaskDecision: async (taskId: string) => {
+    return apiClient.patch<{ status: number; message: string; data?: unknown }>(
+      `/api/v1/tasks-v2/${taskId}/isAccepted`,
+      {},
+      { credentials: "include" },
+    );
+  },
+
   deleteTask: async (taskId: string) => {
     return apiClient.delete<{ status: number; message: string }>(
       `/api/v1/tasks-v2/${taskId}`,

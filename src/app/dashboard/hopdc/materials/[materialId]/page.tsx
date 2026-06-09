@@ -157,6 +157,7 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
     // Handled internally by FinalDecisionCard component
 
     const normalizedStatus = evalStatus?.toUpperCase()?.trim();
+    const isAcceptedStatus = normalizedStatus === 'ACCEPTED' || normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE';
     const isRevisionRequested = normalizedStatus === 'REVISION_REQUIRED' || 
                                normalizedStatus === 'REVISION_REQUESTED' ||
                                normalizedStatus?.replace(/_/g, ' ') === 'REVISION REQUESTED';
@@ -398,10 +399,10 @@ export default function HoPDCMaterialMonitorPage({ params }: { params: Promise<{
         )}
 
         {/* Floating Panels Container */}
-        {(rejectComment || showFloatingDecision) && (
+        {((rejectComment && !isAcceptedStatus) || showFloatingDecision) && (
             <div className="fixed top-32 right-6 z-[150] flex flex-col items-end gap-4 pointer-events-none">
                 {/* Floating Rejection Comment Banner */}
-                {rejectComment && (
+                {(rejectComment && !isAcceptedStatus) && (
                     <div className="flex items-start gap-3 pointer-events-auto">
                         {isFeedbackOpen && (
                             <div id="rejected-feedback-banner" className="w-96 p-5 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-md text-left flex items-start gap-4 shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300 relative">
