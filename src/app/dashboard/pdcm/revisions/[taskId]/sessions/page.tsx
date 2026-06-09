@@ -729,25 +729,27 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
 
             {/* ── Edit Session Modal ── */}
             {editingIndex !== null && draftSession && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 md:p-8">
-                    {/* Backdrop Blur */}
-                    <div className="absolute inset-0 bg-on-surface/20" onClick={handleCloseModal}></div>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/50 animate-in fade-in duration-200">
+                    <div className="absolute inset-0" onClick={handleCloseModal}></div>
 
                     {/* Modal Container */}
-                    <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="relative bg-white w-full max-w-4xl max-h-[95vh] rounded-2xl flex flex-col overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-slate-200">
                         {/* Modal Header */}
-                        <div className="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-bright">
-                            <div>
-                                <h2 className="text-2xl font-extrabold text-on-surface">
-                                    {editingIndex === -1 ? 'Create New Session' : `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}`}
-                                </h2>
-                                <p className="text-sm text-on-surface-variant">Configure timing, topics, and pedagogical mappings.</p>
+                        <header className="px-8 py-6 flex justify-between items-start bg-slate-50 border-b border-slate-100">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-widest uppercase">
+                                        {draftSession.sessionId ? 'Editing' : 'Drafting'}
+                                    </span>
+                                    <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                                        {draftSession.sessionId ? `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}` : 'Create New Session'}
+                                    </h2>
+                                </div>
                             </div>
-                            <button onClick={handleCloseModal}
-                                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
-                                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+                            <button onClick={handleCloseModal} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
+                                <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
                             </button>
-                        </div>
+                        </header>
 
                         {/* Modal Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
@@ -860,10 +862,11 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                         </div>
 
                         {/* Modal Footer Actions */}
-                        <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end items-center gap-4 bg-surface-bright">
-                            <button onClick={handleCloseModal}
-                                className="px-6 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Discard Changes</button>
-                            
+                        <footer className="px-8 py-6 border-t border-slate-100 bg-white">
+                            <div className="flex items-center justify-end">
+                                <div className="flex gap-3">
+                                    <button onClick={handleCloseModal}
+                                        className="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
 
                                 <button 
                                     onClick={async () => {
@@ -930,12 +933,20 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
                                         }
                                     }}
                                     disabled={isSaving}
-                                    className="bg-primary-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                    className="flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white bg-primary shadow-primary/20 hover:scale-[1.03] active:scale-95"
                                 >
-                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
-                                    {draftSession.sessionId ? 'Update Session' : 'Create Session'}
+                                    {isSaving ? (
+                                        <Loader2 size={20} className="animate-spin" />
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-[20px]">save</span>
+                                            Save
+                                        </>
+                                    )}
                                 </button>
-                        </div>
+                                </div>
+                            </div>
+                        </footer>
                     </div>
                 </div>
             )}
