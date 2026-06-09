@@ -63,7 +63,9 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
     const [isSaving, setIsSaving] = useState(false);
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [isViewOnly, setIsViewOnly] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number } | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
 
 
@@ -420,6 +422,29 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
         // Bulk save removed. Logic moved to Modal.
     };
 
+    const handleExportAssessments = async () => {
+        if (!syllabusId) return;
+        setIsExporting(true);
+        try {
+            const { AssessmentService } = await import('@/services/assessment.service');
+            const blob = await AssessmentService.exportAssessments(syllabusId as string);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Syllabus_${syllabusId}_Assessments.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast("Export assessments successfully", "success");
+        } catch (e) {
+            console.error("Export error", e);
+            showToast("Failed to export assessments", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen pb-32 animate-in fade-in duration-500">
             {!isRevisionLoading && revisionRequest && (
@@ -460,6 +485,14 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                 </button>
                             )}
                             <button
+                                onClick={handleExportAssessments}
+                                disabled={isExporting}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
+                            >
+                                {isExporting ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">download</span>}
+                                Export
+                            </button>
+                            <button
                                 onClick={() => setIsImportModalOpen(true)}
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                             >
@@ -485,6 +518,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                             note: ''
                                         }
                                     }));
+                                    setIsViewOnly(false);
                                     setExpandedIndex(newIdx);
                                 }}
                                 className="bg-[#00966d] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm"
@@ -620,15 +654,10 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
                                                     <p className="text-lg font-bold text-on-surface leading-none">{ass.weight}%</p>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
-                                                    <button onClick={() => setExpandedIndex(index)}
+                                                    <button onClick={() => { setIsViewOnly(true); setExpandedIndex(index); }}
                                                         className="p-1 px-2 text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center gap-1 border border-primary/20 shadow-xs">
                                                         <span className="material-symbols-outlined text-[16px]">visibility</span>
                                                         <span className="text-[10px] font-bold">View</span>
-                                                    </button>
-                                                    <button onClick={() => setExpandedIndex(index)}
-                                                        className="p-1 px-2 text-on-surface-variant hover:bg-surface-container rounded-md transition-colors flex items-center gap-1 border border-outline-variant/20 shadow-xs">
-                                                        <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                        <span className="text-[10px] font-bold">Edit</span>
                                                     </button>
                                                     <button
                                                         onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : handleDeleteLocal(index)}
@@ -692,6 +721,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
             {/* ── Edit Assessment Modal ── */}
             {expandedIndex !== null && (
                 <AssessmentEditModal
+                    isViewOnly={isViewOnly}
                     assessment={assessments[expandedIndex]}
                     onClose={(saved?: boolean) => {
                         const ass = assessments[expandedIndex];
@@ -1313,7 +1343,7 @@ export default function RevisionAssessmentsPage({ params }: { params: Promise<{ 
 
 
 // ── Assessment Edit Modal Component ──
-function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories, types, otherAssessmentsWeight, subjectId, syllabusId }: {
+function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories, types, otherAssessmentsWeight, subjectId, syllabusId, isViewOnly }: {
     assessment: AssessmentItem;
     onClose: (saved?: boolean) => void;
     onSave: () => Promise<void>;
@@ -1323,6 +1353,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
     otherAssessmentsWeight: number;
     subjectId?: string;
     syllabusId?: string;
+    isViewOnly?: boolean;
 }) {
     const { showToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
@@ -1431,14 +1462,9 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                 {/* Modal Header */}
                 <header className="px-8 py-6 flex justify-between items-start bg-slate-50 border-b border-slate-100">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-widest uppercase">
-                                {assessment.assessmentId ? 'Editing' : 'Drafting'}
-                            </span>
                             <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                {assessment.categoryName || 'New Assessment'}
+                                {assessment.assessmentId ? (isViewOnly ? 'View Assessment' : 'Edit Assessment') : 'New Assessment'}
                             </h2>
-                        </div>
                     </div>
                     <button onClick={() => onClose(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
                         <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
@@ -1452,6 +1478,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Category</label>
                             <select
+                                disabled={isViewOnly}
                                 value={assessment.categoryId}
                                 onChange={(e) => {
                                     const cat = categories.find(c => c.categoryId === e.target.value);
@@ -1470,6 +1497,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Evaluation Type</label>
                             <select
+                                disabled={isViewOnly}
                                 value={assessment.typeId}
                                 onChange={(e) => {
                                     const type = types.find(t => t.typeId === e.target.value);
@@ -1488,6 +1516,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-1 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Part #</label>
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.part}
                                 onChange={(e) => onUpdate({ part: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
@@ -1498,6 +1527,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-1 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Weight %</label>
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.weight}
                                 onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-emerald-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden font-bold text-primary"
@@ -1511,6 +1541,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-4 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Completion Criteria</label>
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.completionCriteria}
                                 onChange={(e) => onUpdate({ completionCriteria: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
@@ -1521,6 +1552,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Duration (mins)</label>
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.duration}
                                 onChange={(e) => onUpdate({ duration: Number(e.target.value) })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
@@ -1533,6 +1565,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Question Type</label>
                             <select
+                                disabled={isViewOnly}
                                 value={assessment.questionType}
                                 onChange={(e) => onUpdate({ questionType: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
@@ -1546,6 +1579,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
 
                             {/* Knowledge Skill Text Input */}
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.knowledgeSkill || ""}
                                 onChange={(e) => onUpdate({ knowledgeSkill: e.target.value })}
                                 placeholder="Enter knowledge or skills"
@@ -1556,6 +1590,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="col-span-2 space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grading Guide</label>
                             <input
+                                disabled={isViewOnly}
                                 value={assessment.gradingGuide}
                                 onChange={(e) => onUpdate({ gradingGuide: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
@@ -1571,6 +1606,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 <span className="text-[10px] text-slate-400 italic">Supports clinical or pedagogical notes</span>
                             </div>
                             <textarea
+                                disabled={isViewOnly}
                                 value={assessment.note}
                                 onChange={(e) => onUpdate({ note: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden resize-none"
@@ -1622,10 +1658,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="flex items-center gap-3 shrink-0">
                             <button onClick={() => onClose(false)} disabled={isSaving || isSingleValidating}
                                 className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
-                                Cancel
+                                {isViewOnly ? 'Close' : 'Cancel'}
                             </button>
 
-
+                            {!isViewOnly && (
                                 <button onClick={handleSave} disabled={isSaving}
                                     className={`flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white
                                         ${isOverWeight ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary shadow-primary/20 hover:scale-[1.03]'}`}>
@@ -1638,7 +1674,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         </>
                                     )}
                                 </button>
-
+                            )}
                         </div>
                     </div>
                 </footer>

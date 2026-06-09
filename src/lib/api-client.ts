@@ -131,5 +131,22 @@ export const apiClient = {
             return null as any;
         }
         return response.json();
+    },
+
+    async download(endpoint: string, options?: RequestInit & { signal?: AbortSignal }): Promise<Blob> {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'GET',
+            headers: {
+                ...options?.headers,
+            },
+            signal: options?.signal,
+            ...options,
+        });
+        
+        if (!response.ok) {
+            await this.handleResponse(response); // Use existing error handler if it fails
+        }
+        
+        return response.blob();
     }
 };

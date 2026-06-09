@@ -62,9 +62,11 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
     const [isSaving, setIsSaving] = useState(false);
     const [originalAssessmentsMap, setOriginalAssessmentsMap] = useState<Record<string, AssessmentItem>>({});
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [isViewOnly, setIsViewOnly] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number } | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
-
+    // Filter CLOs to exclude parent nodes
 
     // 1. Fetch Task to get.syllabus?.syllabusId
     const { data: routeTaskData, isLoading: isTaskLoading } = useQuery({
@@ -413,6 +415,29 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
         // Bulk save removed. Logic moved to Modal.
     };
 
+    const handleExportAssessments = async () => {
+        if (!syllabusId) return;
+        setIsExporting(true);
+        try {
+            const { AssessmentService } = await import('@/services/assessment.service');
+            const blob = await AssessmentService.exportAssessments(syllabusId as string);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Syllabus_${syllabusId}_Assessments.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast("Export assessments successfully", "success");
+        } catch (e) {
+            console.error("Export error", e);
+            showToast("Failed to export assessments", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen pb-32 animate-in fade-in duration-500">
 
@@ -445,6 +470,14 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                 </button>
                             )}
                             <button
+                                onClick={handleExportAssessments}
+                                disabled={isExporting}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
+                            >
+                                {isExporting ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">download</span>}
+                                Export
+                            </button>
+                            <button
                                 onClick={() => setIsImportModalOpen(true)}
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
                             >
@@ -470,6 +503,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                             note: ''
                                         }
                                     }));
+                                    setIsViewOnly(false);
                                     setExpandedIndex(newIdx);
                                 }}
                                 className="bg-[#00966d] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#00966d]/20 text-sm"
@@ -604,15 +638,10 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                                     <p className="text-lg font-bold text-on-surface leading-none">{ass.weight}%</p>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
-                                                    <button onClick={() => setExpandedIndex(index)}
+                                                    <button onClick={() => { setIsViewOnly(true); setExpandedIndex(index); }}
                                                         className="p-1 px-2 text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center gap-1 border border-primary/20 shadow-xs">
                                                         <span className="material-symbols-outlined text-[16px]">visibility</span>
                                                         <span className="text-[10px] font-bold">View</span>
-                                                    </button>
-                                                    <button onClick={() => setExpandedIndex(index)}
-                                                        className="p-1 px-2 text-on-surface-variant hover:bg-surface-container rounded-md transition-colors flex items-center gap-1 border border-outline-variant/20 shadow-xs">
-                                                        <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                        <span className="text-[10px] font-bold">Edit</span>
                                                     </button>
                                                     <button
                                                         onClick={() => ass.assessmentId ? handleDeleteApi(ass.assessmentId, index) : handleDeleteLocal(index)}
@@ -676,6 +705,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             {/* ── Edit Assessment Modal ── */}
             {expandedIndex !== null && (
                 <AssessmentEditModal
+                    isViewOnly={isViewOnly}
                     assessment={assessments[expandedIndex]}
                     onClose={(saved?: boolean) => {
                         const ass = assessments[expandedIndex];
@@ -1097,8 +1127,9 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                     onClick={() => { setIsPreviewOpen(false); setPreviewData([]); setIsImportModalOpen(true); setIsValidated(false); setValidationErrors([]); setValidationSummary(null); }}
                                     className="px-6 py-2.5 rounded-xl font-bold text-on-surface-variant bg-white border border-outline-variant/30 hover:bg-outline-variant/10 transition-colors"
                                 >
-                                    Back
+                                    {isViewOnly ? 'Close' : 'Cancel'}
                                 </button>
+                                {!isViewOnly && (
                                 <button
                                     disabled={isSaving}
                                     onClick={async () => {
@@ -1221,6 +1252,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
                                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <span className="material-symbols-outlined text-[20px]">save</span>}
                                     Confirm & Save
                                 </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1290,7 +1322,7 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
 
 
 // ── Assessment Edit Modal Component ──
-function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories, types, otherAssessmentsWeight, subjectId, syllabusId }: {
+function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories, types, otherAssessmentsWeight, subjectId, syllabusId, isViewOnly }: {
     assessment: AssessmentItem;
     onClose: (saved?: boolean) => void;
     onSave: () => Promise<void>;
@@ -1300,6 +1332,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
     otherAssessmentsWeight: number;
     subjectId?: string;
     syllabusId?: string;
+    isViewOnly?: boolean;
 }) {
     const { showToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
@@ -1404,14 +1437,9 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                 {/* Modal Header */}
                 <header className="px-8 py-6 flex justify-between items-start bg-slate-50 border-b border-slate-100">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-widest uppercase">
-                                {assessment.assessmentId ? 'Editing' : 'Drafting'}
-                            </span>
                             <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                {assessment.categoryName || 'New Assessment'}
+                                {assessment.assessmentId ? (isViewOnly ? 'View Assessment' : 'Edit Assessment') : 'New Assessment'}
                             </h2>
-                        </div>
                     </div>
                     <button onClick={() => onClose(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
                         <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
@@ -1426,6 +1454,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Category</label>
                             <select
                                 value={assessment.categoryId}
+                                disabled={isViewOnly}
                                 onChange={(e) => {
                                     const cat = categories.find(c => c.categoryId === e.target.value);
                                     onUpdate({
@@ -1434,7 +1463,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         typeId: "", typeName: "", questionType: ""
                                     });
                                 }}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none disabled:opacity-70"
                             >
                                 <option value="" disabled>Select Category</option>
                                 {categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}
@@ -1444,6 +1473,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Evaluation Type</label>
                             <select
                                 value={assessment.typeId}
+                                disabled={isViewOnly}
                                 onChange={(e) => {
                                     const type = types.find(t => t.typeId === e.target.value);
                                     onUpdate({
@@ -1452,7 +1482,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         questionType: ""
                                     });
                                 }}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none disabled:opacity-70"
                             >
                                 <option value="" disabled>Select Type</option>
                                 {availableTypes.map(t => <option key={t.typeId} value={t.typeId}>{t.typeName}</option>)}
@@ -1462,8 +1492,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Part #</label>
                             <input
                                 value={assessment.part}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ part: Number(e.target.value) })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                 type="number"
                                 min={1}
                             />
@@ -1472,8 +1504,9 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Weight %</label>
                             <input
                                 value={assessment.weight}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
-                                className="w-full bg-slate-50 border border-emerald-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden font-bold text-primary"
+                                className="w-full bg-slate-50 border border-emerald-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden font-bold text-primary disabled:opacity-70"
                                 type="number"
                                 min={0}
                                 max={100}
@@ -1485,8 +1518,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Completion Criteria</label>
                             <input
                                 value={assessment.completionCriteria}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ completionCriteria: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                 placeholder="e.g., Minimum 70% accuracy on functional code snippets"
                                 type="text"
                             />
@@ -1495,8 +1530,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Duration (mins)</label>
                             <input
                                 value={assessment.duration}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ duration: Number(e.target.value) })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                 type="number"
                                 min={0}
                             />
@@ -1507,8 +1544,9 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Question Type</label>
                             <select
                                 value={assessment.questionType}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ questionType: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                             >
                                 <option value="" disabled>Select Methodology</option>
                                 {availableQuestionTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1520,9 +1558,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             {/* Knowledge Skill Text Input */}
                             <input
                                 value={assessment.knowledgeSkill || ""}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ knowledgeSkill: e.target.value })}
                                 placeholder="Enter knowledge or skills"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                 type="text"
                             />
                         </div>
@@ -1530,8 +1570,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grading Guide</label>
                             <input
                                 value={assessment.gradingGuide}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ gradingGuide: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                 placeholder="e.g., Standard Rubric V2"
                                 type="text"
                             />
@@ -1545,8 +1587,10 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                             </div>
                             <textarea
                                 value={assessment.note}
+                                readOnly={isViewOnly}
+                                disabled={isViewOnly}
                                 onChange={(e) => onUpdate({ note: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden resize-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden resize-none disabled:opacity-70"
                                 placeholder="Provide detailed instructions for the assessment facilitator..."
                                 rows={5}
                             ></textarea>
@@ -1643,10 +1687,11 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                         <div className="flex items-center gap-3 shrink-0">
                             <button onClick={() => onClose(false)} disabled={isSaving || isSingleValidating}
                                 className="px-6 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-50">
-                                Cancel
+                                {isViewOnly ? 'Close' : 'Cancel'}
                             </button>
 
 
+                                {!isViewOnly && (
                                 <button onClick={handleSave} disabled={isSaving}
                                     className={`flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white
                                         ${isOverWeight ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary shadow-primary/20 hover:scale-[1.03]'}`}>
@@ -1659,6 +1704,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         </>
                                     )}
                                 </button>
+                                )}
                         </div>
                     </div>
                 </footer>
