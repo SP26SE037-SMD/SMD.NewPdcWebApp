@@ -463,7 +463,8 @@ export default function RevisionSessionsPage({ params }: { params: Promise<{ tas
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Syllabus_${syllabusId}_Sessions.xlsx`;
+            const syllabusNameStr = syllabusData?.data?.syllabusName || syllabusId;
+            a.download = `Syllabus_${syllabusNameStr}_Session.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

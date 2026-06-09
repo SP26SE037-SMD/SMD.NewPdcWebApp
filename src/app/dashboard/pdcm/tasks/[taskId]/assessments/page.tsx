@@ -424,7 +424,8 @@ export default function AssessmentsPage({ params }: { params: Promise<{ taskId: 
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Syllabus_${syllabusId}_Assessments.xlsx`;
+            const syllabusNameStr = syllabusData?.data?.syllabusName || syllabusId;
+            a.download = `Syllabus_${syllabusNameStr}_Assessment.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
