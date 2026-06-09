@@ -114,6 +114,10 @@ export class SessionService {
         return apiClient.get<any>(`/api/sessions?syllabusId=${syllabusId}&page=${page}&size=${size}&sort=sessionNumber,asc`);
     }
 
+    static async exportSessions(syllabusId: string) {
+        return apiClient.download(`/api/sessions/syllabus/${syllabusId}/export`);
+    }
+
     static async createSession(payload: any) {
         return apiClient.post('/api/sessions/bluk', [payload]);
     }

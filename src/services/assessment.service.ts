@@ -103,6 +103,10 @@ export class AssessmentService {
         return apiClient.postFormData(`/api/assessments/import?syllabusId=${syllabusId}&subjectId=${subjectId}`, formData);
     }
 
+    static async exportAssessments(syllabusId: string) {
+        return apiClient.download(`/api/assessments/syllabus/${syllabusId}/export`);
+    }
+
     static async bulkDeleteAssessments(assessmentIds: string[]) {
         return apiClient.delete('/api/assessments/bulk', { body: JSON.stringify(assessmentIds) });
     }

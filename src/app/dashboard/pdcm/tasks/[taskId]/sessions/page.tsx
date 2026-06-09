@@ -35,6 +35,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
     const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
+    const [isViewOnly, setIsViewOnly] = useState(false);
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     const [draftSession, setDraftSession] = useState<SessionItem | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -120,6 +121,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
 
     const reduxSessions = useSelector((state: RootState) => syllabusId ? state.syllabus.sessionsDB[syllabusId] : undefined);
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | null, index: number, number: number } | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     const credit = syllabusData?.data?.credit || syllabusData?.data?.noCredit || 0;
     
@@ -362,16 +364,18 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         setIsBulkDeleteModalOpen(true);
     };
 
-    const handleStartEdit = (index: number) => {
+    const handleViewSession = (index: number) => {
         const session = sessions[index];
         setDraftSession({ ...session });
         setInitialSessionJson(JSON.stringify(session));
         setEditingIndex(index);
+        setIsViewOnly(true);
         setIsSingleValidated(false);
         setSingleValidationErrors([]);
     };
 
     const handleCreateNew = () => {
+        setIsViewOnly(false);
         const nextSessionNumber = sessions.length > 0 
             ? Math.max(...sessions.map(s => s.sessionNumber || 0)) + 1 
             : 1;
@@ -450,6 +454,29 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
         );
     }
 
+    const handleExportSessions = async () => {
+        if (!syllabusId) return;
+        setIsExporting(true);
+        try {
+            const { SessionService } = await import('@/services/session.service');
+            const blob = await SessionService.exportSessions(syllabusId as string);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Syllabus_${syllabusId}_Sessions.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast("Export sessions successfully", "success");
+        } catch (e) {
+            console.error("Export error", e);
+            showToast("Failed to export sessions", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="space-y-0">
 
@@ -480,6 +507,14 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     Delete Selected ({selectedSessions.length})
                                 </button>
                             )}
+                            <button
+                                onClick={handleExportSessions}
+                                disabled={isExporting}
+                                className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10 disabled:opacity-50"
+                            >
+                                {isExporting ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-[18px]">download</span>}
+                                Export
+                            </button>
                             <button
                                 onClick={() => setIsImportModalOpen(true)}
                                 className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm text-sm border-2 border-[#00966d] text-[#00966d] hover:bg-[#00966d]/5 active:bg-[#00966d]/10"
@@ -663,19 +698,12 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 )}
                                             </div>
                                             <div className="col-span-2 flex items-center justify-end gap-1.5">
-                                                <button onClick={() => handleStartEdit(index)}
+                                                <button onClick={() => handleViewSession(index)}
                                                     className="h-8 px-2 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-all duration-200"
                                                     title="View Session"
                                                 >
                                                     <Eye size={13} strokeWidth={2.5} className="mr-1" />
                                                     <span className="text-[10px] font-bold">View</span>
-                                                </button>
-                                                <button onClick={() => handleStartEdit(index)}
-                                                    className="h-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-200"
-                                                    title="Edit Session"
-                                                >
-                                                    <Pencil size={13} strokeWidth={2.5} className="mr-1" />
-                                                    <span className="text-[10px] font-bold">Edit</span>
                                                 </button>
                                                 <button onClick={() => handleDeleteSession(index)}
                                                     className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
@@ -727,14 +755,9 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                         {/* Modal Header */}
                         <header className="px-8 py-6 flex justify-between items-start bg-slate-50 border-b border-slate-100">
                             <div className="space-y-1">
-                                <div className="flex items-center gap-3">
-                                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-widest uppercase">
-                                        {draftSession.sessionId ? 'Editing' : 'Drafting'}
-                                    </span>
                                     <h2 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                                        {draftSession.sessionId ? `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}` : 'Create New Session'}
+                                    {draftSession.sessionId ? (isViewOnly ? `View Session ${String(draftSession.sessionNumber).padStart(2, '0')}` : `Edit Session ${String(draftSession.sessionNumber).padStart(2, '0')}`) : 'Create New Session'}
                                     </h2>
-                                </div>
                             </div>
                             <button onClick={handleCloseModal} className="p-2 hover:bg-slate-200 rounded-full transition-colors group">
                                 <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-600">close</span>
@@ -758,11 +781,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                 </div>
                             )}
 
-                            <section className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                <div className="md:col-span-2 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session No.</label>
+                            <section className="grid grid-cols-4 gap-x-6 gap-y-8 mb-8">
+                                <div className="col-span-1 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Session No.</label>
                                     <input
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 font-black text-center outline-none"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden text-center font-bold disabled:opacity-70"
                                         type="text"
                                         inputMode="numeric"
                                         pattern="[0-9]*"
@@ -774,30 +797,30 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         }}
                                     />
                                 </div>
-                                <div className="md:col-span-7 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Title</label>
+                                <div className="col-span-3 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Session Title</label>
                                     <input
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden disabled:opacity-70"
                                         type="text"
                                         value={draftSession.sessionTitle || ''}
                                         onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTitle: e.target.value } : null)}
                                     />
                                 </div>
-                                <div className="md:col-span-3 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Duration (Mins)</label>
+                                <div className="col-span-1 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Duration (Mins)</label>
                                     <input
-                                        className="bg-slate-50 border-2 border-slate-200 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed outline-none font-medium"
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm cursor-not-allowed outline-hidden font-medium text-slate-500 disabled:opacity-70"
                                         type="number"
                                         value={draftSession.duration ?? ''}
                                         disabled
                                         title="Duration is configured by system settings"
                                     />
                                 </div>
-                                <div className="md:col-span-6 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Teaching Method</label>
+                                <div className="col-span-2 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Teaching Method</label>
                                     <div className="relative">
                                         <select
-                                            className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none cursor-pointer disabled:opacity-70"
                                             value={draftSession.teachingMethods}
                                             onChange={e => setDraftSession(prev => prev ? { ...prev, teachingMethods: e.target.value } : null)}
                                         >
@@ -812,11 +835,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg pointer-events-none">school</span>
                                     </div>
                                 </div>
-                                <div className="md:col-span-6 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Type</label>
+                                <div className="col-span-1 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Session Type</label>
                                     <div className="relative">
                                         <select
-                                            className="w-full bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary appearance-none cursor-pointer outline-none"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden appearance-none cursor-pointer disabled:opacity-70"
                                             value={draftSession.sessionType || 'THEORY'}
                                             onChange={e => setDraftSession(prev => prev ? { ...prev, sessionType: e.target.value } : null)}
                                         >
@@ -827,10 +850,10 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg pointer-events-none">category</span>
                                     </div>
                                 </div>
-                                <div className="md:col-span-12 flex flex-col gap-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Session Topic</label>
+                                <div className="col-span-4 space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Session Topic</label>
                                     <textarea
-                                        className="bg-white border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-colors focus:border-primary placeholder-slate-400 outline-none resize-none h-24"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all outline-hidden resize-none h-24 disabled:opacity-70"
                                         placeholder="Enter the detailed topic for this session..."
                                         value={draftSession.sessionTopic || ''}
                                         onChange={e => setDraftSession(prev => prev ? { ...prev, sessionTopic: e.target.value } : null)}
@@ -846,8 +869,11 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             <div className="flex items-center justify-end">
                                 <div className="flex gap-3">
                                     <button onClick={handleCloseModal}
-                                        className="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+                                        className="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+                                        {isViewOnly ? 'Close' : 'Cancel'}
+                                    </button>
 
+                                {!isViewOnly && (
                                 <button 
                                     onClick={async () => {
                                         if (!draftSession || !syllabusId) return;
@@ -860,7 +886,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                                 sessionNumber: Number(draftSession.sessionNumber),
                                                 sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
                                                 teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "General Topic",
+                                                sessionTopic: draftSession.sessionTopic?.replace(/\n/g, '~') || "General Topic",
                                                 sessionType: draftSession.sessionType || "THEORY",
                                                 duration: Number(draftSession.duration || sessionMinute),
                                             };
@@ -924,6 +950,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                         </>
                                     )}
                                 </button>
+                                )}
                                 </div>
                             </div>
                         </footer>
