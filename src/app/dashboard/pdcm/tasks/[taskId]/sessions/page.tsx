@@ -844,90 +844,7 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                             <button onClick={handleCloseModal}
                                 className="px-6 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Discard Changes</button>
                             
-                            {!isSingleValidated ? (
-                                <button
-                                    onClick={async () => {
-                                        if (!draftSession || !syllabusId) return;
-                                        setIsSingleValidating(true);
-                                        try {
-                                            const { SessionService } = await import('@/services/session.service');
-                                            
-                                            // 1. Fetch existing sessions
-                                            const existingRes = await SessionService.getSessionsBySyllabusId(syllabusId);
-                                            const existingSessions = existingRes?.data || [];
-                                            
-                                            // 2. Prepare draft session payload
-                                            const draftMapped = {
-                                                syllabusId,
-                                                sessionNumber: Number(draftSession.sessionNumber),
-                                                sessionTitle: draftSession.sessionTitle || `Session ${draftSession.sessionNumber}`,
-                                                teachingMethods: draftSession.teachingMethods || "Lecture",
-                                                sessionTopic: draftSession.sessionTopic || "General Topic",
-                                                sessionType: draftSession.sessionType || "THEORY",
-                                                duration: Number(draftSession.duration || sessionMinute),
-                                            };
 
-                                            // 3. Combine payloads
-                                            let combinedPayload = [];
-                                            if (editingIndex === -1) {
-                                                combinedPayload = existingSessions.map((s: any) => ({
-                                                    syllabusId: s.syllabusId,
-                                                    sessionNumber: Number(s.sessionNumber),
-                                                    sessionTitle: s.sessionTitle,
-                                                    teachingMethods: s.teachingMethods,
-                                                    sessionTopic: s.sessionTopic,
-                                                    sessionType: s.sessionType,
-                                                    duration: Number(s.duration)
-                                                }));
-                                                combinedPayload.push(draftMapped);
-                                            } else {
-                                                combinedPayload = existingSessions.map((s: any) => {
-                                                    if (s.sessionId === draftSession.sessionId) return draftMapped;
-                                                    return {
-                                                        syllabusId: s.syllabusId,
-                                                        sessionNumber: Number(s.sessionNumber),
-                                                        sessionTitle: s.sessionTitle,
-                                                        teachingMethods: s.teachingMethods,
-                                                        sessionTopic: s.sessionTopic,
-                                                        sessionType: s.sessionType,
-                                                        duration: Number(s.duration)
-                                                    };
-                                                });
-                                            }
-
-                                            // 4. Validate
-                                            const validateRes = await SessionService.validateSessionsSyllabus(syllabusId!, combinedPayload) as any;
-                                            const resData = validateRes?.data || {};
-                                            const errorsArray = resData.errors || [];
-                                            const isValid = resData.valid === true && errorsArray.length === 0;
-                                            
-                                            setSingleValidationErrors([{ errors: errorsArray }]);
-                                            
-                                            if (isValid) {
-                                                setIsSingleValidated(true);
-                                                showToast('Session data is valid!', 'success');
-                                            } else {
-                                                setIsSingleValidated(false);
-                                                showToast('Validation failed. Please fix the errors.', 'error');
-                                            }
-                                        } catch (e: any) {
-                                            console.error("Validation error:", e);
-                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
-                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
-                                            setSingleValidationErrors([{ errors: errorsArray }]);
-                                            setIsSingleValidated(false);
-                                            showToast('Validation failed. Please fix the errors.', 'error');
-                                        } finally {
-                                            setIsSingleValidating(false);
-                                        }
-                                    }}
-                                    disabled={isSingleValidating}
-                                    className="bg-blue-500 text-white px-8 py-2.5 rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    {isSingleValidating ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">fact_check</span>}
-                                    Validate Session
-                                </button>
-                            ) : (
                                 <button 
                                     onClick={async () => {
                                         if (!draftSession || !syllabusId) return;
@@ -998,7 +915,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <span className="material-symbols-outlined text-lg">check_circle</span>}
                                     {draftSession.sessionId ? 'Update Session' : 'Create Session'}
                                 </button>
-                            )}
                         </div>
                     </div>
                 </div>

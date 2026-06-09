@@ -1647,101 +1647,7 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                 Cancel
                             </button>
 
-                            {!isSingleValidated ? (
-                                <button
-                                    onClick={async () => {
-                                        if (!syllabusId) return;
-                                        setIsSingleValidating(true);
-                                        try {
-                                            // 1. Fetch existing assessments
-                                            const existingRes = await AssessmentService.getAssessmentsBySyllabusId(syllabusId);
-                                            const existingAssessments = Array.isArray(existingRes?.data) ? existingRes.data : (existingRes?.data?.content || []);
-                                            
-                                            // 2. Prepare draft assessment
-                                            const draftMapped = {
-                                                categoryId: assessment.categoryId,
-                                                typeId: assessment.typeId,
-                                                syllabusId: assessment.syllabusId || syllabusId,
-                                                part: Number(assessment.part),
-                                                weight: Number(assessment.weight),
-                                                completionCriteria: assessment.completionCriteria || "",
-                                                duration: Number(assessment.duration || 0),
-                                                questionType: assessment.questionType || "",
-                                                knowledgeSkill: assessment.knowledgeSkill || "",
-                                                gradingGuide: assessment.gradingGuide || "",
-                                                note: assessment.note || "",
-                                            };
 
-                                            // 3. Combine existing with draft
-                                            let combinedPayload = [];
-                                            if (!assessment.assessmentId) {
-                                                combinedPayload = existingAssessments.map((a: any) => ({
-                                                    categoryId: a.categoryId,
-                                                    typeId: a.typeId,
-                                                    syllabusId: a.syllabusId,
-                                                    part: Number(a.part),
-                                                    weight: Number(a.weight),
-                                                    completionCriteria: a.completionCriteria || "",
-                                                    duration: Number(a.duration || 0),
-                                                    questionType: a.questionType || "",
-                                                    knowledgeSkill: a.knowledgeSkill || "",
-                                                    gradingGuide: a.gradingGuide || "",
-                                                    note: a.note || "",
-                                                }));
-                                                combinedPayload.push(draftMapped);
-                                            } else {
-                                                combinedPayload = existingAssessments.map((a: any) => {
-                                                    if (a.assessmentId === assessment.assessmentId) return draftMapped;
-                                                    return {
-                                                        categoryId: a.categoryId,
-                                                        typeId: a.typeId,
-                                                        syllabusId: a.syllabusId,
-                                                        part: Number(a.part),
-                                                        weight: Number(a.weight),
-                                                        completionCriteria: a.completionCriteria || "",
-                                                        duration: Number(a.duration || 0),
-                                                        questionType: a.questionType || "",
-                                                        knowledgeSkill: a.knowledgeSkill || "",
-                                                        gradingGuide: a.gradingGuide || "",
-                                                        note: a.note || "",
-                                                    };
-                                                });
-                                            }
-
-                                            // 4. Validate
-                                            const res = await AssessmentService.validateAssessments(syllabusId, combinedPayload) as any;
-                                            const resData = res?.data || {};
-                                            const errorsArray = resData.errors || [];
-                                            const isValid = resData.valid === true && errorsArray.length === 0;
-
-                                            setSingleValidationErrors(errorsArray);
-                                            setSingleValidationSummary(resData.summary || null);
-
-                                            if (isValid) {
-                                                setIsSingleValidated(true);
-                                                showToast('Assessment is valid!', 'success');
-                                            } else {
-                                                setIsSingleValidated(false);
-                                                showToast('Validation failed. Please fix the errors.', 'error');
-                                            }
-                                        } catch (e: any) {
-                                            console.error("Validation error:", e);
-                                            const errorData = e.data || e.response?.data?.data || e.response?.data || {};
-                                            const errorsArray = Array.isArray(errorData) ? errorData : (errorData.errors || []);
-                                            setSingleValidationErrors(errorsArray);
-                                            setIsSingleValidated(false);
-                                            showToast('Validation failed. Please fix the errors.', 'error');
-                                        } finally {
-                                            setIsSingleValidating(false);
-                                        }
-                                    }}
-                                    disabled={isSingleValidating}
-                                    className="flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white bg-blue-500 hover:bg-blue-600 shadow-blue-500/20 hover:scale-[1.03]"
-                                >
-                                    {isSingleValidating ? <Loader2 size={20} className="animate-spin" /> : <span className="material-symbols-outlined text-[20px]">fact_check</span>}
-                                    Validate
-                                </button>
-                            ) : (
                                 <button onClick={handleSave} disabled={isSaving}
                                     className={`flex items-center gap-2 px-10 py-3 text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 min-w-[140px] justify-center text-white
                                         ${isOverWeight ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary shadow-primary/20 hover:scale-[1.03]'}`}>
@@ -1754,7 +1660,6 @@ function AssessmentEditModal({ assessment, onClose, onSave, onUpdate, categories
                                         </>
                                     )}
                                 </button>
-                            )}
                         </div>
                     </div>
                 </footer>
