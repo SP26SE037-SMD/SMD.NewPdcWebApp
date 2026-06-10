@@ -351,7 +351,7 @@ export default function SyllabusCompareModal({
                             </li>
                           ))
                         ) : (
-                          <p className="text-xs text-emerald-600/50 italic">No concepts added</p>
+                          <p className="text-xs text-emerald-600/50 italic">No changes</p>
                         )}
                       </ul>
                     </div>
@@ -369,7 +369,7 @@ export default function SyllabusCompareModal({
                             </li>
                           ))
                         ) : (
-                          <p className="text-xs text-rose-600/50 italic">No concepts removed</p>
+                          <p className="text-xs text-rose-600/50 italic">No changes</p>
                         )}
                       </ul>
                     </div>
@@ -387,7 +387,7 @@ export default function SyllabusCompareModal({
                             </li>
                           ))
                         ) : (
-                          <p className="text-xs text-blue-600/50 italic">No concepts modified</p>
+                          <p className="text-xs text-blue-600/50 italic">No changes</p>
                         )}
                       </ul>
                     </div>

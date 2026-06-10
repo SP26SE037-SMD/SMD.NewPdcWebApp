@@ -1070,15 +1070,27 @@ export default function HopdcFeedbackPage() {
                                 </div>
 
                                 <div className="mt-5 flex flex-wrap items-center gap-2">
-                                  {form.editFormURL && (
+                                  {form.formEditUrl && (
                                     <a
-                                      href={form.editFormURL}
+                                      href={form.formEditUrl}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="inline-flex items-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95"
                                     >
                                       <Pencil className="h-3.5 w-3.5" />
                                       Edit Form
+                                    </a>
+                                  )}
+
+                                  {form.formUrl && (
+                                    <a
+                                      href={form.formUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-300 hover:bg-primary hover:text-white active:scale-95 shadow-sm"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      View Form
                                     </a>
                                   )}
 
