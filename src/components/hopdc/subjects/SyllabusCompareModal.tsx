@@ -399,9 +399,53 @@ export default function SyllabusCompareModal({
                       Risk Assessment: {compareResult.risk_assessment}
                     </h3>
                     <div className="bg-white/60 rounded-xl p-4 border border-amber-100 relative z-10 mt-4">
-                      <p className="text-sm text-amber-900 font-medium leading-relaxed">
-                        {compareResult.risk_reason}
-                      </p>
+                      <div className="text-sm text-amber-900 font-medium leading-relaxed">
+                        {(() => {
+                          const text = compareResult.risk_reason || "";
+                          if (!text) return null;
+                          
+                          let formatted = text
+                            .replace(/### /g, '\n### ')
+                            .replace(/\s+- \*\*/g, '\n- **')
+                            .replace(/\s+-\s+/g, '\n- ');
+                          
+                          const lines = formatted.split('\n').filter(l => l.trim() !== '');
+                          
+                          const renderBold = (str: string) => {
+                            const parts = str.split(/(\*\*.*?\*\*)/g);
+                            return parts.map((part, i) => {
+                              if (part.startsWith('**') && part.endsWith('**')) {
+                                return <strong key={i} className="font-bold text-amber-950">{part.slice(2, -2)}</strong>;
+                              }
+                              return part;
+                            });
+                          };
+
+                          return (
+                            <div className="space-y-3">
+                              {lines.map((line, idx) => {
+                                const trimmed = line.trim();
+                                if (trimmed.startsWith('### ')) {
+                                  return (
+                                    <h4 key={idx} className="font-bold text-amber-950 mt-5 first:mt-0 text-base">
+                                      {renderBold(trimmed.substring(4))}
+                                    </h4>
+                                  );
+                                }
+                                if (trimmed.startsWith('- ')) {
+                                  return (
+                                    <div key={idx} className="flex items-start gap-2 ml-2">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                                      <div className="flex-1">{renderBold(trimmed.substring(2))}</div>
+                                    </div>
+                                  );
+                                }
+                                return <div key={idx}>{renderBold(trimmed)}</div>;
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
