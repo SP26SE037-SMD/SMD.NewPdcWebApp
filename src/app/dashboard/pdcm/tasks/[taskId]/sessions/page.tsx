@@ -289,11 +289,14 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
             const res: any = await MappingService.validateSessionMappings(syllabusId, payload);
             console.log("[Validate Mapping] Success Response:", res);
             
-            if (res?.data) {
+            if (res?.data && typeof res.data.is_valid !== 'undefined') {
                 setMappingValidationResult(res.data);
                 setIsMappingResultModalOpen(true);
+                setIsMappingValidating(false);
+                showToast(res?.message || "Mapping validation complete", "success");
+            } else {
+                showToast(res?.message || "Validation started. Please wait...", "info");
             }
-            showToast(res?.message || "Mapping validation complete", "success");
         } catch (error: any) {
             console.error("[Validate Mapping] Error Response:", error);
             if (error.data?.data && typeof error.data.data.is_valid !== 'undefined') {
@@ -308,7 +311,6 @@ export default function SessionsPage({ params }: { params: Promise<{ taskId: str
                 const errMsg = error.message || error.data?.message || "Failed to validate mappings";
                 showToast(errMsg, "error");
             }
-        } finally {
             setIsMappingValidating(false);
         }
     };
