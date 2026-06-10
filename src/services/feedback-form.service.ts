@@ -5,7 +5,7 @@ export interface FeedbackFormRecord {
   curriculumId: string;
   googleFormId?: string | null;
   formUrl?: string | null;
-  editFormURL?: string | null;
+  formEditUrl?: string | null;
   formType: string;
   isActive: boolean;
   createdAt?: string;
