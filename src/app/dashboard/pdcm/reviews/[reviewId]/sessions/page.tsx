@@ -68,9 +68,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                     const warningsCovered = sessionValidDataState?.warningsCovered || [];
                     const quotas = sessionValidDataState?.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 };
 
-                    const isMappingsValid = mappingValidData?.is_valid !== false;
                     const isAllClosMapped = mappingValidData?.is_all_clos_mapped !== false;
                     const isAllSessionsMapped = mappingValidData?.is_all_sessions_mapped !== false;
+                    const isMappingsValid = isAllClosMapped && isAllSessionsMapped;
                     const unmappedClos = mappingValidData?.unmapped_clos || [];
                     const unmappedSessions = mappingValidData?.unmapped_sessions || [];
                     const mappingsList = mappingValidData?.data || [];
@@ -126,9 +126,9 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                                 status: isSessionsValid ? 'PASS' : 'FAIL',
                                 stats: [
                                     { label: 'Total Sessions', value: `${sortedSessions.length}`, type: 'info' },
-                                    { label: 'Theory Hours', value: quotas.theory >= 0 ? `${quotas.theory} available` : `${Math.abs(quotas.theory)} exceeded`, type: quotas.theory >= 0 ? 'ok' : 'error' },
-                                    { label: 'Practice Hours', value: quotas.practice >= 0 ? `${quotas.practice} available` : `${Math.abs(quotas.practice)} exceeded`, type: quotas.practice >= 0 ? 'ok' : 'error' },
-                                    { label: 'Self-Study Hours', value: quotas.selfStudy >= 0 ? `${quotas.selfStudy}h available` : `${Math.abs(quotas.selfStudy)}h exceeded`, type: quotas.selfStudy >= 0 ? 'ok' : 'error' },
+                                    { label: 'Theory Hours', value: quotas.theory > 0 ? `${quotas.theory} available` : quotas.theory === 0 ? 'Fully allocated' : `${Math.abs(quotas.theory)} exceeded`, type: quotas.theory >= 0 ? 'ok' : 'error' },
+                                    { label: 'Practice Hours', value: quotas.practice > 0 ? `${quotas.practice} available` : quotas.practice === 0 ? 'Fully allocated' : `${Math.abs(quotas.practice)} exceeded`, type: quotas.practice >= 0 ? 'ok' : 'error' },
+                                    { label: 'Self-Study Hours', value: quotas.selfStudy > 0 ? `${quotas.selfStudy}h available` : quotas.selfStudy === 0 ? 'Fully allocated' : `${Math.abs(quotas.selfStudy)}h exceeded`, type: quotas.selfStudy >= 0 ? 'ok' : 'error' },
                                 ],
                                 warnings: combinedWarnings,
                             },
@@ -242,11 +242,30 @@ export default function PDCMReviewSessionsPage({ params }: { params: Promise<{ r
                 duration: s.duration || 0
             }));
 
-            // 2. Call Session validate API
+            // 2. Call Session validate APIs
             let sessionValidData: any = null;
             try {
-                const sessionValidateRes = await SessionService.validateSessionsSyllabus(syllabusId || "", sessionsPayload);
-                sessionValidData = sessionValidateRes?.data;
+                const [sessionValidateRes, sessionTypeValidateRes] = await Promise.all([
+                    SessionService.validateSessionsSyllabus(syllabusId || "", sessionsPayload).catch(e => {
+                        console.warn("[Sessions] validateSessionsSyllabus failed:", e?.message);
+                        return null;
+                    }),
+                    SessionService.validateSessionType(syllabusId || "", [{}]).catch(e => {
+                        console.warn("[Sessions] validateSessionType failed:", e?.message);
+                        return null;
+                    })
+                ]);
+                
+                const sessionData = sessionValidateRes?.data || {};
+                const sessionTypeData = sessionTypeValidateRes?.data || {};
+                
+                sessionValidData = {
+                    valid: sessionTypeData.valid !== false,
+                    errors: sessionTypeData.errors || [],
+                    remainingQuotas: sessionTypeData.remainingQuotas || { theory: 0, practice: 0, selfStudy: 0 },
+                    warningsContent: sessionData.warningsContent || [],
+                    warningsCovered: sessionData.warningsCovered || []
+                };
             } catch (err: any) {
                 console.warn("[Sessions] Validation API failed, using defaults:", err?.message);
             }

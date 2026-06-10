@@ -14,7 +14,7 @@ export async function POST(
         const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
         const body = await request.json();
 
-        const backendResponse = await fetch(`${API_BASE_URL}/api/sessions/syllabus/${syllabusId}/validate`, {
+        const backendResponse = await fetch(`${API_BASE_URL}/api/sessions/syllabus/${syllabusId}/validate-session-type`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
